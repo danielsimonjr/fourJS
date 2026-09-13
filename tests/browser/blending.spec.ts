@@ -895,24 +895,10 @@ test.describe("§110: animated ↔ kinematic ↔ physical control in the browser
     // A handful of framebuffer pairs prove the wave reached the pixels and the
     // scenery did not. The wave *period* is watched below via `data-chain-y`:
     // screenshotting for that long is what starved the simulation.
-<<<<<<< HEAD
     // Capture all required pairs. Screenshot latency is not simulation time;
     // the test's timeout already bounds a stalled browser.
     for (let pair = 0; pair < PIXEL_PROOF_PAIRS; pair += 1) {
       await page.waitForTimeout(FRAME_GAP_MS);
-=======
-    // The budget is in frames, the unit the gap is waited in: a wall-clock
-    // deadline here starved the loop of pairs on a runner drawing slowly
-    // (measured 2 of 3 in 1.6 s), which is a count about the runner.
-    const gapFrames = framesFor(FRAME_GAP_MS / 1000);
-    const pixelFrameDeadline =
-      (await readFrameCount(page)) + gapFrames * (PIXEL_PROOF_PAIRS + 5);
-    while (
-      bandDeltas.length < PIXEL_PROOF_PAIRS &&
-      (await readFrameCount(page)) < pixelFrameDeadline
-    ) {
-      await waitForFrames(page, gapFrames);
->>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
       const frame = await grab(canvas);
 
       // The chain's band changed — it is being animated, right now.

@@ -1,10 +1,6 @@
 # Duplicate Symbols
 
-<<<<<<< HEAD
 **Generated**: 2026-09-13 (by tools/create-dependency-graph)
-=======
-**Generated**: 2026-09-11 (by tools/create-dependency-graph)
->>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
 
 Names that are OWN-DEFINED (not merely re-exported) by >= 2 distinct files across the monorepo, then CLASSIFIED (see `DupEntryTag`) so the actionable subset is clear: `TRUE_DUPLICATE` (real merge targets) vs `DISPATCH_VARIANT` (>=2 `mathTyped(...)` registrations of the same public name — distinct dispatch surfaces, Bucket C delegation candidates, not copy-paste bodies), `ALIAS_DELEGATION` (a `const X = importedY` forward, excluded once <2 real bodies remain), and `ALLOWLISTED` (matches `duplicate-allowlist.json`: hot-path `is*` guards, AssemblyScript mirrors, per-package `VERSION` strings).
 

@@ -59,7 +59,6 @@
  * | particles-demo | 43.04 kB        | 43 kB       | 43.5 kB   | +38 B over — id-pass / appearance already in the demo graph. A: hold at 43 → red; B: 43.5 kB. |
  * | ui-demo        | 49.51 kB        | 49.5 kB     | 50 kB     | +11 B over — PickProvider on `@fourjs/input` rides the retained-mode graph. B: 50 kB. |
  *
-<<<<<<< HEAD
  * **2026-09-11 RFC packets:** clean A/B builds on the same Bun 1.4.2 /
  * Vite 8.2.2 toolchain, baseline main 318e6bd vs this branch. Main already
  * exceeded all three old limits; the new production Mesh skinning/texture
@@ -74,7 +73,6 @@
  *
  * These retain ~1.5–2.1% headroom. The normative first-2d limit remains
  * 150 kB (61.29 kB measured); all solver-bearing example limits remain.
-=======
  * **2026-09-11 (registration seams for the shadow, effect and particle
  * pipelines):** `WebglRenderer` compiled eight programs at initialize, so
  * `ShadowProgram`, `EffectProgram`, `ParticleProgram` + `ParticleTrailProgram`
@@ -132,7 +130,6 @@
  * double like `0.2` (5 000 → 5 000 on the shape row); the shipped mirror
  * holds doubles, and the unit test now uses `[0.2, 0.6, 1, 1]` for exactly
  * that reason. No limit was raised.
->>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
  */
 
 export const SIZE_BUDGETS_DOC = "tools/size-budgets.mjs";

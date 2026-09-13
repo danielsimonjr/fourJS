@@ -128,14 +128,10 @@ import {
   type NodeMaterialProgram,
   type NodeMaterialPrograms,
 } from "./node-pipeline-registry.js";
-<<<<<<< HEAD
-import { ShadowProgram } from "./gl-shadow.js";
 import {
-  StandardProgram,
   NORMAL_TEXTURE_UNIT,
   OCCLUSION_TEXTURE_UNIT,
 } from "./gl-standard.js";
-=======
 import {
   resolveShadowPipelineFactory,
   type ShadowCasterPipeline,
@@ -144,7 +140,6 @@ import {
   resolveStandardPipelineFactory,
   type StandardPipeline,
 } from "./gl-standard-registry.js";
->>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
 import { TextureCache, type CacheableTexture } from "./gl-texture.js";
 
 /**

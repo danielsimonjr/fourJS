@@ -12900,7 +12900,6 @@ describe("WebglRenderer.readPixels (§61, §92; 2026-08-29)", () => {
   });
 });
 
-<<<<<<< HEAD
 describe("Standard material normal and occlusion maps", () => {
   it("binds both linear data maps, transitions to scalar shading, and releases units", async () => {
     const { renderer, gl, camera } = await initialized();
@@ -12958,7 +12957,9 @@ describe("Standard material normal and occlusion maps", () => {
     expect(source).toContain("diffuseColor * occlusion");
     expect(source).toContain("vec4(shaded + emit, base.a)");
     program.dispose();
-=======
+  });
+});
+
 // ---------------------------------------------------------------------------
 // The registration seams of 2026-09-11 — §69 shadows, §70 effects, §36
 // particles and (owner decision) §59's standard surface moved out of `initialize` and behind `register…Pipeline()`,
@@ -14104,6 +14105,5 @@ describe("bound-texture mirror — the shaded and skinned map sites (audit A6)",
     } finally {
       clearRegisteredSkinningPipeline();
     }
->>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
   });
 });
