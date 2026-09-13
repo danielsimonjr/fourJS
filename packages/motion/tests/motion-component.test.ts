@@ -1,3 +1,4 @@
+import { isFourError } from "@fourjs/core";
 import {
   Quaternion,
   Vector3,
@@ -18,6 +19,19 @@ import {
   SystemRegistry,
   type FixedUpdateContext,
 } from "../src/systems.js";
+
+/** Runs `run`, expecting a `FourError` with `INVALID_APPLICATION_STATE` (§83, §89). */
+function expectDisposedError(run: () => void): Error {
+  let caught: unknown;
+  try {
+    run();
+  } catch (error) {
+    caught = error;
+  }
+  expect(isFourError(caught)).toBe(true);
+  expect((caught as { code: string }).code).toBe("INVALID_APPLICATION_STATE");
+  return caught as Error;
+}
 
 const DT = DEFAULT_FIXED_DELTA_TIME;
 
@@ -626,5 +640,32 @@ describe("MotionSystem — determinism and allocation (§33, §7b)", () => {
     resetConstructionCount();
     step(100);
     expect(constructionCount()).toBe(0);
+  });
+});
+
+describe("MotionSystem disposal (§83 stability audit, 2026-09-11)", () => {
+  it("disposes idempotently and refuses tracking and stepping afterwards", () => {
+    const system = new MotionSystem();
+    const node = new Group();
+    expect(system.disposed).toBe(false);
+    system.track(node);
+    expect(system.size).toBe(1);
+
+    system.dispose();
+    expect(system.disposed).toBe(true);
+    expect(system.size).toBe(0);
+    // A second dispose is a no-op (§83: idempotent), not an error.
+    expect(() => system.dispose()).not.toThrow();
+    expect(system.disposed).toBe(true);
+
+    // Disposal is terminal (§83): the mutating entry points refuse with §89's
+    // INVALID_APPLICATION_STATE instead of silently working on a dead system.
+    expect(expectDisposedError(() => system.track(node)).message).toMatch(
+      /MotionSystem is disposed.*§83/s,
+    );
+    expectDisposedError(() => system.fixedUpdate(makeContext()));
+    expect(system.size).toBe(0);
+    // Reads stay answerable, so teardown code can still inspect the system.
+    expect(system.has(node)).toBe(false);
   });
 });

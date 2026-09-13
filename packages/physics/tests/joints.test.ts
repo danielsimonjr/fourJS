@@ -550,7 +550,10 @@ describe("HingeJoint (§28's example)", () => {
     const joint = new FixedJoint({ bodyA: a, bodyB: b });
     expect(
       expectFourError(() =>
-        joint.setAnchors(new Vector3(Number.POSITIVE_INFINITY, 0, 0), undefined),
+        joint.setAnchors(
+          new Vector3(Number.POSITIVE_INFINITY, 0, 0),
+          undefined,
+        ),
       ).message,
     ).toContain("anchorA must be finite");
   });
@@ -1153,3 +1156,32 @@ function toTuple(v: Vector3): [number, number, number] {
 function pretendRegistered(joint: object): void {
   (joint as { id: number | undefined }).id = 1;
 }
+
+describe("Joint disposal (§83 stability audit, 2026-09-11)", () => {
+  it("disposes idempotently and refuses registration afterwards", () => {
+    const { a, b } = bodies();
+    const joint = new HingeJoint({
+      bodyA: a,
+      bodyB: b,
+      axis: new Vector3(0, 0, 1),
+    });
+    expect(joint.disposed).toBe(false);
+    expect(joint.toDescriptor(binding()).type).toBe("revolute");
+
+    joint.dispose();
+    expect(joint.disposed).toBe(true);
+    // A second dispose is a no-op (§83: idempotent), not an error.
+    expect(() => joint.dispose()).not.toThrow();
+    expect(joint.disposed).toBe(true);
+
+    // Disposal is terminal (§83): every shipped joint's `toDescriptor` runs
+    // through `describeBase`, which is what `world.addJoint` builds from, so
+    // registering a disposed joint refuses with §89's INVALID_APPLICATION_STATE.
+    const error = expectFourError(() => joint.toDescriptor(binding()));
+    expect(error.code).toBe("INVALID_APPLICATION_STATE");
+    expect(error.message).toMatch(/revolute joint is disposed.*§83/s);
+    // Plain reads stay answerable for teardown code.
+    expect(joint.registered).toBe(false);
+    expect(joint.bodyA).toBe(a);
+  });
+});

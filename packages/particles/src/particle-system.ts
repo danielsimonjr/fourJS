@@ -116,6 +116,8 @@
  * reproduces step for step.
  */
 
+import { FourError } from "@fourjs/core";
+
 /**
  * Execution order key for particle simulation: §39 step 5, *force generation*.
  *
@@ -246,6 +248,31 @@ export class ParticleSystem {
   /** Tracked emitters in insertion order (§33: deterministic iteration). */
   readonly #tracked = new Set<SteppableEmitter>();
 
+  /** Set by {@link ParticleSystem.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link ParticleSystem.dispose} has run. Disposal is terminal (§83):
+   * a disposed system refuses its mutating entry points with
+   * `INVALID_APPLICATION_STATE` (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "ParticleSystem is disposed; stepping emitters through a disposed system is a " +
+          "lifetime mistake (§83), and a new system is a new " +
+          "ParticleSystem.",
+        { context: { system: "ParticleSystem" } },
+      );
+    }
+  }
+
   /**
    * @throws RangeError if `priority` is given and is not a finite number —
    * checked here as well as by the registry, so an application that builds the
@@ -277,6 +304,7 @@ export class ParticleSystem {
    * position in the iteration order and steps it once.
    */
   track<T extends SteppableEmitter>(emitter: T): T {
+    this.#requireLive();
     this.#tracked.add(emitter);
     return emitter;
   }
@@ -336,6 +364,7 @@ export class ParticleSystem {
    * nothing to them.
    */
   fixedUpdate(context: ParticleFixedUpdateContext): void {
+    this.#requireLive();
     const { fixedDeltaTime, simulationTime } = context.time;
     for (const emitter of this.#tracked) {
       emitter.step(fixedDeltaTime, simulationTime);
@@ -351,6 +380,10 @@ export class ParticleSystem {
    * frame from. `AnimationSystem.dispose` draws the same line.
    */
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     this.#tracked.clear();
   }
 }

@@ -207,7 +207,17 @@ export class Scheduler {
     ) {
       time.simulationStep += 1;
       time.simulationTime += fixedDeltaTime;
-      this.onFixedStep?.(time);
+      try {
+        this.onFixedStep?.(time);
+      } catch (error) {
+        // A throwing step leaves the accumulator holding (the step is re-run
+        // next frame — deliberate, §10) — so the counters the callback already
+        // saw advanced must step back too, or `simulationStep` runs one ahead
+        // of the accumulator for the rest of the session (2026-09-11 audit).
+        time.simulationStep -= 1;
+        time.simulationTime -= fixedDeltaTime;
+        throw error;
+      }
       this.#accumulator -= fixedDeltaTime;
       steps += 1;
     }

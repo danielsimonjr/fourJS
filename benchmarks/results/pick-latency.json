@@ -2,7 +2,7 @@
   "_note": "Recorded measurement, not a gate. Nothing in CI asserts on these timings; see benchmarks/README.md for how the numbers are to be read and why this host is not 'suitable hardware'.",
   "benchmark": "pick-latency",
   "specification": "RFC 0005 prototype: id-pass cost vs the flagship / R-8 render list, and fence-vs-stall pick latency; §71, §64, §86",
-  "recordedAt": "2026-09-09T03:47:00.786Z",
+  "recordedAt": "2026-09-11T02:59:30.236Z",
   "flagshipOrderNodes": 64,
   "flagshipOrderNote": "The §118 flagship is O(10²) id-pass candidates (named meshes, 16 orbit dots, Text, UI skin quads; particle systems skipped). 64 is that order of magnitude. R-8 sizes are 10 000 / 50 000 / 100 000.",
   "particleIdProgram": false,
@@ -28,104 +28,104 @@
       "role": "flagship-order",
       "listItems": 64,
       "list": {
-        "warmupMeanMsPerPass": 0.6502,
-        "meanMsPerPass": 0.1226,
-        "medianMsPerPass": 0.0746,
-        "p95MsPerPass": 0.1211,
-        "p99MsPerPass": 1.3482,
-        "minMsPerPass": 0.0727,
-        "maxMsPerPass": 1.3482
+        "warmupMeanMsPerPass": 0.984,
+        "meanMsPerPass": 0.1172,
+        "medianMsPerPass": 0.1069,
+        "p95MsPerPass": 0.1695,
+        "p99MsPerPass": 0.1705,
+        "minMsPerPass": 0.0939,
+        "maxMsPerPass": 0.1705
       },
       "idPass": {
-        "warmupMeanMsPerPass": 0.1588,
-        "meanMsPerPass": 0.1257,
-        "medianMsPerPass": 0.1016,
-        "p95MsPerPass": 0.1857,
-        "p99MsPerPass": 0.7599,
-        "minMsPerPass": 0.0676,
-        "maxMsPerPass": 0.7599
+        "warmupMeanMsPerPass": 0.3452,
+        "meanMsPerPass": 0.2094,
+        "medianMsPerPass": 0.1954,
+        "p95MsPerPass": 0.3263,
+        "p99MsPerPass": 0.3271,
+        "minMsPerPass": 0.1366,
+        "maxMsPerPass": 0.3271
       },
-      "idPassOverListMs": 0.0031,
-      "idPassOverListRatio": 1.0253,
-      "meanFractionOfFixedStepBudget": 0.0075
+      "idPassOverListMs": 0.0922,
+      "idPassOverListRatio": 1.7867,
+      "meanFractionOfFixedStepBudget": 0.0126
     },
     {
       "nodes": 10000,
       "role": "r8-list",
       "listItems": 10000,
       "list": {
-        "warmupMeanMsPerPass": 5.8703,
-        "meanMsPerPass": 1.2391,
-        "medianMsPerPass": 1.2403,
-        "p95MsPerPass": 1.2724,
-        "p99MsPerPass": 1.2909,
-        "minMsPerPass": 1.2163,
-        "maxMsPerPass": 1.2909
+        "warmupMeanMsPerPass": 12.2626,
+        "meanMsPerPass": 2.6201,
+        "medianMsPerPass": 2.2814,
+        "p95MsPerPass": 3.8411,
+        "p99MsPerPass": 5.549,
+        "minMsPerPass": 1.7036,
+        "maxMsPerPass": 5.549
       },
       "idPass": {
-        "warmupMeanMsPerPass": 5.6738,
-        "meanMsPerPass": 4.4121,
-        "medianMsPerPass": 4.3853,
-        "p95MsPerPass": 4.7289,
-        "p99MsPerPass": 4.9036,
-        "minMsPerPass": 4.0659,
-        "maxMsPerPass": 4.9036
+        "warmupMeanMsPerPass": 12.7128,
+        "meanMsPerPass": 10.2753,
+        "medianMsPerPass": 9.2968,
+        "p95MsPerPass": 13.6671,
+        "p99MsPerPass": 38.3743,
+        "minMsPerPass": 7.1856,
+        "maxMsPerPass": 38.3743
       },
-      "idPassOverListMs": 3.173,
-      "idPassOverListRatio": 3.5607,
-      "meanFractionOfFixedStepBudget": 0.2647
+      "idPassOverListMs": 7.6552,
+      "idPassOverListRatio": 3.9217,
+      "meanFractionOfFixedStepBudget": 0.6165
     },
     {
       "nodes": 50000,
       "role": "r8-list",
       "listItems": 50000,
       "list": {
-        "warmupMeanMsPerPass": 18.1835,
-        "meanMsPerPass": 9.4279,
-        "medianMsPerPass": 9.6987,
-        "p95MsPerPass": 11.2767,
-        "p99MsPerPass": 12.5315,
-        "minMsPerPass": 6.1084,
-        "maxMsPerPass": 12.5315
+        "warmupMeanMsPerPass": 60.6725,
+        "meanMsPerPass": 22.5594,
+        "medianMsPerPass": 22.3272,
+        "p95MsPerPass": 24.8189,
+        "p99MsPerPass": 26.4608,
+        "minMsPerPass": 21.1345,
+        "maxMsPerPass": 26.4608
       },
       "idPass": {
-        "warmupMeanMsPerPass": 28.1224,
-        "meanMsPerPass": 29.1262,
-        "medianMsPerPass": 25.3301,
-        "p95MsPerPass": 35.4503,
-        "p99MsPerPass": 35.8231,
-        "minMsPerPass": 23.5345,
-        "maxMsPerPass": 35.8231
+        "warmupMeanMsPerPass": 73.0503,
+        "meanMsPerPass": 73.1869,
+        "medianMsPerPass": 72.1829,
+        "p95MsPerPass": 79.8285,
+        "p99MsPerPass": 87.133,
+        "minMsPerPass": 68.2346,
+        "maxMsPerPass": 87.133
       },
-      "idPassOverListMs": 19.6983,
-      "idPassOverListRatio": 3.0894,
-      "meanFractionOfFixedStepBudget": 1.7476
+      "idPassOverListMs": 50.6275,
+      "idPassOverListRatio": 3.2442,
+      "meanFractionOfFixedStepBudget": 4.3912
     },
     {
       "nodes": 100000,
       "role": "r8-list",
       "listItems": 100000,
       "list": {
-        "warmupMeanMsPerPass": 73.4318,
-        "meanMsPerPass": 15.7087,
-        "medianMsPerPass": 14.6762,
-        "p95MsPerPass": 20.6288,
-        "p99MsPerPass": 22.0894,
-        "minMsPerPass": 13.43,
-        "maxMsPerPass": 22.0894
+        "warmupMeanMsPerPass": 100.0665,
+        "meanMsPerPass": 41.4751,
+        "medianMsPerPass": 41.0844,
+        "p95MsPerPass": 43.3531,
+        "p99MsPerPass": 43.9523,
+        "minMsPerPass": 40.1347,
+        "maxMsPerPass": 43.9523
       },
       "idPass": {
-        "warmupMeanMsPerPass": 63.4611,
-        "meanMsPerPass": 67.1543,
-        "medianMsPerPass": 67.0408,
-        "p95MsPerPass": 75.0511,
-        "p99MsPerPass": 77.2463,
-        "minMsPerPass": 57.8277,
-        "maxMsPerPass": 77.2463
+        "warmupMeanMsPerPass": 192.3037,
+        "meanMsPerPass": 153.5677,
+        "medianMsPerPass": 151.0971,
+        "p95MsPerPass": 162.8364,
+        "p99MsPerPass": 189.0726,
+        "minMsPerPass": 145.6123,
+        "maxMsPerPass": 189.0726
       },
-      "idPassOverListMs": 51.4456,
-      "idPassOverListRatio": 4.275,
-      "meanFractionOfFixedStepBudget": 4.0293
+      "idPassOverListMs": 112.0926,
+      "idPassOverListRatio": 3.7026,
+      "meanFractionOfFixedStepBudget": 9.2141
     }
   ],
   "pick": {
@@ -134,35 +134,35 @@
     "fence": {
       "path": "fence",
       "entryPoints": "PIXEL_PACK_BUFFER + fenceSync + clientWaitSync + getBufferSubData",
-      "warmupMeanMsPerPick": 0.0052,
-      "meanMsPerPick": 0.0025,
-      "medianMsPerPick": 0.0025,
-      "p95MsPerPick": 0.0029,
-      "p99MsPerPick": 0.003,
-      "minMsPerPick": 0.0022,
-      "maxMsPerPick": 0.0031,
+      "warmupMeanMsPerPick": 0.0077,
+      "meanMsPerPick": 0.0053,
+      "medianMsPerPick": 0.0039,
+      "p95MsPerPick": 0.0055,
+      "p99MsPerPick": 0.011,
+      "minMsPerPick": 0.0036,
+      "maxMsPerPick": 0.2043,
       "extraFrames": 0
     },
     "stall": {
       "path": "stall",
       "entryPoints": "readPixels into a Uint8Array",
-      "warmupMeanMsPerPick": 0.0027,
-      "meanMsPerPick": 0.0008,
-      "medianMsPerPick": 0.0007,
-      "p95MsPerPick": 0.0011,
-      "p99MsPerPick": 0.0013,
-      "minMsPerPick": 0.0007,
-      "maxMsPerPick": 0.0015,
+      "warmupMeanMsPerPick": 0.0053,
+      "meanMsPerPick": 0.0013,
+      "medianMsPerPick": 0.001,
+      "p95MsPerPick": 0.0025,
+      "p99MsPerPick": 0.0029,
+      "minMsPerPick": 0.001,
+      "maxMsPerPick": 0.0043,
       "extraFrames": 0
     },
-    "fenceMinusStallMs": 0.0017
+    "fenceMinusStallMs": 0.004
   },
-  "proposedSection86": "Id pass over 64 rectangles: 0.1257 ms/pass (1.0253× the 0.1226 ms list). At R-8's 100 000: 67.1543 ms/pass vs 15.7087 ms list. Fence pick 0.0025 ms, stall pick 0.0008 ms, both extraFrames=0 on the counting seam. Not a gate — this host is not §86's \"suitable hardware\".",
+  "proposedSection86": "Id pass over 64 rectangles: 0.2094 ms/pass (1.7867× the 0.1172 ms list). At R-8's 100 000: 153.5677 ms/pass vs 41.4751 ms list. Fence pick 0.0053 ms, stall pick 0.0013 ms, both extraFrames=0 on the counting seam. Not a gate — this host is not §86's \"suitable hardware\".",
   "keepAliveTotal": 12805632,
-  "hostNode": "v22.14.0",
+  "hostNode": "v22.22.2",
   "hostPlatform": "linux x64",
-  "hostCpuModel": "Intel(R) Xeon(R) Processor",
+  "hostCpuModel": "Intel(R) Xeon(R) Processor @ 2.80GHz",
   "hostCpuCount": 4,
-  "hostTotalMemoryGb": 15.6,
-  "hostCaveat": "CI container, no WebGL 2, no GPU. Id-pass and pick numbers are the service plus a counting GL seam, not driver or GPU time. WebGPU has no PickingService (mapAsync pick path does not exist)."
+  "hostTotalMemoryGb": 15.7,
+  "hostCaveat": "CI container, no WebGL 2, no GPU. Id-pass and pick numbers are the service plus a counting GL seam, not driver or GPU time. WebGPU's PickingService (mapAsync, 2026-09-09) is not exercised here: no WebGPU device in this container."
 }

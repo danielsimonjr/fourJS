@@ -48,7 +48,11 @@ import {
   collectSceneLights,
   createSceneLights,
 } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import {
+  WebglRenderer,
+  registerShadowPipeline,
+  registerStandardPipeline,
+} from "@fourjs/render-webgl";
 import {
   DirectionalLight,
   DirectionalLightShadow,
@@ -73,6 +77,14 @@ import {
   createRecordingGl,
   type RecordingGl,
 } from "./helpers/recording-gl.js";
+
+// §69's caster pass is a registration seam on WebGL 2 since 2026-09-11 (the
+// skinning shape): one explicit call links the depth-only program, and the
+// renderer compiles it on the first shadowed frame. Registered for the file,
+// as an application registers once at setup.
+registerShadowPipeline();
+// …and §59's standard surface, which the receiver scenes below draw.
+registerStandardPipeline();
 
 interface Harness {
   readonly recorder: RecordingGl;
@@ -316,10 +328,13 @@ describe("R-18 — a scene whose light does not cast is byte-identical (§69)", 
         handles.push(JSON.stringify({ kind: "getUniformLocation", serial }));
       }
     }
-    // Six names each in the two shaded pipelines, plus the caster pipeline's
-    // `shadowViewProjection` — resolved once, at initialization, which is the
-    // whole cost of R-18 to a scene that casts nothing.
-    expect(handles).toHaveLength(13);
+    // Six names each in the two shaded pipelines — resolved once, at
+    // initialization, which is the whole cost of R-18 to a scene that casts
+    // nothing. Thirteen until 2026-09-11: the caster pipeline's
+    // `shadowViewProjection` no longer resolves at initialize, because the
+    // caster compiles behind `registerShadowPipeline()` on the first frame
+    // that actually casts.
+    expect(handles).toHaveLength(12);
 
     test.recorder.reset();
     test.renderer.render(test.scene, test.views);

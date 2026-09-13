@@ -359,6 +359,14 @@ export interface PoseSnapshotSystem {
  * renderer may still be interpolating from it, and a re-registered system must
  * continue from the poses already stored). Clear it explicitly with
  * {@link PoseBuffer.clear}.
+ *
+ * The returned object carries **no disposed flag and refuses nothing after
+ * `dispose`** (stability audit, 2026-09-11): it owns no state of its own —
+ * the buffer is the resource, and `PoseBuffer.clear` is its lifetime call —
+ * and `SystemRegistry` never calls an unregistered system again (rule 4 of
+ * its mutation contract), so a §83 use-after-dispose cannot reach it and a
+ * flag would guard nothing. `PoseBuffer` itself is deliberately not
+ * disposable.
  */
 export function createSnapshotSystem(
   buffer: PoseBuffer,

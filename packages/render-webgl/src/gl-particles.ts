@@ -93,7 +93,6 @@ import type { Disposable } from "@fourjs/core";
 import type { Matrix4 } from "@fourjs/math";
 import {
   PARTICLE_COLOR_OFFSET,
-  PARTICLE_INSTANCE_FLOATS,
   PARTICLE_POSITION_OFFSET,
   PARTICLE_ROTATION_OFFSET,
   PARTICLE_SIZE_OFFSET,
@@ -118,6 +117,11 @@ import {
   type GlVertexArray,
   type WebglContext,
 } from "./gl-program.js";
+import {
+  particleItemFloats,
+  setParticlePipelineFactory,
+  type ParticlePrograms,
+} from "./gl-particles-registry.js";
 
 /**
  * The WebGL 2 / OpenGL ES 3.0 enumerants only the particle path uses. See
@@ -158,10 +162,10 @@ export const PARTICLE_ATTRIBUTE_LOCATIONS = {
   instanceSoftness: 5,
 } as const;
 
-/** Instance stride in floats for `item` — 8 unless the emitter opted into R-32. */
-export function particleItemFloats(item: ParticleRenderItem): number {
-  return item.instanceFloats ?? PARTICLE_INSTANCE_FLOATS;
-}
+// `particleItemFloats` moved to the registry module on 2026-09-11 so the
+// renderer's draw loop can read it without linking this module; re-exported
+// here so every existing import keeps resolving.
+export { particleItemFloats };
 
 /**
  * The GL 2 entry points the particle path adds to `WebglContext` — see the
@@ -1081,4 +1085,113 @@ export class ParticleTrailBatchCache {
     gl.deleteVertexArray(record.vertexArray);
     gl.deleteBuffer(record.vertexBuffer);
   }
+}
+
+/**
+ * One renderer's particle programs and caches — what
+ * {@link registerParticlePipeline}'s factory hands the renderer (§36, §62;
+ * 2026-09-11).
+ *
+ * The plain billboard program and both caches are built by the constructor;
+ * the R-32 appearance program and the trail program each compile on their
+ * first `acquire…`, behind a fail-once latch, so a scene of plain billboards
+ * pays one `createProgram` and a driver that refuses an opt-in tier is asked
+ * exactly once per context (the `SkinnedPrograms.acquireShadow` rule).
+ */
+class ParticleProgramSet implements ParticlePrograms {
+  readonly particle: ParticleProgram;
+
+  readonly batches: ParticleBatchCache;
+
+  readonly trailBatches: ParticleTrailBatchCache;
+
+  readonly #gl: ParticleGlContext;
+
+  #appearance: ParticleAppearanceProgram | null = null;
+
+  #appearanceFailed = false;
+
+  #trail: ParticleTrailProgram | null = null;
+
+  #trailFailed = false;
+
+  constructor(gl: ParticleGlContext) {
+    this.#gl = gl;
+    this.particle = ParticleProgram.create(gl);
+    this.batches = new ParticleBatchCache(gl);
+    this.trailBatches = new ParticleTrailBatchCache(gl);
+  }
+
+  acquireAppearance(): ParticleAppearanceProgram | null {
+    const existing = this.#appearance;
+    if (existing !== null) {
+      return existing;
+    }
+    if (this.#appearanceFailed) {
+      return null;
+    }
+    try {
+      const compiled = ParticleAppearanceProgram.create(this.#gl);
+      this.#appearance = compiled;
+      return compiled;
+    } catch {
+      // §61: a compile refusal costs the appearance tier, not the frame — the
+      // caller draws through the plain program instead, as it always did.
+      this.#appearanceFailed = true;
+      return null;
+    }
+  }
+
+  acquireTrail(): ParticleTrailProgram | null {
+    const existing = this.#trail;
+    if (existing !== null) {
+      return existing;
+    }
+    if (this.#trailFailed) {
+      return null;
+    }
+    try {
+      const compiled = ParticleTrailProgram.create(this.#gl);
+      this.#trail = compiled;
+      return compiled;
+    } catch {
+      // §61: the ribbon is skipped; the billboards it trails still draw.
+      this.#trailFailed = true;
+      return null;
+    }
+  }
+
+  dispose(): void {
+    this.particle.dispose();
+    this.#appearance?.dispose();
+    this.#trail?.dispose();
+    this.batches.dispose();
+    this.trailBatches.dispose();
+  }
+}
+
+/**
+ * Opts this process's `WebglRenderer`s into §36's instanced particle draws
+ * (§62; 2026-09-11).
+ *
+ * ```ts
+ * import { registerParticlePipeline } from "@fourjs/render-webgl";
+ * registerParticlePipeline();          // once, at application setup
+ * ```
+ *
+ * Calling it is what links this module — three programs, their GLSL, and the
+ * two batch caches — into the bundle; a build that never calls it carries
+ * none of it. The billboard program still compiles **lazily, on each
+ * renderer's first particle item**, and the appearance and trail programs on
+ * the first item that needs them, never here and never at renderer
+ * initialize, so registration alone changes no GL transcript. Without it,
+ * particle items are skipped with one development warning. Idempotent;
+ * calling it twice re-installs the same factory.
+ */
+export function registerParticlePipeline(): void {
+  setParticlePipelineFactory({
+    create(gl: ParticleGlContext): ParticlePrograms {
+      return new ParticleProgramSet(gl);
+    },
+  });
 }

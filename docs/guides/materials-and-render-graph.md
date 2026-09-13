@@ -79,6 +79,38 @@ Particles use `ParticleRenderable` (see the
 [performance guide](performance-optimization.md)); geometry comes from
 `four/geometry`'s `boxGeometry`, `planeGeometry`, and `circleGeometry2D`.
 
+On WebGL 2, four of the backend's pipelines are **registration seams**
+(2026-09-11, the `registerSkinningPipeline()` shape): call
+`registerShadowPipeline()` before a light's `castShadow` can produce a map,
+`registerEffectPipeline()` before a `RenderGraph` copy / grade /
+output-transform pass will draw, `registerParticlePipeline()` before a
+`ParticleRenderable` is drawn, and `registerStandardPipeline()` before a
+`StandardMaterial` surface is drawn (an owner decision — §59 is a core
+family, and the seam still pays for itself in every bundle that shades with
+`LitMaterial` alone). Each is one explicit call at application setup, never
+an import side effect; an unregistered feature is skipped with one
+development warning naming the call (shadows fall back to unshadowed
+lighting; effects, particles and standard surfaces to absence — never a
+Lambert stand-in), and a bundle that never calls one carries none of that
+pipeline. §60 graph effects go through `registerNodeMaterialPipeline()`
+instead. WebGPU compiles all four eagerly.
+
+```ts
+import {
+  registerEffectPipeline,
+  registerParticlePipeline,
+  registerShadowPipeline,
+  registerStandardPipeline,
+  registerWebglRenderer,
+} from "fourJS/render-webgl";
+
+registerWebglRenderer();
+registerShadowPipeline(); // §69: the depth-only caster pass
+registerEffectPipeline(); // §70: copy, colour grade, output transform
+registerParticlePipeline(); // §36: instanced billboards, trails, R-32 appearance
+registerStandardPipeline(); // §59: the metallic-roughness surface
+```
+
 Facts of this tier worth knowing before you fight them:
 
 - **Blending on shapes and meshes is opt-in per material.** The base's
@@ -163,7 +195,7 @@ runtime, which is what keeps headless bundles free of GL (R-2/A-8).
 | §62     | backends                           | WebGL 2 shipped; **`render-webgpu` shipped — the R-1 plan is complete** (WP-R1.1–R1.9, 2026-08-21…29), behind `registerWebgpuRenderer()`, with two honest absences (RFC 0003's skinned pipelines, §71 picking); `render-canvas` and `render-svg` remain reserved stubs. This row called `render-webgpu` "scaffold-only" until 2026-08-29 — stale since WP-R1.1 landed 2026-08-21                                                                                                                                                                                   |
 | §63     | render graph                       | **shipped at the linear-pass tier 2026-08-07** (`RenderGraph` in `@fourjs/render`: named passes over R-4's target seam, declared `inputs` + discovered sampled-target validation, enable/disable, per-pass viewports, textual `describe()`). Transient targets, resource lifetimes, and barriers are staged with dated reasons in the module header. This row said "not implemented; the fixed pipeline is list → sort → draw" until 2026-08-07; the fixed pipeline is still what one pass runs                                                                      |
 | §65     | batching                           | particles are instanced (one draw per system); **sprite and compatible-shape batching shipped opt-in** (R-9, 2026-08-09): `renderer.batching = createGlBatching()` (or `createWgpuBatching()`, WP-R1.3) merges consecutive draws sharing a pipeline (`unlit`/`sprite`) and a material instance into one draw — without the opt-in it stays one draw call per sprite. Instanced meshes for the shaded pipelines are staged (`batch.ts`). This row said "nothing else is batched" until 2026-08-29                                                                   |
-| §68–§70 | lighting, shadows, post-processing | lighting: directional + ambient (2026-08-04) **plus up to eight punctual point/spot lights** (R-17, 2026-08-09) **plus one hemisphere** (2026-09-10; area/IBL/layers staged, `lights.ts`). Shadows (§69): **one tier shipped** — the directional light's depth-only shadow map with 3×3 PCF, on both GPU backends (R-18, 2026-08-09). Post-processing (§70): **shipped as `RenderGraph` effect passes** — copy, colour grade, the §60a sRGB output transform (R-6/R-15), and §60 graph effects (RFC 0001). This row said shadows and post-processing were "not implemented" until 2026-08-29 |
+| §68–§70 | lighting, shadows, post-processing | lighting: directional + ambient (2026-08-04) **plus up to eight punctual point/spot lights** (R-17, 2026-08-09) **plus one hemisphere** (2026-09-10; area/IBL/layers staged, `lights.ts`). Shadows (§69): **one tier shipped** — the directional light's depth-only shadow map with 3×3 PCF, on both GPU backends (R-18, 2026-08-09; on WebGL 2 behind `registerShadowPipeline()` since 2026-09-11). Post-processing (§70): **shipped as `RenderGraph` effect passes** — copy, colour grade, the §60a sRGB output transform (R-6/R-15; on WebGL 2 behind `registerEffectPipeline()` since 2026-09-11), and §60 graph effects (RFC 0001). This row said shadows and post-processing were "not implemented" until 2026-08-29 |
 
 When the staged remainders land they are required to slot beneath the same
 `Renderer` interface and render-list contract, so scene code written against

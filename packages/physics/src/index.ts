@@ -48,6 +48,7 @@ export { SOLVER_REGISTRY } from "./capabilities.js";
 export type {
   PhysicsCapabilities,
   PhysicsQueryCapabilities,
+  PhysicsEventInterest,
   PhysicsSolverAdapter,
   PhysicsTuningCapabilities,
 } from "./adapter.js";

@@ -87,6 +87,9 @@ import {
 
 registerWebglRenderer(); // §62 registry: "auto" can now pick WebGL 2
 registerNodeMaterialPipeline(); // §60: links the GLSL emitter + program cache
+// A §70 graph effect draws through this same node pipeline; the *fixed*
+// effects (copy, grade, output transform) are a separate seam on WebGL 2 —
+// `registerEffectPipeline()` (2026-09-11) — and are not needed for this page.
 
 const app = new Application({ renderer: "auto", canvas });
 await app.initialize();

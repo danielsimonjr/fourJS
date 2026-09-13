@@ -2,7 +2,7 @@
 
 - **Status:** accepted (owner, 2026-08-21 — "Continue with the remaining WPs and the RFCs"; the recommended dispositions of the flagged questions are adopted)
 - **Date:** 2026-08-09
-- **Owner decision:** accepted (2026-08-21)
+- **Owner decision:** accepted (2026-08-21); implemented 2026-08-29 (spec revision 1.12, §77a)
 - **Spec sections affected:** §77 (primary), a proposed new **§77a**, §73, §33, §34, §40, §55, §58, §62, §63, §79, §83, §85, §89, §90, §96, §98
 
 ## Context
@@ -791,3 +791,64 @@ ahead of a packet. What the packet must measure, stated now so it cannot be skip
    staged in `@fourjs/ui` (_"a hover delay is a §9 time reading, and the loop that owns time
    lives above this package"_). Recommendation: no hook, no warning, and a prominent line in
    the guide.
+
+## Post-acceptance corrections (2026-09-10 review pass)
+
+Decision text left as accepted. Verified against the tree 2026-09-10:
+
+- **§2b `static readonly typeName = "ui:canvas-view"` and "the
+  typeName-enumerating test makes the pair a gate".** `CanvasViewWidget`
+  deliberately carries **no `typeName`** (the `Bone` rule, RFC 0003); its §79
+  identity is the node type registered by `registerUISerializers`, and the
+  gate is the serializer round-trip test (`packages/fourjs/tests/scene-serializers.test.ts`).
+- **Context / §2b "`widget.ts:157` states the blocker", "nine of sixteen
+  controls ship".** The note was corrected on 2026-08-29 ("was wrong") and
+  **ten** of sixteen ship (`packages/ui/README.md`); the old sentence survives
+  only as a quotation in `canvas-view.ts`.
+- **§1 motivation "§58 paint is `R-16`, no engine path at all".** R-16
+  (solid paint + full stroke incl. dashes) closed 2026-08-09, this RFC's own
+  date; §58's gradient/image Paint tier landed 2026-08-29 with this RFC's
+  packet. The stand-in motivation is historical.
+- **§3 `ALLOWED` "holds the `four` umbrella barrel".** The directory is
+  `packages/fourjs` and the package is `fourJS`; the test's `"four"` entry
+  never matched and passed only because the umbrella never names
+  `CanvasTexture`. Fixed 2026-09-10 (`"fourjs"`).
+- **§4 "`width * height * 4` re-checked on every `update()`".** The byte
+  check runs in the constructor only; `update()` refuses any size *change*,
+  so the check cannot be escaped (`raster.ts:361-362, 466-490`).
+- **§5 amendments-row sketch "1.9".** Landed as row **1.12**, 2026-08-29; the
+  §73 note settled with acceptance (no longer "draft, owner decision pending").
+- **§6 deferred table.** "Dirty-rect upload waits on R-30's wrap and filter
+  tier" and "mipmaps / filter modes wait on R-30": R-30 (2026-08-13), R-30b
+  (mipmaps, 2026-08-21) and R-30c (map roles, 2026-09-09) have all shipped for
+  `Texture`; what remains is that `CanvasTexture` declares none of the
+  optional `MaterialTexture` sampler fields, and no backend has a
+  sub-rectangle upload (`texSubImage2D` absent). "GPU readback waits on A-11"
+  → now **RFC 0009** (draft, corrected 2026-09-10). Only in-place resize still
+  waits on §77 change notification.
+- **§6 "`four/application`" and "ui-demo 32.98 / 33 kB — twenty bytes".**
+  Specifier is `fourJS/application`; at landing ui-demo measured
+  43.63 / 44 kB with painting symbols in 0 of 9 bundles and +213 B on the twin
+  for the serializer pair (MEMORY 2026-08-29); today 49.51 / 50 kB.
+- **Alternative F "`@fourjs/render` compiles with no `lib.dom` … would not
+  compile".** No workspace tsconfig pins `lib`; DOM-free is a seam rule the
+  types keep, not a compiler guarantee (`raster.ts:29` repeats the claim).
+- **Consequences "`maxTextureSize` is already reported".** Declared `0` for
+  every backend; WebGL fills it after the first `initialize` (`COMPATIBILITY.md` §2).
+- **Prototype "None run".** Measured at landing: bundle A/B (above); flip vs
+  read at 2048² 0.96 ms / 1.32 ms, 256² 24 µs; §83 accounting asserted in
+  `packages/render/tests/raster.test.ts`. The timings live in MEMORY, not
+  under `benchmarks/`.
+- **Context "grep returns four hits … `renderer.ts:150`".** A 2026-08-09
+  snapshot; the `canvas?: unknown` note is now at `renderer.ts:321` and the
+  grep also hits `raster.ts` and `assets/src/texture.ts` (A-19 decoder).
+- **Compatibility.** `docs/COMPATIBILITY.md` carries no §77a / `ui:canvas-view`
+  row; the "rows this RFC moves" were never written into it (its tables are
+  backend/capability tables).
+
+**Residue (open, `TODO.md` "RFC 0004 residue"):** video textures (prose in
+`texture.ts` only), decoded-image *raster* sources (A-19's static loader
+exists in `@fourjs/assets`; no `RasterSource` producer), in-place resize
+(refused; change notification unshipped), dirty-rect upload (none),
+`CanvasTexture` sampler fields (none declared), GPU readback (RFC 0009),
+Canvas 2D backend (stub by decision). Plan: `docs/plans/RFC-0004-RESIDUE_PLAN.md`.

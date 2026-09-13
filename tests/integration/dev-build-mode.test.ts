@@ -380,7 +380,7 @@ describe("§33 — the flag stays out of everything deterministic", () => {
 
 describe("every example builds in production mode", () => {
   it("defines __FOUR_DEV__ as false", () => {
-    // The examples are what `pnpm run size` measures against §86's payload
+    // The examples are what `bun run size` measures against §86's payload
     // budget, so an example that forgot the define would quietly measure a
     // development bundle and report a number no user experiences.
     const configs: string[] = [];

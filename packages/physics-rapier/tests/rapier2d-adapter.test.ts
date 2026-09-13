@@ -1790,3 +1790,67 @@ describe("dispose (§37, §83)", () => {
     );
   });
 });
+
+describe("snapshot envelope hardening (§96, 2026-09-11)", () => {
+  it("refuses declared lengths that overrun the buffer, and malformed meta, as UNTRUSTED_INPUT_REJECTED", async () => {
+    const adapter = await createAdapter();
+    const snapshot = adapter.createSnapshot();
+    const overrun = snapshot.slice(0);
+    new DataView(overrun).setUint32(12, 0xffffffff, true);
+    expect(() => adapter.restoreSnapshot(overrun)).toThrowError(
+      expect.objectContaining({ code: "UNTRUSTED_INPUT_REJECTED" }) as Error,
+    );
+    const garbled = snapshot.slice(0);
+    new Uint8Array(garbled)[16] = 0x21; // "!" where the meta JSON's "{" was
+    expect(() => adapter.restoreSnapshot(garbled)).toThrowError(
+      expect.objectContaining({ code: "UNTRUSTED_INPUT_REJECTED" }) as Error,
+    );
+    adapter.dispose();
+  });
+
+  /** Re-wraps `snapshot` with `meta` as its envelope meta, lengths updated. */
+  function withMeta(snapshot: ArrayBuffer, meta: string): ArrayBuffer {
+    const header = new DataView(snapshot);
+    const oldMetaLength = header.getUint32(8, true);
+    const rapierLength = header.getUint32(12, true);
+    const metaBytes = new TextEncoder().encode(meta);
+    const out = new Uint8Array(16 + metaBytes.byteLength + rapierLength);
+    out.set(new Uint8Array(snapshot, 0, 16), 0);
+    new DataView(out.buffer).setUint32(8, metaBytes.byteLength, true);
+    out.set(metaBytes, 16);
+    out.set(
+      new Uint8Array(snapshot, 16 + oldMetaLength, rapierLength),
+      16 + metaBytes.byteLength,
+    );
+    return out.buffer;
+  }
+
+  it("refuses meta that is not an object, or lacks the string / integer fields (§34, §96)", async () => {
+    const adapter = await createAdapter();
+    const snapshot = adapter.createSnapshot();
+    const original = JSON.parse(
+      new TextDecoder().decode(
+        new Uint8Array(snapshot, 16, new DataView(snapshot).getUint32(8, true)),
+      ),
+    ) as Record<string, unknown>;
+    for (const meta of [
+      "null",
+      "[]",
+      "42",
+      JSON.stringify({ ...original, adapter: 7 }),
+      JSON.stringify({ ...original, version: null }),
+      JSON.stringify({ ...original, nextBodyId: -1 }),
+      JSON.stringify({ ...original, nextColliderId: 1.5 }),
+      JSON.stringify({ ...original, nextJointId: "3" }),
+    ]) {
+      expect(() => adapter.restoreSnapshot(withMeta(snapshot, meta))).toThrowError(
+        expect.objectContaining({ code: "UNTRUSTED_INPUT_REJECTED" }) as Error,
+      );
+    }
+    // The same envelope with the original meta re-wrapped still restores.
+    expect(() =>
+      adapter.restoreSnapshot(withMeta(snapshot, JSON.stringify(original))),
+    ).not.toThrow();
+    adapter.dispose();
+  });
+});

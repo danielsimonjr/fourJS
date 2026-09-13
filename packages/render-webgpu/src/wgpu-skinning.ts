@@ -534,9 +534,10 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
     const base = slot * JOINT_PALETTE_FLOATS;
     const staging = this.#paletteStaging;
     const limit = Math.min(palette.length, JOINT_PALETTE_FLOATS);
-    for (let index = 0; index < JOINT_PALETTE_FLOATS; index += 1) {
-      staging[base + index] = index < limit ? palette[index] : 0;
-    }
+    // Native copy + fill instead of a 768-iteration scalar loop with a branch
+    // per element (2026-09-11 audit); byte-identical output.
+    staging.set(palette.subarray(0, limit), base);
+    staging.fill(0, base + limit, base + JOINT_PALETTE_FLOATS);
     this.#packed = slot + 1;
     return slot * JOINT_PALETTE_BYTES;
   }

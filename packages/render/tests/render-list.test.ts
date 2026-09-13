@@ -1324,3 +1324,45 @@ describe("§66 sort key 3 — pipeline and material grouping (R-10)", () => {
     expect(names(list, scene)).toEqual(["a", "b", "c"]);
   });
 });
+
+describe("§66 default sort skip (2026-09-11 audit)", () => {
+  function surface(name: string, material: Material): Renderable<Material> {
+    const node = new Renderable(planeGeometry(), material);
+    node.name = name;
+    return node;
+  }
+
+  it("leaves a heterogeneous list that is already in §66 order untouched, and still sorts a descending one", () => {
+    const material = new UnlitMaterial();
+    const glass = new UnlitMaterial();
+    glass.transparent = true;
+
+    // Opaque items first, then a transparent one: already the comparator's
+    // order, so the output must equal generation order.
+    const ordered = new Scene();
+    const a = surface("a", material);
+    const b = surface("b", material);
+    b.renderOrder = 2;
+    const c = surface("c", glass);
+    ordered.add(a, b, c);
+    resolveWorldTransforms(ordered);
+    expect(names(buildRenderList(ordered, []), ordered)).toEqual(["a", "b", "c"]);
+
+    // Transparent generated first: the comparator moves it last.
+    const descending = new Scene();
+    const glassFirst = surface("glass", glass);
+    const opaque = surface("opaque", material);
+    const late = surface("late", material);
+    late.renderOrder = 1;
+    const early = surface("early", material);
+    early.renderOrder = -1;
+    descending.add(glassFirst, opaque, late, early);
+    resolveWorldTransforms(descending);
+    expect(names(buildRenderList(descending, []), descending)).toEqual([
+      "early",
+      "opaque",
+      "late",
+      "glass",
+    ]);
+  });
+});

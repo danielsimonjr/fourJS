@@ -12,6 +12,7 @@
  * the planner's.
  */
 
+import { isFourError } from "@fourjs/core";
 import { Matrix4 } from "@fourjs/math";
 import type { RenderBatch, RenderItem } from "@fourjs/render";
 import { describe, expect, it } from "vitest";
@@ -23,6 +24,19 @@ import {
   type GpuDevice,
   type GpuRenderPassEncoder,
 } from "../src/index.js";
+
+/** Runs `run`, expecting a `FourError` with `INVALID_APPLICATION_STATE` (§83, §89). */
+function expectDisposedError(run: () => void): Error {
+  let caught: unknown;
+  try {
+    run();
+  } catch (error) {
+    caught = error;
+  }
+  expect(isFourError(caught)).toBe(true);
+  expect((caught as { code: string }).code).toBe("INVALID_APPLICATION_STATE");
+  return caught as Error;
+}
 
 /** A recording device plus one open render pass to record batch draws into. */
 function rig(): {
@@ -317,5 +331,32 @@ describe("WgpuBatching lifecycle (§61, §83)", () => {
     expect(() => {
       batching.dispose();
     }).not.toThrow();
+  });
+});
+
+describe("WgpuBatching disposal (§83 stability audit, 2026-09-11)", () => {
+  it("disposes idempotently and refuses per-frame entry points afterwards", () => {
+    const { gpu, device, pass } = rig();
+    const batching = new WgpuBatching();
+    expect(batching.disposed).toBe(false);
+    batching.beginFrame();
+    batching.draw(device, pass, batch());
+    expect(gpu.countOf("device.createBuffer")).toBe(2);
+
+    batching.dispose();
+    expect(batching.disposed).toBe(true);
+    expect(gpu.countOf("buffer.destroy")).toBe(2);
+    // A second dispose is a no-op (§83: idempotent): nothing is destroyed twice.
+    expect(() => batching.dispose()).not.toThrow();
+    expect(gpu.countOf("buffer.destroy")).toBe(2);
+    expect(batching.disposed).toBe(true);
+
+    // Disposal is terminal (§83): the per-frame entry points refuse with §89's
+    // INVALID_APPLICATION_STATE rather than silently recreating a pool.
+    expect(expectDisposedError(() => batching.beginFrame()).message).toMatch(
+      /WgpuBatching is disposed.*§83/s,
+    );
+    expectDisposedError(() => batching.draw(device, pass, batch()));
+    expect(gpu.countOf("device.createBuffer")).toBe(2);
   });
 });

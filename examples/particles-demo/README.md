@@ -33,8 +33,8 @@ playground).
 ## Running it
 
 ```sh
-pnpm run build                  # the packages the example imports as `four/…`
-pnpm run particles-demo:build   # bundles to examples/particles-demo/dist
+bun run build                  # the packages the example imports as `four/…`
+bun run particles-demo:build   # bundles to examples/particles-demo/dist
 npx vite preview examples/particles-demo
 ```
 

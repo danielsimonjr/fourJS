@@ -6,17 +6,29 @@
   },
   {
     "path": "examples/first-3d-scene/dist/assets/*.js",
+<<<<<<< HEAD
     "limit": "46 kB",
+=======
+    "limit": "41 kB",
+>>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
     "gzip": true
   },
   {
     "path": "examples/particles-demo/dist/assets/*.js",
+<<<<<<< HEAD
     "limit": "46 kB",
+=======
+    "limit": "43 kB",
+>>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
     "gzip": true
   },
   {
     "path": "examples/ui-demo/dist/assets/*.js",
+<<<<<<< HEAD
     "limit": "54.5 kB",
+=======
+    "limit": "48 kB",
+>>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
     "gzip": true
   },
   {

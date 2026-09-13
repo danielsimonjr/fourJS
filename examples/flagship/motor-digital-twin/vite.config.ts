@@ -14,7 +14,7 @@ export default defineConfig({
   // A digital twin is an instrumented build; that is what a twin is for. The
   // price is recorded rather than hidden: the guarded paths (§84's statistics
   // wiring, §6a's duplicate-component warning, §83's leak audit, `devAssert`)
-  // survive tree-shaking here, and `pnpm run size` measures the result against
+  // survive tree-shaking here, and `bun run size` measures the result against
   // this example's own budget in `.size-limit.json`.
   //
   // See docs/guides/performance-optimization.md for the production form, and

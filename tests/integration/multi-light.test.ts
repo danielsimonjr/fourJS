@@ -47,7 +47,7 @@ import {
   collectSceneLights,
   createSceneLights,
 } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import { WebglRenderer, registerStandardPipeline } from "@fourjs/render-webgl";
 import {
   DirectionalLight,
   HemisphereLight,
@@ -73,6 +73,12 @@ import {
   createRecordingGl,
   type RecordingGl,
 } from "./helpers/recording-gl.js";
+
+// §59's standard surface is a registration seam on WebGL 2 since 2026-09-11
+// (owner decision; the skinning shape): one explicit call links the program,
+// and the renderer compiles it on the first `StandardMaterial` draw.
+// Registered for the file, as an application registers once at setup.
+registerStandardPipeline();
 
 interface Harness {
   readonly recorder: RecordingGl;

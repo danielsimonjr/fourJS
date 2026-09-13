@@ -215,8 +215,11 @@ import {
 import {
   WgpuPipelineCache,
   type WgpuPipelineDescriptor,
-  type WgpuStencilDescriptor,
 } from "./wgpu-pipeline-cache.js";
+import {
+  WgpuPipelineMemo,
+  createPipelineRequest,
+} from "./wgpu-pipeline-memo.js";
 import { readTexturePixels } from "./wgpu-readback.js";
 import {
   RENDER_TARGET_COLOR_FORMAT,
@@ -328,11 +331,27 @@ const FALLBACK_CANVAS_FORMAT = "bgra8unorm";
 /** `UNIFORM_STRIDE_BYTES` in `Float32Array` elements. */
 const UNIFORM_STRIDE_FLOATS = UNIFORM_STRIDE_BYTES / 4;
 
+/**
+ * The one dynamic-offset array every `setBindGroup` in this file passes
+ * (performance audit 2026-09-11, finding A2).
+ *
+ * `setBindGroup` copies its `dynamicOffsets` sequence synchronously — the
+ * WebGPU spec converts the sequence at call time — so reusing one array
+ * across draws is safe on a real device, and the recording double copies
+ * every array argument at record time (`recording-gpu.ts`'s `snapshot`), so
+ * a transcript read after a later draw still reports this draw's offset. The
+ * previous `[offset]` literal allocated one array per draw per frame.
+ */
+const dynamicOffsetScratch: number[] = [0];
+
+/** `[offset]` without the allocation — see {@link dynamicOffsetScratch}. */
+function dynamicOffset(offset: number): readonly number[] {
+  dynamicOffsetScratch[0] = offset;
+  return dynamicOffsetScratch;
+}
+
 /** An unlit render item (§64). */
 type UnlitItem = Extract<RenderItem, { kind: "unlit" }>;
-
-/** §57's state as this backend reads it off an unlit item's material. */
-type UnlitMaterialLike = UnlitItem["material"];
 
 /** A sprite render item (§55, WP-R1.3). */
 type SpriteItem = Extract<RenderItem, { kind: "sprite" }>;
@@ -685,6 +704,16 @@ export class WebgpuRenderer implements Renderer {
   #format = FALLBACK_CANVAS_FORMAT;
 
   #pipelines: WgpuPipelineCache | null = null;
+
+  /**
+   * The "same as the previous draw" pipeline fast path (audit A3,
+   * `wgpu-pipeline-memo.ts`), with its one reusable request record. The
+   * per-item draw arms fill the record and ask the memo; only a changed
+   * request reaches `WgpuPipelineCache.acquire`.
+   */
+  readonly #pipelineMemo = new WgpuPipelineMemo();
+
+  readonly #pipelineRequest = createPipelineRequest();
 
   #geometries: WgpuGeometryCache | null = null;
 
@@ -1832,7 +1861,11 @@ export class WebgpuRenderer implements Renderer {
             0,
           );
           pass.setPipeline(pipeline);
-          pass.setBindGroup(0, bindGroup, [block * UNIFORM_STRIDE_BYTES]);
+          pass.setBindGroup(
+            0,
+            bindGroup,
+            dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+          );
           stencilReference = applyStencilReference(
             pass,
             stencilReference,
@@ -1971,33 +2004,35 @@ export class WebgpuRenderer implements Renderer {
               ? clip.stencil
               : material.stencil
             : undefined;
-          const pipeline = pipelines.acquire({
-            kind: item.kind,
-            vertexColors: false,
-            map: useMap,
-            blend:
-              material.transparent === true
-                ? (material.blendMode ?? "normal")
-                : "none",
-            // A pass with no depth attachment normalizes both depth bits off
-            // (`depth: false` targets, WP-R1.6): the pipeline omits its
-            // depth-stencil state either way, and the normalization keeps
-            // the cache key canonical for that one pipeline.
-            depthTest: depthFormat !== null && material.depthTest !== false,
-            depthWrite: depthFormat !== null && material.depthWrite !== false,
-            colorWrite: material.colorWrite !== false,
-            topology: record.topology,
-            colorFormat: this.#frameFormat,
-            depthFormat,
-            stencil:
-              stencilRecord === undefined
-                ? null
-                : stencilDescriptor(stencilRecord),
-            batch: null,
-            normals,
-            shadow: receiving,
-            metalRoughness: useMetalRoughness,
-          });
+          // Through the A3 memo: the same descriptor as before, spelled into
+          // the reusable request so a run of same-material draws skips the
+          // descriptor, the key string and the map lookup.
+          const request = this.#pipelineRequest;
+          request.kind = item.kind;
+          request.vertexColors = false;
+          request.map = useMap;
+          request.blend =
+            material.transparent === true
+              ? (material.blendMode ?? "normal")
+              : "none";
+          // A pass with no depth attachment normalizes both depth bits off
+          // (`depth: false` targets, WP-R1.6): the pipeline omits its
+          // depth-stencil state either way, and the normalization keeps
+          // the cache key canonical for that one pipeline.
+          request.depthTest =
+            depthFormat !== null && material.depthTest !== false;
+          request.depthWrite =
+            depthFormat !== null && material.depthWrite !== false;
+          request.colorWrite = material.colorWrite !== false;
+          request.topology = record.topology;
+          request.colorFormat = this.#frameFormat;
+          request.depthFormat = depthFormat;
+          request.stencil = stencilRecord ?? null;
+          request.normals = normals;
+          request.shadow = receiving;
+          request.metalRoughness = useMetalRoughness;
+          request.gpuInstances = false;
+          const pipeline = this.#pipelineMemo.acquire(pipelines, request);
           if (pipeline === null) {
             // Unreachable given the class invariant — the unlit arm's
             // narrowing, same reason: §61 forbids throwing here.
@@ -2024,7 +2059,7 @@ export class WebgpuRenderer implements Renderer {
             pass.setBindGroup(
               0,
               this.#acquireStandardBindGroup(device, uniformBuffer),
-              [block * UNIFORM_STRIDE_BYTES],
+              dynamicOffset(block * UNIFORM_STRIDE_BYTES),
             );
           } else {
             const color = item.material.color;
@@ -2038,7 +2073,11 @@ export class WebgpuRenderer implements Renderer {
               color[3] * opacity,
             );
             pass.setPipeline(pipeline);
-            pass.setBindGroup(0, bindGroup, [block * UNIFORM_STRIDE_BYTES]);
+            pass.setBindGroup(
+              0,
+              bindGroup,
+              dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+            );
           }
           // The view's light block, at this view's dynamic offset — bound per
           // draw rather than mirrored, because slot 1 is also where the unlit
@@ -2047,7 +2086,11 @@ export class WebgpuRenderer implements Renderer {
           // that, for a saving the GL backend's per-draw uniform calls never
           // had either). A receiving draw binds the widened shadow group
           // over the same buffer at the same offset (WP-R1.7).
-          pass.setBindGroup(LIGHTS_BIND_GROUP_INDEX, shadedLights, [lightBase]);
+          pass.setBindGroup(
+            LIGHTS_BIND_GROUP_INDEX,
+            shadedLights,
+            dynamicOffset(lightBase),
+          );
           if (stencilRecord !== undefined) {
             stencilReference = applyStencilReference(
               pass,
@@ -2125,18 +2168,30 @@ export class WebgpuRenderer implements Renderer {
             ? clip.stencil
             : material.stencil
           : undefined;
-        const pipeline = pipelines.acquire(
-          this.#unlitDescriptor(
-            material,
-            vertexColors,
-            useMap,
-            record.topology,
-            depthFormat,
-            stencilRecord === undefined
-              ? null
-              : stencilDescriptor(stencilRecord),
-          ),
-        );
+        // §57's state as data, through the A3 memo (the shaded arm's note).
+        const request = this.#pipelineRequest;
+        request.kind = "unlit";
+        request.vertexColors = vertexColors;
+        request.map = useMap;
+        request.blend =
+          material.transparent === true
+            ? (material.blendMode ?? "normal")
+            : "none";
+        // Normalized off on a depthless pass (WP-R1.6) — the shaded arm's note.
+        request.depthTest =
+          depthFormat !== null && material.depthTest !== false;
+        request.depthWrite =
+          depthFormat !== null && material.depthWrite !== false;
+        request.colorWrite = material.colorWrite !== false;
+        request.topology = record.topology;
+        request.colorFormat = this.#frameFormat;
+        request.depthFormat = depthFormat;
+        request.stencil = stencilRecord ?? null;
+        request.normals = undefined;
+        request.shadow = false;
+        request.metalRoughness = false;
+        request.gpuInstances = false;
+        const pipeline = this.#pipelineMemo.acquire(pipelines, request);
         if (pipeline === null) {
           // Unreachable given the class invariant — the cache answers `null`
           // only once disposed, and a disposed cache means a lost device,
@@ -2158,7 +2213,11 @@ export class WebgpuRenderer implements Renderer {
         );
 
         pass.setPipeline(pipeline);
-        pass.setBindGroup(0, bindGroup, [block * UNIFORM_STRIDE_BYTES]);
+        pass.setBindGroup(
+          0,
+          bindGroup,
+          dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+        );
         if (stencilRecord !== undefined) {
           stencilReference = applyStencilReference(
             pass,
@@ -2992,9 +3051,17 @@ export class WebgpuRenderer implements Renderer {
     );
     const paletteOffset = programs.packPalette(item.jointMatrices);
     pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup, [block * UNIFORM_STRIDE_BYTES]);
+    pass.setBindGroup(
+      0,
+      bindGroup,
+      dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+    );
     if (lit && shadedLights !== null) {
-      pass.setBindGroup(LIGHTS_BIND_GROUP_INDEX, shadedLights, [lightBase]);
+      pass.setBindGroup(
+        LIGHTS_BIND_GROUP_INDEX,
+        shadedLights,
+        dynamicOffset(lightBase),
+      );
     }
     if (useMap && mapBindGroup !== null) {
       pass.setBindGroup(
@@ -3179,6 +3246,7 @@ export class WebgpuRenderer implements Renderer {
     this.#renderTargets = null;
     this.#particles = null;
     this.#pipelines = null;
+    this.#pipelineMemo.reset();
     this.#uniformBuffer = null;
     this.#bindGroup = null;
     this.#bindGroupLayout = null;
@@ -3200,35 +3268,6 @@ export class WebgpuRenderer implements Renderer {
     this.#canvas = null;
     this.#gpuTimer = null;
     this.events.removeAllListeners();
-  }
-
-  /** Builds the pipeline descriptor for one unlit draw — §57's state, as data. */
-  #unlitDescriptor(
-    material: UnlitMaterialLike,
-    vertexColors: boolean,
-    map: boolean,
-    topology: "triangle-list" | "line-list",
-    depthFormat: string | null,
-    stencil: WgpuStencilDescriptor | null,
-  ): WgpuPipelineDescriptor {
-    return {
-      kind: "unlit",
-      vertexColors,
-      map,
-      blend:
-        material.transparent === true
-          ? (material.blendMode ?? "normal")
-          : "none",
-      // Normalized off on a depthless pass (WP-R1.6) — the shaded arm's note.
-      depthTest: depthFormat !== null && material.depthTest !== false,
-      depthWrite: depthFormat !== null && material.depthWrite !== false,
-      colorWrite: material.colorWrite !== false,
-      topology,
-      colorFormat: this.#frameFormat,
-      depthFormat,
-      stencil,
-      batch: null,
-    };
   }
 
   /** Records one view's clear (see `wgpu-unlit.ts` for why a clear is a draw). */
@@ -3268,7 +3307,11 @@ export class WebgpuRenderer implements Renderer {
       return;
     }
     pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup, [block * UNIFORM_STRIDE_BYTES]);
+    pass.setBindGroup(
+      0,
+      bindGroup,
+      dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+    );
     pass.draw(CLEAR_VERTEX_COUNT);
   }
 
@@ -3308,24 +3351,27 @@ export class WebgpuRenderer implements Renderer {
         ? clip.stencil
         : material.stencil
       : undefined;
-    const pipeline = pipelines.acquire({
-      kind: "sprite",
-      vertexColors: false,
-      // Not a variant: a sprite always samples (§55), so the flag is fixed
-      // and the family has exactly one WGSL module.
-      map: true,
-      blend: material.blendMode ?? "normal",
-      // Normalized off on a depthless pass (WP-R1.6) — the shaded arm's note.
-      depthTest: depthFormat !== null && material.depthTest !== false,
-      depthWrite: depthFormat !== null && material.depthWrite !== false,
-      colorWrite: material.colorWrite !== false,
-      topology: record.topology,
-      colorFormat: this.#frameFormat,
-      depthFormat,
-      stencil:
-        stencilRecord === undefined ? null : stencilDescriptor(stencilRecord),
-      batch: null,
-    });
+    // Through the A3 memo (the shaded arm's note).
+    const request = this.#pipelineRequest;
+    request.kind = "sprite";
+    request.vertexColors = false;
+    // Not a variant: a sprite always samples (§55), so the flag is fixed
+    // and the family has exactly one WGSL module.
+    request.map = true;
+    request.blend = material.blendMode ?? "normal";
+    // Normalized off on a depthless pass (WP-R1.6) — the shaded arm's note.
+    request.depthTest = depthFormat !== null && material.depthTest !== false;
+    request.depthWrite = depthFormat !== null && material.depthWrite !== false;
+    request.colorWrite = material.colorWrite !== false;
+    request.topology = record.topology;
+    request.colorFormat = this.#frameFormat;
+    request.depthFormat = depthFormat;
+    request.stencil = stencilRecord ?? null;
+    request.normals = undefined;
+    request.shadow = false;
+    request.metalRoughness = false;
+    request.gpuInstances = false;
+    const pipeline = this.#pipelineMemo.acquire(pipelines, request);
     if (pipeline === null) {
       // Unreachable for the unlit path's reason — this renderer always wires
       // both layout providers; same narrowing.
@@ -3418,23 +3464,25 @@ export class WebgpuRenderer implements Renderer {
     const registered = this.#particleSimulations.get(item.id);
     const simulation =
       registered !== undefined && !registered.disposed ? registered : null;
-    const pipeline = pipelines.acquire({
-      kind: "particles",
-      vertexColors: false,
-      map: false,
-      blend: "normal",
-      // Normalized off on a depthless pass (WP-R1.6) — the shaded arm's note.
-      depthTest: depthFormat !== null,
-      depthWrite: depthFormat !== null,
-      colorWrite: true,
-      topology: record.topology,
-      colorFormat: this.#frameFormat,
-      depthFormat,
-      stencil:
-        stencilRecord === undefined ? null : stencilDescriptor(stencilRecord),
-      batch: null,
-      gpuInstances: simulation !== null,
-    });
+    // Through the A3 memo (the shaded arm's note).
+    const request = this.#pipelineRequest;
+    request.kind = "particles";
+    request.vertexColors = false;
+    request.map = false;
+    request.blend = "normal";
+    // Normalized off on a depthless pass (WP-R1.6) — the shaded arm's note.
+    request.depthTest = depthFormat !== null;
+    request.depthWrite = depthFormat !== null;
+    request.colorWrite = true;
+    request.topology = record.topology;
+    request.colorFormat = this.#frameFormat;
+    request.depthFormat = depthFormat;
+    request.stencil = stencilRecord ?? null;
+    request.normals = undefined;
+    request.shadow = false;
+    request.metalRoughness = false;
+    request.gpuInstances = simulation !== null;
+    const pipeline = this.#pipelineMemo.acquire(pipelines, request);
     if (pipeline === null) {
       // Unreachable for the unlit path's reason — this renderer always wires
       // the particle layout provider; same narrowing.
@@ -3456,7 +3504,7 @@ export class WebgpuRenderer implements Renderer {
     pass.setBindGroup(
       0,
       this.#acquireParticleBindGroup(device, uniformBuffer),
-      [block * UNIFORM_STRIDE_BYTES],
+      dynamicOffset(block * UNIFORM_STRIDE_BYTES),
     );
     let reference = stencilReference;
     if (stencilRecord !== undefined) {
@@ -3619,7 +3667,11 @@ export class WebgpuRenderer implements Renderer {
       color[3] * batch.opacity,
     );
     pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup, [block * UNIFORM_STRIDE_BYTES]);
+    pass.setBindGroup(
+      0,
+      bindGroup,
+      dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+    );
     if (mapGroup !== null) {
       pass.setBindGroup(MAP_BIND_GROUP_INDEX, mapGroup);
     }
@@ -3884,8 +3936,12 @@ export class WebgpuRenderer implements Renderer {
           0,
         );
         pass.setPipeline(skinnedPipeline);
-        pass.setBindGroup(0, bindGroup, [block * UNIFORM_STRIDE_BYTES]);
-        pass.setBindGroup(1, paletteGroup, [paletteOffset]);
+        pass.setBindGroup(
+          0,
+          bindGroup,
+          dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+        );
+        pass.setBindGroup(1, paletteGroup, dynamicOffset(paletteOffset));
         pass.setVertexBuffer(0, geometry.positionBuffer);
         pass.setVertexBuffer(1, geometry.jointBuffer);
         pass.setVertexBuffer(2, geometry.weightBuffer);
@@ -3933,7 +3989,11 @@ export class WebgpuRenderer implements Renderer {
         0,
       );
       pass.setPipeline(pipeline);
-      pass.setBindGroup(0, bindGroup, [block * UNIFORM_STRIDE_BYTES]);
+      pass.setBindGroup(
+        0,
+        bindGroup,
+        dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+      );
       pass.setVertexBuffer(0, geometry.positionBuffer);
       if (geometry.indexBuffer !== null && geometry.indexFormat !== null) {
         pass.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
@@ -4186,6 +4246,13 @@ export class WebgpuRenderer implements Renderer {
       this.#skinnedPrograms?.forget();
       this.#skinnedPrograms = null;
       this.#skinnedProgramsFailed = false;
+      // The frame-level handles too: `render` already returns while lost,
+      // but a handle that outlives its device is the kind of thing a future
+      // restore path would trip over (2026-09-11 stability audit).
+      this.#bindGroupLayout = null;
+      this.#uniformBuffer = null;
+      this.#bindGroup = null;
+      this.#depthTexture = null;
       this.#spriteLayout = null;
       this.#spriteBindGroup = null;
       this.#particleLayout = null;

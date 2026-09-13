@@ -30,7 +30,11 @@
 | 1.13 | 2026-08-30 | Honesty pass over §89's example-code list: the shipped `FourErrorCode` union had grown `INVALID_APPLICATION_STATE`, `UNTRUSTED_INPUT_REJECTED`, `NOT_IMPLEMENTED`, and (this revision) `INVALID_RENDER_GRAPH` without the spec's example list following. The list is examples, not a closed set, but a host matching on the documented names should see every code the engine currently throws. Header revision number was lagging at 1.11 while the table already carried 1.12. Frozen §1–120 numbering untouched. |
 | 1.14 | 2026-09-05 | RFC 0006 (TypeScript-on-Bun toolchain) accepted: §91 recommended baseline replaces "pnpm workspace" and "Turborepo or Nx" with a **Bun workspace** (package manager + script runner); Vitest, Playwright, ESLint, Prettier, TypeDoc, Vite, Changesets, and GitHub Actions stay. Library emit remains `tsc -b` with composite project references — Bun does not replace the TypeScript compiler for published `dist`. §103 Phase 0 deliverables list `bun.lock` / `bunfig.toml` instead of `pnpm-workspace.yaml`. Frozen §1–120 numbering untouched. |
 | 1.15 | 2026-09-10 | Honesty pass on §60's shipped-tier paragraph: R-17's light-uniform contract landed 2026-08-09, so lighting-aware graphs are no longer sequenced as waiting on that contract. Node materials stay **unlit**; lighting-aware graphs remain RFC 0001 residue. Frozen §1–120 numbering untouched. |
+<<<<<<< HEAD
 | 1.16 | 2026-09-11 | Owner requested implementation of all RFCs: accept RFC 0007 path-planning adapters, RFC 0008 optional HarfBuzz WebAssembly shaping, and RFC 0009 display-only GPU readback snapshots. §56 records the shaping-engine decision before implementation; default bitmap layout remains unchanged. Frozen section numbering preserved. |
+=======
+| 1.16 | 2026-09-11 | Record-hygiene revision from the RFC audit. **§71** gains the shipped form of RFC 0005 (accepted 2026-08-21, implemented 2026-08-29 / 2026-09-09) which never received a row: `hitTestMode` is `HitTestMode \| null`, `"custom"` deliberately absent, the GPU/pixel tiers are an asynchronous `PickingService`, and `hitTestMode` is a §79 field. **§91**: ESLint → Oxlint (type-aware), the toolchain change that accompanied the TypeScript 7 move after revision 1.14. Frozen §1–120 numbering untouched. |
+>>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
 
 ---
 
@@ -2274,6 +2278,15 @@ node.hitTestMode = "bounds" | "geometry" | "pixel" | "gpu" | "custom";
 ```
 
 The engine should select the cheapest valid method by default.
+
+Shipped form (RFC 0005, accepted 2026-08-21; recorded revision 1.16): `hitTestMode`
+is `HitTestMode | null` on `Node`, `null` meaning the engine selects; the four
+values `"bounds" | "geometry" | "pixel" | "gpu"` ship, and `"custom"` is
+deliberately absent until a callback strategy exists. The `"gpu"` / `"pixel"`
+tiers are a `PickingService` (id buffer plus a fence / `mapAsync` read-back)
+whose result is asynchronous and honestly one frame late; the id is a §33-fixed
+table index. `hitTestMode` is serialized (§79); documents that never set it are
+byte-identical.
 ### 72. Input and Event Propagation
 Input sources:
 - mouse;
@@ -2804,7 +2817,7 @@ Recommended baseline:
 - Bun workspace (package manager and script runner);
 - Vitest (unit and cross-package suites; `bun:test` is a staged alternative);
 - Playwright;
-- ESLint;
+- Oxlint (type-aware; replaced ESLint with the TypeScript 7 move, revision 1.16);
 - Prettier;
 - API Extractor or TypeDoc;
 - Vite;

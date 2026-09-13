@@ -128,6 +128,7 @@ import type {
   PhysicsColliderHandle,
   PhysicsDimension,
   PhysicsEvent,
+  PhysicsEventInterest,
   PhysicsJointHandle,
   PhysicsSolverAdapter,
   PhysicsWorldOptions,
@@ -321,6 +322,43 @@ const SNAPSHOT_FORMAT_VERSION = 2;
 
 /** Four `u32` fields: magic, format version, metadata length, Rapier length. */
 const SNAPSHOT_HEADER_BYTES = 16;
+
+/**
+ * Decodes and shape-checks the envelope's `meta` JSON (§34). The bytes are
+ * content: a malformed or mis-shaped record is `UNTRUSTED_INPUT_REJECTED`,
+ * never a `SyntaxError` / `TypeError` escaping from inside the restore.
+ */
+function parseSnapshotMeta(bytes: Uint8Array): SnapshotMeta {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(new TextDecoder().decode(bytes));
+  } catch (error) {
+    throw new FourError(
+      "UNTRUSTED_INPUT_REJECTED",
+      "Snapshot envelope meta is not valid JSON (§34, §96).",
+      { cause: error },
+    );
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new FourError(
+      "UNTRUSTED_INPUT_REJECTED",
+      "Snapshot envelope meta is not an object (§34, §96).",
+    );
+  }
+  const meta = parsed as Record<string, unknown>;
+  const ids = [meta["nextBodyId"], meta["nextColliderId"], meta["nextJointId"]];
+  if (
+    typeof meta["adapter"] !== "string" ||
+    typeof meta["version"] !== "string" ||
+    ids.some((id) => typeof id !== "number" || !Number.isSafeInteger(id) || id < 0)
+  ) {
+    throw new FourError(
+      "UNTRUSTED_INPUT_REJECTED",
+      "Snapshot envelope meta is missing a string adapter/version or a non-negative integer id counter (§34, §96).",
+    );
+  }
+  return meta as unknown as SnapshotMeta;
+}
 
 /**
  * How a body's mass is decided (§23, §25), resolved once at
@@ -766,6 +804,13 @@ export class Rapier2dAdapter
 
   /** Keys of the pairs that stopped this step, so `stay` can skip them. */
   readonly #stoppedKeys = new Set<string>();
+
+  /**
+   * Whether `collisionstay` events are synthesised for touching pairs (see
+   * `PhysicsSolverAdapter.setEventInterest`). `true` until a world says
+   * otherwise, so an adapter driven directly keeps reporting everything.
+   */
+  #stayEvents = true;
 
   readonly #scratchVector3 = new Vector3();
 
@@ -1381,6 +1426,10 @@ export class Rapier2dAdapter
    * allocated per event and are never pooled, so they stay valid for as long as
    * the caller holds them.
    */
+  setEventInterest(interest: PhysicsEventInterest): void {
+    this.#stayEvents = interest.collisionstay;
+  }
+
   drainEvents(): PhysicsEvent[] {
     const drained = this.#pendingEvents;
     this.#pendingEvents = [];
@@ -1815,15 +1864,17 @@ export class Rapier2dAdapter
     }
     const metaLength = header.getUint32(8, true);
     const rapierLength = header.getUint32(12, true);
+    if (SNAPSHOT_HEADER_BYTES + metaLength + rapierLength > snapshot.byteLength) {
+      throw new FourError(
+        "UNTRUSTED_INPUT_REJECTED",
+        `Snapshot envelope declares ${String(metaLength)} meta + ${String(rapierLength)} solver bytes but carries ${String(snapshot.byteLength - SNAPSHOT_HEADER_BYTES)} (§34, §96).`,
+        { context: { adapter: ADAPTER_NAME, metaLength, rapierLength, byteLength: snapshot.byteLength } },
+      );
+    }
     const bytes = new Uint8Array(snapshot);
-    const meta = JSON.parse(
-      new TextDecoder().decode(
-        bytes.subarray(
-          SNAPSHOT_HEADER_BYTES,
-          SNAPSHOT_HEADER_BYTES + metaLength,
-        ),
-      ),
-    ) as SnapshotMeta;
+    const meta = parseSnapshotMeta(
+      bytes.subarray(SNAPSHOT_HEADER_BYTES, SNAPSHOT_HEADER_BYTES + metaLength),
+    );
     if (meta.adapter !== ADAPTER_NAME || meta.version !== this.#version) {
       throw new FourError(
         ADAPTER_ERROR_CODE,
@@ -2834,14 +2885,16 @@ export class Rapier2dAdapter
       this.#emitPair(started[i], started[i + 1], "start");
     }
 
-    for (const pair of this.#activePairs.values()) {
-      if (
-        pair.trigger ||
-        this.#stoppedKeys.has(this.#pairKey(pair.a, pair.b))
-      ) {
-        continue;
+    if (this.#stayEvents) {
+      for (const pair of this.#activePairs.values()) {
+        if (
+          pair.trigger ||
+          this.#stoppedKeys.has(this.#pairKey(pair.a, pair.b))
+        ) {
+          continue;
+        }
+        this.#emitPair(pair.a, pair.b, "stay");
       }
-      this.#emitPair(pair.a, pair.b, "stay");
     }
 
     for (let i = 0; i < started.length; i += 2) {

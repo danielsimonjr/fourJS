@@ -39,7 +39,16 @@
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-/** Seconds between two frames compared for "the loop is running". */
+import { framesFor, waitForFrames } from "./helpers/wait.js";
+
+/**
+ * Seconds between two frames compared for "the loop is running" — spent as
+ * `ceil(0.3 · 60)` animation frames, not as a wall-clock sleep (2026-09-11).
+ * No wall-clock gap is needed anywhere in this spec: the loss and restore
+ * events themselves are awaited with `expect.poll` against the probe's
+ * counters, so the browser's own delivery latency is covered by a condition
+ * wait rather than a timer.
+ */
 const FRAME_GAP_SECONDS = 0.3;
 
 /** Milliseconds to wait for a context event the extension asked for. */
@@ -173,7 +182,7 @@ test.describe("§61 context loss and restore, against a real driver", () => {
     // A drawn, animating starting point: two frames apart must differ, or the
     // rest of this test would be comparing a page that never worked.
     const first = await frame(canvas);
-    await page.waitForTimeout(FRAME_GAP_SECONDS * 1000);
+    await waitForFrames(page, framesFor(FRAME_GAP_SECONDS));
     expect(await frame(canvas)).not.toBe(first);
 
     const supported = await loseContext(page);
@@ -192,9 +201,9 @@ test.describe("§61 context loss and restore, against a real driver", () => {
     // backend that threw from `render` while lost would stop the loop and fill
     // the error log; one that kept issuing GL calls would fill it too.
     const framesWhileLost = (await readProbe(page)).frames;
-    await page.waitForTimeout(FRAME_GAP_SECONDS * 1000);
+    await waitForFrames(page, framesFor(FRAME_GAP_SECONDS));
     const lostFrame = await frame(canvas);
-    await page.waitForTimeout(FRAME_GAP_SECONDS * 1000);
+    await waitForFrames(page, framesFor(FRAME_GAP_SECONDS));
     const stillLost = await readProbe(page);
     expect(stillLost.frames).toBeGreaterThan(framesWhileLost);
     expect(errors).toEqual([]);
@@ -218,7 +227,7 @@ test.describe("§61 context loss and restore, against a real driver", () => {
       .poll(async () => frame(canvas), { timeout: CONTEXT_EVENT_TIMEOUT_MS })
       .not.toBe(lostFrame);
     const restored = await frame(canvas);
-    await page.waitForTimeout(FRAME_GAP_SECONDS * 1000);
+    await waitForFrames(page, framesFor(FRAME_GAP_SECONDS));
     expect(await frame(canvas)).not.toBe(restored);
     expect(errors).toEqual([]);
   });

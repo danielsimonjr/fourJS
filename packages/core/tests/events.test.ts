@@ -353,3 +353,35 @@ describe("EventEmitter (§6b)", () => {
     });
   });
 });
+
+describe("dispatch without a snapshot (2026-09-11)", () => {
+  it("compacts records removed during dispatch once the dispatch ends, keeping counts and order honest", () => {
+    const emitter = new EventEmitter<{ ping: number }>();
+    const seen: string[] = [];
+    const offA = emitter.on("ping", () => {
+      seen.push("a");
+      offA();
+    });
+    emitter.on("ping", () => seen.push("b"));
+    emitter.on("ping", () => seen.push("c"));
+    emitter.emit("ping", 1);
+    expect(seen).toEqual(["a", "b", "c"]);
+    expect(emitter.listenerCount("ping")).toBe(2);
+    emitter.emit("ping", 2);
+    expect(seen).toEqual(["a", "b", "c", "b", "c"]);
+  });
+
+  it("removeAllListeners during dispatch stops delivery and leaves the type empty", () => {
+    const emitter = new EventEmitter<{ ping: number }>();
+    const seen: string[] = [];
+    emitter.on("ping", () => {
+      seen.push("a");
+      emitter.removeAllListeners("ping");
+    });
+    emitter.on("ping", () => seen.push("b"));
+    emitter.emit("ping", 1);
+    expect(seen).toEqual(["a"]);
+    expect(emitter.listenerCount("ping")).toBe(0);
+    expect(emitter.totalListenerCount()).toBe(0);
+  });
+});

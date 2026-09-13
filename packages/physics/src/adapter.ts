@@ -274,6 +274,12 @@ export interface PhysicsCapabilities {
  * lists; the member is restated below only to carry the physics-specific
  * contract.
  */
+/** The derived-event interests a world can switch off (see {@link PhysicsSolverAdapter.setEventInterest}). */
+export interface PhysicsEventInterest {
+  /** Whether any registered body listens for `collisionstay`. */
+  readonly collisionstay: boolean;
+}
+
 export interface PhysicsSolverAdapter extends Disposable {
   /**
    * Stable identifier of the backing solver, e.g. `"rapier2d"`. Recorded in
@@ -353,6 +359,22 @@ export interface PhysicsSolverAdapter extends Disposable {
    * part of CCD, and must not read a clock to decide how far to advance (§33).
    */
   step(delta: number): void;
+
+  /**
+   * Tells the adapter which *derived* events anyone is listening for, so it
+   * can skip building the ones nobody will read (2026-09-11). Optional and
+   * additive: an adapter that omits it behaves as if every interest were
+   * `true`. `PhysicsWorld` calls it before `step` whenever the answer changes
+   * (never every step), computed from the registered bodies' listener counts.
+   *
+   * Today the one interest is `collisionstay`: Rapier reports start/end pairs
+   * itself, but a *stay* event is synthesised per touching pair per step
+   * (pair key, contact points, world-space vectors), which the physics
+   * benchmark attributes most of a piled-body step to. Start/end events,
+   * trigger events, the §33 event order, and the solver's own state are not
+   * affected — the interest gates *translation*, never simulation.
+   */
+  setEventInterest?(interest: PhysicsEventInterest): void;
 
   /**
    * Returns and clears the events accumulated during the preceding `step`

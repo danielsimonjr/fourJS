@@ -162,3 +162,40 @@ describe("loadFromManifest", () => {
     await expect(pending).rejects.toThrow(/aborted/);
   });
 });
+
+describe("parseAssetManifest rebuilds the record (§96, 2026-09-11)", () => {
+  it("returns a prototype-free copy so content keys cannot shadow Object.prototype", () => {
+    const manifest = parseAssetManifest({
+      constructor: { url: "a.png" },
+      hasOwnProperty: { url: "b.png", hash: "x" },
+      extra: { url: "c.png", ignored: true },
+    });
+    expect(Object.getPrototypeOf(manifest)).toBeNull();
+    expect(manifest["constructor"]).toEqual({ url: "a.png" });
+    expect(manifest["hasOwnProperty"]).toEqual({ url: "b.png", hash: "x" });
+    expect(manifest["extra"]).toEqual({ url: "c.png" });
+  });
+});
+
+describe("parseAssetManifest origin policy (§96, 2026-09-11)", () => {
+  it("refuses scheme and protocol-relative URLs by default, keeps same-origin shapes", () => {
+    expect(() =>
+      parseAssetManifest({ a: { url: "https://cdn.example/a.png" } }),
+    ).toThrow(/names another origin/);
+    expect(() =>
+      parseAssetManifest({ a: { url: "//cdn.example/a.png" } }),
+    ).toThrow(/names another origin/);
+    expect(parseAssetManifest({ a: { url: "/a.png" }, b: { url: "b/c.png" } })).toEqual(
+      expect.objectContaining({ a: { url: "/a.png" }, b: { url: "b/c.png" } }),
+    );
+  });
+
+  it("accepts other origins when opted in", () => {
+    const manifest = parseAssetManifest(
+      { a: { url: "https://cdn.example/a.png" } },
+      "cdn",
+      { allowCrossOriginUrls: true },
+    );
+    expect(manifest["a"]).toEqual({ url: "https://cdn.example/a.png" });
+  });
+});

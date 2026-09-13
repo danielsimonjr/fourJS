@@ -894,6 +894,12 @@ export class PhysicsWorld {
   readonly #checksumAngular = new Vector3();
 
   /** Break-monitoring scratch, so the per-step joint pass allocates nothing. */
+  /** Last `collisionstay` interest forwarded to the adapter; `null` until the first step. */
+  #stayInterest: boolean | null = null;
+
+  /** Per-step snapshot scratch for {@link PhysicsWorld.#monitorJointBreakage}. */
+  readonly #jointScratch: JointRegistration[] = [];
+
   readonly #reactionLinear = new Vector3();
 
   readonly #reactionAngular = new Vector3();
@@ -1364,6 +1370,7 @@ export class PhysicsWorld {
    * may be added again once their bodies are.
    */
   removeBody(node: Node): boolean {
+    this.#assertNotDisposed();
     const registration = this.#bodiesByNode.get(node);
     if (registration === undefined) {
       return false;
@@ -2240,6 +2247,7 @@ export class PhysicsWorld {
       this.#feedKinematic(registration);
     }
     this.#applyJointCommands();
+    this.#publishEventInterest();
     this.#adapter.syncSceneToSolver();
     this.#adapter.step(deltaSeconds);
     this.#adapter.syncSolverToScene();
@@ -3932,6 +3940,30 @@ export class PhysicsWorld {
    * already normalized. An event naming a body or collider this world has not
    * registered is dropped — there is no component to name in the payload.
    */
+  /**
+   * Forwards the bodies' `collisionstay` listener presence to the adapter
+   * (see `PhysicsSolverAdapter.setEventInterest`), only when it changes, so a
+   * quiet world issues no extra adapter call per step. One integer read per
+   * body per step; the adapter without the member costs nothing at all.
+   */
+  #publishEventInterest(): void {
+    const adapter = this.#adapter;
+    if (adapter.setEventInterest === undefined) {
+      return;
+    }
+    let stay = false;
+    for (const registration of this.#bodiesByNode.values()) {
+      if (registration.body.listenerCount("collisionstay") > 0) {
+        stay = true;
+        break;
+      }
+    }
+    if (stay !== this.#stayInterest) {
+      this.#stayInterest = stay;
+      adapter.setEventInterest({ collisionstay: stay });
+    }
+  }
+
   #collectEvents(): void {
     const drained = this.#adapter.drainEvents();
     for (let i = 0; i < drained.length; i += 1) {
@@ -4145,7 +4177,12 @@ export class PhysicsWorld {
     const linear = this.#reactionLinear;
     const angular = this.#reactionAngular;
     // Snapshot first: a break mutates the registry while it is being walked.
-    const registrations = [...this.#jointsByJoint.values()];
+    // Into world-owned scratch (cleared afterwards), not a fresh array — this
+    // runs every step for every world with a joint (2026-09-11 audit).
+    const registrations = this.#jointScratch;
+    for (const registration of this.#jointsByJoint.values()) {
+      registrations.push(registration);
+    }
     for (const registration of registrations) {
       const joint = registration.joint;
       if (!joint.breakable) {
@@ -4171,6 +4208,7 @@ export class PhysicsWorld {
       };
       this.#queue.push(event);
     }
+    registrations.length = 0;
   }
 
   /**

@@ -69,7 +69,13 @@ export function isRapierSupported(options?: PhysicsWorldOptions): boolean {
   // Accepted to satisfy `SolverRegistration.isSupported` and deliberately
   // unread: Rapier's availability does not depend on the world.
   void options;
-  return typeof WebAssembly !== "undefined";
+  // Read through `globalThis` so this package needs no host lib for the
+  // probe (the workspace pins `lib: ["ES2022"]`; DOM-free is enforced, not
+  // assumed — 2026-09-11).
+  return (
+    typeof (globalThis as { WebAssembly?: unknown }).WebAssembly !==
+    "undefined"
+  );
 }
 
 /**

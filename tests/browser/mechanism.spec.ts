@@ -26,7 +26,7 @@
  * `baseURL`), `physics-playground` on 4174 and `mechanism` on 4175.
  * {@link MECHANISM_URL} restates that port for the reason the scene constants
  * below are restated rather than imported — see "Method notes". Run
- * `pnpm mechanism:build` before `pnpm test:browser`, or the preview server has
+ * `bun run mechanism:build` before `bun run test:browser`, or the preview server has
  * no `dist` to serve.
  *
  * ## What is measured, and against what
@@ -69,6 +69,8 @@
 import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+
+import { framesFor, waitForFrames } from "./helpers/wait.js";
 
 /** A decoded, unfiltered 8-bit image: `pixels` is `width * height` samples. */
 interface DecodedImage {
@@ -505,7 +507,7 @@ interface Cadence {
 async function measureCadence(page: Page, seconds: number): Promise<Cadence> {
   const before = await readCounters(page);
   const startedAt = Date.now();
-  await page.waitForTimeout(seconds * 1000);
+  await waitForFrames(page, framesFor(seconds));
   const after = await readCounters(page);
   const elapsed = (Date.now() - startedAt) / 1000;
   const hits = combined(after) - combined(before);
@@ -697,7 +699,7 @@ test.describe("§109: a jointed mechanism, running and reconfigurable in the bro
 
     // A loop that throws on its first frames does so after `running`, so keep
     // the page alive long enough for that to be collected.
-    await page.waitForTimeout(1000);
+    await waitForFrames(page, framesFor(1));
     expect(errors).toEqual([]);
   });
 
@@ -716,7 +718,7 @@ test.describe("§109: a jointed mechanism, running and reconfigurable in the bro
 
     // Two frames 200 ms apart, taken while the mechanism is driven.
     const firstFrame = await grab(canvas);
-    await page.waitForTimeout(200);
+    await waitForFrames(page, framesFor(0.2));
     const secondFrame = await grab(canvas);
 
     const moving = regionDelta(firstFrame, secondFrame, MECHANISM_REGION);
@@ -896,7 +898,7 @@ test.describe("§109: a jointed mechanism, running and reconfigurable in the bro
     );
     // Let the shaft reach the new rate before timing it (measured: it is there
     // within a few frames, and the probe allowed 800 ms).
-    await page.waitForTimeout(800);
+    await waitForFrames(page, framesFor(0.8));
 
     const fast = await measureCadence(page, CADENCE_SECONDS);
     expect(
@@ -916,7 +918,7 @@ test.describe("§109: a jointed mechanism, running and reconfigurable in the bro
     await clickWorldPoint(page, rect, SLOWER_PLATE_POINT);
     await clickWorldPoint(page, rect, SLOWER_PLATE_POINT);
     await expect(status).toHaveAttribute("data-target", TARGET_DEFAULT);
-    await page.waitForTimeout(800);
+    await waitForFrames(page, framesFor(0.8));
 
     const restoredSpin = Number(await status.getAttribute("data-spin"));
     expect(restoredSpin).toBeLessThan(8);

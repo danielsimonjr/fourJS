@@ -25,8 +25,10 @@ DATAFLOW, API, TEST_COVERAGE + the generated dependency-graph reports).
 
 ## Tracking files (root)
 
-Read `MEMORY.md` (decisions, standing facts, gotchas) and `TODO.md` (task tracker) at the
-start of a session. Before finishing: record new decisions in `MEMORY.md`, update `TODO.md`,
+Read `MEMORY.md` (decisions, standing facts, gotchas) and `TODO.md` (task tracker — open
+rows only; closed rows are archived in `docs/archive/TODO-DONE.md`) at the start of a
+session. Before finishing: record new decisions in `MEMORY.md` (append-only: supersede,
+never rewrite), update `TODO.md` (move a row you close to the archive in the same commit),
 and add substantive changes to `CHANGELOG.md`.
 
 ## The Specification

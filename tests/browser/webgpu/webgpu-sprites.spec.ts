@@ -62,7 +62,7 @@ interface QuadResult {
  *
  * A **string**, not a function: this repository pins no WebGPU typings, and
  * `GPUBufferUsage` and friends only have meaning in the page (see
- * `webgpu-unlit.spec.ts` on `pnpm typecheck:tests`).
+ * `webgpu-unlit.spec.ts` on `bun run typecheck:tests`).
  */
 const QUAD_SCRIPT = `async (options) => {
   const { size, shader, sprite, vertexLayout, strong, spriteBytes, drawBytes } = options;

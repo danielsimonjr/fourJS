@@ -71,6 +71,12 @@ import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import {
+  framesFor,
+  waitForFrames,
+  waitForSimulationTime,
+} from "./helpers/wait.js";
+
 // ---------------------------------------------------------------------------
 // PNG decoding (see "Method notes")
 // ---------------------------------------------------------------------------
@@ -679,7 +685,7 @@ async function focusControl(page: Page, name: string): Promise<void> {
   for (let attempt = 0; attempt < 8; attempt += 1) {
     if ((await readStatus(page)).focused === name) return;
     await page.keyboard.press("Tab");
-    await page.waitForTimeout(80);
+    await waitForFrames(page, framesFor(0.08));
   }
   expect(
     (await readStatus(page)).focused,
@@ -725,7 +731,7 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
 
     // A render loop fails on its first frames, not on first paint: keep the
     // page alive long enough for a throw in `step`/`render` to be recorded.
-    await page.waitForTimeout(1_000);
+    await waitForFrames(page, framesFor(1));
     expect(errors).toEqual([]);
   });
 
@@ -736,7 +742,7 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
     // Two and a half seconds in, the ball has landed at least once, the sparks
     // have fired, the cube has turned away from its start pose and the timeline
     // has completed an iteration.
-    await page.waitForTimeout(2_500);
+    await waitForSimulationTime(page, 2.5);
 
     const image = await grab(page.locator("#scene"));
     const counts = measure(image);
@@ -796,12 +802,12 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
     page,
   }) => {
     await openDemo(page);
-    await page.waitForTimeout(2_500);
+    await waitForSimulationTime(page, 2.5);
 
     const canvas = page.locator("#scene");
     const before = await readStatus(page);
     const first = await grab(canvas);
-    await page.waitForTimeout(FRAME_GAP_SECONDS * 1000);
+    await waitForFrames(page, framesFor(FRAME_GAP_SECONDS));
     const second = await grab(canvas);
     const after = await readStatus(page);
 
@@ -843,7 +849,7 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
     page,
   }) => {
     await openDemo(page);
-    await page.waitForTimeout(1_500);
+    await waitForSimulationTime(page, 1.5);
 
     const canvas = page.locator("#scene");
     const counts = measure(await grab(canvas));
@@ -876,7 +882,7 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
       expect(point).toBeDefined();
       if (point === undefined) continue;
       await page.mouse.move(point.x, point.y);
-      await page.waitForTimeout(150);
+      await waitForFrames(page, framesFor(0.15));
       expect(
         (await readStatus(page)).hover,
         `pointing at the published position of "${name}" hovered something else`,
@@ -888,7 +894,7 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
     page,
   }) => {
     await openDemo(page);
-    await page.waitForTimeout(1_500);
+    await waitForSimulationTime(page, 1.5);
 
     const canvas = page.locator("#scene");
     const points = await controlPoints(page, canvas);
@@ -904,12 +910,12 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
 
     // --- pause ---------------------------------------------------------
     await page.mouse.click(pause.x, pause.y);
-    await page.waitForTimeout(300);
+    await waitForFrames(page, framesFor(0.3));
     const paused = await readStatus(page);
     expect(paused.paused).toBe("true");
 
     const firstPausedFrame = await grab(canvas);
-    await page.waitForTimeout(FRAME_GAP_SECONDS * 1000);
+    await waitForFrames(page, framesFor(FRAME_GAP_SECONDS));
     const secondPausedFrame = await grab(canvas);
     expect(
       changedPixels(firstPausedFrame, secondPausedFrame),
@@ -929,7 +935,7 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
     // --- one single step ------------------------------------------------
     const beforeStep = await readStatus(page);
     await page.mouse.click(step.x, step.y);
-    await page.waitForTimeout(250);
+    await waitForFrames(page, framesFor(0.25));
     const afterStep = await readStatus(page);
 
     expect(
@@ -950,7 +956,7 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
 
     const beforeSecondStep = await grab(canvas);
     await page.mouse.click(step.x, step.y);
-    await page.waitForTimeout(250);
+    await waitForFrames(page, framesFor(0.25));
     const afterSecondStep = await grab(canvas);
     expect(
       changedPixels(beforeSecondStep, afterSecondStep),
@@ -963,7 +969,7 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
     const beforeOverlay = await grab(canvas);
     expect(measure(beforeOverlay).overlay).toBe(0);
     await page.mouse.click(debug.x, debug.y);
-    await page.waitForTimeout(300);
+    await waitForFrames(page, framesFor(0.3));
     const afterOverlay = await grab(canvas);
     const overlayCounts = measure(afterOverlay);
 
@@ -986,11 +992,15 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
     page,
   }) => {
     await openDemo(page);
-    await page.waitForTimeout(1_500);
+    await waitForSimulationTime(page, 1.5);
 
     // --- how fast simulated time runs at full speed ----------------------
+    // Sixty frames is at least a second of wall clock (rAF is paced at 60 Hz
+    // at most), so the lower bound below is measured over no less than the
+    // second it was tuned for — and over more frames, never fewer, when the
+    // runner is slow.
     const fullSpeedStart = statusNumber((await readStatus(page)).sim);
-    await page.waitForTimeout(1_000);
+    await waitForFrames(page, framesFor(1));
     const fullSpeedEnd = statusNumber((await readStatus(page)).sim);
     expect(
       fullSpeedEnd - fullSpeedStart,
@@ -1002,13 +1012,18 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
     // §75: Home jumps a slider to its lower bound. The example's is 0.05, which
     // is deliberately not zero — zero is what pause means.
     await page.keyboard.press("Home");
-    await page.waitForTimeout(200);
+    await waitForFrames(page, framesFor(0.2));
     const slow = await readStatus(page);
     expect(statusNumber(slow.speed)).toBeCloseTo(0.05, 5);
     expect(statusNumber(slow.timescale)).toBeCloseTo(0.05, 5);
 
+    // The window here is an *upper* bound on simulated time, so it is measured
+    // on the page's own clock: one wall second at timeScale 0.05 is 0.05 s of
+    // simulation, and waiting for exactly that advance cannot overshoot the
+    // 0.2 s ceiling however slowly the runner draws — a frame or wall-clock
+    // wait could.
     const slowStart = statusNumber(slow.sim);
-    await page.waitForTimeout(1_000);
+    await waitForSimulationTime(page, slowStart + 0.05);
     const slowEnd = statusNumber((await readStatus(page)).sim);
     expect(
       slowEnd - slowStart,
@@ -1019,17 +1034,17 @@ test.describe("examples/flagship/one-scene-everything-moves (§118)", () => {
 
     // §75: End jumps to the upper bound, and an arrow key steps by `step`.
     await page.keyboard.press("End");
-    await page.waitForTimeout(150);
+    await waitForFrames(page, framesFor(0.15));
     expect(statusNumber((await readStatus(page)).speed)).toBeCloseTo(1.45, 5);
     await page.keyboard.press("ArrowLeft");
-    await page.waitForTimeout(150);
+    await waitForFrames(page, framesFor(0.15));
     expect(statusNumber((await readStatus(page)).speed)).toBeCloseTo(1.4, 5);
 
     // --- Enter activates the focused button ------------------------------
     await focusControl(page, "pause");
     const beforeEnter = await readStatus(page);
     await page.keyboard.press("Enter");
-    await page.waitForTimeout(200);
+    await waitForFrames(page, framesFor(0.2));
     const afterEnter = await readStatus(page);
 
     expect(

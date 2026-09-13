@@ -50,7 +50,11 @@ import {
   sortRenderListByDepth,
   type RenderItem,
 } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import {
+  WebglRenderer,
+  registerShadowPipeline,
+  registerStandardPipeline,
+} from "@fourjs/render-webgl";
 import {
   DirectionalLight,
   OrthographicCamera,
@@ -74,6 +78,12 @@ import {
   createRecordingGl,
   type RecordingGl,
 } from "./helpers/recording-gl.js";
+
+// §59's standard surface is a registration seam on WebGL 2 since 2026-09-11
+// (owner decision; the skinning shape): one explicit call links the program,
+// and the renderer compiles it on the first `StandardMaterial` draw.
+// Registered for the file, as an application registers once at setup.
+registerStandardPipeline();
 
 interface Harness {
   readonly recorder: RecordingGl;
@@ -401,6 +411,8 @@ describe("R-8 — one frame list, two views that disagree (§64, §48)", () => {
 
 describe("R-8 — the §69 shadow map stays view-independent (R-18's §46 argument)", () => {
   it("draws a caster no camera can see into the map", async () => {
+    // The caster pass is a registration seam since 2026-09-11.
+    registerShadowPipeline();
     const test = await harness();
     const sun = new DirectionalLight({ intensity: 1 });
     sun.castShadow = true;

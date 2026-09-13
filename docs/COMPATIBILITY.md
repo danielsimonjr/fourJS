@@ -83,7 +83,7 @@ engineering judgement with no gate behind it.
 | Target                                    | Status             | What backs the claim                                                                                                                                                                                                                                                                           |
 | ----------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Node >= 20                                | verified           | Root `engines.node`. The unit suites, `tests/integration`, `tests/determinism` and every `tools/` script run here, headless and with no GPU.                                                                                                                                                   |
-| Headless Chromium, ANGLE over SwiftShader | verified           | `playwright.config.ts` launches with `--use-gl=angle --use-angle=swiftshader` and drives six built example sites (`pnpm test:browser`); the `visual` project additionally compares committed SwiftShader goldens.                                                                              |
+| Headless Chromium, ANGLE over SwiftShader | verified           | `playwright.config.ts` launches with `--use-gl=angle --use-angle=swiftshader` and drives six built example sites (`bun run test:browser`); the `visual` project additionally compares committed SwiftShader goldens.                                                                              |
 | Chromium on a real GPU                    | expected           | The same code path with a different rasteriser. No gate runs it, which is why the browser suite asserts thresholds rather than pixels in the `chromium` project.                                                                                                                               |
 | Firefox, Safari, other evergreen browsers | expected, untested | Nothing in the engine is Chromium-specific and the requirements below are all standard, but there is no Playwright project and no CI job for them. Do not read this row as support.                                                                                                            |
 | Browsers with WebGL 1 only                | not supported      | §120 fixes the MVP renderer tier at WebGL 2, and neither shipped GPU backend (section 2) has a WebGL 1 path. There is no WebGL 1 fallback and none is planned. (This row called `@fourjs/render-webgl` "the only backend" until 2026-08-29 — stale since WP-R1.1 shipped `@fourjs/render-webgpu`.) |
@@ -106,7 +106,7 @@ What an application needs at runtime:
   mode, so `SharedArrayBuffer` is not required and COOP/COEP headers are not
   needed. See `docs/guides/workers-and-cross-origin-isolation.md` for what
   changes if split-simulation mode lands.
-- **pnpm 10** (`packageManager` pins `pnpm@10.33.0`) to build from source,
+- **Bun 1.4.2** (`packageManager` pins `bun@1.4.2`) to build from source,
   which is the only way to consume the packages until first publish.
 
 ## 2. Render backends and capability tiers (§62)
@@ -135,17 +135,18 @@ What the WebGL 2 tier actually carries:
 
 | Feature                        | State                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pipelines, compiled at init    | seven — unlit, sprite, lit (`gl-program.ts`), particles (`gl-particles.ts`), §59 metallic-roughness standard (`gl-standard.ts`, R-13), §70 full-screen effect (`gl-effect.ts`, R-6), §69 depth-only shadow caster (`gl-shadow.ts`, R-18). This row said "four" until 2026-08-29 — stale since R-6/R-13/R-18 landed 2026-08-07…09                                                                                                                         |
-| Pipelines, registered (opt-in) | three seams an application links by calling them — a bundle that never calls one pays nothing for it: `registerSkinningPipeline()` (§54 skinned unlit + lit, plus a lazy depth-only caster on the first skinned `castShadow`, RFC 0003), `registerPickingPipeline()` (§71 id-buffer pass, RFC 0005), `registerNodeMaterialPipeline()` (§60 GLSL emitter — one program compiled per distinct graph, on first draw, RFC 0001)                                                                                               |
+| Pipelines, compiled at init    | three — unlit, sprite, lit (`gl-program.ts`). This row said "seven" from 2026-08-29 until 2026-09-11, when the particle, effect and shadow pipelines moved behind the registered seams below (they had compiled at initialize since P9-3/R-6/R-18 and rode every bundle that carried `WebglRenderer`, including `first-2d-scene` and `ui-demo`, which use none of them), and "four" for the rest of that day until the owner authorised moving §59's standard pipeline (`gl-standard.ts`, R-13) behind a seam as well |
+| Pipelines, registered (opt-in) | seven seams an application links by calling them — a bundle that never calls one pays nothing for it: `registerSkinningPipeline()` (§54 skinned unlit + lit, plus a lazy depth-only caster on the first skinned `castShadow`, RFC 0003), `registerPickingPipeline()` (§71 id-buffer pass, RFC 0005), `registerNodeMaterialPipeline()` (§60 GLSL emitter — one program compiled per distinct graph, on first draw, RFC 0001), and since 2026-09-11 `registerShadowPipeline()` (§69 depth-only caster, `gl-shadow.ts`, compiled on the first shadowed frame), `registerEffectPipeline()` (§70 full-screen copy / grade / output transform, `gl-effect.ts`, compiled on the first fixed effect pass) `registerParticlePipeline()` (§36 instanced billboards plus the lazy R-32 appearance and trail programs and both batch caches, `gl-particles.ts`, compiled on the first particle item) and `registerStandardPipeline()` (§59 metallic-roughness surface, `gl-standard.ts`, compiled on the first `StandardMaterial` item; owner decision). Each unregistered feature is skipped with one development warning naming the call — shadows fall back to unshadowed lighting; effects, particles and standard surfaces to absence, never a Lambert stand-in — and each is dropped on context loss and re-acquired lazily after restore, the skinned pair's rule |
 | Geometry                       | one vertex array object per geometry, cached and evicted (`gl-geometry.ts`)                                                                                                                                                                                                                                                                                                                                                                              |
 | Clip depth                     | `"negative-one-to-one"` (plan D8) — the WebGL convention, not WebGPU's                                                                                                                                                                                                                                                                                                                                                                                   |
 | Context loss and restore (§61) | implemented; `contextlost`/`contextrestored` are emitted on `Renderer.events`                                                                                                                                                                                                                                                                                                                                                                            |
 | Lighting (§68)                 | one directional light plus scene ambient, first light in scene-graph DFS order (§33-deterministic) — **plus up to `MAX_PUNCTUAL_LIGHTS = 8` point and spot lights** (R-17, 2026-08-09; overflow keeps the first eight in traversal order, deterministically, and warns once) **plus one `HemisphereLight`** (2026-09-10; first-match, +Y sky axis, two-colour ambient). This row stopped at the directional light until 2026-08-29                                                                                                                 |
-| Shadows (§69)                  | one tier: the directional light's shadow map — a depth-only caster pass into a `DEPTH_COMPONENT24` target, 3×3 percentage-closer filtering on receivers (R-18, 2026-08-09). §69's remaining features are staged with reasons in `@fourjs/scene`'s `DirectionalLightShadow`                                                                                                                                                                                 |
+| Shadows (§69)                  | one tier: the directional light's shadow map — a depth-only caster pass into a `DEPTH_COMPONENT24` target, 3×3 percentage-closer filtering on receivers (R-18, 2026-08-09), behind `registerShadowPipeline()` since 2026-09-11 (unregistered: the pass is skipped once-warned and lit surfaces draw unshadowed). §69's remaining features are staged with reasons in `@fourjs/scene`'s `DirectionalLightShadow`                                                                                                                                                                                 |
 | Sprite batching (§65)          | **shipped, opt-in** (R-9, 2026-08-09): `renderer.batching = createGlBatching()` merges consecutive items sharing a pipeline and a material instance into one draw through the unlit program; without the opt-in it stays one draw call per sprite. Opt-in by measured decision — the batcher costs bundle bytes every non-batching application would otherwise carry (`gl-batch.ts`). This row said "absent — one draw call per sprite" until 2026-08-29 |
-| Post-processing (§70)          | copy, colour grade, the sRGB output transform (R-15), and §60 graph effects — driven as `RenderGraph` effect passes (R-6, 2026-08-07; RFC 0001, 2026-08-28)                                                                                                                                                                                                                                                                                              |
+| Post-processing (§70)          | copy, colour grade, the sRGB output transform (R-15) — behind `registerEffectPipeline()` since 2026-09-11 (unregistered: the pass is skipped once-warned, never quietly copied) — and §60 graph effects through `registerNodeMaterialPipeline()`; all driven as `RenderGraph` effect passes (R-6, 2026-08-07; RFC 0001, 2026-08-28)                                                                                                                                                                                                                                                                                              |
 | Anti-aliasing                  | `RendererOptions.antialias` is a hint; a backend that cannot honour it never fails initialization                                                                                                                                                                                                                                                                                                                                                        |
-| Picking (§71)                  | id-buffer + fence read-back, behind `registerPickingPipeline()` (RFC 0005, 2026-08-29): one id per `Renderable`, one id per particle emitter, and a deformed silhouette for skinned meshes (`SkinnedIdProgram`, 2026-09-09) |
+| Particles (§36)                | one instanced draw per `ParticleRenderable` (plan P9-3), plus the R-32 appearance tier and trails — behind `registerParticlePipeline()` since 2026-09-11 (unregistered: particle items are skipped once-warned; the §71 id pass then sees no particle batches either) |
+| Picking (§71)                  | id-buffer + fence read-back, behind `registerPickingPipeline()` (RFC 0005, 2026-08-29): one id per `Renderable`, one id per particle emitter (when `registerParticlePipeline()` has also been called, 2026-09-11), and a deformed silhouette for skinned meshes (`SkinnedIdProgram`, 2026-09-09) |
 
 §62's capability-reporting clause lists eleven fields. `RendererCapabilities`
 covers **all eleven** since WP-R1.1 (2026-08-21): `maxTextureSize`,
@@ -425,7 +426,7 @@ Notes per row:
 
 **Implemented 2026-08-28 (RFC 0002, gap A-3 closed).** The §81 plugin host lives
 in `@fourjs/core` (`FourPlugin`, `PluginContext`, `PluginHost`, `installPlugins`),
-and the umbrella package `four` declares the six capability tokens
+and the owning packages declare the capability tokens (the first six listed here; the umbrella `fourJS` re-exports them)
 (`SIMULATION_SYSTEMS`, `RENDERER_REGISTRY`, `SOLVER_REGISTRY`,
 `COMPONENT_SERIALIZERS`, `SCENE_MIGRATIONS`, `RENDER_GRAPH`).
 
@@ -441,11 +442,15 @@ consequence worth knowing before publishing a plugin: a caret range below
 `1.0.0` is minor-locked, so `^0.1.0` accepts `0.1.z` and **refuses** `0.2.0` —
 which is exactly the honesty starting at `0.1.0` buys.
 
-Five of §81's eleven extension points (asset formats, materials/shader nodes,
-UI controls, editor tools, compute workloads) have **no capability token, by
-design**: there is no registry to hand over yet, so a plugin asking for one is
-refused by name at install rather than registering into nothing. Adding a token
-later is additive and does not move `PLUGIN_API_VERSION`'s major.
+**All eleven** §81 extension points now have a token (2026-09-06): the six
+above plus `ASSET_LOADERS` (`@fourjs/assets`), `SHADER_OPERATORS`
+(`@fourjs/materials`), `UI_CONTROLS` (`@fourjs/ui`), `COMPUTE_WORKLOADS`
+(`@fourjs/render`) and `EDITOR_TOOLS` (the umbrella), each over a minimal
+registry. Until that date the last five were absent by design (a plugin asking
+for one was refused by name at install). Adding tokens was additive and did not
+move `PLUGIN_API_VERSION`'s major. Tokens are declared in their owning packages
+since 2026-08-29; the umbrella package (`fourJS`, directory `packages/fourjs`)
+re-exports the same objects.
 
 The registries the tokens hand over — `ComponentSerializerRegistry` (§79),
 `SceneMigrationRegistry` (§80), `SystemRegistry` (§39), `RendererRegistry`
@@ -483,7 +488,7 @@ node tools/generate-compatibility.mjs           # refresh the generated block
 node tools/generate-compatibility.mjs --check   # fail if the block is stale
 ```
 
-The generator imports the built adapters from `dist/`, so run `pnpm build`
+The generator imports the built adapters from `dist/`, so run `bun run build`
 first. Everything outside the `BEGIN GENERATED` / `END GENERATED` markers is
 hand-written and has to be reviewed against the code the same way any other
 document does; `tools/check-spec.mjs` and `tools/check-docs.mjs` are the

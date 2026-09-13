@@ -368,7 +368,7 @@ interface PassState {
   /**
    * The device and geometry cache the pass drew with — the **era witness**:
    * a §61 loss drops every handle, so `pick` compares these against the
-   * host's current objects and refuses (`CONTEXT_LOST`) on mismatch rather
+   * host's current objects and refuses (`DEVICE_LOST` — the backend's one loss code, 2026-09-11) on mismatch rather
    * than reading a texture that no longer exists.
    */
   readonly era: WgpuGeometryCache;
@@ -764,7 +764,7 @@ export class WebgpuPickingService implements PickingService {
       device !== pass.device
     ) {
       throw new FourError(
-        "CONTEXT_LOST",
+        "DEVICE_LOST",
         "§71: the id buffer did not survive a device loss — render and " +
           "update() again, then pick (§61).",
         { context: { deviceLost: host.deviceLost() } },
@@ -798,7 +798,7 @@ export class WebgpuPickingService implements PickingService {
     }
     if (this.#host.deviceLost()) {
       throw new FourError(
-        "CONTEXT_LOST",
+        "DEVICE_LOST",
         "§71: the device was lost while a pick was in flight — the " +
           "id buffer is gone (§61).",
         { context: { deviceLost: true } },

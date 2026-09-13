@@ -283,3 +283,66 @@ None run; this RFC is a design decision ahead of the packet, and §95 item 6 ask
 3. **Uniform-value ownership.** `NodeMaterial.setUniform` puts values on the material, which means a material shared by a thousand draws has one value. §60's `material.time()` suggests per-frame values; per-_node_ values would need a per-drawable uniform block and would change `RenderItem`'s shape. Confirm that per-material is the intended tier for the MVP.
 4. **`positionOffset` and physics.** A graph may displace vertices; nothing tells the physics world. This RFC's position is that it must not — §42's authority model says the transform is owned by one system and a vertex displacement is not a transform. Confirm that no §85 warning is wanted when a `NodeMaterial` with `positionOffset` is attached to a node carrying a collider.
 5. **Whether §60 needs an amendments-table row.** Nothing in §60's text is contradicted by this RFC, but "no raw shader source" is a normative narrowing of _"advanced users require a backend-independent shader model"_ that a reader would benefit from finding in the spec rather than only here.
+
+## Post-acceptance corrections (2026-09-10 review pass)
+
+The decision text above is the record as accepted on 2026-08-21 and is left as
+written. Re-verified against the tree on 2026-09-10; the statements below are
+now false or were imprecise, with the tree's actual state. None changes the
+decision.
+
+- **§1 `ShaderUnaryOp` (lines ~102–111) lists nine ops.** The union gained
+  `"angle"` (`atan2`, §58's conic gradient) on 2026-09-06 as this RFC's one-row
+  closed-union amendment (`packages/materials/src/shader-graph.ts:80-94`;
+  builder `angle()` in `node-material-builder.ts`). §6's affected-sections
+  list should read §58 as well.
+- **§5 `ScreenEffect = CopyEffect | ColorGradeEffect | GraphEffect`.** The
+  shipped union is `CopyEffect | ColorGradeEffect | OutputTransformEffect |
+  GraphEffect` — `OutputTransformEffect` (R-15, 2026-08-08) predates this RFC's
+  landing (`packages/render/src/effect-pass.ts:313-314`).
+- **§5 `GraphEffect` shape.** Shipped with a fourth field,
+  `textures?: Record<string, RenderTargetTexture>` (`effect-pass.ts:284-310`),
+  which the prose two paragraphs later already required.
+- **§5 "the `attribute` node is rejected in the screen domain".** Deviation
+  recorded in source: `"uv"` is nameable in `"screen"` as the pass's
+  normalised coordinate; only position / normal / colour are rejected
+  (`shader-graph.ts:66-73`, `effect-pass.ts:280-281`).
+- **§6 "WGSL generation defers — there is no WebGPU backend".** The WGSL
+  emitter shipped 2026-08-29 (WP-R1.9, `packages/render-webgpu/src/wgpu-node-program.ts`,
+  `registerWebgpuNodeMaterialPipeline`); `docs/COMPATIBILITY.md` §2's WebGPU
+  row already lists §60 node materials + §70 graph effects. The compatibility
+  bullet "a later WGSL emitter moves this row" has happened.
+- **§3 "cached … under a structural hash of the graph".** The cache is keyed
+  on the **emitted GLSL source** (a structural key) with a per-graph `WeakMap`
+  fast path; no hash function exists (`gl-node-program.ts:23-26`).
+- **Alternative E "deferred to a follow-up RFC" / §81 point "absent".** Half
+  landed 2026-09-06: `ShaderOperatorRegistry` (named factories producing
+  *closed* nodes, `packages/materials/src/shader-operators.ts`) and the
+  `SHADER_OPERATORS` token (`materials/src/capabilities.ts`). The
+  data-declared-operator half (widening the node-kind union) remains deferred.
+- **§4 "exceeded ui-demo's 30 kB by 99 B" / "seventeen example bundles".**
+  Historical figures from 2026-08-07; ui-demo's budget is 50 kB today
+  (`.size-limit.json`, `tools/size-budgets.mjs`), and MEMORY counts nine
+  measured bundles. "Seventeen" has no source in the tree.
+- **Prototype item 3 / §4 "must add a golden".** No node-material or
+  graph-effect pixel golden exists under `tests/visual/` (only `text` and
+  `ui-demo`); the GL-sequence gate is asserted instead
+  (`tests/integration/node-materials.test.ts`). Recorded as residue below.
+- **Context citations** (`effect-pass.ts:69` header, `custom-shaders.md`
+  "When §60 lands…") quote text that was rewritten on implementation
+  (2026-08-28/29); read them as historical.
+- **Compatibility row names.** The rows are titled "2. Render backends and
+  capability tiers (§62)" and "4. Scene, replay and snapshot format versions
+  (§34, §79, §80)" in `docs/COMPATIBILITY.md`.
+- **Quoted A-16 sentence** ("camera, light, sprite and renderable node types
+  are still absent") is not in the tree; the umbrella's serializers record
+  those types as added 2026-08-07, this RFC's own date.
+
+**Residue (open, `TODO.md` "RFC 0001 residue"):** uniform blocks (WebGPU's
+node pipeline already packs an all-`vec4` `NodeUniforms` block by necessity;
+WebGL has none; no measurement), reusable functions / named subgraphs
+(nothing), conditional variants (nothing for graphs), storage buffers
+(§82 compute infra exists; no graph node), source maps (nothing), lighting-
+aware graphs (still unlit; R-17's prerequisite exists), data-declared
+operators (the `SHADER_OPERATORS` hook exists), plus the missing pixel
+golden. Plan: `docs/plans/RFC-0001-RESIDUE_PLAN.md`.

@@ -22,7 +22,7 @@
 import { Vector3 } from "@fourjs/math";
 import { ParticleEmitter, ParticleRenderable } from "@fourjs/particles";
 import { PARTICLE_INSTANCE_FLOATS } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import { WebglRenderer, registerParticlePipeline } from "@fourjs/render-webgl";
 import {
   PARTICLE_MODEL_OFFSET,
   PARTICLE_UNIFORM_BYTES,
@@ -173,7 +173,9 @@ describe("WebGPU particles — the real @fourjs/particles node (§36, WP-R1.8)",
   });
 
   it("submits the same instanced draw and bytes as the WebGL backend", async () => {
-    // The GL half, over the identical deterministic scene.
+    // The GL half, over the identical deterministic scene. WebGL's particle
+    // pipeline is a registration seam since 2026-09-11.
+    registerParticlePipeline();
     const glScene = fountain();
     const recording = createRecordingGl();
     const glRenderer = new WebglRenderer();

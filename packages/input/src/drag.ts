@@ -245,6 +245,14 @@ export class DragManager {
   /**
    * Ends every drag and unsubscribes from every draggable node. Idempotent; the
    * manager is reusable afterwards (nothing about it is one-shot).
+   *
+   * **A deliberate exception to §83's "disposal is terminal"** (kept on the
+   * 2026-09-11 stability audit): there is no disposed flag and nothing is
+   * refused afterwards, because the manager owns no GPU or solver resource —
+   * only node subscriptions and pointer captures, both of which
+   * {@link DragManager.makeDraggable} re-establishes. `dispose` here means
+   * "release everything now", not "never again"; a manager that must not be
+   * reused is simply dropped.
    */
   dispose(): void {
     for (const pointerId of [...this.#drags.keys()]) {

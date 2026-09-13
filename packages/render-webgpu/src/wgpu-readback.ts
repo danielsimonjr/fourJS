@@ -43,6 +43,7 @@
  * this function performs anyway and costs no extra pass.
  */
 
+import { FourError } from "@fourjs/core";
 import type { Rectangle2 } from "@fourjs/math";
 
 import {
@@ -135,7 +136,19 @@ export async function readTexturePixels(
   device.queue.submit([encoder.finish()]);
 
   try {
-    await buffer.mapAsync(GPU_MAP_MODE.READ);
+    try {
+      await buffer.mapAsync(GPU_MAP_MODE.READ);
+    } catch (error) {
+      // A device lost (or a buffer destroyed) while the map is in flight
+      // rejects with the browser's own `DOMException`; the §61 contract is
+      // one `FourError` code for that condition, with the original as `cause`.
+      throw new FourError(
+        "DEVICE_LOST",
+        "readPixels: the device was lost (or the staging buffer destroyed) " +
+          "while the read-back map was in flight (§61).",
+        { cause: error },
+      );
+    }
     const mapped = new Uint8Array(buffer.getMappedRange());
     const rowBytes = readWidth * BYTES_PER_TEXEL;
     const packed = new Uint8Array(rowBytes * readHeight);

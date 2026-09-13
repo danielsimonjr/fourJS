@@ -29,7 +29,7 @@ import {
 } from "@fourjs/assets";
 import { StandardMaterial } from "@fourjs/materials";
 import { Mesh } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import { WebglRenderer, registerStandardPipeline } from "@fourjs/render-webgl";
 import {
   Bone,
   OrthographicCamera,
@@ -42,6 +42,12 @@ import { instantiateGltf } from "fourJS";
 import { describe, expect, it } from "vitest";
 
 import { RecordingCanvas, createRecordingGl } from "./helpers/recording-gl.js";
+
+// §59's standard surface is a registration seam on WebGL 2 since 2026-09-11
+// (owner decision; the skinning shape): one explicit call links the program,
+// and the renderer compiles it on the first `StandardMaterial` draw.
+// Registered for the file, as an application registers once at setup.
+registerStandardPipeline();
 
 /**
  * The fixture directory **as a URL** — see `tests/determinism/gltf-load.test.ts` for the

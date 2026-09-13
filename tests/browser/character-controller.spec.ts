@@ -23,7 +23,7 @@
  * `playwright.config.ts` serves the built example on {@link CHARACTER_URL}'s
  * port; the port is restated here for the reason every sibling spec gives — a
  * browser gate checks the built page from the outside. Run
- * `pnpm character:build` before `pnpm test:browser`, or the preview server has
+ * `bun run character:build` before `bun run test:browser`, or the preview server has
  * no `dist` to serve.
  *
  * ## What is measured, and against what
@@ -58,6 +58,8 @@
 import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+
+import { framesFor, waitForFrames } from "./helpers/wait.js";
 
 /** A decoded, unfiltered 8-bit image: `pixels` is `width * height` samples. */
 interface DecodedImage {
@@ -564,7 +566,7 @@ test.describe("§12: the character-controller family in the browser", () => {
     ).toBeGreaterThan(LIT_PIXEL_MINIMUM);
 
     // A loop that throws on its first frames does so after `running`.
-    await page.waitForTimeout(1000);
+    await waitForFrames(page, framesFor(1));
     expect(errors).toEqual([]);
   });
 
@@ -593,7 +595,7 @@ test.describe("§12: the character-controller family in the browser", () => {
         .locator("#status")
         .getAttribute("data-grounded");
       if (grounded === "false") wasAirborne = true;
-      await page.waitForTimeout(40);
+      await waitForFrames(page, framesFor(0.04));
     }
 
     expect(wasAirborne, "the character never left the ground").toBe(true);
@@ -738,7 +740,7 @@ test.describe("§12: the character-controller family in the browser", () => {
     const px0 = await readNumber(page, "px");
     const pz0 = await readNumber(page, "pz");
 
-    await page.waitForTimeout(1000);
+    await waitForFrames(page, framesFor(1));
 
     const npcX1 = await readNumber(page, "npcx");
     const npcZ1 = await readNumber(page, "npcz");

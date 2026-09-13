@@ -43,8 +43,8 @@
  * This spec drives the sixth `webServer` of `playwright.config.ts`:
  * `examples/ui-demo` built to `dist` and previewed on port 4178.
  * {@link UI_URL} restates the port for the reason every constant below is
- * restated rather than imported — see "Method notes". Run `pnpm ui-demo:build`
- * before `pnpm test:browser`, or the preview server has no `dist` to serve.
+ * restated rather than imported — see "Method notes". Run `bun run ui-demo:build`
+ * before `bun run test:browser`, or the preview server has no `dist` to serve.
  *
  * ## Method notes
  *
@@ -71,6 +71,8 @@
 import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+
+import { framesFor, waitForFrames } from "./helpers/wait.js";
 
 // --- PNG decoding (copied from example.spec.ts) -----------------------------
 
@@ -708,7 +710,7 @@ test.describe("examples/ui-demo (§73–§75): @fourjs/ui in a rendered scene", 
     // so no event is dispatched at all. The wait is an upper bound on event
     // delivery, not a performance floor.
     await clickWorld(page, rect, EMPTY_POINT_X, EMPTY_POINT_Y);
-    await page.waitForTimeout(SETTLE_SECONDS * 1000);
+    await waitForFrames(page, framesFor(SETTLE_SECONDS));
     const after = await readStatus(page);
     expect(
       after.clicks,

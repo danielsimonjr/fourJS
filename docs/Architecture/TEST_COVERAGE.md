@@ -203,11 +203,11 @@ full recompute. Nothing in CI asserts on these timings.
 All numbers in this document were produced on 2026-08-05 by:
 
 ```sh
-pnpm run coverage            # per-package unit tests + v8 coverage, ≥95% gate
+bun run coverage            # per-package unit tests + v8 coverage, ≥95% gate
 bun tools/run-in-packages.mjs --sequential \
   exec vitest run --coverage --config ../../vitest.coverage.config.ts
                              # same gate, serialized, for unambiguous row→package mapping
-pnpm run test:suites         # tests/{integration,determinism}: 174 passed (15 files)
+bun run test:suites         # tests/{integration,determinism}: 174 passed (15 files)
 npx playwright test --list   # browser+visual inventory: 38 tests in 10 files
 ```
 

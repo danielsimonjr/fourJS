@@ -1,6 +1,6 @@
 # RFC NNNN: <title>
 
-- **Status:** draft | accepted | rejected | superseded by NNNN
+- **Status:** draft | proposed (awaiting the owner) | accepted | rejected | superseded by NNNN
 - **Date:** YYYY-MM-DD
 - **Owner decision:** pending | accepted YYYY-MM-DD | rejected YYYY-MM-DD
 - **Spec sections affected:** §…

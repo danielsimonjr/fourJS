@@ -546,3 +546,16 @@ describe("encodeSceneDocument / decodeSceneDocument", () => {
     expect(() => decodeSceneDocument("{")).toThrow(SyntaxError);
   });
 });
+
+describe("string field ceiling (§96, 2026-09-11)", () => {
+  it("refuses a node id over 4096 characters", () => {
+    expect(() =>
+      decodeSceneDocument(
+        JSON.stringify({
+          formatVersion: SCENE_FORMAT_VERSION,
+          nodes: [{ id: "n".repeat(4097), type: "group" }],
+        }),
+      ),
+    ).toThrow(/over the 4096-character limit/);
+  });
+});

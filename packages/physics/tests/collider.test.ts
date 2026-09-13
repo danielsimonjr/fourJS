@@ -401,3 +401,28 @@ describe("Collider as a §6a component", () => {
     expect(collider.listenerCount("triggerenter")).toBe(0);
   });
 });
+
+describe("Collider disposal (§83 stability audit, 2026-09-11)", () => {
+  it("disposes idempotently and refuses registration afterwards", () => {
+    const collider = sphereCollider();
+    collider.on("triggerenter", vi.fn());
+    expect(collider.disposed).toBe(false);
+
+    collider.dispose();
+    expect(collider.disposed).toBe(true);
+    expect(collider.listenerCount("triggerenter")).toBe(0);
+    // A second dispose is a no-op (§83: idempotent), not an error.
+    expect(() => collider.dispose()).not.toThrow();
+    expect(collider.disposed).toBe(true);
+
+    // Disposal is terminal (§83): the world's registration gate — validateFor
+    // then toDescriptor, in `addBody` / `addCollider` — refuses with §89's
+    // INVALID_APPLICATION_STATE.
+    expect(
+      expectValidationError(() => collider.validateFor("3d")).message,
+    ).toMatch(/Collider is disposed.*§83/s);
+    expectValidationError(() => collider.toDescriptor(makeBodyHandle("b")));
+    // Plain reads stay answerable for teardown code.
+    expect(collider.shape).toEqual({ type: "sphere", radius: 0.5 });
+  });
+});

@@ -197,6 +197,193 @@ hardware and release work. Coverage thresholds and the normative 150 kB budget r
   the §58 paint tier leave the deferred list. Spec revision **1.15**
   matches that §60 honesty.
 
+## Unreleased — "fix all" follow-through (2026-09-11)
+
+### Changed
+
+- **WebGL: `registerStandardPipeline()`** joins the seams — init compiles
+  three programs (unlit, sprite, lit); an unregistered `StandardMaterial` draw
+  is skipped with one dev warning. Bundles: first-3d-scene 40.2 kB (limit
+  41), particles-demo 42.2 kB (limit 43), ui-demo 47.1 kB (limit 48),
+  first-2d-scene 55.0 kB. **Behavioural change:** `StandardMaterial` on
+  WebGL 2 needs the registrar, like skinning and picking.
+- **WebGL CPU mirrors.** Colour / tint uploads keep a last-value mirror (as
+  doubles — a `Float32Array` mirror rounded `0.2` and never matched) and
+  unit-0 map binds keep a per-frame last-bound mirror. Counting-GL seam,
+  10 000 sprites on one atlas: `uniform4fv` 10 000 → 1, `bindTexture`
+  10 001 → 2, all GL calls 50 015 → 30 017 per frame; 5 000 rectangles:
+  20 007 → 15 008. GL-sequence goldens re-recorded with the reason in each
+  comment; no assertion loosened; 38/38 WebGL browser gates green.
+- **WebGL: shadow, effect and particle pipelines are register seams.**
+  `registerShadowPipeline()`, `registerEffectPipeline()`,
+  `registerParticlePipeline()` from `@fourjs/render-webgl` (the
+  `registerSkinningPipeline()` shape: a registry module the renderer imports,
+  a heavy module linked only by the call). Init compiles four programs
+  instead of eight; unregistered features skip with one dev warning naming
+  the registrar; context loss drops and lazily re-acquires them. Bundles:
+  first-2d-scene 58.1 → 56.2 kB, first-3d-scene 43.4 → 41.5 kB (limit
+  42 kB), ui-demo 50.3 → 48.2 kB (limit 49 kB). Examples, fixtures, suites
+  and guides register what they use; `COMPATIBILITY.md` §2 rows updated;
+  28/28 WebGL browser gates green. **Behavioural change:** an application
+  drawing particles, shadows or fixed effects on WebGL 2 must call the
+  matching registrar (as it already must for skinning and picking).
+- **Browser gates no longer sleep.** All 77 `page.waitForTimeout` calls across
+  14 specs are replaced by condition waits from a shared
+  `tests/browser/helpers/wait.ts`: a rAF frame counter, the page's published
+  simulation clock (`data-sim`) where the sleep meant "let the simulation
+  advance", and probe predicates. Assertions unchanged; `context-loss` needs
+  no wall-clock gap (its events were already polled). Three runs of the 14
+  specs: 13 green every time; `playground › each sensor zone repaints` failed
+  twice under load on HEAD's own content (a ~0.36 s screenshot race that
+  predates this change); its emptiness proof is now gated on the page's own
+  `data-zone*` occupancy read before and after the grab (4/4 green).
+- **WebGPU per-draw allocations removed.** Thirteen `[offset]` dynamic-offset
+  arrays per draw path go through one reused array (the fake-device harness
+  already copies retained arguments at record time, so transcripts are
+  byte-identical). Pipeline resolution memoises against the previous draw's
+  derived key scalars (`wgpu-pipeline-memo.ts`; the six §57 render-state
+  fields deliberately do not bump `material.version`, so a version-keyed
+  memo would have been wrong): 406 → 36 ns/draw without stencil, 839 → 42
+  with, on 100k same-material draws; keys, labels, draw order and the
+  string-keyed cache unchanged (§33). The batch content-hash change (B4)
+  was measured (~20 % upper bound on the batching pass) and **declined**: a
+  version-only stamp cannot see the in-place matrix write the idle-skip
+  contract pins, and interpolated matrices change every frame anyway.
+- **Dispose discipline (§83).** Eleven classes gain a `disposed` getter, an
+  idempotent `dispose()`, and `INVALID_APPLICATION_STATE` on their primary
+  mutating entry points after dispose: `AnimationSystem`, `KinematicSystem`,
+  `ConstraintSystem`, `MotionSystem`, `ParticleSystem`,
+  `SweptCharacterSystem` (`track` / `fixedUpdate`); `RigidBody` (`validateFor`
+  and the §26/§32 commands), `Collider` (`validateFor` / `toDescriptor`),
+  every shipped `Joint` (`describeBase`, so `world.addJoint` refuses);
+  `WgpuBatching` (`beginFrame` / `draw`), `WgpuGpuTimer` (`arm` /
+  `beginPass`). Live behaviour unchanged; one test per class. Documented
+  exceptions: `DragManager` reuses after dispose on purpose (now stated on
+  `dispose()`); `createSnapshotSystem` is a stateless factory whose resource
+  is the `PoseBuffer`.
+- **Scheduler:** a fixed step that throws now rolls `simulationStep` and
+  `simulationTime` back beside the accumulator it leaves holding, so the
+  re-run next frame is the same step (they ran one ahead for the rest of the
+  session before).
+- **`EventEmitter.emit` allocates nothing:** the dispatch loop captures the
+  listener count instead of copying the array, `off()` during a dispatch
+  defers its splice, and the list is compacted once the dispatch ends. Rule 3
+  semantics unchanged (tests added); physics emitted every contact on two
+  bodies through the old copy.
+- **Asset loaders receive the request's abort signal** (`AssetLoader.load`'s
+  optional third `AssetLoadContext`); the glTF loader forwards it to its
+  sub-resource fetches, so cancelling a glTF load cancels its `.bin` and
+  image requests too (RFC 0004 §6's A-18 half, the transport part).
+- **Asset manifests refuse other origins by default** (`scheme:` and
+  `//host` URLs); same-origin shapes always pass; `parseAssetManifest(…,
+  { allowCrossOriginUrls: true })` opts in — the glTF `allowAbsoluteUris`
+  model.
+- **`TODO.md` holds open work only.** Every closed row (263) moved to
+  `docs/archive/TODO-DONE.md` under its original heading; the tracker went from
+  ~2,400 to ~500 lines. `CLAUDE.md` states the rule (close → move in the same
+  commit). `MEMORY.md` is unchanged: it is an append-only record by its own
+  convention and `check-docs` enforces that, so it is not split.
+- **DOM-free is now a compiler guarantee.** `tsconfig.base.json` pins
+  `lib: ["ES2022"]` + `types: ["node"]`; every package builds. The one host
+  global a package needed, `WebAssembly` in `physics-rapier`'s support probe,
+  is read through `globalThis` without a type. Browser specs (`tests/`) and
+  examples keep an explicit DOM lib because they run in a page.
+- **Physics: `PhysicsSolverAdapter.setEventInterest?()`** (additive, optional).
+  `PhysicsWorld` tells the adapter, only when it changes, whether any body
+  listens for `collisionstay`; the Rapier adapters then skip synthesising a
+  stay event per touching pair per step. Proven checksum-neutral: the four
+  piled-scenario §33 fingerprints are identical with and without the gate.
+  `benchmarks/results/physics-step.json` re-recorded (the previous record
+  predated Rapier 0.20; its piled checksums were stale). Timing on this host
+  was noisy (two builds ran concurrently), so the record notes that the
+  events/step column, not the milliseconds, is the evidence.
+- **WebGPU picking uses `DEVICE_LOST`**, the backend's one loss code, instead
+  of `CONTEXT_LOST`; tests updated.
+- **RFC template and README** gain the `proposed` status and the rule that
+  accepted decision text is never rewritten (corrections are appended).
+- **CI:** `bun audit --audit-level=critical` now gates; the high-and-above run
+  stays visibility-only. New `typecheck:benchmarks` step: `pick-latency.mjs`'s
+  host double is typed against `PickingRendererHost`, so a member the service
+  starts reading fails typecheck instead of the run (the exact failure of
+  2026-09-10). `harness.mjs`/`runTimed` carry the JSDoc the checker needs.
+
+## Unreleased — security, stability and performance pass (2026-09-11)
+
+Three read-only audits (security against §96, stability of lifecycle/error
+paths, per-frame hot paths) over the whole tree; the mechanical findings are
+applied here with tests, the ones needing a measurement or a decision are
+recorded in `TODO.md` ("2026-09-11 audit follow-ups").
+
+### Security (§96)
+
+- **glTF subresource URIs are relative-only by default.** A document naming an
+  absolute, protocol-relative, root-relative or scheme-carrying `.bin` / image
+  URI is refused (`ASSET_LOAD_FAILED`, message names the option); a trusted CDN
+  layout opts in with `createGltfLoader({ allowAbsoluteUris: true })`.
+- **`cloneJsonValue` has a 1024-level depth ceiling** (`UNTRUSTED_INPUT_REJECTED`),
+  the same figure `parseUntrustedJson` enforces, so the documented
+  `migrateSceneDocument(JSON.parse(text), …)` path can no longer be driven into
+  stack exhaustion by a deep document.
+- **Asset manifests are rebuilt into a prototype-free record**; a content key
+  such as `constructor` is an ordinary entry.
+- **Rapier snapshot envelopes** check the declared meta + solver lengths against
+  the buffer and shape-check the meta JSON (`UNTRUSTED_INPUT_REJECTED`) instead
+  of letting a `SyntaxError` / `TypeError` escape the restore (2D and 3D).
+- **Scene documents:** string fields are capped at 4096 characters; an engine-
+  shaped node id at or above 2^52 is kept but no longer reserves the counter
+  beside its saturation point.
+- **Physics shapes:** convex hulls and triangle meshes refuse more than
+  `MAXIMUM_SHAPE_POINTS` (2^20) points.
+
+### Stability
+
+- **WebGPU GPU timer:** a `mapAsync` still in flight across device loss or
+  `dispose()` no longer surfaces as an unhandled rejection and no longer leaves
+  its slot `busy` forever.
+- **WebGPU `readPixels`:** a map that rejects mid-flight (device lost, buffer
+  destroyed) now rejects with `FourError` `DEVICE_LOST` carrying the original
+  as `cause`, matching the §61 contract.
+- **`PhysicsWorld.removeBody`** after `dispose()` throws
+  `INVALID_APPLICATION_STATE` like its siblings instead of returning `false`.
+- **WebGPU loss handler** also nulls the frame bind group / layout / uniform
+  buffer / depth texture handles.
+
+### Performance
+
+- **Render list:** the default §66 sort now runs only when an item sorts before
+  the one generated ahead of it. A heterogeneous scene already in order (opaque
+  then transparent, ascending `renderOrder`) skips the per-frame O(n log n)
+  pass; output is byte-identical (stable sort fixed point). Regression test added.
+- **WebGPU skinning:** `packPalette` copies the palette with `set`/`fill`
+  instead of a 768-iteration scalar loop.
+- **Physics:** the per-step joint-breakage monitor snapshots into world-owned
+  scratch instead of spreading the registry into a fresh array.
+
+## Unreleased — sync after #91/#92 and gate repair (2026-09-11)
+
+### Fixed
+
+- **Size gate red after #92.** `HemisphereLight` grew every example bundle by
+  ~0.5 kB gzip (lit/standard/skinned-lit programs compile at init, so the GLSL
+  chunk and its uniform class ride light-free bundles too). The two GLSL
+  helpers collapse into one `hemisphereAmbient` and the uploader is compacted
+  (−20–30 B); the three over-budget limits rise with the A/B recorded in
+  `tools/size-budgets.mjs` (first-3d 44 kB, particles-demo 44.5 kB, ui-demo
+  51 kB). first-2d-scene stays at 58 kB against §86's 150 kB.
+- **Lint red after #92.** Two unnecessary `as number` assertions in
+  `webgpu-renderer.test.ts` removed (`typeof` already narrows).
+- **`benchmarks/pick-latency.mjs` runs again.** Its host double lacked the
+  `particleBatches()` member the WebGL picking service has asked for since #86;
+  the record is re-recorded and its caveat no longer says WebGPU has no
+  `PickingService`.
+- **Spec revision collision.** #91 and the RFC-audit branch both minted 1.15;
+  the audit's row is now **1.16 (2026-09-11)** (§71 RFC 0005 shipped form,
+  §91 Oxlint), placed after #91's 1.15 in the table.
+- **RFC 0003 / 0005 corrections and plans reconciled with #91/#92:** the
+  WebGPU skinned id pass and skinned shadow caster are recorded as landed;
+  `RFC-0005-RESIDUE_PLAN.md` is marked superseded; `RFC-0003-RESIDUE_PLAN.md`
+  drops its WP-SK.1 slot.
+
 ## Unreleased — RFC 0007–0009 review pass (2026-09-10)
 
 ### Changed
@@ -218,8 +405,33 @@ hardware and release work. Coverage thresholds and the normative 150 kB budget r
   feedback check mechanism (`CanvasTexture.readbackTarget` → `collectSampledTargets`)
   is spelled; RFC 0005's pick-latency numbers cited as landed.
 
+- **Accepted RFCs 0001–0006 audited against the tree.** Each gains a dated
+  *Post-acceptance corrections* section (decision text untouched) recording
+  every statement the tree now contradicts, and the open residue with its plan.
+- **`tests/integration/raster-display-only.test.ts`** — the umbrella allowlist
+  entry was `"four"`, matching no directory; now `"fourjs"` (behaviour unchanged;
+  the umbrella never names the raster types).
+- **`docs/COMPATIBILITY.md` §5** — no longer claims five §81 points lack tokens
+  (all eleven exist since 2026-09-06) or that the umbrella declares them.
+- **RFC 0009** — no longer calls RFC 0005 "closed" without qualification (its last residue closed in #91 the same day).
+
+- **Record hygiene applied.** Spec revision 1.16 (§71 gains RFC 0005's shipped
+  form, which never had a row; §91 ESLint → Oxlint; 1.15 was taken by #91's §60 pass); `pnpm` command leftovers
+  replaced by `bun run` across READMEs, benchmark scripts, test and example
+  comments (dated audit/gap-analysis documents left as written); COMPATIBILITY §1
+  now says `bun@1.4.2`; stale comments fixed in `renderer.ts` (WebGPU skinned
+  status; the picking service does not read through `readPixels`), `raster.ts`
+  ("no lib.dom" → seam rule), `core/src/index.ts` (token homes); MEMORY's Bun
+  floor and WebGPU-skinning lines; `pick-latency` caveat text.
+- **Found:** `benchmarks/pick-latency.mjs` fails at HEAD against the current
+  `dist` (`host.particleBatches is not a function`); tracked in TODO.
+
 ### Added
 
+- `docs/plans/RFC-0001-RESIDUE_PLAN.md`, `RFC-0003-RESIDUE_PLAN.md`,
+  `RFC-0004-RESIDUE_PLAN.md`, `RFC-0005-RESIDUE_PLAN.md` — residue plans for the
+  accepted RFCs in the same ≤ 4-agent format, each with a scope table naming what
+  is gated on a decision rather than a packet.
 - `docs/plans/RFC-0007-PATH-PLANNING_PLAN.md`, `RFC-0008-TEXT-SHAPING_PLAN.md`,
   `RFC-0009-GPU-READBACK_PLAN.md` — subagent-driven plans (≤ 4 haiku-class agents,
   disjoint file ownership, waves, per-plan anti-hallucination sheets with file:line

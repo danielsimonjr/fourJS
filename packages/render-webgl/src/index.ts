@@ -16,18 +16,44 @@ export const PACKAGE_NAME = "@fourjs/render-webgl";
 
 export type { BatchGlContext, RenderBatching } from "./gl-batch.js";
 export { GlBatching, createGlBatching } from "./gl-batch.js";
+export type {
+  EffectPipeline,
+  EffectPipelineFactory,
+} from "./gl-effect-registry.js";
 export {
   EFFECT_TEXTURE_UNIT,
   EFFECT_VERTEX_COUNT,
-  EffectProgram,
-} from "./gl-effect.js";
+  clearRegisteredEffectPipeline,
+  resolveEffectPipelineFactory,
+} from "./gl-effect-registry.js";
+// §70's fixed-effect pipeline (R-6; behind a seam since 2026-09-11).
+// Deliberately — like every registered pipeline below — a module
+// `WebglRenderer` never reaches statically: importing `registerEffectPipeline`
+// is what links the full-screen program into a bundle, and a barrel re-export
+// does not (it tree-shakes like every other unused export) — see
+// `gl-effect-registry.ts` for the whole seam.
+export { EffectProgram, registerEffectPipeline } from "./gl-effect.js";
 export type { CacheableGeometry, GeometryRecord } from "./gl-geometry.js";
 export { GeometryCache } from "./gl-geometry.js";
+export type {
+  ParticleAppearancePipeline,
+  ParticleBillboardPipeline,
+  ParticlePipelineFactory,
+  ParticlePrograms,
+} from "./gl-particles-registry.js";
+export {
+  clearRegisteredParticlePipeline,
+  particleItemFloats,
+  resolveParticlePipelineFactory,
+} from "./gl-particles-registry.js";
 export type {
   ParticleBatchRecord,
   ParticleGlContext,
   ParticleTrailBatchRecord,
 } from "./gl-particles.js";
+// §36's particle pipeline (plan P9-3; behind a seam since 2026-09-11):
+// importing `registerParticlePipeline` is what links the three programs and
+// the two batch caches — see `gl-particles-registry.ts`.
 export {
   PARTICLE_ATTRIBUTE_LOCATIONS,
   PARTICLE_DEPTH_TEXTURE_UNIT,
@@ -38,7 +64,7 @@ export {
   ParticleProgram,
   ParticleTrailBatchCache,
   ParticleTrailProgram,
-  particleItemFloats,
+  registerParticlePipeline,
 } from "./gl-particles.js";
 export type {
   GlBuffer,
@@ -151,8 +177,29 @@ export {
   emitShaderGraphGlsl,
   registerNodeMaterialPipeline,
 } from "./gl-node-program.js";
-export { ShadowProgram } from "./gl-shadow.js";
-export { StandardProgram } from "./gl-standard.js";
+export type {
+  ShadowCasterPipeline,
+  ShadowPipelineFactory,
+} from "./gl-shadow-registry.js";
+export {
+  clearRegisteredShadowPipeline,
+  resolveShadowPipelineFactory,
+} from "./gl-shadow-registry.js";
+// §69's depth-only caster (R-18; behind a seam since 2026-09-11): importing
+// `registerShadowPipeline` is what links it — see `gl-shadow-registry.ts`.
+export { ShadowProgram, registerShadowPipeline } from "./gl-shadow.js";
+export type {
+  StandardPipeline,
+  StandardPipelineFactory,
+} from "./gl-standard-registry.js";
+export {
+  clearRegisteredStandardPipeline,
+  resolveStandardPipelineFactory,
+} from "./gl-standard-registry.js";
+// §59's metallic-roughness pipeline (R-13; behind a seam since 2026-09-11 by
+// owner decision): importing `registerStandardPipeline` is what links it —
+// see `gl-standard-registry.ts`.
+export { StandardProgram, registerStandardPipeline } from "./gl-standard.js";
 export type { CacheableTexture, TextureRecord } from "./gl-texture.js";
 export { TextureCache } from "./gl-texture.js";
 export { isWebgl2Supported, registerWebglRenderer } from "./register.js";

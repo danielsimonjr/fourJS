@@ -89,6 +89,8 @@ import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { framesFor, waitForFrames } from "./helpers/wait.js";
+
 // --- PNG decoding (copied from example.spec.ts) -----------------------------
 
 /** A decoded, unfiltered 8-bit image: `pixels` is `width * height` samples. */
@@ -856,7 +858,7 @@ test.describe("§106a: pointer events, picking, dragging and labels in the brows
     // The centre of the box is inside its silhouette whatever its rotation, so
     // this pixel is the box for the picker as well as for a human.
     await clickWorld(page, rect, BOX_HOME_X, BOX_HOME_Y);
-    await page.waitForTimeout(SETTLE_SECONDS * 1000);
+    await waitForFrames(page, framesFor(SETTLE_SECONDS));
 
     const after = requireShape(await grab(canvas), isBoxPixel, "box");
     const afterIndex = nearestPaletteIndex(BOX_PALETTE, after.color);
@@ -902,7 +904,7 @@ test.describe("§106a: pointer events, picking, dragging and labels in the brows
     const orbiterBefore = requireShape(first, isOrbiterPixel, "orbiter");
 
     await clickWorld(page, rect, EMPTY_POINT_X, EMPTY_POINT_Y);
-    await page.waitForTimeout(SETTLE_SECONDS * 1000);
+    await waitForFrames(page, framesFor(SETTLE_SECONDS));
 
     const second = await grab(canvas);
     const boxAfter = requireShape(second, isBoxPixel, "box");
@@ -982,10 +984,10 @@ test.describe("§106a: pointer events, picking, dragging and labels in the brows
           BOX_HOME_Y + (DRAG_TARGET_Y - BOX_HOME_Y) * fraction,
         ),
       );
-      await page.waitForTimeout(DRAG_STEP_SECONDS * 1000);
+      await waitForFrames(page, framesFor(DRAG_STEP_SECONDS));
     }
     await page.mouse.up();
-    await page.waitForTimeout(SETTLE_SECONDS * 1000);
+    await waitForFrames(page, framesFor(SETTLE_SECONDS));
 
     const dropped = requireShape(await grab(canvas), isBoxPixel, "box");
     const error = Math.hypot(
@@ -1017,7 +1019,7 @@ test.describe("§106a: pointer events, picking, dragging and labels in the brows
     // §42 handover, second half: the drag gave the transform back to the
     // motion system, so the box must be turning again.
     const firstFrame = await grab(canvas);
-    await page.waitForTimeout(TUMBLE_GAP_SECONDS * 1000);
+    await waitForFrames(page, framesFor(TUMBLE_GAP_SECONDS));
     const secondFrame = await grab(canvas);
     const changed = changedPixelsIn(firstFrame, secondFrame, boxRegion);
     console.log(
@@ -1035,7 +1037,7 @@ test.describe("§106a: pointer events, picking, dragging and labels in the brows
       worldToClientX(rect, EMPTY_POINT_X),
       worldToClientY(rect, EMPTY_POINT_Y),
     );
-    await page.waitForTimeout(SETTLE_SECONDS * 1000);
+    await waitForFrames(page, framesFor(SETTLE_SECONDS));
     const afterRelease = requireShape(await grab(canvas), isBoxPixel, "box");
     expect(
       Math.hypot(afterRelease.x - dropped.x, afterRelease.y - dropped.y),
@@ -1130,13 +1132,13 @@ test.describe("§106a: pointer events, picking, dragging and labels in the brows
           BOX_HOME_Y + (DRAG_TARGET_Y - BOX_HOME_Y) * fraction,
         ),
       );
-      await page.waitForTimeout(DRAG_STEP_SECONDS * 1000);
+      await waitForFrames(page, framesFor(DRAG_STEP_SECONDS));
     }
     await page.mouse.up();
 
     // A drag that leaves the box under the wrong authority makes the *next*
     // fixed step warn or throw, so keep stepping after the gesture ends.
-    await page.waitForTimeout(SETTLE_SECONDS * 1000);
+    await waitForFrames(page, framesFor(SETTLE_SECONDS));
     const frame = await grab(canvas);
     expect(
       distinctColors(frame),

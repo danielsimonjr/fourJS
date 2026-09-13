@@ -1,16 +1,27 @@
 # Unused Files and Exports Analysis
 
+<<<<<<< HEAD
 **Generated**: 2026-09-13
+=======
+**Generated**: 2026-09-11
+>>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
 
 ## Summary
 
 - **Potentially unused files**: 0
 - **Dormant files** (runtime code on disk, unreachable from any entry/build root): 4
   - **Orphaned (reachable from nothing — delete/wire candidates)**: 0
+<<<<<<< HEAD
   - **Test-only (exercised by a test, ships nothing)**: 4
 - **Potentially unused exports**: 5
   - **Unreferenced anywhere (deletion candidates)**: 0
   - **Referenced in-module (type contracts / helpers backing live exports)**: 5
+=======
+  - **Test-only (exercised by a test, ships nothing)**: 1
+- **Potentially unused exports**: 6
+  - **Unreferenced anywhere (deletion candidates)**: 0
+  - **Referenced in-module (type contracts / helpers backing live exports)**: 6
+>>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
 
 ## Dormant Files — Orphaned (delete/wire candidates)
 
@@ -57,17 +68,22 @@ Not imported cross-file, but referenced within their own module — they type or
 support exports that ARE used, so they cannot be deleted in isolation. Mostly
 interfaces typing live guards and per-package API completeness, not rot.
 
-### `packages/fourjs/src/scene-serializers.ts`
+### `packages/geometry/src/path-boolean.ts`
 
-- `CANVAS_VIEW_NODE_TYPE` (constant) — 3 in-file refs
+- `ringsContain` (function) — 2 in-file refs
 
 ### `packages/geometry/src/geometry.ts`
 
 - `nextGeometryIdentifier` (function) — 1 in-file ref
 
-### `packages/geometry/src/path-boolean.ts`
+### `packages/render-webgpu/src/wgpu-pipeline-memo.ts`
 
-- `ringsContain` (function) — 2 in-file refs
+- `WgpuPipelineRequest` (interface) — 1 in-file ref
+- `MutableWgpuPipelineRequest` (interface) — 1 in-file ref
+
+### `packages/fourjs/src/scene-serializers.ts`
+
+- `CANVAS_VIEW_NODE_TYPE` (constant) — 3 in-file refs
 
 ### `packages/geometry/src/svg-document.ts`
 

@@ -79,3 +79,24 @@ Landing criterion: `bun install --frozen-lockfile`, `bun run build`,
 `bun run test` (or a representative package subset), `bun run lint`, and
 `bun run check-spec` succeed on the migration branch. Full CI job set in
 `.github/workflows/ci.yml` must be green before merge.
+
+## Post-acceptance corrections (2026-09-10 review pass)
+
+Verified against the tree 2026-09-10 (accepted and applied 2026-09-05):
+
+- **"Playwright, ESLint, Prettier, TypeDoc, Vite, Changesets, and size-limit
+  stay".** ESLint and typescript-eslint were removed with the TypeScript 7
+  move; linting is **Oxlint** (`"lint": "bunx oxlint --type-aware"`). Spec
+  revision 1.14's row and §91 still say ESLint — an amendment-note item.
+- **`"workspaces": ["packages/*"]` "(same membership as before)".** Now
+  `["packages/*", "tools/docs"]` — TypeDoc is isolated in `tools/docs`.
+- **"contributors need Bun ≥ 1.2".** `engines.bun` is `>=1.4.2`,
+  `packageManager` `bun@1.4.2`, CI pins 1.4.2.
+- **"docs and agent orientation must stop saying `pnpm`".** Unfulfilled in
+  `benchmarks/README.md`, `benchmarks/harness.mjs`, `docs/COMPATIBILITY.md`
+  (§1 still claims `packageManager` pins `pnpm@10.33.0`),
+  `docs/Architecture/TEST_COVERAGE.md`, and four example READMEs. Tracked in
+  `TODO.md`.
+- Consistent: `bun install --frozen-lockfile`, `bun.lock` + `bunfig.toml`,
+  `tsc -b` retained, no `pnpm-workspace.yaml`/`pnpm-lock.yaml`, CI on
+  `oven-sh/setup-bun@v2`.

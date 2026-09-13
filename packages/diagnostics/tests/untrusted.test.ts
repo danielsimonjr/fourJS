@@ -85,12 +85,17 @@ describe("decodeReplayRecording treats its text as untrusted (§96)", () => {
 
   it("refuses the payload cloneJsonValue's recursion would die on", () => {
     const text = hostileMetadataText(50_000);
-    // The parser copes; the recursive copy in `validateReplayRecording` does
-    // not — which is the whole point of checking depth before validating.
+    // The parser copes. Until 2026-09-11 the recursive copy in
+    // `validateReplayRecording` died with a `RangeError` (stack exhaustion);
+    // `cloneJsonValue` now carries its own 1024-level ceiling (§96), so the
+    // unguarded path refuses by name too — and `decodeReplayRecording` still
+    // refuses *before* any recursion, which is the point of this file.
     expect(() => {
       JSON.parse(text);
     }).not.toThrow();
-    expect(() => validateReplayRecording(JSON.parse(text))).toThrow(RangeError);
+    expect(() => validateReplayRecording(JSON.parse(text))).toThrow(
+      expect.objectContaining({ code: "UNTRUSTED_INPUT_REJECTED" }) as Error,
+    );
     try {
       decodeReplayRecording(text);
       expect.unreachable("should have refused");

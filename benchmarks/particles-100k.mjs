@@ -2,7 +2,7 @@
  * §112's 100 000-particle CPU budget, measured (plan §6h, WP-9.4).
  *
  * ```sh
- * pnpm run build           # this script imports the built dist, not src
+ * bun run build           # this script imports the built dist, not src
  * node benchmarks/particles-100k.mjs
  * ```
  *

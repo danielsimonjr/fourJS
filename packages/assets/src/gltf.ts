@@ -120,6 +120,7 @@ import {
 import {
   DEFAULT_MAXIMUM_BYTES,
   resolveGlobalFetch,
+  type AssetLoadContext,
   type AssetLoader,
   type FetchLike,
   type FetchResponse,
@@ -345,7 +346,7 @@ export interface GltfLoaderOptions {
    * naming an external URI is refused loudly at the reference — a model with
    * a missing buffer is not a model with fewer vertices.
    */
-  readonly fetch?: FetchLike;
+  readonly fetch?: FetchLike<unknown>;
   /**
    * The image decoder for base-colour textures — {@link createTextureLoader}'s
    * own seam, injected for its reason (this package names no `Blob`, no
@@ -366,6 +367,16 @@ export interface GltfLoaderOptions {
    * `AssetManager` that fetched it.
    */
   readonly maximumBytes?: number;
+
+  /**
+   * Whether a document may name an **absolute** or root-relative subresource
+   * URI (`https://…`, `//host/…`, `/path`, any `scheme:`). Defaults to
+   * `false`: a glTF is untrusted content (§96), and a document that can pick
+   * the origin its `.bin` comes from can direct the injected transport
+   * anywhere. Relative URIs resolve lexically against the asset's own URL and
+   * cannot climb above its root. Set `true` for a trusted CDN layout.
+   */
+  readonly allowAbsoluteUris?: boolean;
   /** §96 decoded-texture bound, forwarded to {@link createTextureLoader}. */
   readonly maximumDecodedBytes?: number;
   /** §96 expansion-ratio bound, forwarded to {@link createTextureLoader}. */
@@ -730,8 +741,13 @@ function decodeBase64(
  * segments normalized, because this package names no `URL` global and a §33
  * loader should resolve identically everywhere.
  */
+/** Scheme-carrying, protocol-relative, or root-relative — anything not relative to the asset. */
+function isAbsoluteUri(uri: string): boolean {
+  return /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(uri) || uri.startsWith("/");
+}
+
 function resolveUri(baseUrl: string, uri: string): string {
-  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(uri) || uri.startsWith("/")) {
+  if (isAbsoluteUri(uri)) {
     return uri;
   }
   const slash = baseUrl.lastIndexOf("/");
@@ -1213,7 +1229,11 @@ export function createGltfLoader(
 
   return {
     name,
-    async load(response: FetchResponse, url: string): Promise<GltfAsset> {
+    async load(
+      response: FetchResponse,
+      url: string,
+      context?: AssetLoadContext,
+    ): Promise<GltfAsset> {
       const body = new Uint8Array(await response.arrayBuffer());
       return parseGltf(body, url, {
         // Default to the platform transport, exactly as `AssetManager` does
@@ -1222,7 +1242,7 @@ export function createGltfLoader(
         // a first attempt, found by building a consumer app on 2026-09-07.
         // Resolved per load rather than at construction so a stubbed or
         // late-installed global is still seen.
-        fetch: options.fetch ?? resolveGlobalFetch<never>(),
+        fetch: options.fetch ?? resolveGlobalFetch<unknown>(),
         decodeTexture: options.decodeTexture,
         probeTexture: options.probeTexture,
         maximumBytes,
@@ -1231,6 +1251,8 @@ export function createGltfLoader(
         maximumWorkingBytes: options.maximumWorkingBytes,
         decodeText,
         name,
+        allowAbsoluteUris: options.allowAbsoluteUris ?? false,
+        signal: context?.signal,
       });
     },
   };
@@ -1238,7 +1260,7 @@ export function createGltfLoader(
 
 /** The resolved options {@link parseGltf} runs with. */
 interface ResolvedOptions {
-  readonly fetch: FetchLike | undefined;
+  readonly fetch: FetchLike<unknown> | undefined;
   readonly decodeTexture: TexelDecodeLike | undefined;
   readonly probeTexture: TexelProbeLike | undefined;
   readonly maximumBytes: number;
@@ -1247,6 +1269,9 @@ interface ResolvedOptions {
   readonly maximumWorkingBytes: number | undefined;
   readonly decodeText: TextDecodeLike | undefined;
   readonly name: string;
+  readonly allowAbsoluteUris: boolean;
+  /** The erased abort signal of the parent request, forwarded to sub-resource fetches. */
+  readonly signal: unknown;
 }
 
 /** Fetches one external subresource through the injected transport (§96). */
@@ -1266,10 +1291,23 @@ async function fetchSubresource(
       { uri },
     );
   }
+  if (!options.allowAbsoluteUris && isAbsoluteUri(uri)) {
+    refuse(
+      baseUrl,
+      where,
+      `the document names ${kind} "${uri}" by an absolute or root-relative ` +
+        `URI; only URIs relative to the asset are fetched unless the loader ` +
+        `was built with { allowAbsoluteUris: true } (§96).`,
+      { uri, limitName: "allowAbsoluteUris" },
+    );
+  }
   const resolved = resolveUri(baseUrl, uri);
   let response: FetchResponse;
   try {
-    response = await options.fetch(resolved);
+    response = await options.fetch(
+      resolved,
+      options.signal === undefined ? undefined : { signal: options.signal },
+    );
   } catch (error) {
     refuseFetch(baseUrl, where, resolved, error);
   }

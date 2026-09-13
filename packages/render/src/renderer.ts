@@ -807,8 +807,9 @@ export interface Renderer extends Disposable {
    * - **A target never rendered into reads back its zero-filled allocation**
    *   — transparent black, the same defined answer sampling one gives.
    *
-   * §92's visual regression tier is the first consumer; RFC 0005 names the
-   * region form as the pixel-picking fallback path.
+   * §92's visual regression tier is the first consumer. The pixel-picking
+   * service (RFC 0005) does **not** read through this member: it owns its
+   * own one-texel fence / `mapAsync` path.
    */
   readPixels?(target: RenderTarget, region?: Rectangle2): Promise<ArrayBuffer>;
 

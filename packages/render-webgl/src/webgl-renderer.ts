@@ -80,19 +80,24 @@ import type { RenderBatching } from "./gl-batch.js";
 import {
   EFFECT_TEXTURE_UNIT,
   EFFECT_VERTEX_COUNT,
-  EffectProgram,
-} from "./gl-effect.js";
+  resolveEffectPipelineFactory,
+  type EffectPipeline,
+} from "./gl-effect-registry.js";
 import { GeometryCache } from "./gl-geometry.js";
 import { GlGpuTimer, hasDisjointTimerQuery } from "./gl-gpu-timer.js";
+// §36's particle pipeline (2026-09-11), §70's effect pipeline and §69's
+// shadow pipeline are reached through their registry slots only — the
+// skinning seam's rule (`gl-skinning-registry.ts`): the heavy modules link
+// when the application calls `register…Pipeline()`, never through this class.
+// `ParticleGlContext` is a type import and links nothing.
 import {
-  ParticleAppearanceProgram,
-  ParticleBatchCache,
-  ParticleProgram,
-  ParticleTrailBatchCache,
-  ParticleTrailProgram,
   particleItemFloats,
-  type ParticleGlContext,
-} from "./gl-particles.js";
+  resolveParticlePipelineFactory,
+  type ParticleAppearancePipeline,
+  type ParticleBillboardPipeline,
+  type ParticlePrograms,
+} from "./gl-particles-registry.js";
+import type { ParticleGlContext } from "./gl-particles.js";
 import {
   GL,
   LitProgram,
@@ -123,12 +128,23 @@ import {
   type NodeMaterialProgram,
   type NodeMaterialPrograms,
 } from "./node-pipeline-registry.js";
+<<<<<<< HEAD
 import { ShadowProgram } from "./gl-shadow.js";
 import {
   StandardProgram,
   NORMAL_TEXTURE_UNIT,
   OCCLUSION_TEXTURE_UNIT,
 } from "./gl-standard.js";
+=======
+import {
+  resolveShadowPipelineFactory,
+  type ShadowCasterPipeline,
+} from "./gl-shadow-registry.js";
+import {
+  resolveStandardPipelineFactory,
+  type StandardPipeline,
+} from "./gl-standard-registry.js";
+>>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
 import { TextureCache, type CacheableTexture } from "./gl-texture.js";
 
 /**
@@ -1391,12 +1407,21 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
 
   #spriteProgram: SpriteProgram | null = null;
 
-  #particleProgram: ParticleProgram | null = null;
+  /**
+   * The registered particle pipeline's programs and batch caches (§36;
+   * 2026-09-11), or `null` — before the first particle item, while the
+   * context is lost, when nothing registered, and forever in a scene with no
+   * particles. **Acquired lazily by {@link WebglRenderer.render}**, never at
+   * initialize, through `#acquireParticlePrograms` — the skinned pair's
+   * shape: a compile refusal costs particles, not the frame, and a scene
+   * without particles issues the byte-identical GL sequence it always did.
+   * Until 2026-09-11 the billboard and trail programs compiled at
+   * initialize and rode every bundle that carried this class.
+   */
+  #particlePrograms: ParticlePrograms | null = null;
 
-  /** R-32 appearance program — compiled on first opt-in draw (§61-safe). */
-  #particleAppearanceProgram: ParticleAppearanceProgram | null = null;
-
-  #particleTrailProgram: ParticleTrailProgram | null = null;
+  /** The once-per-context latch for a refused particle compile. */
+  #particleProgramsFailed = false;
 
   #litProgram: LitProgram | null = null;
 
@@ -1412,39 +1437,53 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
    * already offer an application that uses none of them, and **measured**
    * rather than assumed (see the CHANGELOG entry for R-13).
    */
-  #standardProgram: StandardProgram | null = null;
+  #standardProgram: StandardPipeline | null = null;
 
   /**
-   * §70's full-screen effect pipeline (R-6), or `null` before initialization
-   * and while the context is lost.
-   *
-   * Compiled by {@link WebglRenderer.initialize} with the other four, never
-   * lazily: `renderEffect` runs inside an application's frame, and a compile
-   * there could throw for a driver reason the application cannot pre-empt —
-   * the same argument §61 makes about `render` (`gl-effect.ts` restates it).
-   * The cost of that choice is one program per renderer that never runs an
-   * effect — the same deal the lit and particle pipelines already offer a
-   * purely 2D application, and **measured** rather than assumed: 0.75 kB gzip
-   * per example bundle (0.42 kB for this pipeline and its two shaders, 0.33 kB
-   * for {@link WebglRenderer.renderEffect}), because nothing reachable from a
-   * class method can tree-shake. `@fourjs/render`'s half — `effect-pass.ts` — is
-   * a separate side-effect-free module and does tree-shake out; grepping the
-   * example bundles confirms both halves of that sentence (R-6, 2026-08-07).
+   * The once-per-context latch for a refused standard compile. `#standardProgram`
+   * is the registered standard pipeline's program (§59, R-13; behind
+   * `registerStandardPipeline()` since 2026-09-11 by owner decision), or
+   * `null` — before the first `"standard"` item, while the context is lost,
+   * when nothing registered, and forever in a scene without one. Acquired
+   * through `#acquireStandardProgram`, the skinned pair's way.
    */
-  #effectProgram: EffectProgram | null = null;
+  #standardProgramFailed = false;
 
   /**
-   * §69's depth-only caster pipeline (R-18, 2026-08-09), or `null` before
-   * initialization and while the context is lost.
+   * The registered effect pipeline's program (§70, R-6; behind
+   * `registerEffectPipeline()` since 2026-09-11), or `null` — before the
+   * first fixed effect pass, while the context is lost, when nothing
+   * registered, and forever in an application that runs no effect.
    *
-   * Compiled by {@link WebglRenderer.initialize} with the other six, for the
-   * reason every one of them states: a shader compile can throw for a driver
-   * reason no application can pre-empt, and §61 forbids `render` from throwing.
-   * The cost is one program per renderer whose scenes never cast — the deal the
-   * lit, standard, particle and effect pipelines already offer, measured with
-   * this packet rather than assumed.
+   * Compiled at initialize from R-6 until 2026-09-11, for the reason R-6
+   * gave: `renderEffect` runs inside a frame, and a compile there could throw.
+   * The skinning seam (RFC 0003) showed the other way out — compile inside
+   * the frame's own `try`, latch the failure, warn once — and R-6 had
+   * *measured* the cost of the eager choice at 0.75 kB gzip per bundle that
+   * never runs an effect. See `#acquireEffectProgram`.
    */
-  #shadowProgram: ShadowProgram | null = null;
+  #effectProgram: EffectPipeline | null = null;
+
+  /** The once-per-context latch for a refused effect compile. */
+  #effectProgramFailed = false;
+
+  /**
+   * The registered shadow pipeline's depth-only caster (§69, R-18; behind
+   * `registerShadowPipeline()` since 2026-09-11), or `null` — before the
+   * first shadowed frame, while the context is lost, when nothing registered,
+   * and forever in a scene whose light never asks for a map.
+   *
+   * Compiled at initialize from R-18 until 2026-09-11; now acquired on the
+   * first frame with `sceneLights.hasShadow`, inside the frame's `try`, the
+   * skinned pair's way. An unregistered or refused pipeline skips the caster
+   * pass, and the frame's lit surfaces draw unshadowed — `shadowActive` is
+   * `false` exactly as it is when the shadow target will not allocate. See
+   * `#acquireShadowProgram`.
+   */
+  #shadowProgram: ShadowCasterPipeline | null = null;
+
+  /** The once-per-context latch for a refused shadow compile. */
+  #shadowProgramFailed = false;
 
   /**
    * The off-screen surface §69's shadow map is rendered into (R-18), or `null`
@@ -1516,10 +1555,6 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
   #textures: TextureCache | null = null;
 
   #renderTargets: RenderTargetCache | null = null;
-
-  #particleBatches: ParticleBatchCache | null = null;
-
-  #particleTrailBatches: ParticleTrailBatchCache | null = null;
 
   /**
    * This renderer's own §57 state mirror (F13) — see `GlState` for why it
@@ -1640,15 +1675,20 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     // Every handle died with the context: drop them, never delete them.
     this.#program = null;
     this.#spriteProgram = null;
-    this.#particleProgram = null;
-    this.#particleAppearanceProgram = null;
-    this.#particleTrailProgram = null;
     this.#litProgram = null;
+    // The four registered pipelines (particles, effects, shadows, standard —
+    // 2026-09-11) and §54's lazily compiled pair (RFC 0003) died with the
+    // context like every other handle; the next draw that needs one
+    // re-acquires it, and a fresh context may compile what this one refused,
+    // so the latches clear too.
     this.#standardProgram = null;
+    this.#standardProgramFailed = false;
+    this.#particlePrograms = null;
+    this.#particleProgramsFailed = false;
     this.#effectProgram = null;
+    this.#effectProgramFailed = false;
     this.#shadowProgram = null;
-    // §54's lazily compiled pair (RFC 0003) died with the context like every
-    // other handle; the next skinned draw recompiles.
+    this.#shadowProgramFailed = false;
     this.#skinnedPrograms = null;
     this.#skinnedProgramsFailed = false;
     this.#skinnedShadowFailed = false;
@@ -1658,8 +1698,6 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#geometries?.forget();
     this.#textures?.forget();
     this.#renderTargets?.forget();
-    this.#particleBatches?.forget();
-    this.#particleTrailBatches?.forget();
     // §65's batcher, when the application assigned one (R-9). Its two buffers
     // and its vertex array died with the context like every other handle; the
     // next batched draw recreates them.
@@ -1679,17 +1717,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     // claimed to be ready would fail on the next draw instead, with no clue.
     this.#program = UnlitProgram.create(gl);
     this.#spriteProgram = SpriteProgram.create(gl);
-    this.#particleProgram = ParticleProgram.create(gl);
-    this.#particleTrailProgram = ParticleTrailProgram.create(gl);
     this.#litProgram = LitProgram.create(gl);
-    this.#standardProgram = StandardProgram.create(gl);
-    this.#effectProgram = EffectProgram.create(gl);
-    this.#shadowProgram = ShadowProgram.create(gl);
     this.#geometries = new GeometryCache(gl);
     this.#textures = new TextureCache(gl);
     this.#renderTargets = new RenderTargetCache(gl);
-    this.#particleBatches = new ParticleBatchCache(gl);
-    this.#particleTrailBatches = new ParticleTrailBatchCache(gl);
     this.#applyFixedState(gl);
     // Textures are re-uploaded lazily from the CPU-side sources their `Texture`
     // objects still retain — §61's "re-uploads user resources that retain
@@ -1864,29 +1895,17 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     // throwing here.
     const program = this.#program;
     const spriteProgram = this.#spriteProgram;
-    const particleProgram = this.#particleProgram;
-    const particleTrailProgram = this.#particleTrailProgram;
     const litProgram = this.#litProgram;
-    const standardProgram = this.#standardProgram;
-    const shadowProgram = this.#shadowProgram;
     const geometries = this.#geometries;
     const textures = this.#textures;
     const renderTargets = this.#renderTargets;
-    const particleBatches = this.#particleBatches;
-    const particleTrailBatches = this.#particleTrailBatches;
     if (
       program === null ||
       spriteProgram === null ||
-      particleProgram === null ||
-      particleTrailProgram === null ||
       litProgram === null ||
-      standardProgram === null ||
-      shadowProgram === null ||
       geometries === null ||
       textures === null ||
-      renderTargets === null ||
-      particleBatches === null ||
-      particleTrailBatches === null
+      renderTargets === null
     ) {
       return;
     }
@@ -1946,6 +1965,17 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     // mapped unlit or lit draw selects it once, on the first one — both target
     // the same unit, so a frame that mixes them issues one call either way.
     let mapUnitActive = false;
+    // CPU mirror of what is bound to the map unit (audit A6, 2026-09-11): the
+    // texture handle the last unit-0 `bindTexture` of this frame bound, and
+    // the pipeline that was current when it did. A draw whose texture is the
+    // one already bound, under the same pipeline, binds nothing — N sprites
+    // over one atlas cost one bind per frame instead of N. Forgotten whenever
+    // the active unit moves off unit 0 (the `!mapUnitActive` re-select clears
+    // it) and whenever the pipeline changes (the kind is part of the key), and
+    // it dies with the frame: the `finally` unbinds unit 0 and the next frame
+    // starts with nothing claimed.
+    let boundMapTexture: GlTexture | null = null;
+    let boundMapKind: string | null = null;
     let metalRoughnessBound = false;
     let emissiveBound = false;
     let normalBound = false;
@@ -2058,25 +2088,36 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       // for shadows, so this whole block — target, framebuffer, program, draws,
       // texture bind — issues **no GL call at all** in such a frame. That is
       // the byte-identity contract, not an optimisation.
+      //
+      // The caster program is the registered shadow pipeline's (2026-09-11),
+      // acquired on the first shadowed frame: unregistered or refused, the
+      // pass is skipped with one warning and `shadowActive` stays `false`, so
+      // the lit surfaces below draw unshadowed rather than wrong.
       let shadowRecord: RenderTargetRecord | null = null;
       if (hasLitItems && sceneLights.hasShadow) {
-        // Set *before* the call, not after it: from here on the `finally` owes
-        // an unbind whatever happens inside, including a throw between the
-        // pass's own bind and its rebind below.
-        framebufferBound = true;
-        shadowRecord = this.#renderShadowMap(
-          gl,
-          items,
-          renderTargets,
-          geometries,
-          shadowProgram,
-          state,
-          statistics,
-        );
-        // Back to the surface this frame is actually drawing into. The
-        // on-screen path is `null`, which is where the shadow pass found the
-        // binding; an off-screen frame re-binds its own target.
-        gl.bindFramebuffer(GL.FRAMEBUFFER, targetRecord?.framebuffer ?? null);
+        const shadowProgram = this.#acquireShadowProgram(gl);
+        if (shadowProgram !== null) {
+          // Set *before* the call, not after it: from here on the `finally`
+          // owes an unbind whatever happens inside, including a throw between
+          // the pass's own bind and its rebind below.
+          framebufferBound = true;
+          shadowRecord = this.#renderShadowMap(
+            gl,
+            items,
+            renderTargets,
+            geometries,
+            shadowProgram,
+            state,
+            statistics,
+          );
+          // Back to the surface this frame is actually drawing into. The
+          // on-screen path is `null`, which is where the shadow pass found
+          // the binding; an off-screen frame re-binds its own target.
+          gl.bindFramebuffer(
+            GL.FRAMEBUFFER,
+            targetRecord?.framebuffer ?? null,
+          );
+        }
       }
       // Whether the shaded pipelines may compare against a map this frame: the
       // light asked *and* the backend actually produced one. A shadow target
@@ -2272,8 +2313,13 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                   if (!mapUnitActive) {
                     gl.activeTexture(GL.TEXTURE0 + MAP_TEXTURE_UNIT);
                     mapUnitActive = true;
+                    boundMapTexture = null;
                   }
-                  gl.bindTexture(GL.TEXTURE_2D, batchTexture);
+                  if (boundMapTexture !== batchTexture || boundMapKind !== activeKind) {
+                    gl.bindTexture(GL.TEXTURE_2D, batchTexture);
+                    boundMapTexture = batchTexture;
+                    boundMapKind = activeKind;
+                  }
                   textureBound = true;
                 }
                 batching.draw(gl, program, batch, batchTexture !== null);
@@ -2335,8 +2381,13 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 if (!mapUnitActive) {
                   gl.activeTexture(GL.TEXTURE0 + MAP_TEXTURE_UNIT);
                   mapUnitActive = true;
+                  boundMapTexture = null;
                 }
-                gl.bindTexture(GL.TEXTURE_2D, texture);
+                if (boundMapTexture !== texture || boundMapKind !== activeKind) {
+                  gl.bindTexture(GL.TEXTURE_2D, texture);
+                  boundMapTexture = texture;
+                  boundMapKind = activeKind;
+                }
                 textureBound = true;
               }
               skinnedProgram.setFeatures(
@@ -2395,8 +2446,13 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 if (!mapUnitActive) {
                   gl.activeTexture(GL.TEXTURE0 + MAP_TEXTURE_UNIT);
                   mapUnitActive = true;
+                  boundMapTexture = null;
                 }
-                gl.bindTexture(GL.TEXTURE_2D, texture);
+                if (boundMapTexture !== texture || boundMapKind !== activeKind) {
+                  gl.bindTexture(GL.TEXTURE_2D, texture);
+                  boundMapTexture = texture;
+                  boundMapKind = activeKind;
+                }
                 textureBound = true;
               }
               skinnedProgram.setFeatures(texture !== null);
@@ -2513,6 +2569,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               // reports as selected.
               gl.activeTexture(GL.TEXTURE0);
               mapUnitActive = true;
+              boundMapTexture = null;
             }
             nodeProgram.setMaterial(nodeMaterial);
             nodeProgram.setModel(item.worldMatrix);
@@ -2533,16 +2590,25 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             continue;
           }
 
-          const record = geometries.acquire(item.geometry);
-          if (record === null) {
-            continue;
-          }
-
           if (isParticlesItem(item)) {
-            // §36's whole system, one instanced draw (plan P9-3). The geometry
-            // record is the *shared unit quad* every particle item points at, so
-            // the corner stream is uploaded once for the application and this
-            // system's own vertex array is built on top of that buffer.
+            // §36's whole system, one instanced draw (plan P9-3), through the
+            // registered particle pipeline (2026-09-11) — resolved *before*
+            // the geometry upload, the skinned arm's rule: an item skipped
+            // for an unregistered pipeline contributes nothing at all.
+            const particlePrograms = this.#acquireParticlePrograms(gl);
+            if (particlePrograms === null) {
+              continue;
+            }
+            const particleProgram = particlePrograms.particle;
+            const particleBatches = particlePrograms.batches;
+            // The geometry record is the *shared unit quad* every particle
+            // item points at, so the corner stream is uploaded once for the
+            // application and this system's own vertex array is built on top
+            // of that buffer.
+            const record = geometries.acquire(item.geometry);
+            if (record === null) {
+              continue;
+            }
             if (item.count === 0) {
               continue;
             }
@@ -2553,19 +2619,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             const needsAppearance =
               particleItemFloats(item) >= 10 ||
               item.particleTexture !== undefined;
-            let appearanceProgram: ParticleAppearanceProgram | null = null;
-            if (needsAppearance) {
-              appearanceProgram = this.#particleAppearanceProgram;
-              if (appearanceProgram === null) {
-                try {
-                  appearanceProgram = ParticleAppearanceProgram.create(gl);
-                  this.#particleAppearanceProgram = appearanceProgram;
-                } catch {
-                  // §61: a compile refusal costs the appearance draw, not the frame.
-                  appearanceProgram = null;
-                }
-              }
-            }
+            // R-32's opt-in tier compiles on first need and latches a refusal
+            // inside the pipeline (§61); `null` falls back to the plain
+            // program, as it always did.
+            const appearanceProgram: ParticleAppearancePipeline | null =
+              needsAppearance ? particlePrograms.acquireAppearance() : null;
             if (appearanceProgram !== null) {
               if (activeKind !== "particle-appearance") {
                 appearanceProgram.use();
@@ -2588,6 +2646,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                   gl.activeTexture(GL.TEXTURE0);
                   gl.bindTexture(GL.TEXTURE_2D, map);
                   textureBound = true;
+                  boundMapTexture = null;
                 }
               }
             } else if (activeKind !== "particles") {
@@ -2634,8 +2693,15 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
 
             const trailCount = item.trailVertexCount ?? 0;
             if (trailCount > 0) {
-              const trailBatch = particleTrailBatches.acquire(item);
-              if (trailBatch !== null) {
+              // The trail program compiles on the first ribbon, latched the
+              // same way; a refusal skips the ribbon, never the billboards.
+              const particleTrailProgram: ParticleBillboardPipeline | null =
+                particlePrograms.acquireTrail();
+              const trailBatch =
+                particleTrailProgram === null
+                  ? null
+                  : particlePrograms.trailBatches.acquire(item);
+              if (particleTrailProgram !== null && trailBatch !== null) {
                 if (!particleTrailActive) {
                   particleTrailProgram.use();
                   particleTrailActive = true;
@@ -2653,7 +2719,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                   particleViewUploaded = true;
                 }
                 particleTrailProgram.setModel(item.worldMatrix);
-                particleTrailBatches.upload(trailBatch, item);
+                particlePrograms.trailBatches.upload(trailBatch, item);
                 gl.bindVertexArray(trailBatch.vertexArray);
                 gl.drawArrays(GL.TRIANGLES, 0, trailCount);
                 if (statistics !== null) {
@@ -2661,6 +2727,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 }
               }
             }
+            continue;
+          }
+
+          const record = geometries.acquire(item.geometry);
+          if (record === null) {
             continue;
           }
 
@@ -2680,6 +2751,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               spriteProgram.setSampler(SPRITE_TEXTURE_UNIT);
               gl.activeTexture(GL.TEXTURE0);
               activeKind = "sprite";
+              boundMapTexture = null;
             }
             // §55's pipeline blends by construction — it did before §57's
             // `transparent` flag existed, and a textured quad with an alpha
@@ -2696,7 +2768,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             // there is no per-draw `quad` uniform.
             spriteProgram.setModel(item.worldMatrix);
             spriteProgram.setTint(material.tint, opacityOf(material));
-            gl.bindTexture(GL.TEXTURE_2D, texture);
+            if (boundMapTexture !== texture) {
+              gl.bindTexture(GL.TEXTURE_2D, texture);
+              boundMapTexture = texture;
+              boundMapKind = activeKind;
+            }
             textureBound = true;
           } else if (isLitItem(item)) {
             // The Lambert-lit pipeline (§68): depth-tested exactly like unlit,
@@ -2750,8 +2826,13 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               if (!mapUnitActive) {
                 gl.activeTexture(GL.TEXTURE0 + MAP_TEXTURE_UNIT);
                 mapUnitActive = true;
+                boundMapTexture = null;
               }
-              gl.bindTexture(GL.TEXTURE_2D, litTexture);
+              if (boundMapTexture !== litTexture || boundMapKind !== activeKind) {
+                gl.bindTexture(GL.TEXTURE_2D, litTexture);
+                boundMapTexture = litTexture;
+                boundMapKind = activeKind;
+              }
               textureBound = true;
             }
             litProgram.setFeatures(litTexture !== null);
@@ -2768,7 +2849,14 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             // branch above — same lights, same albedo map, same §57 render
             // state — plus the two things a specular lobe needs and a diffuse
             // one does not: the eye position, and the surface's own metalness,
-            // roughness, and emissive term.
+            // roughness, and emissive term. Behind `registerStandardPipeline()`
+            // since 2026-09-11: unregistered or refused, the draw is skipped
+            // with one warning (a Lambert stand-in would be a different
+            // picture).
+            const standardProgram = this.#acquireStandardProgram(gl);
+            if (standardProgram === null) {
+              continue;
+            }
             if (activeKind !== "standard") {
               standardProgram.use();
               activeKind = "standard";
@@ -2820,8 +2908,13 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               if (!mapUnitActive) {
                 gl.activeTexture(GL.TEXTURE0 + MAP_TEXTURE_UNIT);
                 mapUnitActive = true;
+                boundMapTexture = null;
               }
-              gl.bindTexture(GL.TEXTURE_2D, standardTexture);
+              if (boundMapTexture !== standardTexture || boundMapKind !== activeKind) {
+                gl.bindTexture(GL.TEXTURE_2D, standardTexture);
+                boundMapTexture = standardTexture;
+                boundMapKind = activeKind;
+              }
               textureBound = true;
             }
             const metalRoughnessSource = metalRoughnessMapOf(item.material);
@@ -2926,8 +3019,13 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               if (!mapUnitActive) {
                 gl.activeTexture(GL.TEXTURE0 + MAP_TEXTURE_UNIT);
                 mapUnitActive = true;
+                boundMapTexture = null;
               }
-              gl.bindTexture(GL.TEXTURE_2D, texture);
+              if (boundMapTexture !== texture || boundMapKind !== activeKind) {
+                gl.bindTexture(GL.TEXTURE_2D, texture);
+                boundMapTexture = texture;
+                boundMapKind = activeKind;
+              }
               textureBound = true;
             }
             // §53's per-vertex colours (R-19) reach the screen here, and with
@@ -3123,11 +3221,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     }
 
     // Unreachable given the class invariant, exactly as in `render`; the
-    // fields are nullable so context loss can drop them, and §61 forbids
+    // field is nullable so context loss can drop it, and §61 forbids
     // throwing here, so the effect is skipped if it is ever broken.
-    const effectProgram = this.#effectProgram;
     const renderTargets = this.#renderTargets;
-    if (effectProgram === null || renderTargets === null) {
+    if (renderTargets === null) {
       return;
     }
 
@@ -3189,6 +3286,16 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       effect.kind !== "grade" &&
       effect.kind !== "output-transform"
     ) {
+      return;
+    }
+
+    // The registered effect pipeline (2026-09-11), acquired on the first
+    // fixed effect — after every refusal above, so a pass that would have
+    // been skipped anyway never compiles, and before the envelope, so an
+    // unregistered or refused pipeline skips with one warning and touches no
+    // GL state at all.
+    const effectProgram = this.#acquireEffectProgram(gl);
+    if (effectProgram === null) {
       return;
     }
 
@@ -3311,7 +3418,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     const host: PickingRendererHost = {
       context: () => this.#gl,
       geometries: () => this.#geometries,
-      particleBatches: () => this.#particleBatches,
+      particleBatches: () => this.#particlePrograms?.batches ?? null,
       renderTargets: () => this.#renderTargets,
       surfaceWidth: () => this.#bufferWidth,
       surfaceHeight: () => this.#bufferHeight,
@@ -3505,11 +3612,9 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     if (!this.#contextLost) {
       this.#program?.dispose();
       this.#spriteProgram?.dispose();
-      this.#particleProgram?.dispose();
-      this.#particleAppearanceProgram?.dispose();
-      this.#particleTrailProgram?.dispose();
       this.#litProgram?.dispose();
       this.#standardProgram?.dispose();
+      this.#particlePrograms?.dispose();
       this.#effectProgram?.dispose();
       this.#shadowProgram?.dispose();
       this.#skinnedPrograms?.dispose();
@@ -3517,8 +3622,6 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       this.#geometries?.dispose();
       this.#textures?.dispose();
       this.#renderTargets?.dispose();
-      this.#particleBatches?.dispose();
-      this.#particleTrailBatches?.dispose();
       this.batching?.dispose();
       if (this.#gl !== null) {
         this.#gpuTimer?.dispose(this.#gl);
@@ -3527,9 +3630,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
 
     this.#program = null;
     this.#spriteProgram = null;
-    this.#particleProgram = null;
-    this.#particleAppearanceProgram = null;
-    this.#particleTrailProgram = null;
+    this.#particlePrograms = null;
     this.#litProgram = null;
     this.#standardProgram = null;
     this.#effectProgram = null;
@@ -3546,8 +3647,6 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#geometries = null;
     this.#textures = null;
     this.#renderTargets = null;
-    this.#particleBatches = null;
-    this.#particleTrailBatches = null;
     this.#gl = null;
     this.#canvas = null;
     this.#gpuTimer = null;
@@ -3593,9 +3692,16 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       );
     }
 
-    // All seven programs are built before anything is stored, so a shader
-    // failure leaves the renderer uninitialized rather than half-initialized —
-    // and each failure disposes the ones already built.
+    // All three eager programs are built before anything is stored, so a
+    // shader failure leaves the renderer uninitialized rather than
+    // half-initialized — and each failure disposes the ones already built.
+    // Three since 2026-09-11 (eight before it): the particle, effect, shadow
+    // and — by owner decision — standard pipelines moved behind
+    // `register…Pipeline()` seams and compile on first use, the skinned
+    // pair's way — see `#particlePrograms`, `#effectProgram`,
+    // `#shadowProgram` and `#standardProgram`. `initialize` builds its
+    // pipelines in a fixed order (unlit, sprite, lit), and the failure-path
+    // tests reach the partial-disposal branches by index.
     const program = UnlitProgram.create(gl);
     let spriteProgram: SpriteProgram;
     try {
@@ -3604,64 +3710,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       program.dispose();
       throw error;
     }
-    let particleProgram: ParticleProgram;
-    try {
-      particleProgram = ParticleProgram.create(gl);
-    } catch (error: unknown) {
-      spriteProgram.dispose();
-      program.dispose();
-      throw error;
-    }
     let litProgram: LitProgram;
     try {
       litProgram = LitProgram.create(gl);
     } catch (error: unknown) {
-      particleProgram.dispose();
-      spriteProgram.dispose();
-      program.dispose();
-      throw error;
-    }
-    // §59's metallic-roughness pipeline (R-13), compiled here for the reason
-    // every other pipeline is: §61 forbids a frame from throwing, and a shader
-    // compile is exactly the operation that can.
-    let standardProgram: StandardProgram;
-    try {
-      standardProgram = StandardProgram.create(gl);
-    } catch (error: unknown) {
-      litProgram.dispose();
-      particleProgram.dispose();
-      spriteProgram.dispose();
-      program.dispose();
-      throw error;
-    }
-    // §70's effect pipeline, compiled here rather than on first use (R-6):
-    // `renderEffect` runs inside a frame, and §61's no-throw rule applies to
-    // it for the same reason it applies to `render` — see `#effectProgram`.
-    let effectProgram: EffectProgram;
-    try {
-      effectProgram = EffectProgram.create(gl);
-    } catch (error: unknown) {
-      standardProgram.dispose();
-      litProgram.dispose();
-      particleProgram.dispose();
-      spriteProgram.dispose();
-      program.dispose();
-      throw error;
-    }
-
-    // §69's caster pipeline, compiled **last** (R-18, 2026-08-09). Last on
-    // purpose: `initialize` builds its pipelines in a fixed order, and the
-    // failure-path tests reach the partial-disposal branches by index, so a
-    // seventh program appended to the end leaves every existing index — and
-    // every recorded frame's `createProgram#n` aliasing — exactly where it was.
-    let shadowProgram: ShadowProgram;
-    try {
-      shadowProgram = ShadowProgram.create(gl);
-    } catch (error: unknown) {
-      effectProgram.dispose();
-      standardProgram.dispose();
-      litProgram.dispose();
-      particleProgram.dispose();
       spriteProgram.dispose();
       program.dispose();
       throw error;
@@ -3671,17 +3723,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#gl = gl;
     this.#program = program;
     this.#spriteProgram = spriteProgram;
-    this.#particleProgram = particleProgram;
-    this.#particleTrailProgram = ParticleTrailProgram.create(gl);
     this.#litProgram = litProgram;
-    this.#standardProgram = standardProgram;
-    this.#effectProgram = effectProgram;
-    this.#shadowProgram = shadowProgram;
     this.#geometries = new GeometryCache(gl);
     this.#textures = new TextureCache(gl);
     this.#renderTargets = new RenderTargetCache(gl);
-    this.#particleBatches = new ParticleBatchCache(gl);
-    this.#particleTrailBatches = new ParticleTrailBatchCache(gl);
     this.#capabilities = readCapabilities(gl);
     this.#applyFixedState(gl);
 
@@ -3696,6 +3741,193 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
 
     canvas.addEventListener("webglcontextlost", this.#onContextLost);
     canvas.addEventListener("webglcontextrestored", this.#onContextRestored);
+  }
+
+  /**
+   * The registered standard pipeline's program for this context, compiled on
+   * the first `"standard"` item, or `null` when there is nothing to draw a
+   * §59 surface with (2026-09-11, owner decision). `#acquireShadowProgram`'s
+   * three answers, naming `registerStandardPipeline()`; the draw is skipped,
+   * never approximated with the Lambert pipeline.
+   */
+  #acquireStandardProgram(gl: ParticleGlContext): StandardPipeline | null {
+    const existing = this.#standardProgram;
+    if (existing !== null) {
+      return existing;
+    }
+    if (this.#standardProgramFailed) {
+      return null;
+    }
+    const factory = resolveStandardPipelineFactory();
+    if (factory === null) {
+      if (DEV) {
+        devWarnOnce(
+          "webgl-standard-unregistered",
+          "§59: this scene uses a StandardMaterial but no standard pipeline " +
+            "is registered, so those draws are skipped (a Lambert stand-in " +
+            "would be a different picture). Call registerStandardPipeline() " +
+            "from @fourjs/render-webgl at application setup.",
+        );
+      }
+      return null;
+    }
+    try {
+      const compiled = factory.create(gl);
+      this.#standardProgram = compiled;
+      return compiled;
+    } catch (error: unknown) {
+      this.#standardProgramFailed = true;
+      if (DEV) {
+        devWarnOnce(
+          "webgl-standard-compile-failed",
+          "§59: the standard pipeline failed to compile on this context; " +
+            `StandardMaterial draws are skipped (§61, §89). ${String(error)}`,
+        );
+      }
+      return null;
+    }
+  }
+
+  /**
+   * The registered shadow pipeline's caster program for this context,
+   * compiled on the first shadowed frame, or `null` when there is nothing to
+   * render a map with (§69; 2026-09-11).
+   *
+   * The three answers of `#acquireSkinnedPrograms`, and the same §61 terms:
+   * **compiled already** — one field read; **nothing registered** — `null`
+   * with a one-time §85 warning naming `registerShadowPipeline()`, and the
+   * frame's lit surfaces draw unshadowed (lights still work; a map is the
+   * only thing missing); **the compile failed** — `null` forever on this
+   * context, with a one-time warning carrying the driver's §89 failure. A
+   * context restore clears the latch.
+   */
+  #acquireShadowProgram(gl: ParticleGlContext): ShadowCasterPipeline | null {
+    const existing = this.#shadowProgram;
+    if (existing !== null) {
+      return existing;
+    }
+    if (this.#shadowProgramFailed) {
+      return null;
+    }
+    const factory = resolveShadowPipelineFactory();
+    if (factory === null) {
+      if (DEV) {
+        devWarnOnce(
+          "webgl-shadow-unregistered",
+          "§69: this scene's light asks for a shadow map but no shadow " +
+            "pipeline is registered, so the shadow pass is skipped and lit " +
+            "surfaces draw unshadowed. Call registerShadowPipeline() from " +
+            "@fourjs/render-webgl at application setup.",
+        );
+      }
+      return null;
+    }
+    try {
+      const compiled = factory.create(gl);
+      this.#shadowProgram = compiled;
+      return compiled;
+    } catch (error: unknown) {
+      // §61: a driver's compile refusal costs the shadow, never the frame.
+      this.#shadowProgramFailed = true;
+      if (DEV) {
+        devWarnOnce(
+          "webgl-shadow-compile-failed",
+          "§69: the shadow pipeline failed to compile on this context; the " +
+            `shadow pass is skipped (§61, §89). ${String(error)}`,
+        );
+      }
+      return null;
+    }
+  }
+
+  /**
+   * The registered effect pipeline's program for this context, compiled on
+   * the first fixed effect pass, or `null` when there is nothing to run the
+   * pass with (§70; 2026-09-11). `#acquireShadowProgram`'s three answers,
+   * naming `registerEffectPipeline()`; the pass is skipped, never quietly
+   * copied.
+   */
+  #acquireEffectProgram(gl: ParticleGlContext): EffectPipeline | null {
+    const existing = this.#effectProgram;
+    if (existing !== null) {
+      return existing;
+    }
+    if (this.#effectProgramFailed) {
+      return null;
+    }
+    const factory = resolveEffectPipelineFactory();
+    if (factory === null) {
+      if (DEV) {
+        devWarnOnce(
+          "webgl-effect-unregistered",
+          "§70: this render graph runs an effect pass but no effect " +
+            "pipeline is registered, so the pass is skipped. Call " +
+            "registerEffectPipeline() from @fourjs/render-webgl at " +
+            "application setup.",
+        );
+      }
+      return null;
+    }
+    try {
+      const compiled = factory.create(gl);
+      this.#effectProgram = compiled;
+      return compiled;
+    } catch (error: unknown) {
+      this.#effectProgramFailed = true;
+      if (DEV) {
+        devWarnOnce(
+          "webgl-effect-compile-failed",
+          "§70: the effect pipeline failed to compile on this context; " +
+            `effect passes are skipped (§61, §89). ${String(error)}`,
+        );
+      }
+      return null;
+    }
+  }
+
+  /**
+   * The registered particle pipeline's programs and caches for this context,
+   * created on the first particle item, or `null` when there is nothing to
+   * draw particles with (§36; 2026-09-11). `#acquireShadowProgram`'s three
+   * answers, naming `registerParticlePipeline()`; the item is skipped, never
+   * approximated.
+   */
+  #acquireParticlePrograms(gl: ParticleGlContext): ParticlePrograms | null {
+    const existing = this.#particlePrograms;
+    if (existing !== null) {
+      return existing;
+    }
+    if (this.#particleProgramsFailed) {
+      return null;
+    }
+    const factory = resolveParticlePipelineFactory();
+    if (factory === null) {
+      if (DEV) {
+        devWarnOnce(
+          "webgl-particles-unregistered",
+          "§36: this scene contains a particle system but no particle " +
+            "pipeline is registered, so its draws are skipped. Call " +
+            "registerParticlePipeline() from @fourjs/render-webgl at " +
+            "application setup.",
+        );
+      }
+      return null;
+    }
+    try {
+      const created = factory.create(gl);
+      this.#particlePrograms = created;
+      return created;
+    } catch (error: unknown) {
+      this.#particleProgramsFailed = true;
+      if (DEV) {
+        devWarnOnce(
+          "webgl-particles-compile-failed",
+          "§36: the particle pipeline failed to compile on this context; " +
+            `particle draws are skipped (§61, §89). ${String(error)}`,
+        );
+      }
+      return null;
+    }
   }
 
   /**
@@ -3994,7 +4226,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     items: readonly RenderItem[],
     renderTargets: RenderTargetCache,
     geometries: GeometryCache,
-    shadowProgram: ShadowProgram,
+    shadowProgram: ShadowCasterPipeline,
     state: GlState,
     statistics: RenderStatistics | null,
   ): RenderTargetRecord | null {

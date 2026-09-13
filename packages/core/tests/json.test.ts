@@ -115,3 +115,23 @@ describe("cloneJsonValue (§34/§79 shared JSON validation)", () => {
     );
   });
 });
+
+describe("cloneJsonValue depth ceiling (§96, 2026-09-11)", () => {
+  it("refuses a value nested deeper than 1024 levels with UNTRUSTED_INPUT_REJECTED", () => {
+    let deep: unknown = 0;
+    for (let i = 0; i < 1100; i += 1) {
+      deep = [deep];
+    }
+    expect(() => cloneJsonValue(deep)).toThrowError(
+      expect.objectContaining({ code: "UNTRUSTED_INPUT_REJECTED" }) as Error,
+    );
+  });
+
+  it("accepts 1024 levels exactly", () => {
+    let deep: unknown = 0;
+    for (let i = 0; i < 1023; i += 1) {
+      deep = [deep];
+    }
+    expect(cloneJsonValue(deep)).toBeDefined();
+  });
+});

@@ -4,10 +4,10 @@
  * tests; A-27).
  *
  * ```sh
- * pnpm run build       # every script imports the built dist, not src
- * pnpm bench           # this file
- * pnpm bench ui-layout text-layout      # a subset, by record name or filename
- * pnpm bench --list                     # what would run, and in what order
+ * bun run build       # every script imports the built dist, not src
+ * bun run bench           # this file
+ * bun run bench ui-layout text-layout      # a subset, by record name or filename
+ * bun run bench --list                     # what would run, and in what order
  * ```
  *
  * ## Why a process each
@@ -100,16 +100,16 @@ function usage() {
   return [
     "fourJS benchmark suite runner (§86 targets, §92 performance tests)",
     "",
-    "  pnpm run build          # required: every script imports the built dist",
-    "  pnpm bench              # the whole suite, in this order:",
+    "  bun run build          # required: every script imports the built dist",
+    "  bun run bench              # the whole suite, in this order:",
     "",
     ...SUITE.map(
       (entry) =>
         `    ${entry.file.padEnd(width)}   ${entry.what}\n    ${" ".repeat(width)}   → results/${entry.record}.json`,
     ),
     "",
-    "  pnpm bench <name>…      # a subset, named by record ('ui-layout') or file",
-    "  pnpm bench --list       # this text",
+    "  bun run bench <name>…      # a subset, named by record ('ui-layout') or file",
+    "  bun run bench --list       # this text",
     "",
     "  Each script runs in its own process, prints its own report, and rewrites its",
     "  own committed record. The runner writes results/suite.json — a manifest of what",
@@ -134,7 +134,7 @@ function select(argv) {
     .sort((a, b) => a.localeCompare(b));
   if (unknown.length > 0) {
     throw new Error(
-      `run-all: no benchmark named ${unknown.join(", ")}. Run 'pnpm bench --list' for the suite.`,
+      `run-all: no benchmark named ${unknown.join(", ")}. Run 'bun run bench --list' for the suite.`,
     );
   }
   return chosen;

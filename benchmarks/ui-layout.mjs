@@ -4,7 +4,7 @@
  * measurement; §92's *"CPU time"* metric).
  *
  * ```sh
- * pnpm run build          # this script imports the built dist, not src
+ * bun run build          # this script imports the built dist, not src
  * node benchmarks/ui-layout.mjs
  * ```
  *

@@ -71,7 +71,7 @@
  * same-runtime tier, like the rest of the engine's floating point.
  */
 
-import type { Component, ComponentHost } from "@fourjs/core";
+import { FourError, type Component, type ComponentHost } from "@fourjs/core";
 import { Quaternion, Vector3 } from "@fourjs/math";
 import {
   resolveWorldTransform,
@@ -313,6 +313,31 @@ export class ConstraintSystem implements SimulationSystem {
   /** Tracked nodes in insertion order (§33: deterministic iteration). */
   readonly #tracked = new Set<Node>();
 
+  /** Set by {@link ConstraintSystem.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link ConstraintSystem.dispose} has run. Disposal is terminal
+   * (§83): a disposed system refuses its mutating entry points with
+   * `INVALID_APPLICATION_STATE` (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "ConstraintSystem is disposed; constraining nodes through a disposed system is a " +
+          "lifetime mistake (§83), and a new system is a new " +
+          "ConstraintSystem.",
+        { context: { system: "ConstraintSystem" } },
+      );
+    }
+  }
+
   constructor(options: ConstraintSystemOptions = {}) {
     this.priority = options.priority ?? PRIORITY_CONSTRAINTS;
   }
@@ -335,6 +360,7 @@ export class ConstraintSystem implements SimulationSystem {
    * step, so tracking first and attaching later is fine.
    */
   track(node: Node): Node {
+    this.#requireLive();
     this.#tracked.add(node);
     return node;
   }
@@ -361,6 +387,7 @@ export class ConstraintSystem implements SimulationSystem {
 
   /** Places and aims every tracked node, using `time.fixedDeltaTime`. */
   fixedUpdate(context: FixedUpdateContext): void {
+    this.#requireLive();
     const dt = context.time.fixedDeltaTime;
     for (const node of this.#tracked) {
       if (!node.enabled) {
@@ -399,6 +426,10 @@ export class ConstraintSystem implements SimulationSystem {
 
   /** Drops every tracked node (§39 teardown). */
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     this.#tracked.clear();
   }
 }

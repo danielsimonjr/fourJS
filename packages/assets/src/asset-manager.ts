@@ -514,6 +514,18 @@ export type FetchLike<TSignal = never> = (
  * The one field this package puts in a request `init` — deliberately a subset
  * of the DOM's `RequestInit`, so the platform `fetch` accepts it unchanged.
  */
+/**
+ * What the manager hands a loader beside the response (2026-09-11): the
+ * request's cancellation signal, type-erased the way the manager's own
+ * transport call erases it, so a loader that fetches *sub-resources* (glTF's
+ * `.bin` and images) can forward it — until then a cancelled glTF load kept
+ * its child requests running to completion.
+ */
+export interface AssetLoadContext {
+  /** The erased abort signal of the request that produced `response`, if any. */
+  readonly signal?: unknown;
+}
+
 export interface FetchInit<TSignal> {
   /** The transport's cancellation signal, when the manager has one to give. */
   readonly signal?: TSignal;
@@ -626,7 +638,11 @@ export interface AssetLoader<T> {
    * @param url - The URL it came from, for error messages and (once glTF
    *   lands) for resolving relative dependencies.
    */
-  load(response: FetchResponse, url: string): Promise<T>;
+  load(
+    response: FetchResponse,
+    url: string,
+    context?: AssetLoadContext,
+  ): Promise<T>;
   /**
    * Optional chunked decode (§76 streaming).
    *
@@ -2406,7 +2422,11 @@ export class AssetManager<TSignal = never> implements Disposable {
         const chunks = this.#progressingChunks(response, url, total, report);
         return await loader.loadStream(chunks, url);
       }
-      const value = await loader.load(response, url);
+      const value = await loader.load(
+        response,
+        url,
+        signal === undefined ? undefined : { signal },
+      );
       if (entry.lastProgress === undefined) {
         report({ loaded: total ?? 0, total, url });
       }

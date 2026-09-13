@@ -121,7 +121,7 @@ import {
   vortexField,
   type ParticleFixedUpdateContext,
 } from "fourJS/particles";
-import { WebglRenderer } from "fourJS/render-webgl";
+import { WebglRenderer, registerParticlePipeline } from "fourJS/render-webgl";
 import { OrthographicCamera, createFullscreenViewport } from "fourJS/scene";
 
 // --- surface ---------------------------------------------------------------
@@ -233,6 +233,12 @@ const view = createFullscreenViewport(camera);
 view.clearColor = [0.051, 0.059, 0.078, 1];
 
 // --- application (§45) ------------------------------------------------------
+
+// §36's instanced particle pipeline is a registration seam on WebGL 2
+// (2026-09-11): an explicit call, never an import side effect, links the
+// billboard program and its batch caches into this bundle — without it every
+// `ParticleRenderable` is skipped with one development warning.
+registerParticlePipeline();
 
 const renderer = new TimedWebglRenderer();
 const app = new Application({ renderer, canvas, views: [view] });

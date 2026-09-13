@@ -649,6 +649,14 @@ function validateSegmentRun(
  * Count and finiteness only — see {@link ConvexHullShape} for why degeneracy
  * is the adapter's verdict rather than a second one taken here.
  */
+/**
+ * Ceiling on the points a hull or mesh shape may carry (§96): a scene
+ * document reaches these through the physics serializers, and a solver's
+ * hull / BVH build is superlinear in the count. 2^20 is far above any
+ * authored collider and far below what would stall a step.
+ */
+export const MAXIMUM_SHAPE_POINTS = 1_048_576;
+
 function validateConvexHull(shape: ConvexHullShape): void {
   const { points } = shape;
   if (points.length < 4) {
@@ -656,6 +664,13 @@ function validateConvexHull(shape: ConvexHullShape): void {
       SHAPE_ERROR_CODE,
       `convex-hull shape: needs at least 4 points to enclose a volume; got ${String(points.length)} (§24, §85).`,
       { context: { shape: "convex-hull", pointCount: points.length } },
+    );
+  }
+  if (points.length > MAXIMUM_SHAPE_POINTS) {
+    throw new FourError(
+      "UNTRUSTED_INPUT_REJECTED",
+      `convex-hull shape: point count ${String(points.length)} is over the ${String(MAXIMUM_SHAPE_POINTS)} limit (§96).`,
+      { context: { shape: "convex-hull", limitName: "MAXIMUM_SHAPE_POINTS", limit: MAXIMUM_SHAPE_POINTS, observed: points.length } },
     );
   }
   for (let i = 0; i < points.length; i += 1) {
@@ -690,6 +705,13 @@ function validateTriangleMesh(shape: TriangleMeshShape): void {
       SHAPE_ERROR_CODE,
       `triangle-mesh shape: needs at least 3 vertices; got ${String(vertices.length)} (§24, §85).`,
       { context: { shape: "triangle-mesh", vertexCount: vertices.length } },
+    );
+  }
+  if (vertices.length > MAXIMUM_SHAPE_POINTS) {
+    throw new FourError(
+      "UNTRUSTED_INPUT_REJECTED",
+      `triangle-mesh shape: vertex count ${String(vertices.length)} is over the ${String(MAXIMUM_SHAPE_POINTS)} limit (§96).`,
+      { context: { shape: "triangle-mesh", limitName: "MAXIMUM_SHAPE_POINTS", limit: MAXIMUM_SHAPE_POINTS, observed: vertices.length } },
     );
   }
   for (let i = 0; i < vertices.length; i += 1) {

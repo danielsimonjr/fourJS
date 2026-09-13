@@ -32,8 +32,8 @@ every joint used here in **both** dimensions, plus the 3D-only spherical joint.
 ## Running it
 
 ```sh
-pnpm run build             # the packages the example imports as `four/…`
-pnpm run mechanism:build   # bundles to examples/mechanism/dist
+bun run build             # the packages the example imports as `four/…`
+bun run mechanism:build   # bundles to examples/mechanism/dist
 npx vite preview examples/mechanism
 ```
 

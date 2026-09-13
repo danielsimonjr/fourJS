@@ -27,7 +27,7 @@
  * `baseURL`), `physics-playground` on 4174, `mechanism` on 4175 and `blending`
  * on 4176. {@link BLENDING_URL} restates that port for the reason the scene
  * constants below are restated rather than imported — see "Method notes". Run
- * `pnpm blending:build` before `pnpm test:browser`, or the preview server has no
+ * `bun run blending:build` before `bun run test:browser`, or the preview server has no
  * `dist` to serve.
  *
  * ## What is measured, and against what
@@ -74,6 +74,8 @@
 import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+
+import { framesFor, readFrameCount, waitForFrames } from "./helpers/wait.js";
 
 /** A decoded, unfiltered 8-bit image: `pixels` is `width * height` samples. */
 interface DecodedImage {
@@ -876,7 +878,7 @@ test.describe("§110: animated ↔ kinematic ↔ physical control in the browser
 
     // A loop that throws on its first frames does so after `running`, so keep
     // the page alive long enough for that to be collected.
-    await page.waitForTimeout(1000);
+    await waitForFrames(page, framesFor(1));
     expect(errors).toEqual([]);
   });
 
@@ -893,10 +895,24 @@ test.describe("§110: animated ↔ kinematic ↔ physical control in the browser
     // A handful of framebuffer pairs prove the wave reached the pixels and the
     // scenery did not. The wave *period* is watched below via `data-chain-y`:
     // screenshotting for that long is what starved the simulation.
+<<<<<<< HEAD
     // Capture all required pairs. Screenshot latency is not simulation time;
     // the test's timeout already bounds a stalled browser.
     for (let pair = 0; pair < PIXEL_PROOF_PAIRS; pair += 1) {
       await page.waitForTimeout(FRAME_GAP_MS);
+=======
+    // The budget is in frames, the unit the gap is waited in: a wall-clock
+    // deadline here starved the loop of pairs on a runner drawing slowly
+    // (measured 2 of 3 in 1.6 s), which is a count about the runner.
+    const gapFrames = framesFor(FRAME_GAP_MS / 1000);
+    const pixelFrameDeadline =
+      (await readFrameCount(page)) + gapFrames * (PIXEL_PROOF_PAIRS + 5);
+    while (
+      bandDeltas.length < PIXEL_PROOF_PAIRS &&
+      (await readFrameCount(page)) < pixelFrameDeadline
+    ) {
+      await waitForFrames(page, gapFrames);
+>>>>>>> refs/remotes/origin/claude/rfc-review-planning-s2clzd
       const frame = await grab(canvas);
 
       // The chain's band changed — it is being animated, right now.

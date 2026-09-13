@@ -27,7 +27,7 @@
  *    allowlist is visible below and editing it is deliberately a visible act.
  * 2. **`add` admits no string.** The parameter type is `FourPlugin`, so a
  *    module specifier is a compile error, not a runtime check somebody can
- *    forget. `@ts-expect-error` is the assertion, and `pnpm typecheck:tests`
+ *    forget. `@ts-expect-error` is the assertion, and `bun run typecheck:tests`
  *    is what runs it.
  *
  * The second half of §96's phrase — safe **shader** boundaries — is answered by
