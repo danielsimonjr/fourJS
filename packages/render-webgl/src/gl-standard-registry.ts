@@ -67,12 +67,30 @@ export interface StandardPipeline {
   setReceivesShadow(receiving: boolean): void;
   /** Uploads the eye position the specular lobe needs. */
   setCameraPosition(x: number, y: number, z: number): void;
-  /** Selects the albedo, metal-roughness and emissive map switches. */
+  /**
+   * Selects the albedo, metal-roughness, emissive, normal and occlusion map
+   * switches.
+   *
+   * The last two were added with the S59 normalMap/occlusionMap WebGL work and
+   * reached both `StandardProgram` and the renderer's draw loop, but not this
+   * seam - so the renderer's five-argument call failed to compile against its
+   * own contract (TS2554). Kept optional so an implementation that predates the
+   * maps still satisfies the interface.
+   */
   setFeatures(
     useMap: boolean,
     useMetalRoughnessMap?: boolean,
     useEmissiveMap?: boolean,
+    useNormalMap?: boolean,
+    useOcclusionMap?: boolean,
   ): void;
+  /**
+   * Uploads the glTF normal-scale and occlusion-strength factors.
+   *
+   * Offset-encoded by the implementation so GL's zero-initialised uniforms are
+   * the glTF defaults; callers pass the material values directly.
+   */
+  setMapFactors(normalScale?: number, occlusionStrength?: number): void;
   /** Deletes the program. Live context only; idempotent. */
   dispose(): void;
 }
