@@ -50,9 +50,8 @@ did not build at the start of it, and all three workflows were red.
 ### Fixed — gates
 
 - **`check-compat` failed on any Windows clone.** With `core.autocrlf=true` and no
-  `.gitattributes`, the checked-out document is CRLF; the checker split on `
-`,
-  so every line compared unequal and its "first difference" printed two
+  `.gitattributes`, the checked-out document is CRLF; the checker split on `\n`, so
+  every line compared unequal and its "first difference" printed two
   identical-looking lines. The document is now normalised to LF when read.
 - **`gltf-model.spec.ts` asserted pixels before page errors,** so every failure
   read "nothing was drawn" and hid its cause. Errors are asserted first, and the
