@@ -954,6 +954,21 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       cannot rasterise; staged texels still resolve through the §33 table.
       Engine: **clean**. Guide index patched. WebGPU still skips skinned
       items. Checkbox stays `[ ]`.
+      **Cycle 4 (2026-09-13, EVO) — the full consumer seat, run end to end.** Staged the 24
+      published-name packages, packed real tarballs, installed them into a project OUTSIDE the
+      workspace, and compiled against the SHIPPED declarations. Results, all measured:
+      24/24 packages staged, packed and installed · all **26** umbrella subpaths imported (the
+      map above says 25; the export map declares 26) · ESM runtime smoke loads the shipped
+      artifact and reports **79 exports** · consumer typecheck under `strict` +
+      `skipLibCheck: false` finds **zero errors in fourJS's own declarations**. The 69 errors it
+      does report are entirely third-party (`rapier2d-compat` 33, `rapier3d-compat` 36, all
+      TS2550 for `Symbol.dispose`) and go to zero with `lib: esnext` — verified, not assumed, and
+      now documented in docs/COMPATIBILITY.md §0.
+      The pass also found what only a real staging run can: DEV diagnostics shipped the WORKSPACE
+      package name (`@fourjs/render-webgl`) into built artifacts, so the message telling a user to
+      register a pipeline named a package they cannot install. `publish-names:test` passes
+      regardless — it unit-tests the mapper, not the staged output.
+
 
 - [x] **`registerRapierSolver()` throws on a second call — awkward for anything building more than
       one world.** Registration is process-global, so a test suite or a probe with a `makeWorld()`

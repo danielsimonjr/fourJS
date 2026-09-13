@@ -74,6 +74,24 @@ more. Do not re-add one.
 
 ---
 
+## 0. What a consumer's TypeScript needs
+
+Measured from a real consumer seat: a fresh project outside this workspace,
+installing the published-name tarballs and compiling against the shipped
+declarations.
+
+| Setting | Requirement | Why |
+| --- | --- | --- |
+| `lib` | **`esnext`** if you set `skipLibCheck: false` | `@dimforge/rapier2d-compat` and `rapier3d-compat` declare `Symbol.dispose`, which `es2022` does not carry. Their `.d.ts` then raise `TS2550`. |
+| `skipLibCheck` | `true` is fine, `false` is supported | fourJS's own declarations compile clean either way. |
+| `moduleResolution` | `nodenext` or `bundler` | The packages ship an `exports` map with no `main` fallback. |
+| module format | **ESM only** | Every package is `"type": "module"` and declares no `require` condition. `require()` fails with `ERR_PACKAGE_PATH_NOT_EXPORTED` by design. |
+
+With `lib: ["es2022", "dom"]` and `skipLibCheck: false`, a consumer importing all
+26 umbrella subpaths sees **69 errors, none of them from fourJS** — 33 from
+`rapier2d-compat` and 36 from `rapier3d-compat`. Changing `lib` to `esnext`
+takes the same project to zero. Neither number is an estimate; both were run.
+
 ## 1. Browser and runtime support (§90)
 
 Split deliberately into what is **verified** — something in this repository
