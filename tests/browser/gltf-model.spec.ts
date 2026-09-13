@@ -14,6 +14,8 @@
  */
 import { expect, test } from "@playwright/test";
 
+import { waitForFrames } from "./helpers/wait.js";
+
 /** Where `vite preview` serves `examples/gltf-model/dist`. */
 const PAGE = "http://localhost:4183/";
 
@@ -70,6 +72,15 @@ test.describe("examples/gltf-model (§78)", () => {
     // block each of them carries its own copy of. One assertion does not earn a
     // sixth copy, so the page decodes its own screenshot instead: the browser
     // already has a PNG decoder, and `Image` + a 2D canvas is the whole of it.
+    // WAIT FOR A DRAWN FRAME, not merely a loaded model. `data-state="running"`
+    // proves `assets.load` resolved and the scene assembled; it says nothing
+    // about whether the renderer has presented anything yet. On a GPU the first
+    // frame is already composited by the time we get here, so this gate passed
+    // locally while failing in CI, where SwiftShader rasterises in software and
+    // loses the race - reported as "the model loaded but nothing was drawn",
+    // which reads like a rendering fault and was a test race.
+    await waitForFrames(page, 2);
+
     const shot = (await page.locator("#scene").screenshot()).toString("base64");
     const lit = await page.evaluate(
       async ([png, litSum]: readonly [string, number]) => {

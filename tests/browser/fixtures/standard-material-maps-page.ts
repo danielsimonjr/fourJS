@@ -1,7 +1,7 @@
 import { planeGeometry } from "@fourjs/geometry";
 import { StandardMaterial } from "@fourjs/materials";
 import { RenderTarget, Renderable, Texture } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import { WebglRenderer, registerStandardPipeline } from "@fourjs/render-webgl";
 import {
   DirectionalLight,
   OrthographicCamera,
@@ -19,6 +19,10 @@ declare global {
 window.fourStandardMapsProbe = async () => {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = 16;
+  // This fixture draws a StandardMaterial, and §59's pipeline is a registration
+  // seam on WebGL 2 since 2026-09-11. Without this the draws are SKIPPED and
+  // every probe reads black - which is exactly what happened.
+  registerStandardPipeline();
   const renderer = new WebglRenderer();
   await renderer.initialize({ canvas });
   const target = new RenderTarget({ width: 16, height: 16 });
