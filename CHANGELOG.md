@@ -6,7 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 are published, releases will follow [Semantic Versioning](https://semver.org/) per §90 of the
 specification; until then, entries are grouped by date under **Unreleased**.
 
-## Unreleased — release-readiness cycle (2026-09-13)
+## [Unreleased]
+
+## [0.1.0] — 2026-09-13 — first public release
+
+The first publish to npm: all 24 packages at 0.1.0 under the `@danielsimonjr` scope
+(`@danielsimonjr/fourjs` and `@danielsimonjr/fourjs-*`). Every `0.1.0 —` section below,
+down to the pre-release history, is the content of this release. Earlier entries dated
+before 2026-09-06 predate the release line and are kept as history.
+
+## 0.1.0 — release-readiness cycle (2026-09-13)
 
 A rubber-duck and consumer-seat dogfood pass ahead of the first publish. `main`
 did not build at the start of it, and all three workflows were red.
@@ -66,7 +75,7 @@ did not build at the start of it, and all three workflows were red.
   with `skipLibCheck: false`; the `@dimforge/rapier*-compat` declarations need
   `lib: esnext` for `Symbol.dispose` under that setting.
 
-## Unreleased — bounded image decoding (2026-09-12)
+## 0.1.0 — bounded image decoding (2026-09-12)
 
 ### Added
 
@@ -101,7 +110,7 @@ docs, spec/docs/compatibility, architecture/duplicate checks, 13 publish-name
 and 10 graph-tool tests, frozen install, and all seven bundle budgets pass.
 The complete browser matrix and all-package coverage were not rerun locally.
 
-## Unreleased — post-merge review (2026-09-11)
+## 0.1.0 — post-merge review (2026-09-11)
 
 ### Fixed
 
@@ -140,7 +149,7 @@ regressions pass. Frozen install succeeds. All existing bundle budgets pass;
 minimal 2D app: 61.34 kB gzip / 150 kB limit. No threshold, timeout or bundle budget
 was relaxed. Nothing published or merged by this follow-up.
 
-## Unreleased — RFC implementation packets (2026-09-11)
+## 0.1.0 — RFC implementation packets (2026-09-11)
 
 ### Added
 
@@ -194,7 +203,7 @@ This is a feature implementation wave, not a declaration that every TODO is comp
 The dated TODO section names the remaining backend, graph, batching, rendering,
 hardware and release work. Coverage thresholds and the normative 150 kB budget remain.
 
-## Unreleased — hemisphere light (2026-09-10)
+## 0.1.0 — hemisphere light (2026-09-10)
 
 ### Added
 
@@ -208,7 +217,7 @@ hardware and release work. Coverage thresholds and the normative 150 kB budget r
   `scene:hemisphere-light`. Lighting checkbox stays open (area, extra
   directionals, clustered, IBL, …).
 
-## Unreleased — WebGPU skinned shadow caster (2026-09-10)
+## 0.1.0 — WebGPU skinned shadow caster (2026-09-10)
 
 ### Added
 
@@ -220,7 +229,7 @@ hardware and release work. Coverage thresholds and the normative 150 kB budget r
   Unregistered casters still skip. RFC 0003 stays open (GPU morph, CPU
   skinning, bone-texture).
 
-## Unreleased — open-TODO audit + RFC 0005 close (2026-09-10)
+## 0.1.0 — open-TODO audit + RFC 0005 close (2026-09-10)
 
 ### Added
 
@@ -257,7 +266,7 @@ hardware and release work. Coverage thresholds and the normative 150 kB budget r
   the §58 paint tier leave the deferred list. Spec revision **1.15**
   matches that §60 honesty.
 
-## Unreleased — "fix all" follow-through (2026-09-11)
+## 0.1.0 — "fix all" follow-through (2026-09-11)
 
 ### Changed
 
@@ -367,7 +376,7 @@ hardware and release work. Coverage thresholds and the normative 150 kB budget r
   starts reading fails typecheck instead of the run (the exact failure of
   2026-09-10). `harness.mjs`/`runTimed` carry the JSDoc the checker needs.
 
-## Unreleased — security, stability and performance pass (2026-09-11)
+## 0.1.0 — security, stability and performance pass (2026-09-11)
 
 Three read-only audits (security against §96, stability of lifecycle/error
 paths, per-frame hot paths) over the whole tree; the mechanical findings are
@@ -419,7 +428,7 @@ recorded in `TODO.md` ("2026-09-11 audit follow-ups").
 - **Physics:** the per-step joint-breakage monitor snapshots into world-owned
   scratch instead of spreading the registry into a fresh array.
 
-## Unreleased — sync after #91/#92 and gate repair (2026-09-11)
+## 0.1.0 — sync after #91/#92 and gate repair (2026-09-11)
 
 ### Fixed
 
@@ -444,7 +453,7 @@ recorded in `TODO.md` ("2026-09-11 audit follow-ups").
   `RFC-0005-RESIDUE_PLAN.md` is marked superseded; `RFC-0003-RESIDUE_PLAN.md`
   drops its WP-SK.1 slot.
 
-## Unreleased — RFC 0007–0009 review pass (2026-09-10)
+## 0.1.0 — RFC 0007–0009 review pass (2026-09-10)
 
 ### Changed
 
@@ -497,7 +506,7 @@ recorded in `TODO.md` ("2026-09-11 audit follow-ups").
   disjoint file ownership, waves, per-plan anti-hallucination sheets with file:line
   citations, gates). Plan only; implementation waits on owner acceptance.
 
-## Unreleased — open-TODO burndown (2026-09-09)
+## 0.1.0 — open-TODO burndown (2026-09-09)
 
 Closed the remaining *contained* open items. Feature packets, RFC residues, the
 standing dogfooding map, first publish, and R-33 (needs non-SwiftShader hardware)
@@ -739,7 +748,7 @@ No packet closed.
   an unspecified turn.
 - **A-19 remainder merged into R-30c.** Same §77 upload work; one checkbox.
 
-## Unreleased — the root is TypeScript 7 only
+## 0.1.0 — the root is TypeScript 7 only
 
 > **Note on the commit split, recorded because `git log` is misleading here.** This work
 > landed as two commits whose messages do not match their contents: `2d05ece`
@@ -818,7 +827,7 @@ exactly **two** consumers, so neither could be removed alone; both were addresse
   ignore named a dependency the repo no longer has. Both removed, with the reasons recorded.
   The `vitest` ignore stays — blocked by the coverage gap in `docs/MIGRATION.md` section 5,
   which is unrelated to TypeScript.
-## Unreleased — TypeScript 7 and Bun 1.4.2
+## 0.1.0 — TypeScript 7 and Bun 1.4.2
 
 The release gate that said *"wait for TypeDoc"* is gone. It was never the compiler's gate.
 
@@ -962,7 +971,7 @@ The release gate that said *"wait for TypeDoc"* is gone. It was never the compil
 
 - Two false claims in `examples/tsconfig.json`'s own comment: the umbrella specifier is `fourJS/`,
   not `four/`, and this repo runs `bun`, not `pnpm`.
-## Unreleased — a red gate nobody was reading, and two docs that had gone false
+## 0.1.0 — a red gate nobody was reading, and two docs that had gone false
 
 Closes (D) and (E1) of the four decisions delegated on 2026-09-07, and fixes a failing test
 gate found while running them.
@@ -1004,7 +1013,7 @@ gate found while running them.
 - **`TimeState` now states its unit.** Six of its duration fields never said "seconds", and both
   `performance.now()` and `requestAnimationFrame` hand out milliseconds — a substitution that
   type-checks and produces motion 1000x too fast rather than an error.
-## Unreleased — the two capability gaps dogfooding found are closed
+## 0.1.0 — the two capability gaps dogfooding found are closed
 
 Decisions (B) and (C) of the four delegated on 2026-09-07. Both were found by building a
 consumer app rather than by reading the code, and both are about what the library did not
@@ -1055,7 +1064,7 @@ I pushed anyway. The failure was trivial (a redundant `as never` in a test) and 
 `021b5aa`, but the miss is worth recording on its own: a gate that is ignored is worse than a
 gate that is missing, because the next reader reasonably takes green as checked.
 
-## Unreleased — Stage 3, and the TS 7 block turns out not to be a block
+## 0.1.0 — Stage 3, and the TS 7 block turns out not to be a block
 
 **Stage 3.** The repository and its directory are `fourJS`: GitHub renamed, remote updated,
 local directory moved, fetch verified from the new path. The old `four.js` name survives only
@@ -1092,7 +1101,7 @@ typedoc's `1.0.0-dev.*` versions sort last in `npm view versions` but were publi
 — I briefly read them as a newer release that fixed this. And my earlier "still blocked" rested
 on `peerDependencies` from the `latest` tag alone: one signal, reported as research.
 
-## Unreleased — Stage 2: the packages are `fourJS` / `@fourjs`, and it broke twice first
+## 0.1.0 — Stage 2: the packages are `fourJS` / `@fourjs`, and it broke twice first
 
 Authorised by Daniel: *"Stage 2 @fourjs"*, *"All imports from four/* need to change to
 fourJS/*"*, *"We can't use four as a name or tag or handler for a library."* Nothing in the
@@ -1142,7 +1151,7 @@ allowlist, and the publish-mapping test. Each failed loudly and named the cause.
 
 Verified on the runner, not just locally: CI, Docs and Release all green.
 
-## Unreleased — a directory-scoped `git stash` ate part of the rebrand
+## 0.1.0 — a directory-scoped `git stash` ate part of the rebrand
 
 Asked whether the rebrand was finished, I measured instead of recalling — and found 11
 occurrences of `four.js` still in the AUTHORED architecture docs (`API`, `ARCHITECTURE`,
@@ -1173,7 +1182,7 @@ inside filed items (3), `ui-demo`'s rendered label (1, blocked on a Linux golden
 and regenerating restores only one of them.** The half that cannot regenerate disappears
 with no failing gate to announce it.
 
-## Unreleased — what the rebrand broke, and why local green was not CI green
+## 0.1.0 — what the rebrand broke, and why local green was not CI green
 
 The rebrand turned `main` red twice. Both were mine, both are fixed, and the second one is
 the more useful failure.
@@ -1206,7 +1215,7 @@ check-docs, check-spec, plus `tests/integration` (507) and `tests/determinism` (
 `docs/COMPATIBILITY.md` was regenerated too: correctly excluded from the pass as a generated
 file, but its SOURCE declarations were rebranded, so the committed output went stale.
 
-## Unreleased — both described personas re-run against current main
+## 0.1.0 — both described personas re-run against current main
 
 They were last exercised on 09-06, before ten commits landed. A scenario that passed yesterday
 says nothing about today's tree, so both were re-run rather than recalled. **Both pass, and the
@@ -1235,7 +1244,7 @@ invariant holds, but calling that "consistent" would be smoothing: the sample wi
 speed and Rapier version (0.20 landed 09-06) all differ, and no controlled comparison was run.
 Neither figure should be quoted as the engine's accuracy until one is.
 
-## Unreleased — the duplicate "First publish" row is deleted, not pointed at
+## 0.1.0 — the duplicate "First publish" row is deleted, not pointed at
 
 Follow-up to the audit. Two verifiers independently recommended deleting the duplicate row
 rather than keeping the pointer I left this morning, and they are right: the charter's rule is
@@ -1248,7 +1257,7 @@ the canonical row survives, and `git diff` shows exactly the three pointer lines
 first check printed "0 rows remaining" and looked alarming — that was a broken grep pattern in
 my own command, not a lost row.)
 
-## Unreleased — TODO audited against CHANGELOG and code: 1 closed, 2 sub-parts struck
+## 0.1.0 — TODO audited against CHANGELOG and code: 1 closed, 2 sub-parts struck
 
 The first audit that cross-referenced **TODO.md against CHANGELOG.md**, not just against the
 code — the direction never checked before. 23 open rows, all 23 examined, three fan-out
@@ -1278,7 +1287,7 @@ bundle test it relied on is not the same claim as the real example bundle, so I 
 `ui-demo` and checked the shipped artifact. A relayed verdict is a hypothesis until the
 load-bearing half is checked.
 
-## Unreleased — dogfooding cycle 3d: our error messages name minified classes
+## 0.1.0 — dogfooding cycle 3d: our error messages name minified classes
 
 Round-tripped a scene through §34/§79 in the browser — the "save my game" path — and the failure
 told me my node was **"a Ur"**.
@@ -1302,7 +1311,7 @@ not a `Group`. So "save my scene" fails on the most ordinary scene there is — 
 the error, and the same shape as the glTF transport gap: the default path does not cover the
 common case.
 
-## Unreleased — §62's renderer abstraction verified from outside: a two-line swap
+## 0.1.0 — §62's renderer abstraction verified from outside: a two-line swap
 
 Dogfooding cycle 3c. The claim a renderer abstraction makes is that a consumer can change
 backends without changing their app; that had never been tested from a consumer's seat, only
@@ -1330,7 +1339,7 @@ consistency: the engine reports the thing that bit that test.
 Recorded as a **strength**, not a finding — the coverage map now carries it, and the surfaces
 still unexercised are text/§56, browser §34 round-trip, and the 2D↔3D story.
 
-## Unreleased — §78 glTF is demonstrated, not just tested
+## 0.1.0 — §78 glTF is demonstrated, not just tested
 
 Cycle 3's fourth finding, fixed. `examples/gltf-model` is the fourteenth example: it builds a
 loader with `createGltfLoader`, hands it to `AssetManager.load`, and assembles the result with
@@ -1358,7 +1367,7 @@ Two notes from building it:
   sibling specs decode the PNG with a local `decodePng`, a ~241-line block each carries its own
   copy of; one assertion does not earn a sixth copy, so the page decodes its own screenshot.
 
-## Unreleased — the README now names the one rule that stops your animation working
+## 0.1.0 — the README now names the one rule that stops your animation working
 
 Cycle 3's fifth finding, fixed. §42's transform authority is mandatory knowledge for animating
 anything and appeared **0 times** in `README.md`. The note now sits in the blockquote that
@@ -1373,7 +1382,7 @@ not move.
 Gates re-run rather than assumed: `check-docs` OK, `check-spec` OK, and the README browser gate
 still passes 2/2 — which matters here, because that gate executes the snippet.
 
-## Unreleased — dogfooding cycle 3: five findings, none of them a broken engine
+## 0.1.0 — dogfooding cycle 3: five findings, none of them a broken engine
 
 Built a character-select screen from a consumer's seat (`.dogfood/charselect`) to reach the
 surfaces the coverage map listed as untouched, and ran it in a real browser rather than
@@ -1413,7 +1422,7 @@ after-composite trap, and a screenshot showed 7,938 lit pixels. And my browser p
 only `console.error`, so it reported "0 errors" while the §42 warning was being emitted the
 whole time.
 
-## Unreleased — A-4 closed: step 3 was never possible, and the item knew why
+## 0.1.0 — A-4 closed: step 3 was never possible, and the item knew why
 
 `A-4 remainder` carried three sub-parts. Two were settled; the third contradicted the second,
 and nobody had said so.
@@ -1439,7 +1448,7 @@ Method note: the first grep for the flag reported 3 hits in scene and 2 in physi
 were **prose** — `authority.ts` literally says *"not `DEV` / `devWarnOnce`"*. Matching real
 `import` statements instead returns zero across all six simulation packages.
 
-## Unreleased — AUDIT-120 had drifted in both directions at once
+## 0.1.0 — AUDIT-120 had drifted in both directions at once
 
 Chasing one TODO row — "qualify `AUDIT-120.md`'s *basic 3D meshes: shipped* row honestly" —
 turned up three defects, and the original row was wrong the opposite way round from the one
@@ -1462,7 +1471,7 @@ converter would not have counted. `TODO.md` also carried a **stale duplicate** r
 §24 work, still open beside the line that recorded it done; the 2026-08-05 sweep that "retired
 stale §24/§12 entries" had missed this copy. Gates: `check-docs` and `check-spec` both OK.
 
-## Unreleased — the look gate measured the runner, not the controller
+## 0.1.0 — the look gate measured the runner, not the controller
 
 `main` went red on a **docs-only** commit (run 34090671121), which is the tell that the gate
 was never testing our code:
@@ -1491,7 +1500,7 @@ fails for every reason it should: no turn, too slow, or the wrong way — the wa
 absolute delta, and the signed assertion that follows still owns the direction claim. Verified:
 5/5 character-controller specs pass.
 
-## Unreleased — TODO audit against the code (2026-09-07)
+## 0.1.0 — TODO audit against the code (2026-09-07)
 
 A verification pass over the 21 open items after #70-#78, to find any that the code had already
 closed. **Result: one row was wrong, one was duplicated, and the rest were open for good reason.**
@@ -1514,7 +1523,7 @@ Two of the three findings are corrections to claims, not code changes.
   gap (§77 cube/array/3D + compressed containers) from two places, and one standing assignment
   that by design never terminates.
 
-## Unreleased — browser gate: assert §84's contract, not the runner's GPU
+## 0.1.0 — browser gate: assert §84's contract, not the runner's GPU
 
 `main` went red on 2026-09-07 (run 34082373822, 104 passed / 1 failed) at
 `motor-digital-twin.spec.ts:613`:
@@ -1539,8 +1548,7 @@ cost two wrong turns that a message would have shortened — the local `dist/` p
 the example ran pre-`A-5` code and failed on a *different* line, which looked like a second bug
 and was only stale build output. Verified after `bun run build`: 9/9 twin specs pass.
 
-## [Unreleased]
-
+## 0.1.0 — pre-release history (2026-09-06 onward)
 ### 2026-09-06 — CI after #76
 
 - **`graph:duplicates`.** Allowlist the R-32 wide-layout constants

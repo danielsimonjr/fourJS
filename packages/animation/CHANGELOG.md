@@ -1,5 +1,12 @@
 # @fourjs/animation
 
+## 0.1.0
+
+### Patch Changes
+
+- Updated dependencies [3f48b1d]
+  - @fourjs/motion@0.1.0
+
 ## 0.0.1
 
 ### Patch Changes

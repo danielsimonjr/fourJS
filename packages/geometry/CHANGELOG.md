@@ -1,4 +1,4 @@
-# @fourjs/render-webgpu
+# @fourjs/geometry
 
 ## 0.1.0
 
@@ -11,13 +11,3 @@
 - 5737b7e: Add bounded raw gzip asset loading through an injected streaming decoder. Isolate asynchronous texture residency by GPU allocation and preserve identity shaping for custom character atlases without glyph-ID maps.
 
   Skip winding tests for points outside ring bounds, preserving exact containment while reducing disjoint-path fill work.
-
-- Updated dependencies [b3ec9d6]
-- Updated dependencies [3f48b1d]
-  - @fourjs/render@0.1.0
-
-## 0.0.2
-
-### Patch Changes
-
-- @fourjs/render@0.1.0
