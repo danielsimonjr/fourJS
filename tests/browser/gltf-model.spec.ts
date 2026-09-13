@@ -103,10 +103,16 @@ test.describe("examples/gltf-model (§78)", () => {
       },
       [shot, LIT_PIXEL_SUM] as const,
     );
+    // ERRORS FIRST. A shader-compile or pipeline failure makes `lit` zero, so
+    // asserting the pixel count first reports "nothing was drawn" and swallows
+    // the message that says WHY - the failure mode this spec hit in CI while
+    // passing locally under the same SwiftShader flags. Whatever the page
+    // complained about now surfaces as itself.
+    expect(errors, "the page logged errors").toEqual([]);
+
     expect(lit, "the model loaded but nothing was drawn").toBeGreaterThan(
       MINIMUM_LIT_PIXELS,
     );
 
-    expect(errors, "the page logged errors").toEqual([]);
   });
 });
