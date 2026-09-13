@@ -43,6 +43,22 @@ declare namespace WebAssembly {
     constructor(bytes: BufferSource);
     /** Static reflection over a compiled module's declared imports. */
     static imports(module: Module): ModuleImportDescriptor[];
+    /** Raw custom-section payloads, by section name. */
+    static customSections(module: Module, sectionName: string): ArrayBuffer[];
+    /**
+     * NOMINAL BRAND - load-bearing, do not delete.
+     *
+     * With only static members this class's INSTANCE type is `{}`, and every
+     * value in the language is assignable to `{}`. That made
+     * `instantiate(bytes, imports)` bind to the `(module: Module, ...)`
+     * overload and return `Promise<Instance>` instead of
+     * `Promise<WebAssemblyInstantiatedSource>`, so callers reading `.instance`
+     * off the result got "Property 'instance' does not exist on type
+     * 'Instance'" - an error whose message points at the call site and whose
+     * cause is here. A `private` member makes the type nominal, so only a real
+     * Module satisfies it and overload resolution picks correctly.
+     */
+    private readonly __wasmModuleBrand: void;
   }
 
   class Memory {
@@ -68,7 +84,21 @@ declare namespace WebAssembly {
     readonly instance: Instance;
   }
 
+  /**
+   * Named `Imports` / `Exports` because call sites spell them that way
+   * (`packages/text/src/harfbuzz/vendor.d.ts` types `instantiateWasm` with both).
+   */
   type Imports = Record<string, Record<string, unknown>>;
+  type Exports = Record<string, unknown>;
+
+  /**
+   * Runtime traps. `RuntimeError` is asserted on in
+   * `packages/assets/tests/bounded-png.test.ts` (`expect.any(...)`), so it is
+   * needed in a VALUE position, not only as a type.
+   */
+  class RuntimeError extends Error {}
+  class CompileError extends Error {}
+  class LinkError extends Error {}
 
   function compile(bytes: BufferSource): Promise<Module>;
   function instantiate(module: Module, imports?: Imports): Promise<Instance>;
@@ -78,4 +108,13 @@ declare namespace WebAssembly {
   ): Promise<WebAssemblyInstantiatedSource>;
   /** Structural validation of a module binary. */
   function validate(bytes: BufferSource): boolean;
+  /**
+   * Streaming compile+instantiate. Takes a `Response` or a promise of one in
+   * the browser; typed loosely here because this repo must not depend on DOM
+   * lib, and no caller inspects the argument beyond passing it through.
+   */
+  function instantiateStreaming(
+    source: unknown,
+    imports?: Imports,
+  ): Promise<WebAssemblyInstantiatedSource>;
 }

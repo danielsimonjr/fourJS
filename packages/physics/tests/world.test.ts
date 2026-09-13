@@ -1766,7 +1766,10 @@ describe("event interest (2026-09-11): the adapter is told when nobody listens f
     const node = dynamicNode();
     world.addBody(node);
     const body = node.getComponent(RigidBody);
-    if (body === null) throw new Error("body");
+    // `getComponent` returns `T | undefined`, never null, so the old
+    // `=== null` guard could not fire and did not narrow `body` - leaving
+    // `body.on(...)` below reported as possibly-undefined.
+    if (body === undefined) throw new Error("body");
 
     world.step(1 / 60);
     world.step(1 / 60);
