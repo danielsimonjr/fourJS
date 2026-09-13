@@ -1,6 +1,6 @@
 # Unused Files and Exports Analysis
 
-**Generated**: 2026-09-12
+**Generated**: 2026-09-13
 
 ## Summary
 
@@ -57,23 +57,23 @@ Not imported cross-file, but referenced within their own module — they type or
 support exports that ARE used, so they cannot be deleted in isolation. Mostly
 interfaces typing live guards and per-package API completeness, not rot.
 
-### `packages/text/src/shaping.ts`
-
-- `validateShapingDirection` (function) — 1 in-file ref
-
 ### `packages/fourjs/src/scene-serializers.ts`
 
 - `CANVAS_VIEW_NODE_TYPE` (constant) — 3 in-file refs
-
-### `packages/geometry/src/path-boolean.ts`
-
-- `ringsContain` (function) — 2 in-file refs
 
 ### `packages/geometry/src/geometry.ts`
 
 - `nextGeometryIdentifier` (function) — 1 in-file ref
 
+### `packages/geometry/src/path-boolean.ts`
+
+- `ringsContain` (function) — 2 in-file refs
+
 ### `packages/geometry/src/svg-document.ts`
 
 - `parseTransform` (function) — 1 in-file ref
+
+### `packages/text/src/shaping.ts`
+
+- `validateShapingDirection` (function) — 1 in-file ref
 

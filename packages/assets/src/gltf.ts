@@ -105,6 +105,8 @@
  * precedent, one level up: data below the seam, assembly above it).
  */
 
+import { assertImageDecoderMemory } from "./image-memory.js";
+
 import {
   FourError,
   cloneJsonValue,
@@ -368,6 +370,8 @@ export interface GltfLoaderOptions {
   readonly maximumDecodedBytes?: number;
   /** §96 expansion-ratio bound, forwarded to {@link createTextureLoader}. */
   readonly maximumExpansionRatio?: number;
+  /** Require a bounded image decoder; forwarded to the texture tier (§96). */
+  readonly maximumWorkingBytes?: number;
   /**
    * UTF-8 decoder for `.gltf` bodies and GLB JSON chunks. Defaults to
    * `globalThis.TextDecoder`; refused loudly when neither exists.
@@ -1191,7 +1195,11 @@ const MIP_MIN_FILTERS = new Set([9984, 9985, 9986, 9987]);
 export function createGltfLoader(
   options: GltfLoaderOptions = {},
 ): AssetLoader<GltfAsset> {
+  options = { ...options };
   const name = options.name ?? "gltf";
+  assertImageDecoderMemory(options.decodeTexture, options.maximumWorkingBytes, {
+    loader: name,
+  });
   const maximumBytes = options.maximumBytes ?? DEFAULT_MAXIMUM_BYTES;
   if (!(maximumBytes > 0)) {
     throw new FourError(
@@ -1220,6 +1228,7 @@ export function createGltfLoader(
         maximumBytes,
         maximumDecodedBytes: options.maximumDecodedBytes,
         maximumExpansionRatio: options.maximumExpansionRatio,
+        maximumWorkingBytes: options.maximumWorkingBytes,
         decodeText,
         name,
       });
@@ -1235,6 +1244,7 @@ interface ResolvedOptions {
   readonly maximumBytes: number;
   readonly maximumDecodedBytes: number | undefined;
   readonly maximumExpansionRatio: number | undefined;
+  readonly maximumWorkingBytes: number | undefined;
   readonly decodeText: TextDecodeLike | undefined;
   readonly name: string;
 }
@@ -1911,6 +1921,7 @@ async function parseGltf(
       wrap: sampler.wrap,
       maximumDecodedBytes: options.maximumDecodedBytes,
       maximumExpansionRatio: options.maximumExpansionRatio,
+      maximumWorkingBytes: options.maximumWorkingBytes,
     });
     textures[index] = await decodeTexture(encoded.slice().buffer, textureUrl);
   }

@@ -1,5 +1,7 @@
 import { isFourError } from "@fourjs/core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { registerBoundedImageDecoder } from "../src/image-memory.js";
 
 import {
   AssetManager,
@@ -9,6 +11,7 @@ import {
   createTextureLoader,
   type DecodedTexels,
   type FetchResponse,
+  type TextureLoaderOptions,
 } from "../src/index.js";
 
 /** A response whose body is `bytes`. */
@@ -229,6 +232,140 @@ describe("§96 decompression limits", () => {
   it("defaults to a 4096² image and a 1000× expansion", () => {
     expect(DEFAULT_MAXIMUM_DECODED_BYTES).toBe(4096 * 4096 * 4);
     expect(DEFAULT_MAXIMUM_EXPANSION_RATIO).toBe(1000);
+  });
+});
+
+describe("§96 strict image memory", () => {
+  it.each(["probe", "decode"] as const)(
+    "preserves the expansion limit when the %s transfers the input",
+    async (stage) => {
+      const detach = (data: ArrayBuffer): void => {
+        structuredClone(data, { transfer: [data] });
+      };
+      const decode = vi.fn((data: ArrayBuffer) => {
+        if (stage === "decode") detach(data);
+        return { width: 2, height: 2, data: new Uint8Array(16) };
+      });
+      const loader = createTextureLoader({
+        decode,
+        probe: (data) => {
+          if (stage === "probe") detach(data);
+          return undefined;
+        },
+        maximumExpansionRatio: 2,
+      });
+      await expect(
+        loader.load(bytesResponse(ENCODED), "/transfer.png"),
+      ).rejects.toMatchObject({
+        context: {
+          url: "/transfer.png",
+          limitName: "maximumExpansionRatio",
+          observed: 4,
+          stage: "decode",
+        },
+      });
+      expect(decode).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("refuses platform callbacks before decoding, even with a probe", () => {
+    const decode = vi.fn(() => TWO_ROWS);
+    expect(() =>
+      createTextureLoader({
+        decode,
+        probe: () => ({ width: 1, height: 2 }),
+        maximumWorkingBytes: 65_536,
+      }),
+    ).toThrow(/no enforceable/);
+    expect(decode).not.toHaveBeenCalled();
+  });
+
+  it("uses the registered capability and snapshots options against replacement", async () => {
+    const decode = registerBoundedImageDecoder(() => TWO_ROWS, 65_536);
+    const unsafe = vi.fn(() => TWO_ROWS);
+    const options: TextureLoaderOptions = {
+      decode,
+      maximumWorkingBytes: 65_536,
+    };
+    const loader = createTextureLoader(options);
+    Object.assign(options, { decode: unsafe, maximumWorkingBytes: undefined });
+    const asset = await loader.load(bytesResponse(ENCODED), "/safe.png");
+    expect(asset.data).toEqual(
+      new Uint8Array([...row(100, 1), ...row(200, 1)]),
+    );
+    expect(unsafe).not.toHaveBeenCalled();
+  });
+
+  it("refuses an unknown required probe before invoking the decoder", async () => {
+    const decode = vi.fn(() => TWO_ROWS);
+    const loader = createTextureLoader({ decode, requireProbe: true });
+    await expect(loader.load(bytesResponse(ENCODED), "/x")).rejects.toThrow(
+      /recognized dimension probe/,
+    );
+    expect(decode).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { width: NaN, height: 1 },
+    { width: 0, height: 1 },
+    { width: 1, height: Infinity },
+    { width: 1, height: -1 },
+    { width: Number.MAX_SAFE_INTEGER, height: 2 },
+  ])("refuses unsafe probe dimensions %o", async (dimensions) => {
+    const decode = vi.fn(() => TWO_ROWS);
+    const loader = createTextureLoader({ decode, probe: () => dimensions });
+    await expect(loader.load(bytesResponse(ENCODED), "/x")).rejects.toThrow(
+      /probe returned invalid dimensions/,
+    );
+    expect(decode).not.toHaveBeenCalled();
+  });
+
+  it("accepts a recognized required probe and validates returned buffer storage", async () => {
+    const loader = createTextureLoader({
+      decode: () => TWO_ROWS,
+      probe: () => ({ width: 1, height: 2 }),
+      requireProbe: true,
+    });
+    await expect(
+      loader.load(bytesResponse(ENCODED), "/x"),
+    ).resolves.toBeInstanceOf(TextureAsset);
+    const oversized = createTextureLoader({
+      decode: () => ({
+        width: 1,
+        height: 1,
+        data: new Uint8Array(128).subarray(0, 4),
+      }),
+      flipY: false,
+      maximumDecodedBytes: 4,
+    });
+    await expect(oversized.load(bytesResponse(ENCODED), "/x")).rejects.toThrow(
+      /over the 4 limit/,
+    );
+    const forged = createTextureLoader({
+      decode: () => ({
+        width: 1,
+        height: 1,
+        data: [1, 2, 3, 4] as unknown as Uint8Array,
+      }),
+    });
+    await expect(forged.load(bytesResponse(ENCODED), "/x")).rejects.toThrow(
+      /Uint8Array/,
+    );
+  });
+
+  it("refuses unsafe decoded products even when limits are disabled", async () => {
+    const loader = createTextureLoader({
+      decode: () => ({
+        width: Number.MAX_SAFE_INTEGER,
+        height: 2,
+        data: new Uint8Array(4),
+      }),
+      maximumDecodedBytes: Infinity,
+      maximumExpansionRatio: Infinity,
+    });
+    await expect(loader.load(bytesResponse(ENCODED), "/x")).rejects.toThrow(
+      /finite integer dimensions/,
+    );
   });
 });
 

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { registerBoundedImageDecoder } from "../src/image-memory.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -110,7 +111,10 @@ describe("body loaders", () => {
 describe("createImageLoader", () => {
   it("decodes through the injected decoder and exposes dimensions", async () => {
     const fake = fakeDecode();
-    const loader = createImageLoader(fake.decode);
+    // This synthetic codec expands five ASCII bytes into a 64×32 bitmap.
+    const loader = createImageLoader(fake.decode, {
+      maximumExpansionRatio: Infinity,
+    });
 
     const asset = await loader.load(textResponse("64x32"), "/icon.png");
 
@@ -179,6 +183,146 @@ describe("createImageLoader", () => {
     expect(a).not.toBe(b);
     expect(fake.calls).toBe(2);
     expect(manager.size).toBe(2);
+  });
+});
+
+describe("image loader security limits", () => {
+  it.each(["probe", "decode"] as const)(
+    "preserves the expansion limit when the %s transfers the input and closes rejected output",
+    async (stage) => {
+      const close = vi.fn();
+      const detach = (data: ArrayBuffer): void => {
+        structuredClone(data, { transfer: [data] });
+      };
+      const loader = createImageLoader(
+        (data) => {
+          if (stage === "decode") detach(data);
+          return { width: 2, height: 2, close };
+        },
+        {
+          maximumExpansionRatio: 2,
+          probe: (data) => {
+            if (stage === "probe") detach(data);
+            return undefined;
+          },
+        },
+      );
+      await expect(
+        loader.load(textResponse("data"), "/transfer.png"),
+      ).rejects.toMatchObject({
+        context: {
+          url: "/transfer.png",
+          stage: "decode",
+          encodedBytes: 4,
+          maximumExpansionRatio: 2,
+        },
+      });
+      expect(close).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("refuses an unbounded decoder before fetching and accepts a registered one", async () => {
+    const decode = vi.fn(() => ({ width: 1, height: 1, close: vi.fn() }));
+    expect(() =>
+      createImageLoader(decode, { maximumWorkingBytes: 65_536 }),
+    ).toThrow(/no enforceable/);
+    expect(decode).not.toHaveBeenCalled();
+    registerBoundedImageDecoder(decode, 65_536);
+    const loader = createImageLoader(decode, {
+      name: "bounded-image",
+      maximumWorkingBytes: 65_536,
+    });
+    const asset = await loader.load(textResponse("data"), "/x.png");
+    expect(loader.name).toBe("bounded-image");
+    expect(asset.width).toBe(1);
+    asset.dispose();
+    expect(decode.mock.results[0].value.close).toHaveBeenCalledOnce();
+  });
+
+  it.each(["maximumDecodedBytes", "maximumExpansionRatio"] as const)(
+    "rejects an invalid %s before decode",
+    (limit) => {
+      expect(() =>
+        createImageLoader(fakeDecode().decode, { [limit]: NaN }),
+      ).toThrow(/must be greater than zero/);
+    },
+  );
+
+  it("checks output size and closes rejected bitmaps exactly once", async () => {
+    const close = vi.fn();
+    const loader = createImageLoader(() => ({ width: 2, height: 2, close }), {
+      maximumDecodedBytes: 8,
+    });
+    await expect(loader.load(textResponse("data"), "/x.png")).rejects.toThrow(
+      /decoded-byte or expansion limits/,
+    );
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("checks expansion ratio and preserves the failure if close throws", async () => {
+    const close = vi.fn(() => {
+      throw new Error("cleanup failed");
+    });
+    const loader = createImageLoader(() => ({ width: 2, height: 2, close }), {
+      maximumExpansionRatio: 2,
+    });
+    await expect(loader.load(textResponse("data"), "/x.png")).rejects.toThrow(
+      /decoded-byte or expansion limits/,
+    );
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("rejects excessive or unknown probes before decode", async () => {
+    const decode = vi.fn(() => ({ width: 1, height: 1, close: vi.fn() }));
+    const excessive = createImageLoader(decode, {
+      probe: () => ({ width: 30_000, height: 30_000 }),
+    });
+    await expect(
+      excessive.load(textResponse("data"), "/x.png"),
+    ).rejects.toThrow(/decoded-byte or expansion limits/);
+    const unknown = createImageLoader(decode, {
+      requireProbe: true,
+      probe: () => undefined,
+    });
+    await expect(unknown.load(textResponse("data"), "/x.png")).rejects.toThrow(
+      /recognized dimension probe/,
+    );
+    expect(decode).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { width: NaN, height: 1 },
+    { width: 0, height: 1 },
+    { width: 1, height: 1.5 },
+    { width: 1, height: 0 },
+    { width: Number.MAX_SAFE_INTEGER, height: 2 },
+  ])(
+    "rejects invalid bitmap dimensions %o and closes it",
+    async (dimensions) => {
+      const close = vi.fn();
+      const loader = createImageLoader(() => ({ ...dimensions, close }));
+      await expect(loader.load(textResponse("data"), "/x.png")).rejects.toThrow(
+        /positive safe integers/,
+      );
+      expect(close).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("accepts recognized probes and snapshots limits against caller mutation", async () => {
+    const options = {
+      requireProbe: true,
+      probe: () => ({ width: 1, height: 1 }),
+      maximumDecodedBytes: 4,
+    };
+    const loader = createImageLoader(
+      () => ({ width: 1, height: 1, close: vi.fn() }),
+      options,
+    );
+    options.maximumDecodedBytes = 1;
+    options.probe = () => ({ width: 0, height: 0 });
+    await expect(
+      loader.load(textResponse(""), "/x.png"),
+    ).resolves.toBeInstanceOf(ImageAsset);
   });
 });
 

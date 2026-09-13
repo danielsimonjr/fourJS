@@ -4450,3 +4450,40 @@ and 10 graph-tool tests pass. API docs are warning-free and four compiler-guard
 regressions pass. Frozen install succeeds. All existing bundle budgets pass;
 minimal 2D app: 61.34 kB gzip / 150 kB limit. No threshold, timeout or bundle budget
 was relaxed. Nothing published or merged by this follow-up.
+
+### 2026-09-12 — §96 bounded image decoding
+
+Owner requested a team implementation of the remaining image decoder heap boundary.
+Verified main at 7fe7098 lacks earlier local roadmap commit b1240b4 (including
+Draco/Basis); this focused change builds directly on main without importing that
+337-file roadmap diff. It preserves the earlier local work.
+
+Native createImageBitmap/WebCodecs expose no allocator maximum. Implemented a
+real PNG alternative using the application-pinned @jsquash/png3.1.1 Wasm binary,
+with a runtime-enforced single unshared Wasm32 heap cap before initialization and
+our own narrow wasm-bindgen bridge (no singleton glue/global ImageData). Encoded
+bytes, RGBA copies, process RSS, retained assets, and Wasm code compilation are
+separate from the linear-heap limit. PNG preflight validates framing/CRCs because
+real-codec testing showed upstream accepted corrupt IHDR CRC. APNG is refused.
+
+Strict maximumWorkingBytes on image/texture/glTF requires private registration
+from the real bounded factory; user-set properties/wrappers cannot assert a cap.
+Options are snapshotted against replacement. ImageBitmap strict mode has no public
+bounded bitmap producer; supported strict image data comes through PNG texture
+loading. Codec traps poison an instance; do not reuse an allocator after unwinding
+through Wasm. Capture encoded byte count before probe/decode: transferred buffers
+otherwise become zero bytes and bypass expansion checks. Image output sizes are
+RGBA8 estimates; rejected bitmaps close once, and texture backing buffers are bounded.
+
+Validation completed: 7,763 package tests / 685 integration-determinism tests;
+assets coverage: 508 tests, 99.21% lines, 98.04% branches; 77 real PNG tests and 73 Wasm
+cap tests. Focused Chromium 152 test passes normal decode, native guest OOM, and
+CRC refusal. Builds/examples,TS7/TS6,lint,API docs,spec/docs/compatibility,
+architecture/duplicate gates,13 release-name/10 graph-tool tests,frozen install,
+and7 size budgets pass. Full browser matrix/all-package coverage not rerun.
+
+Validation caught two preexisting merged dependency regressions: HarfBuzz 1.6.1
+removes the adapter's imported subpaths and explicit destruction/instantiation
+contracts; restore 0.4.13 pending a deliberate 1.x migration. TypeDoc 0.28.20 supports
+TS6 and the guard requires 6; restore the isolated docs compiler 6.0.3 while the
+root stays TS 7.0.2. These changes are separate from PNG semantics.

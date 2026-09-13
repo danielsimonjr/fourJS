@@ -45,7 +45,15 @@
  * bounded output over an injected streaming decoder (§96).
  */
 
+import { FourError } from "@fourjs/core";
+
 import type { AssetLoader, FetchResponse } from "./asset-manager.js";
+import { assertImageDecoderMemory } from "./image-memory.js";
+import {
+  DEFAULT_MAXIMUM_DECODED_BYTES,
+  DEFAULT_MAXIMUM_EXPANSION_RATIO,
+  type TextureLoaderOptions,
+} from "./texture.js";
 
 /** Loads a response body as UTF-8 text (§76: JSON/SVG/shader sources). */
 export const textLoader: AssetLoader<string> = {
@@ -108,6 +116,24 @@ export type ImageDecodeLike = (
   data: ArrayBuffer,
 ) => Promise<ImageBitmapLike> | ImageBitmapLike;
 
+/** RGBA8 size estimates and an optional enforced decoder heap ceiling (§96). */
+export interface ImageLoaderOptions extends Pick<
+  TextureLoaderOptions,
+  "name" | "probe" | "requireProbe" | "maximumWorkingBytes"
+> {
+  /**
+   * Bound on the width × height × 4 RGBA8 size estimate; default 64 MiB.
+   * Native bitmap storage can differ and is not measurable through this seam.
+   * Positive infinity disables this estimate check.
+   */
+  readonly maximumDecodedBytes?: number;
+  /**
+   * Maximum RGBA8 size estimate divided by encoded bytes; default 1000.
+   * Positive infinity disables this estimate check.
+   */
+  readonly maximumExpansionRatio?: number;
+}
+
 /**
  * A decoded image with an explicit lifetime (§83).
  *
@@ -160,19 +186,112 @@ export class ImageAsset implements ImageBitmapLike {
  *
  * @param decode - The decoder; `(data) => createImageBitmap(new Blob([data]))`
  *   in a browser, a fake in a unit test. May return the bitmap synchronously.
- * @param name - Diagnostics label used in error `context.loader`.
+ * @param nameOrOptions - Diagnostics label, or image-size/probe/memory options.
+ *   Native platform decoders cannot satisfy `maximumWorkingBytes` and are
+ *   refused before fetching. RGBA8 size estimates do not cap decoder memory
+ *   or measure the native bitmap's actual storage.
  * @returns A loader producing a `Disposable` {@link ImageAsset}. Each call
  *   returns a distinct object, hence a distinct asset-manager cache slot.
  */
 export function createImageLoader(
   decode: ImageDecodeLike,
-  name = "image",
+  nameOrOptions: string | ImageLoaderOptions = "image",
 ): AssetLoader<ImageAsset> {
+  const options =
+    typeof nameOrOptions === "string"
+      ? { name: nameOrOptions }
+      : { ...nameOrOptions };
+  const name = options.name ?? "image";
+  assertImageDecoderMemory(decode, options.maximumWorkingBytes, {
+    loader: name,
+  });
+  const maximumDecodedBytes =
+    options.maximumDecodedBytes ?? DEFAULT_MAXIMUM_DECODED_BYTES;
+  const maximumExpansionRatio =
+    options.maximumExpansionRatio ?? DEFAULT_MAXIMUM_EXPANSION_RATIO;
+  for (const [limitName, value] of [
+    ["maximumDecodedBytes", maximumDecodedBytes],
+    ["maximumExpansionRatio", maximumExpansionRatio],
+  ] as const) {
+    if (!(value > 0)) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        `ImageLoaderOptions.${limitName} must be greater than zero.`,
+        { context: { loader: name, limitName, found: value } },
+      );
+    }
+  }
+  const check = (
+    width: number,
+    height: number,
+    encodedBytes: number,
+    url: string,
+    stage: "probe" | "decode",
+  ): void => {
+    const bytes = width * height * 4;
+    if (
+      !Number.isSafeInteger(width) ||
+      width < 1 ||
+      !Number.isSafeInteger(height) ||
+      height < 1 ||
+      !Number.isSafeInteger(bytes)
+    ) {
+      throw new FourError(
+        "UNTRUSTED_INPUT_REJECTED",
+        "Image dimensions must be positive safe integers with a safe RGBA8 size.",
+        { context: { url, loader: name, stage, width, height } },
+      );
+    }
+    if (
+      bytes > maximumDecodedBytes ||
+      (encodedBytes > 0 && bytes / encodedBytes > maximumExpansionRatio)
+    ) {
+      throw new FourError(
+        "UNTRUSTED_INPUT_REJECTED",
+        "Image RGBA8 size estimate exceeds decoded-byte or expansion limits.",
+        {
+          context: {
+            url,
+            loader: name,
+            stage,
+            bytes,
+            encodedBytes,
+            maximumDecodedBytes,
+            maximumExpansionRatio,
+          },
+        },
+      );
+    }
+  };
   return {
     name,
-    async load(response: FetchResponse): Promise<ImageAsset> {
+    async load(response: FetchResponse, url: string): Promise<ImageAsset> {
       const data = await response.arrayBuffer();
-      return new ImageAsset(await decode(data));
+      // Worker adapters may transfer the encoded buffer while decoding.
+      const encodedByteLength = data.byteLength;
+      const claimed = options.probe?.(data);
+      if (claimed === undefined && options.requireProbe === true) {
+        throw new FourError(
+          "UNTRUSTED_INPUT_REJECTED",
+          "A recognized dimension probe is required before image decoding.",
+          { context: { url, loader: name, stage: "probe" } },
+        );
+      }
+      if (claimed !== undefined) {
+        check(claimed.width, claimed.height, encodedByteLength, url, "probe");
+      }
+      const bitmap = await decode(data);
+      try {
+        check(bitmap.width, bitmap.height, encodedByteLength, url, "decode");
+        return new ImageAsset(bitmap);
+      } catch (cause) {
+        try {
+          bitmap.close();
+        } catch {
+          // Preserve the validation failure even if a host cleanup hook fails.
+        }
+        throw cause;
+      }
     },
   };
 }

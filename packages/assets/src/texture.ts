@@ -77,15 +77,18 @@
  * {@link TextureLoaderOptions.probe} is supplied — a header reader is a dozen
  * bytes of work for PNG, and it is the only way to refuse an allocation that has
  * not happened yet. Without one they are checked on the decoder's output, which
- * bounds what enters the engine but not the decoder's own peak: a platform
- * `createImageBitmap` cannot be pre-bounded at all, and saying so is more useful
- * than a limit that implies it can. Presence is the capability, as everywhere
- * else in this package.
+ * bounds what enters the engine but not the decoder's own peak. A platform
+ * `createImageBitmap` offers no allocation ceiling. To require one, supply
+ * `maximumWorkingBytes` and a decoder directly from a bounded factory such as
+ * `createBoundedPngDecoder`; unsupported callbacks are refused at construction.
+ * The enforced decoder heap is separate from encoded input and host RGBA/flip
+ * buffers, and does not impose a process-wide memory limit.
  */
 
 import { FourError, type Disposable } from "@fourjs/core";
 
 import type { AssetLoader, FetchResponse } from "./asset-manager.js";
+import { assertImageDecoderMemory } from "./image-memory.js";
 
 /**
  * The colour space of a texture's texels — `@fourjs/render`'s `ColorSpace`,
@@ -149,6 +152,8 @@ export type TexelProbeLike = (
 
 /** Construction options for {@link createTextureLoader}. */
 export interface TextureLoaderOptions {
+  /** Require a recognized dimension probe before decoding. Default false. */
+  readonly requireProbe?: boolean;
   /** The platform decoder (§77's "canvas and image-bitmap sources"). */
   readonly decode: TexelDecodeLike;
   /** Optional header reader; see {@link TexelProbeLike} and §96, above. */
@@ -180,6 +185,15 @@ export interface TextureLoaderOptions {
    * disables it.
    */
   readonly maximumExpansionRatio?: number;
+  /**
+   * Require an enforced decoder linear-memory ceiling, in bytes. The decoder
+   * must come directly from a bounded factory with a ceiling no larger than
+   * this safe integer (64 KiB–4 GiB). Native callbacks are refused at
+   * construction. Omit for legacy platform decoding without a heap cap.
+   * Encoded input, returned RGBA bytes and row-flip copies are separate from
+   * the decoder heap; this is not a process-wide memory limit.
+   */
+  readonly maximumWorkingBytes?: number;
 }
 
 /**
@@ -330,7 +344,13 @@ function flipRows(texels: DecodedTexels): Uint8Array {
 export function createTextureDecoder(
   options: TextureLoaderOptions,
 ): (encoded: ArrayBuffer, url: string) => Promise<TextureAsset> {
+  // Snapshot the capability and settings: mutating caller-owned options must
+  // not substitute an unbounded decoder after the construction-time check.
+  options = { ...options };
   const name = options.name ?? "texture";
+  assertImageDecoderMemory(options.decode, options.maximumWorkingBytes, {
+    loader: name,
+  });
   const flipY = options.flipY ?? true;
   const maximumDecodedBytes = positiveBound(
     options.maximumDecodedBytes,
@@ -378,13 +398,36 @@ export function createTextureDecoder(
   };
 
   return async (encoded: ArrayBuffer, url: string): Promise<TextureAsset> => {
+    // A probe or Worker-backed decoder may transfer and detach this buffer.
+    // The expansion denominator is the original input size, not its later state.
+    const encodedByteLength = encoded.byteLength;
     // Pre-decode refusal, when the caller gave this loader a way to look.
     const claimed = options.probe?.(encoded);
+    if (claimed === undefined && options.requireProbe === true) {
+      throw new FourError(
+        "UNTRUSTED_INPUT_REJECTED",
+        "A recognized dimension probe is required before image decoding.",
+        { context: { url, loader: name, stage: "probe" } },
+      );
+    }
     if (claimed !== undefined) {
+      if (
+        !Number.isSafeInteger(claimed.width) ||
+        claimed.width < 1 ||
+        !Number.isSafeInteger(claimed.height) ||
+        claimed.height < 1 ||
+        !Number.isSafeInteger(claimed.width * claimed.height * 4)
+      ) {
+        throw new FourError(
+          "UNTRUSTED_INPUT_REJECTED",
+          "Texture probe returned invalid dimensions.",
+          { context: { url, loader: name, stage: "probe" } },
+        );
+      }
       check(
         url,
         claimed.width * claimed.height * 4,
-        encoded.byteLength,
+        encodedByteLength,
         "probe",
       );
     }
@@ -392,16 +435,24 @@ export function createTextureDecoder(
     const texels = await options.decode(encoded);
     const { width, height, data } = texels;
     if (
-      !Number.isInteger(width) ||
+      !Number.isSafeInteger(width) ||
       width < 1 ||
-      !Number.isInteger(height) ||
-      height < 1
+      !Number.isSafeInteger(height) ||
+      height < 1 ||
+      !Number.isSafeInteger(width * height * 4)
     ) {
       throw new FourError(
         "ASSET_LOAD_FAILED",
         `"${url}" decoded to ${String(width)} × ${String(height)}; a texture ` +
           `needs finite integer dimensions of at least 1 (§85).`,
         { context: { url, loader: name, width, height } },
+      );
+    }
+    if (!(data instanceof Uint8Array)) {
+      throw new FourError(
+        "ASSET_LOAD_FAILED",
+        `"${url}" must decode to RGBA8 Uint8Array data.`,
+        { context: { url, loader: name } },
       );
     }
     if (data.length !== width * height * 4) {
@@ -421,7 +472,10 @@ export function createTextureDecoder(
         },
       );
     }
-    check(url, data.length, encoded.byteLength, "decode");
+    check(url, data.length, encodedByteLength, "decode");
+    // A small view can retain a much larger decoder allocation. Bound what
+    // the asset would actually retain, before creating a row-flip copy.
+    check(url, data.buffer.byteLength, encodedByteLength, "decode");
 
     return new TextureAsset(
       flipY ? { width, height, data: flipRows(texels) } : texels,

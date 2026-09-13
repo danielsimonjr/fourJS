@@ -4,6 +4,23 @@ Task tracker for four.js. Keep entries short and actionable; move finished items
 (newest first) with the date. Larger context and decisions belong in `MEMORY.md`; released
 changes in `CHANGELOG.md`.
 
+## 2026-09-12 — §96 image decoder memory
+
+- Implemented `createBoundedPngDecoder`: a pinned PNG Wasm heap capped before
+  initialization, complete PNG chunk/CRC preflight, finite output/expansion limits,
+  and fail-closed behavior after a codec trap.
+- `maximumWorkingBytes` on image/texture/glTF loading refuses uncappable callbacks
+  before loading; native APIs expose no configurable allocator cap. The supported
+  strict decoding path is PNG to RGBA8, not arbitrary native ImageBitmap decoding.
+- Fixed image rejection cleanup, invalid probe/dimension/backing-store acceptance,
+  mutable decoder options, and worker-transfer expansion-ratio bypasses.
+- This focused branch starts at `7fe7098` on main. Earlier Draco/Basis work remains
+  in local roadmap commit `b1240b4`; it is not duplicated or marked landed here.
+- Validation: 7,763 package tests, 685 integration/determinism tests, assets
+  coverage (508 tests), focused Chromium PNG check, builds/typechecks/lint/docs
+  and all bundle budgets pass. Restored incompatible baseline HarfBuzz/TypeDoc
+  dependency pins without changing their adapter or compiler contracts.
+
 ## 2026-09-11 post-merge review
 
 PR #93 merged as `3f48b1d`; reviewed its planning, shaping, skinning, shader,
@@ -2017,10 +2034,16 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       multi-texture-unit widening `gl-program.ts` records (R-13 follow-up) —
       metallic-roughness landed 2026-09-06; normal/occlusion/emissive remain.
       The loader parses them already and widens without a format change.
-- [ ] **§96 residue:** decompression limits — **half done 2026-08-21**: `createTextureLoader` enforces an absolute decoded-size bound and an expansion-ratio bound (pre-decode with a `probe`, post-decode without). Raw gzip output now bounded by `createGzipLoader` (2026-09-11). Still open for Draco/Basis when they land, and for platform decoders that cannot be pre-bounded at all; shader trust **runtime** boundary is the closed operator union (shipped); data-declared operators now lower through validated `ShaderFunction` declarations (2026-09-11), without executable source. **Plugin trust
-      boundary discharged 2026-08-28 with A-3**: a plugin is a value, never a name from a
-      document; enforced by `tests/integration/plugin-boundary.test.ts`; explicitly not a
-      sandbox. Guide row **partial** 2026-09-10 (`docs/guides/security-and-untrusted-content.md`: texture-loader bounds; gzip/Draco/Basis still absent)
+- [ ] **§96 residue:** image heap enforcement **implemented 2026-09-12** via
+      `createBoundedPngDecoder` and strict image/texture/glTF `maximumWorkingBytes`.
+      Native browser decoders cannot be capped and are refused in strict mode;
+      JPEG/WebP/AVIF have no bounded adapter yet. Texture decoding and raw gzip
+      output also have absolute decoded-size and expansion-ratio limits, and
+      shader/plugin trust boundaries remain implemented. Separate Draco/Basis
+      work exists in local roadmap commit `b1240b4` but is not on this branch, so
+      the aggregate row remains open. Process RSS, native platform heaps, and
+      host gzip internals remain outside the PNG linear-heap guarantee; see the
+      security guide.
 - [x] **Regenerate `docs/Architecture/` graph artifacts** (`pnpm graph`) — dependency
       graph + export surfaces are stale for the wave-2 exports (new input/ui/geometry/
       materials/assets/core/serialization/diagnostics surface)

@@ -105,7 +105,11 @@ export type {
   GltfSkinRecord,
 } from "./gltf.js";
 export { GltfAsset, createGltfLoader } from "./gltf.js";
-export type { ImageBitmapLike, ImageDecodeLike } from "./loaders.js";
+export type {
+  ImageBitmapLike,
+  ImageDecodeLike,
+  ImageLoaderOptions,
+} from "./loaders.js";
 export {
   ImageAsset,
   binaryLoader,
@@ -116,3 +120,9 @@ export {
 
 export { createGzipLoader } from "./gzip.js";
 export type { GzipDecodeLike, GzipLoaderOptions, GzipReader } from "./gzip.js";
+export { limitWasmMemory } from "./wasm-memory.js";
+export {
+  createBoundedPngDecoder,
+  DEFAULT_IMAGE_WORKING_BYTES,
+} from "./bounded-png.js";
+export type { BoundedPngDecoderOptions } from "./bounded-png.js";

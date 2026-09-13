@@ -10,7 +10,7 @@ colocated in each package (`packages/<name>/tests/`); performance measurements l
 | ------------------------------ | ------------------------------------------- | ---------------------------------------- |
 | [`determinism/`](determinism/) | `bun run test:suites`                       | **27** suites + **24** committed goldens |
 | [`integration/`](integration/) | `bun run test:suites`                       | **71** suites                            |
-| [`browser/`](browser/)         | `bun run test:browser` (project `chromium`) | **35** Playwright specs                  |
+| [`browser/`](browser/)         | `bun run test:browser` (project `chromium`) | **36** Playwright specs                  |
 | [`visual/`](visual/)           | `bun run test:browser` (project `visual`)   | **2** specs, **3** committed PNG goldens |
 
 The bold numbers are pinned by `tools/check-docs.mjs` against the filesystem
@@ -61,7 +61,7 @@ in `integration/helpers/`.
 
 ## `browser/` — §92's browser tier
 
-**35** Playwright specs in the `chromium` project (`tests/browser/*.spec.ts`; the
+**36** Playwright specs in the `chromium` project (`tests/browser/*.spec.ts`; the
 `webgpu/` subdirectory is a separate project). Most drive the **built** example
 sites (`bun run examples:build` first — see `playwright.config.ts` for the
 site/port/spec map). A handful — batching, culling, stencil, the README Quick

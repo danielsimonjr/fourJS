@@ -12,6 +12,7 @@
 
 import { isFourError, resetDevWarnings } from "@fourjs/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { registerBoundedImageDecoder } from "../src/image-memory.js";
 
 import {
   createGltfLoader,
@@ -1649,6 +1650,48 @@ describe("materials (§59 tier)", () => {
 });
 
 describe("textures, images, samplers", () => {
+  it("refuses an unbounded image decoder at construction despite a probe", () => {
+    const decodeTexture = vi.fn(fakeDecode);
+    expect(() =>
+      createGltfLoader({
+        decodeTexture,
+        probeTexture: () => ({ width: 1, height: 2 }),
+        maximumWorkingBytes: 65_536,
+      }),
+    ).toThrow(/no enforceable/);
+    expect(decodeTexture).not.toHaveBeenCalled();
+  });
+
+  it("preserves bounded decoder identity through glTF and snapshots options", async () => {
+    const decodeTexture = registerBoundedImageDecoder(
+      (data: ArrayBuffer) => fakeDecode(data),
+      65_536,
+    );
+    const unsafe = vi.fn(fakeDecode);
+    const options: GltfLoaderOptions = {
+      decodeTexture,
+      maximumWorkingBytes: 65_536,
+    };
+    const loader = createGltfLoader(options);
+    Object.assign(options, { decodeTexture: unsafe });
+    const asset = await loader.load(
+      jsonResponse(texturedDocument()),
+      "/safe.gltf",
+    );
+    expect(asset.textures[0]?.width).toBe(1);
+    expect(unsafe).not.toHaveBeenCalled();
+    asset.dispose();
+  });
+
+  it("permits texture-free glTF with a valid cap and rejects invalid caps", async () => {
+    await expect(
+      load(triangleDocument(), { maximumWorkingBytes: 65_536 }),
+    ).resolves.toBeDefined();
+    expect(() => createGltfLoader({ maximumWorkingBytes: Infinity })).toThrow(
+      /safe integer/,
+    );
+  });
+
   it("decodes a referenced base-colour texture through the injected seam", async () => {
     const asset = await load(texturedDocument(), {
       decodeTexture: fakeDecode,

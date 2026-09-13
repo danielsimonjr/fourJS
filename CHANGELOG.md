@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 are published, releases will follow [Semantic Versioning](https://semver.org/) per §90 of the
 specification; until then, entries are grouped by date under **Unreleased**.
 
+## Unreleased — bounded image decoding (2026-09-12)
+
+### Added
+
+- Static PNG to RGBA8 decoder with a runtime-enforced Wasm heap maximum established
+  before codec initialization, bounded output copies, and PNG framing/CRC checks.
+- Strict `maximumWorkingBytes` requirements for image, texture, and glTF loading;
+  uncappable native callbacks are refused before transport/decode. Existing
+  callbacks remain available without this option. Other image formats have no
+  bounded adapter yet; this is not a process-memory ceiling.
+- Real PNG codec regression fixtures and Chromium checks, including allocator
+  exhaustion; guest Wasm growth and startup-code tests verify the memory ceiling.
+
+### Fixed
+
+- Image loaders check RGBA8 output-size estimates and expansion limits, validate
+  header probes, and close rejected bitmaps. Texture loaders validate safe sizes
+  and backing-buffer retention before creating row-flip copies.
+- Snapshot decoder options to prevent replacement after memory-cap verification;
+  preserve original input size when probes or worker decoders transfer a buffer.
+- Restored the existing HarfBuzz adapter's supported 0.4.13 dependency and the
+  TypeDoc workspace's TypeScript 6.0.3 pin. The merged 1.6.1/7.0.2 pins broke
+  shaping integration and the docs compiler guard independently of this change.
+
+### Validation
+
+7,763 package tests and 685 integration/determinism tests pass. The assets gate
+passes 508 tests at 99.21% lines / 98.04% branches; the 77 PNG tests use the real
+codec and 73 Wasm tests include guest/start-function growth. Focused Chromium
+152 PNG decoding, checksum rejection and allocator-exhaustion check passes.
+All packages and examples build; TypeScript 7/6 checks, lint, warning-free API
+docs, spec/docs/compatibility, architecture/duplicate checks, 13 publish-name
+and 10 graph-tool tests, frozen install, and all seven bundle budgets pass.
+The complete browser matrix and all-package coverage were not rerun locally.
+
 ## Unreleased — post-merge review (2026-09-11)
 
 ### Fixed

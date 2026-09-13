@@ -1,26 +1,26 @@
 # Complete File Inventory
 
-**Generated**: 2026-09-12 (by tools/create-dependency-graph)
+**Generated**: 2026-09-13 (by tools/create-dependency-graph)
 
 Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-root cross-package `tests/`, `tools/`, build/test `*.config.ts`, `examples/`, and `docs/` reference sources — tagged with a disposition. A completeness census: no `.ts` may be silently missing. The self-check gate (`verifyFileCensus`) does a MAXIMAL, location-agnostic repo walk (broader than this census’s enumerated discovery) and HARD-FAILS `npm run docs:deps` if any `.ts` on disk is unaccounted, or if any `orphan` exists.
 
 **Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every tracked `.ts` appears below with an explicit disposition.
 
-**Total files**: 871
+**Total files**: 879
 
 ## Disposition counts
 
 | Disposition | Count | Meaning |
 | --- | --: | --- |
-| `reachable` | 284 | A `src/` file in the module graph, reachable from a root. |
+| `reachable` | 287 | A `src/` file in the module graph, reachable from a root. |
 | `build-entry` | 48 | A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …). |
 | `test-only` | 4 | A `src/` file not reachable from src roots but imported by a test. |
 | `orphan` | 0 | A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate). |
-| `test` | 503 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`). |
+| `test` | 508 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`). |
 | `tool` | 1 | A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks). |
 | `config` | 17 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root). |
 | `example` | 14 | An `examples/` or `docs/` reference/illustration source. |
-| **Total** | **871** | |
+| **Total** | **879** | |
 
 ## Per-area counts
 
@@ -28,17 +28,17 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | --- | --: |
 | `config` | 17 |
 | `examples` | 14 |
-| `src` | 336 |
-| `tests` | 503 |
+| `src` | 339 |
+| `tests` | 508 |
 | `tools` | 1 |
 
 ## Per-package counts
 
 | Package | Files |
 | --- | --: |
-| `(root)` | 235 |
+| `(root)` | 237 |
 | `@fourjs/animation` | 32 |
-| `@fourjs/assets` | 22 |
+| `@fourjs/assets` | 28 |
 | `@fourjs/core` | 26 |
 | `@fourjs/diagnostics` | 27 |
 | `@fourjs/geometry` | 25 |
@@ -127,27 +127,33 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/animation/tests/values.test.ts` | @fourjs/animation | tests | test |
 | `packages/animation/tests/when.test.ts` | @fourjs/animation | tests | test |
 | `packages/assets/src/asset-manager.ts` | @fourjs/assets | src | reachable |
+| `packages/assets/src/bounded-png.ts` | @fourjs/assets | src | reachable |
 | `packages/assets/src/capabilities.ts` | @fourjs/assets | src | reachable |
 | `packages/assets/src/content-hash.ts` | @fourjs/assets | src | reachable |
 | `packages/assets/src/gltf.ts` | @fourjs/assets | src | reachable |
 | `packages/assets/src/gzip.ts` | @fourjs/assets | src | reachable |
+| `packages/assets/src/image-memory.ts` | @fourjs/assets | src | reachable |
 | `packages/assets/src/index.ts` | @fourjs/assets | src | build-entry |
 | `packages/assets/src/loader-registry.ts` | @fourjs/assets | src | reachable |
 | `packages/assets/src/loaders.ts` | @fourjs/assets | src | reachable |
 | `packages/assets/src/manifest.ts` | @fourjs/assets | src | reachable |
 | `packages/assets/src/texture.ts` | @fourjs/assets | src | reachable |
+| `packages/assets/src/wasm-memory.ts` | @fourjs/assets | src | reachable |
 | `packages/assets/tests/a18-remainder.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/asset-manager.test.ts` | @fourjs/assets | tests | test |
+| `packages/assets/tests/bounded-png.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/cancellation.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/capabilities.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/content-hash.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/gltf.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/gzip.test.ts` | @fourjs/assets | tests | test |
+| `packages/assets/tests/image-memory.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/loaders.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/manifest.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/security.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/smoke.test.ts` | @fourjs/assets | tests | test |
 | `packages/assets/tests/texture.test.ts` | @fourjs/assets | tests | test |
+| `packages/assets/tests/wasm-memory.test.ts` | @fourjs/assets | tests | test |
 | `packages/core/src/component.ts` | @fourjs/core | src | reachable |
 | `packages/core/src/conventions.ts` | @fourjs/core | src | reachable |
 | `packages/core/src/dev.ts` | @fourjs/core | src | reachable |
@@ -734,6 +740,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `tests/browser/animation.spec.ts` | (root) | tests | test |
 | `tests/browser/batching.spec.ts` | (root) | tests | test |
 | `tests/browser/blending.spec.ts` | (root) | tests | test |
+| `tests/browser/bounded-png.spec.ts` | (root) | tests | test |
 | `tests/browser/character-controller.spec.ts` | (root) | tests | test |
 | `tests/browser/clipping.spec.ts` | (root) | tests | test |
 | `tests/browser/context-loss.spec.ts` | (root) | tests | test |
@@ -741,6 +748,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `tests/browser/example.spec.ts` | (root) | tests | test |
 | `tests/browser/first-3d-scene.spec.ts` | (root) | tests | test |
 | `tests/browser/fixtures/batching-page.ts` | (root) | tests | test |
+| `tests/browser/fixtures/bounded-png-page.ts` | (root) | tests | test |
 | `tests/browser/fixtures/clipping-page.ts` | (root) | tests | test |
 | `tests/browser/fixtures/culling-page.ts` | (root) | tests | test |
 | `tests/browser/fixtures/geometry-refresh-page.ts` | (root) | tests | test |

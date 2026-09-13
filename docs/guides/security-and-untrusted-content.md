@@ -13,19 +13,22 @@ deployer can write their headers from.
 
 ## Honest state first
 
-§96 lists seven requirements. Six are met and one is **partial**: image
-decoders and raw gzip output are bounded; Draco and Basis are not, because those paths
-do not exist yet.
+§96 lists seven requirements. The bounded PNG path enforces its codec heap
+ceiling before initialization. Native image callbacks remain uncapped unless a
+strict policy refuses them; output-size estimates alone cannot cap those heaps.
+Texture decoding and raw gzip loading also have bounded output/expansion checks.
+The aggregate decompression row remains **partial** on this branch because the
+separate Draco/Basis implementation has not landed here.
 
-| §96 requirement                                  | State      | Where                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| bounds checking                                  | **met**    | `validateSceneDocument` / `validateReplayRecording` rebuild a document field by field and drop every key they do not know; geometry validates index ranges; base64 is canonical-only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| no arbitrary code execution from scene files     | **met**    | the formats are JSON; `cloneJsonValue` refuses a `__proto__` key; nothing anywhere in the engine calls `eval` or builds a `Function` from a string (see "CSP posture", which is tested)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| input-size limits                                | **met**    | `AssetManagerOptions.maximumBytes` for transport; `maximumTextLength` on `decodeSceneDocument` / `decodeReplayRecording` for documents — all three finite by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| cancellation and timeouts for expensive decoders | **met**    | `AssetManagerOptions.timeoutSeconds` bounds a whole load, transport and decode together; `load(url, loader, { signal })` cancels one caller's load, and `AssetManagerOptions.abortController` extends both to the request itself (`canAbortTransport` reports whether a manager has it)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| documented content-security-policy behavior      | **met**    | this guide's "CSP posture" section, enforced by `tests/integration/security-csp.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| decompression limits                             | **partial** | `createTextureLoader` (2026-08-21) enforces `maximumDecodedBytes` (default 64 MiB) and `maximumExpansionRatio` (default 1000×), pre-decode when a `probe` reads the header and post-decode without one. `createGzipLoader` (2026-09-11) enforces finite decoded-byte and expansion limits while pulling a host gzip stream, cancelling on overflow. Still absent: Draco and Basis (no compressed path to bound), and platform decoders that cannot be pre-bounded (`createImageBitmap`) |
-| safe shader/plugin boundaries                    | **met**    | the plugin half (2026-08-28, `A-3`/RFC 0002): a plugin is a **value** the application installs — `PluginHost.add` and `ApplicationOptions.plugins` accept no URL, no module specifier, and no name from a document, and `tests/integration/plugin-boundary.test.ts` fails if any deserializing package reaches the host. It is a boundary, **not a sandbox** — see "Plugins run with your authority". The shader half (2026-08-28, `R-14`/RFC 0001, spec revision 1.11): **shading is a graph of closed operators, never source text** — §60's shipped surface (`ShaderGraph`/`NodeMaterial`/`NodeMaterialBuilder`, `@fourjs/materials`) accepts no GLSL or WGSL anywhere, a graph is plain JSON whose every operator is a member of a closed union validated at construction (§85, with node and sampler caps), every texture it samples is enumerable (so §63's feedback/ordering checks still see a §70 graph effect's full sample set), and §57's `ShaderMaterial` — the name a source-string material would have had — is recorded **permanently unshipped**. An operator the engine has not implemented is a refused value, not an executed one |
+| §96 requirement                                  | State                                                    | Where |
+| ------------------------------------------------ | -------------------------------------------------------- | ----- |
+| bounds checking                                  | **met**                                                  | `validateSceneDocument` / `validateReplayRecording` rebuild a document field by field and drop every key they do not know; geometry validates index ranges; base64 is canonical-only |
+| no arbitrary code execution from scene files     | **met**                                                  | the formats are JSON; `cloneJsonValue` refuses a `__proto__` key; nothing anywhere in the engine calls `eval` or builds a `Function` from a string (see "CSP posture", which is tested) |
+| input-size limits                                | **met**                                                  | `AssetManagerOptions.maximumBytes` for transport; `maximumTextLength` on `decodeSceneDocument` / `decodeReplayRecording` for documents — all three finite by default |
+| cancellation and timeouts for expensive decoders | **met**                                                  | `AssetManagerOptions.timeoutSeconds` bounds a whole load, transport and decode together; `load(url, loader, { signal })` cancels one caller's load, and `AssetManagerOptions.abortController` extends both to the request itself (`canAbortTransport` reports whether a manager has it) |
+| documented content-security-policy behavior      | **met**                                                  | this guide's "CSP posture" section, enforced by `tests/integration/security-csp.test.ts` |
+| decompression limits                             | **partial overall; bounded PNG and gzip implemented**    | `createBoundedPngDecoder` caps the actual Wasm heap before initialization, checks PNG framing/checksums and output budgets, and refuses allocator failures. Image/texture/glTF `maximumWorkingBytes` rejects uncappable callbacks before loading. `createTextureLoader` and `createImageLoader` enforce finite decoded-byte and expansion-ratio limits, and `createGzipLoader` bounds streamed gzip output while cancelling on overflow. Separate Draco/Basis work has not landed on this branch, and native platform decoders still cannot be pre-bounded. |
+| safe shader/plugin boundaries                    | **met**                                                  | the plugin half (2026-08-28, `A-3`/RFC 0002): a plugin is a **value** the application installs — `PluginHost.add` and `ApplicationOptions.plugins` accept no URL, no module specifier, and no name from a document, and `tests/integration/plugin-boundary.test.ts` fails if any deserializing package reaches the host. It is a boundary, **not a sandbox** — see "Plugins run with your authority". The shader half (2026-08-28, `R-14`/RFC 0001, spec revision 1.11): **shading is a graph of closed operators, never source text** — §60's shipped surface (`ShaderGraph`/`NodeMaterial`/`NodeMaterialBuilder`, `@fourjs/materials`) accepts no GLSL or WGSL anywhere, a graph is plain JSON whose every operator is a member of a closed union validated at construction (§85, with node and sampler caps), every texture it samples is enumerable (so §63's feedback/ordering checks still see a §70 graph effect's full sample set), and §57's `ShaderMaterial` — the name a source-string material would have had — is recorded **permanently unshipped**. An operator the engine has not implemented is a refused value, not an executed one |
 
 Depth limiting is the sixth item's neighbour rather than one of the seven, and
 it is met: both decoders bound JSON nesting. It matters more than its absence
@@ -71,6 +74,91 @@ Two details are worth knowing because they change what an attacker can do:
 
 Either limit can be set to `Number.POSITIVE_INFINITY`, which is how an
 application records in its own source that it has decided to trust an origin.
+
+## Image decoder heap limits
+
+Browser [`createImageBitmap`](https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#imagebitmapoptions)
+and [`ImageDecoder`](https://w3c.github.io/webcodecs/#dictdef-imagedecoderinit)
+provide no configurable allocator maximum. Header probes, resize options,
+workers, and deadline checks therefore cannot promise a native heap ceiling.
+
+For static PNG textures, use the actual bounded decoder:
+
+```ts
+import {
+  createBoundedPngDecoder,
+  createTextureLoader,
+  createGltfLoader,
+} from "fourJS/assets";
+
+// Application-pinned executable bytes from @jsquash/png@3.1.1:
+// codec/pkg/squoosh_png_bg.wasm. Load them through your trusted module pipeline.
+const maximumWorkingBytes = 32 * 1024 * 1024;
+const decode = await createBoundedPngDecoder({
+  wasmBinary: trustedPngWasmBytes,
+  maximumWorkingBytes,
+  maximumDecodedBytes: 8 * 1024 * 1024,
+  maximumExpansionRatio: 1000,
+});
+const pngLoader = createTextureLoader({
+  decode,
+  maximumWorkingBytes,
+  colorSpace: "srgb",
+});
+const gltfLoader = createGltfLoader({
+  decodeTexture: decode,
+  maximumWorkingBytes,
+});
+```
+
+The pinned binary's SHA-256 is
+`263d6e658808a74b72a1a99c5cc1d619237e70c150db6e41d5d84d3d117ab9be`.
+The application supplies trusted codec code; asset contents cannot select code or
+module URLs. This factory owns its Wasm instance and its ABI bridge, with no
+jSquash singleton JavaScript glue or new runtime dependency. It validates PNG
+chunk framing and CRCs before invoking the codec. APNG is refused. Standard PNG
+color types, palettes, transparency, row filters, and 16-bit-to-RGBA8 conversion
+are tested with the real codec.
+
+`maximumWorkingBytes` defaults to 128 MiB in the PNG factory and cannot be disabled.
+It is a safe integer from 64 KiB through 4 GiB, rounded down to Wasm's 64 KiB pages;
+a budget below the binary's initial heap is refused. The cap is set before
+instantiation, so even startup code and guest `memory.grow` cannot exceed it.
+The decoder reuses its heap across successful synchronous calls. A codec trap or
+exception permanently refuses further calls on that instance; construct a fresh
+one to recover. Header/budget failures before codec execution leave it usable.
+
+Each decode has one bounded native heap plus at most one independently bounded
+RGBA8 host copy. The caller's encoded buffer, already bounded by `AssetManager`,
+lives outside the codec. Default texture row flipping temporarily needs another
+RGBA8 buffer; returned assets and multiple decoder instances are separate
+allocations. A 32 MiB heap and 8 MiB output limit consequently allow up to 48 MiB
+of codec heap and RGBA buffers during a flip, plus encoded input and runtime
+bookkeeping. These numbers describe live buffers, **not peak process RSS** or
+when the garbage collector returns memory to the OS.
+
+On image, texture, and glTF factories, `maximumWorkingBytes` is an opt-in strict
+requirement. It checks a private factory-established capability before transport
+or decode, rejects an insufficient cap, and rejects ordinary native callbacks.
+Pass the bounded function directly: wrapping it in another callback loses that
+capability. `createImageLoader` has no bounded native bitmap producer; its strict
+option fails closed, and the PNG texture path is the supported alternative.
+JPEG, WebP, and AVIF currently have no bounded adapter in this package, so a PNG
+adapter rejects them rather than falling back to a native decoder.
+
+Without this option, existing native callbacks remain available. Image loaders
+now check a 64 MiB RGBA8-size estimate and 1000× expansion by default, and close
+rejected bitmaps. These estimates are not actual native allocation measurements.
+Texture loaders additionally check a returned view's full backing buffer.
+Both preserve the original encoded size even if a worker transfers the input.
+`requireProbe` can refuse unknown formats before native decoding, but a successful
+probe is still not proof of bounded native memory.
+
+Decoding remains synchronous inside Wasm; use an appropriately managed worker
+when cancellation must interrupt computation. Neither this heap limit nor an
+`AssetManager` deadline preempts a blocked JavaScript thread. WebAssembly use may
+require `script-src 'wasm-unsafe-eval'` under a strict CSP, without permitting
+JavaScript `unsafe-eval`.
 
 ## Documents: length and depth
 
@@ -203,10 +291,13 @@ admits no string.
 Being explicit about the holes is the point of the honest-state table; these
 are the ones that most affect how you deploy:
 
-1. **Decoder-internal allocations.** Texture decoding and raw gzip loading now
-   have output-size and expansion-ratio bounds. These do not bound allocations
-   internal to a host decoder: supply a streaming gzip decoder with bounded
-   chunks. Draco/Basis paths remain unimplemented.
+1. **Native platform heaps and total process memory.** The bounded PNG adapter
+   limits its Wasm linear heap, including input, temporary allocations, and native
+   output. It separately checks the host RGBA copy before allocation. It cannot cap
+   browser/OS bookkeeping, Wasm compilation, other decoder instances, retained
+   assets, or an arbitrary native decoder. Texture and gzip output bounds do not cap
+   their host decoder's internal memory. The separate Draco/Basis work is outside
+   this branch.
 2. **Shader boundaries left this list on 2026-08-28 (`R-14`/RFC 0001).** There
    is no path by which a scene file — or anything else — can name shader
    source, and spec revision 1.11 makes that permanent: shading is a graph of
@@ -238,10 +329,14 @@ are your server's.
 ```ts
 import { createGzipLoader } from "fourJS/assets";
 
-const gzip = createGzipLoader((bytes) =>
-  new Blob([bytes]).stream()
-    .pipeThrough(new DecompressionStream("gzip")).getReader(),
-  { maximumDecodedBytes: 64 * 1024 * 1024, maximumExpansionRatio: 1000 });
+const gzip = createGzipLoader(
+  (bytes) =>
+    new Blob([bytes])
+      .stream()
+      .pipeThrough(new DecompressionStream("gzip"))
+      .getReader(),
+  { maximumDecodedBytes: 64 * 1024 * 1024, maximumExpansionRatio: 1000 },
+);
 const bytes = await assets.load("/scene.json.gz", gzip);
 ```
 

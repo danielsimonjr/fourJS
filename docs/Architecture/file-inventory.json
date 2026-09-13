@@ -1,12 +1,12 @@
 {
-  "generated": "2026-09-12",
-  "totalFiles": 871,
+  "generated": "2026-09-13",
+  "totalFiles": 879,
   "byDisposition": {
-    "reachable": 284,
+    "reachable": 287,
     "build-entry": 48,
     "test-only": 4,
     "orphan": 0,
-    "test": 503,
+    "test": 508,
     "tool": 1,
     "config": 17,
     "example": 14
@@ -14,14 +14,14 @@
   "byArea": {
     "examples": 14,
     "config": 17,
-    "src": 336,
-    "tests": 503,
+    "src": 339,
+    "tests": 508,
     "tools": 1
   },
   "byPackage": {
-    "(root)": 235,
+    "(root)": 237,
     "@fourjs/animation": 32,
-    "@fourjs/assets": 22,
+    "@fourjs/assets": 28,
     "@fourjs/core": 26,
     "@fourjs/diagnostics": 27,
     "fourJS": 53,
@@ -474,6 +474,13 @@
       "loc": 2479
     },
     {
+      "file": "packages/assets/src/bounded-png.ts",
+      "package": "@fourjs/assets",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 327
+    },
+    {
       "file": "packages/assets/src/capabilities.ts",
       "package": "@fourjs/assets",
       "area": "src",
@@ -492,7 +499,7 @@
       "package": "@fourjs/assets",
       "area": "src",
       "disposition": "reachable",
-      "loc": 2579
+      "loc": 2590
     },
     {
       "file": "packages/assets/src/gzip.ts",
@@ -502,11 +509,18 @@
       "loc": 131
     },
     {
+      "file": "packages/assets/src/image-memory.ts",
+      "package": "@fourjs/assets",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 63
+    },
+    {
       "file": "packages/assets/src/index.ts",
       "package": "@fourjs/assets",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 119
+      "loc": 129
     },
     {
       "file": "packages/assets/src/loader-registry.ts",
@@ -520,7 +534,7 @@
       "package": "@fourjs/assets",
       "area": "src",
       "disposition": "reachable",
-      "loc": 179
+      "loc": 298
     },
     {
       "file": "packages/assets/src/manifest.ts",
@@ -534,7 +548,14 @@
       "package": "@fourjs/assets",
       "area": "src",
       "disposition": "reachable",
-      "loc": 462
+      "loc": 516
+    },
+    {
+      "file": "packages/assets/src/wasm-memory.ts",
+      "package": "@fourjs/assets",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 142
     },
     {
       "file": "packages/assets/tests/a18-remainder.test.ts",
@@ -549,6 +570,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 580
+    },
+    {
+      "file": "packages/assets/tests/bounded-png.test.ts",
+      "package": "@fourjs/assets",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 645
     },
     {
       "file": "packages/assets/tests/cancellation.test.ts",
@@ -576,7 +604,7 @@
       "package": "@fourjs/assets",
       "area": "tests",
       "disposition": "test",
-      "loc": 2532
+      "loc": 2575
     },
     {
       "file": "packages/assets/tests/gzip.test.ts",
@@ -586,11 +614,18 @@
       "loc": 142
     },
     {
+      "file": "packages/assets/tests/image-memory.test.ts",
+      "package": "@fourjs/assets",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 57
+    },
+    {
       "file": "packages/assets/tests/loaders.test.ts",
       "package": "@fourjs/assets",
       "area": "tests",
       "disposition": "test",
-      "loc": 203
+      "loc": 347
     },
     {
       "file": "packages/assets/tests/manifest.test.ts",
@@ -618,7 +653,14 @@
       "package": "@fourjs/assets",
       "area": "tests",
       "disposition": "test",
-      "loc": 253
+      "loc": 390
+    },
+    {
+      "file": "packages/assets/tests/wasm-memory.test.ts",
+      "package": "@fourjs/assets",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 299
     },
     {
       "file": "packages/core/src/component.ts",
@@ -4723,6 +4765,13 @@
       "loc": 1140
     },
     {
+      "file": "tests/browser/bounded-png.spec.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 59
+    },
+    {
       "file": "tests/browser/character-controller.spec.ts",
       "package": "(root)",
       "area": "tests",
@@ -4770,6 +4819,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 158
+    },
+    {
+      "file": "tests/browser/fixtures/bounded-png-page.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 29
     },
     {
       "file": "tests/browser/fixtures/clipping-page.ts",

@@ -28,3 +28,19 @@ Implements the MVP tier of §76–78 in [`docs/SPECIFICATION.md`](../../docs/SPE
 Unit tests are colocated in `tests/` per §92.
 
 Workspace name `@fourjs/assets`; publishes as `@danielsimonjr/fourjs-assets`.
+
+## Bounded PNG decoding (§96)
+
+`createBoundedPngDecoder({ wasmBinary, maximumWorkingBytes })` creates a PNG to
+RGBA8 decoder with a Wasm heap ceiling set before initialization. Supply trusted
+`codec/pkg/squoosh_png_bg.wasm` bytes from `@jsquash/png@3.1.1`; no runtime codec
+fetch or singleton glue is used. Pass the returned function directly to
+`createTextureLoader` or `createGltfLoader` with `maximumWorkingBytes` to require
+that enforced cap. Ordinary native image callbacks fail that strict requirement.
+
+Default PNG limits: 128 MiB linear heap, 64 MiB output, 1000× expansion. Native
+heap limits do not include encoded input retained by the caller, host output
+copies, row flipping, or total process memory. PNG CRC/framing and real allocator
+failures are tested; APNG and other formats are refused. See the
+[security guide](../../docs/guides/security-and-untrusted-content.md#image-decoder-heap-limits)
+for complete accounting, trusted-code setup, native callback behavior, and CSP.
