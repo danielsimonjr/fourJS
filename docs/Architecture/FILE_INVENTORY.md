@@ -1,6 +1,6 @@
 # Complete File Inventory
 
-**Generated**: 2026-09-12 (by tools/create-dependency-graph)
+**Generated**: 2026-09-13 (by tools/create-dependency-graph)
 
 Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-root cross-package `tests/`, `tools/`, build/test `*.config.ts`, `examples/`, and `docs/` reference sources — tagged with a disposition. A completeness census: no `.ts` may be silently missing. The self-check gate (`verifyFileCensus`) does a MAXIMAL, location-agnostic repo walk (broader than this census’s enumerated discovery) and HARD-FAILS `npm run docs:deps` if any `.ts` on disk is unaccounted, or if any `orphan` exists.
 

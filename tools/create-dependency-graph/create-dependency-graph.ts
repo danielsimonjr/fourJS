@@ -4836,11 +4836,14 @@ async function main(): Promise<void> {
     `Written: docs/Architecture/dependency-summary.compact.json (${(compactSize / 1024).toFixed(1)}KB)`
   );
 
-  // Per-package source-export surface — the union of exported names across each
-  // workspace package's own source files (alias-corrected). This is the independent
-  // static-source ground truth that `generate-functions-reference.mjs --check`
-  // reconciles the runtime `dist` surface against (a shipped name with no source
-  // origin here is real drift). See docs/reference cross-validation.
+  // Per-package public export surface — the union of names reachable from each
+  // package's public entrypoints (`src/index.ts`, explicit `exports` subpaths,
+  // `bin` targets, and config-referenced bundle entries). This is the
+  // independent static-source ground truth that
+  // `generate-functions-reference.mjs --check` reconciles the runtime `dist`
+  // surface against (a shipped name with no source origin here is real drift).
+  // Internal helper exports that are reachable only by relative imports inside a
+  // package must not appear here.
   const pkgOf = (moduleKey: string): string =>
     moduleKey.startsWith('packages/')
       ? moduleKey.split('/').slice(0, 2).join('/')
@@ -4849,8 +4852,18 @@ async function main(): Promise<void> {
   for (const [mkey, filesObj] of Object.entries(modules)) {
     const pkg = pkgOf(mkey);
     surfaceSets[pkg] ??= new Set<string>();
-    for (const f of Object.values(filesObj))
-      for (const n of f.exports.named) surfaceSets[pkg].add(n);
+    const files = Object.values(filesObj);
+    const publicSurface = computePublicSurface(files);
+    for (const f of files) {
+      for (const n of f.exports.named) {
+        if (
+          publicSurface.publicWildcardFiles.has(f.path) ||
+          publicSurface.publicNamed.has(`${f.path}::${n}`)
+        ) {
+          surfaceSets[pkg].add(n);
+        }
+      }
+    }
   }
   const surfaces: Record<string, string[]> = {};
   for (const pkg of Object.keys(surfaceSets).sort())

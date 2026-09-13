@@ -2037,11 +2037,13 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
 - [ ] **§96 residue:** image heap enforcement **implemented 2026-09-12** via
       `createBoundedPngDecoder` and strict image/texture/glTF `maximumWorkingBytes`.
       Native browser decoders cannot be capped and are refused in strict mode;
-      JPEG/WebP/AVIF have no bounded adapter yet. Output limits, gzip streaming,
-      and shader/plugin trust boundaries remain implemented. Separate Draco/Basis
+      JPEG/WebP/AVIF have no bounded adapter yet. Texture decoding and raw gzip
+      output also have absolute decoded-size and expansion-ratio limits, and
+      shader/plugin trust boundaries remain implemented. Separate Draco/Basis
       work exists in local roadmap commit `b1240b4` but is not on this branch, so
-      the aggregate row remains open. Process RSS and host gzip internals remain
-      outside the PNG linear-heap guarantee; see the security guide.
+      the aggregate row remains open. Process RSS, native platform heaps, and
+      host gzip internals remain outside the PNG linear-heap guarantee; see the
+      security guide.
 - [x] **Regenerate `docs/Architecture/` graph artifacts** (`pnpm graph`) — dependency
       graph + export surfaces are stale for the wave-2 exports (new input/ui/geometry/
       materials/assets/core/serialization/diagnostics surface)
