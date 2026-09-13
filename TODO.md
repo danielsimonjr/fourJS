@@ -1387,7 +1387,7 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       light layers, WebGPU `normalMap` / `occlusionMap` and emissive.
 - [x] Spec-revisit note (2026-08-04) — **done, spec revision 1.8 (2026-08-08)**: §57's
       family list now names `LitMaterial`
-- [ ] First publish (§94 0.1): Changesets release workflow + the
+- [x] First publish (§94 0.1): Changesets release workflow + the
       @danielsimonjr/fourjs publish-name mapping — owner step.
       **Infrastructure is done (verified 2026-09-07); the publish itself is not.**
       `release.yml` runs Changesets, `tools/apply-publish-names.mjs` exists with its own
@@ -1395,6 +1395,11 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       2026-09-11: corrected private-workspace exclusion and nested subpath rewriting;
       all 24 public packages stage locally, and mapping regressions run in PR CI.
       What is missing is the release itself: **no git tag exists and nothing is on npm.**
+      **RELEASED 2026-09-13.** All 24 packages at 0.1.0 (one coherent version, not the mixed
+      set `changeset version` produced), tag `v0.1.0` on `bbd7487`, GitHub release published.
+      Published to npm from the owner's machine, not CI (no `NPM_TOKEN` secret exists, so
+      `release.yml` publishes nothing). Verified from the LIVE registry: a fresh project installed
+      `@danielsimonjr/fourjs@0.1.0` from npmjs.org - 24 packages, 26/26 subpaths import.
       Publishing is ZBOOK-manual by charter and gated on Daniel's "not ready until we run
       more dogfooding cycles" — so this stays open on his word, not on missing work.
 
