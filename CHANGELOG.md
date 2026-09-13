@@ -6,6 +6,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 are published, releases will follow [Semantic Versioning](https://semver.org/) per §90 of the
 specification; until then, entries are grouped by date under **Unreleased**.
 
+## Unreleased — release-readiness cycle (2026-09-13)
+
+A rubber-duck and consumer-seat dogfood pass ahead of the first publish. `main`
+did not build at the start of it, and all three workflows were red.
+
+### Fixed — build and types
+
+- **`WebAssembly` and `BufferSource` had no declaration.** `tsconfig.base.json`
+  pins `lib` to `ES2022` because the library layer is deliberately DOM-free, and
+  TypeScript ships both globals only in `lib.dom`. Four packages use them, so
+  `@fourjs/assets` and `@fourjs/text` failed to compile and the whole build
+  stopped. Declared minimally in `types/wasm/index.d.ts` and loaded through
+  `typeRoots` + `types`, rather than adding `"DOM"` to `lib`. The declaration
+  covers exactly the ten members referenced repo-wide, and `WebAssembly.Module`
+  carries a private brand: with only static members its instance type was `{}`,
+  which made `instantiate(bytes, …)` bind to the wrong overload.
+- **`types` was re-declared identically in 26 tsconfigs.** It is an array, so a
+  child replaces the parent — the build configs picked up the new declarations
+  and the root config used by lint did not. The redundant overrides are removed;
+  the base is the single source.
+- **The `StandardPipeline` seam had drifted from its implementation.** It
+  declared `setFeatures` with three parameters and no `setMapFactors`, against a
+  `StandardProgram` taking five. Brought up to the implementation; trimming the
+  caller instead would have dropped normal and occlusion maps from every
+  `StandardMaterial` draw.
+
+### Fixed — rendering
+
+- **`examples/gltf-model` rendered an empty canvas.** It never called
+  `registerStandardPipeline()`, which became an opt-in seam on 2026-09-11, so its
+  standard draws were skipped. The same omission in the
+  `standard-material-maps` browser fixture made that gate read black.
+
+### Fixed — published artifacts
+
+- **Diagnostics shipped workspace package names.** Twenty DEV messages across six
+  packages told users to call a register function "from `@fourjs/render-webgl`",
+  a name that does not exist on npm. They now name packages unscoped ("the
+  render-webgl package"), which is true under both names.
+  `apply-publish-names` flagged this rather than rewriting prose, which is correct.
+
+### Fixed — gates
+
+- **`check-compat` failed on any Windows clone.** With `core.autocrlf=true` and no
+  `.gitattributes`, the checked-out document is CRLF; the checker split on `
+`,
+  so every line compared unequal and its "first difference" printed two
+  identical-looking lines. The document is now normalised to LF when read.
+- **`gltf-model.spec.ts` asserted pixels before page errors,** so every failure
+  read "nothing was drawn" and hid its cause. Errors are asserted first, and the
+  spec waits for drawn frames rather than a loaded model.
+- A test guard compared `getComponent()` against `null`, which it never returns
+  (`T | undefined`), so the guard could not fire. An unused import is removed.
+
+### Documented
+
+- **`docs/COMPATIBILITY.md` §0 — what a consumer's TypeScript needs.** Every
+  package is ESM-only. fourJS's own declarations compile clean under `strict`
+  with `skipLibCheck: false`; the `@dimforge/rapier*-compat` declarations need
+  `lib: esnext` for `Symbol.dispose` under that setting.
+
 ## Unreleased — bounded image decoding (2026-09-12)
 
 ### Added
