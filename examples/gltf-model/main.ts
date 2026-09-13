@@ -26,7 +26,7 @@ import { Application } from "fourJS/application";
 import { AssetManager, createGltfLoader } from "fourJS/assets";
 import { instantiateGltf } from "fourJS";
 import { PerspectiveCamera, createFullscreenViewport } from "fourJS/scene";
-import { WebglRenderer } from "fourJS/render-webgl";
+import { WebglRenderer, registerStandardPipeline } from "fourJS/render-webgl";
 
 /** The example's drawing surface. */
 const canvas = document.querySelector<HTMLCanvasElement>("#scene");
@@ -34,6 +34,10 @@ if (canvas === null) throw new Error("fourJS example: no #scene in the document.
 const status = document.querySelector<HTMLElement>("#status");
 if (status === null) throw new Error("fourJS example: no #status in the document.");
 
+// The loader assembles a StandardMaterial, and §59's pipeline is a registration
+// seam on WebGL 2 since 2026-09-11. Without this the standard draws are SKIPPED
+// and this example renders an empty canvas.
+registerStandardPipeline();
 const renderer = new WebglRenderer();
 const camera = new PerspectiveCamera({ aspect: 640 / 400, near: 0.1, far: 100 });
 // The quad is authored around the origin in the XY plane; back off along +Z.
