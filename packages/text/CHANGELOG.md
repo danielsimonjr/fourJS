@@ -1,4 +1,4 @@
-# @fourjs/render-webgl
+# @fourjs/text
 
 ## 0.1.0
 
@@ -12,23 +12,9 @@
 
   Skip winding tests for points outside ring bounds, preserving exact containment while reducing disjoint-path fill work.
 
-- Updated dependencies [b3ec9d6]
+- d9347f2: Restore harfbuzzjs 0.4.13, the supported ABI for the optional shaping adapter.
+  The incompatible 1.x dependency update removed the explicit Wasm initialization
+  and resource disposal APIs used by fourJS, preventing the adapter from loading.
+- Updated dependencies [5737b7e]
 - Updated dependencies [3f48b1d]
-  - @fourjs/render@0.1.0
-
-## 0.0.2
-
-### Patch Changes
-
-- 871a545: Reuse WebGL geometry buffers and vertex arrays across compatible geometry edits,
-  centralize attribute upload/cleanup, and prevent disposed cache resurrection.
-  Full data-store updates and rendering order are preserved; public APIs are unchanged.
-- @fourjs/render@0.0.2
-
-## 0.0.1
-
-### Patch Changes
-
-- b4e0ac8: Reuse WebGL geometry buffers and vertex arrays across compatible geometry edits,
-  centralize attribute upload/cleanup, and prevent disposed cache resurrection.
-  Full data-store updates and rendering order are preserved; public APIs are unchanged.
+  - @fourjs/geometry@0.1.0
