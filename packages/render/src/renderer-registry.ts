@@ -585,7 +585,7 @@ export class RendererRegistry {
       SELECTION_ERROR_CODE,
       `renderer: "auto" found no usable backend (§62). Registered: ${describeBackends(this.backends)}.${
         reports.length === 0
-          ? " Call a backend's register function — for example `registerWebglRenderer()` from @fourjs/render-webgl — before selecting by name."
+          ? " Call a backend's register function — for example `registerWebglRenderer()` from the render-webgl package — before selecting by name."
           : ` Tried, in §62 order: ${reports
               .map(
                 (report) =>
@@ -616,7 +616,7 @@ export class RendererRegistry {
     if (registration === undefined) {
       throw new FourError(
         SELECTION_ERROR_CODE,
-        `No ${JSON.stringify(backend)} renderer is registered (§62). Registered: ${describeBackends(this.backends)}. A backend registers itself only when the application calls its register function — for example \`registerWebglRenderer()\` from @fourjs/render-webgl.`,
+        `No ${JSON.stringify(backend)} renderer is registered (§62). Registered: ${describeBackends(this.backends)}. A backend registers itself only when the application calls its register function — for example \`registerWebglRenderer()\` from the render-webgl package.`,
         { context: { selection: backend, registered: this.backends } },
       );
     }
@@ -781,7 +781,7 @@ export async function resolveRenderer(
     // carries, so it says the one thing that is actionable and stops (§85).
     throw new FourError(
       SELECTION_ERROR_CODE,
-      `Cannot select renderer ${JSON.stringify(selection)}: no backend is registered (§62). Call e.g. registerWebglRenderer() from @fourjs/render-webgl first, or pass a Renderer instance (§45).`,
+      `Cannot select renderer ${JSON.stringify(selection)}: no backend is registered (§62). Call e.g. registerWebglRenderer() from the render-webgl package first, or pass a Renderer instance (§45).`,
       { context: { selection, registered: [] } },
     );
   }

@@ -3399,7 +3399,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     if (factory === null) {
       throw new FourError(
         LIFECYCLE_ERROR_CODE,
-        "§71: call registerPickingPipeline() from @fourjs/render-webgl " +
+        "§71: call registerPickingPipeline() from the render-webgl package " +
           "before createPickingService() (§85).",
         { context: { registered: false } },
       );
@@ -3761,7 +3761,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           "§59: this scene uses a StandardMaterial but no standard pipeline " +
             "is registered, so those draws are skipped (a Lambert stand-in " +
             "would be a different picture). Call registerStandardPipeline() " +
-            "from @fourjs/render-webgl at application setup.",
+            "from the render-webgl package at application setup.",
         );
       }
       return null;
@@ -3812,7 +3812,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           "§69: this scene's light asks for a shadow map but no shadow " +
             "pipeline is registered, so the shadow pass is skipped and lit " +
             "surfaces draw unshadowed. Call registerShadowPipeline() from " +
-            "@fourjs/render-webgl at application setup.",
+            "the render-webgl package at application setup.",
         );
       }
       return null;
@@ -3857,7 +3857,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           "webgl-effect-unregistered",
           "§70: this render graph runs an effect pass but no effect " +
             "pipeline is registered, so the pass is skipped. Call " +
-            "registerEffectPipeline() from @fourjs/render-webgl at " +
+            "registerEffectPipeline() from the render-webgl package at " +
             "application setup.",
         );
       }
@@ -3902,7 +3902,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           "webgl-particles-unregistered",
           "§36: this scene contains a particle system but no particle " +
             "pipeline is registered, so its draws are skipped. Call " +
-            "registerParticlePipeline() from @fourjs/render-webgl at " +
+            "registerParticlePipeline() from the render-webgl package at " +
             "application setup.",
         );
       }
@@ -3956,7 +3956,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           "§54: this scene contains a skinned mesh but no skinning pipeline " +
             "is registered, so its draws are skipped (a bind pose would be " +
             "a different picture). Call registerSkinningPipeline() from " +
-            "@fourjs/render-webgl" +
+            "the render-webgl package" +
             " at application setup (RFC 0003).",
         );
       }
@@ -4043,7 +4043,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           "§60: this scene uses a node material (or §70 graph effect) but no " +
             "node pipeline is registered, so those draws are skipped (flat " +
             "colour would be a different picture). Call " +
-            "registerNodeMaterialPipeline() from @fourjs/render-webgl at " +
+            "registerNodeMaterialPipeline() from the render-webgl package at " +
             "application setup (RFC 0001).",
         );
       }

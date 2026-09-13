@@ -2510,7 +2510,7 @@ export class WebgpuRenderer implements Renderer {
     if (factory === null) {
       throw new FourError(
         LIFECYCLE_ERROR_CODE,
-        "§71: call registerPickingPipeline() from @fourjs/render-webgpu " +
+        "§71: call registerPickingPipeline() from the render-webgpu package " +
           "before createPickingService() (§85).",
         { context: { registered: false } },
       );
@@ -2838,7 +2838,7 @@ export class WebgpuRenderer implements Renderer {
             "node pipeline is registered on the WebGPU backend, so those " +
             "draws are skipped (flat colour would be a different picture). " +
             "Call registerWebgpuNodeMaterialPipeline() from " +
-            "@fourjs/render-webgpu" +
+            "the render-webgpu package" +
             " at application setup (RFC 0001).",
         );
       }
@@ -2885,7 +2885,7 @@ export class WebgpuRenderer implements Renderer {
           "§54: this scene contains a skinned mesh but no skinning pipeline " +
             "is registered, so its draws are skipped (a bind pose would be " +
             "a different picture). Call registerSkinningPipeline() from " +
-            "@fourjs/render-webgpu" +
+            "the render-webgpu package" +
             " at application setup (RFC 0003).",
         );
       }

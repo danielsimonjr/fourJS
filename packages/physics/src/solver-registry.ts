@@ -330,7 +330,7 @@ export class SolverRegistry {
       SELECTION_ERROR_CODE,
       `solver: "auto" found no solver that can simulate a ${JSON.stringify(options.dimension)} world at determinism ${JSON.stringify(options.determinism ?? DEFAULT_DETERMINISM_LEVEL)} (§20, §37). Registered: ${describeSolvers(this.solvers)}.${
         reports.length === 0
-          ? " Call a solver's register function — for example `registerRapierSolver()` from @fourjs/physics-rapier — before selecting by name."
+          ? " Call a solver's register function — for example `registerRapierSolver()` from the physics-rapier package — before selecting by name."
           : ` Rejected: ${reports
               .map(
                 (report) => `${JSON.stringify(report.name)} (${report.reason})`,
@@ -361,7 +361,7 @@ export class SolverRegistry {
     if (registration === undefined) {
       throw new FourError(
         SELECTION_ERROR_CODE,
-        `No ${JSON.stringify(name)} solver is registered (§37). Registered: ${describeSolvers(this.solvers)}. A solver opts in only when the application calls its register function — for example \`registerRapierSolver()\` from @fourjs/physics-rapier.`,
+        `No ${JSON.stringify(name)} solver is registered (§37). Registered: ${describeSolvers(this.solvers)}. A solver opts in only when the application calls its register function — for example \`registerRapierSolver()\` from the physics-rapier package.`,
         { context: { selection: name, registered: this.solvers } },
       );
     }
@@ -450,7 +450,7 @@ export function resolveSolver(
   if (target === undefined) {
     throw new FourError(
       SELECTION_ERROR_CODE,
-      `Cannot resolve solver ${JSON.stringify(selection)}: no physics solver is registered (§37). A solver opts in only when the application calls its register function — for example \`registerRapierSolver()\` from @fourjs/physics-rapier — because \`@fourjs/physics\` never imports a solver itself (§20, §91). Passing a constructed adapter instead is always supported.`,
+      `Cannot resolve solver ${JSON.stringify(selection)}: no physics solver is registered (§37). A solver opts in only when the application calls its register function — for example \`registerRapierSolver()\` from the physics-rapier package — because \`the physics package\` never imports a solver itself (§20, §91). Passing a constructed adapter instead is always supported.`,
       { context: { selection, registered: [] } },
     );
   }

@@ -1466,7 +1466,7 @@ export const DEBUG_DRAW_STAGED: readonly StagedVisualization[] = Object.freeze([
       "getJointId, forEachJoint (setJointAnchors landed 2026-09-06, " +
       "PH-22f). A joint's anchors can be written through the seam but " +
       "are not readable from it, and its connected bodies and type are " +
-      "held by @fourjs/physics's Joint descriptors, which @fourjs/diagnostics " +
+      "held by the physics package's Joint descriptors, which the diagnostics package " +
       "may not import — so there is no point in space to draw. " +
       "getJointReaction is additionally unusable on both Rapier adapters, " +
       "which declare reportsJointReactions false (Rapier 0.19.3 exposes no " +
@@ -1476,7 +1476,7 @@ export const DEBUG_DRAW_STAGED: readonly StagedVisualization[] = Object.freeze([
     unblockedBy:
       "either anchor accessors on SolverJointAccess " +
       "(getJointAnchors(handle, outLocalA, outLocalB) plus the connected body " +
-      "handles), or a debug-draw provider inside @fourjs/physics that reads its " +
+      "handles), or a debug-draw provider inside the physics package that reads its " +
       "own Joint registry and writes into a DebugDrawBuffer-shaped sink.",
     staged: "2026-08-02",
   }),
@@ -1487,7 +1487,7 @@ export const DEBUG_DRAW_STAGED: readonly StagedVisualization[] = Object.freeze([
       "The force channel of SolverBodyAccess is write-only: applyForce, " +
       "applyForceAtPoint, applyTorque, applyImpulse, applyImpulseAtPoint, " +
       "applyAngularImpulse, resetForces — seven writes, no getter. §26's " +
-      "per-step command buffers live in @fourjs/physics, which this package " +
+      "per-step command buffers live in the physics package, which this package " +
       "cannot import.",
     shippedInstead:
       "collectContactImpulses — per-contact normal impulses from §29 events, " +

@@ -678,7 +678,7 @@ export class SweptCharacterController implements Component {
     );
     if (options.world !== undefined && options.world.dimension !== "3d") {
       throw new RangeError(
-        "SweptCharacterControllerOptions.world must be a \"3d\" PhysicsWorld (§21, §85): this controller's planar model is a heading about +Y, which a 2D character does not have. Drive a 2D character with @fourjs/motion's CharacterController.",
+        "SweptCharacterControllerOptions.world must be a \"3d\" PhysicsWorld (§21, §85): this controller's planar model is a heading about +Y, which a 2D character does not have. Drive a 2D character with the motion package's CharacterController.",
       );
     }
 
