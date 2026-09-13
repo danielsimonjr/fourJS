@@ -5,7 +5,7 @@
     "lastUpdated": "2026-09-13",
     "totalFiles": 335,
     "totalModules": 24,
-    "totalExports": 3388
+    "totalExports": 3387
   },
   "entryPoints": [
     {
@@ -1876,13 +1876,6 @@
             "reExport": true
           },
           {
-            "file": "./wasm-memory.js",
-            "imports": [
-              "limitWasmMemory"
-            ],
-            "reExport": true
-          },
-          {
             "file": "./bounded-png.js",
             "imports": [
               "createBoundedPngDecoder",
@@ -2028,7 +2021,6 @@
           "jsonLoader",
           "textLoader",
           "createGzipLoader",
-          "limitWasmMemory",
           "createBoundedPngDecoder",
           "DEFAULT_IMAGE_WORKING_BYTES",
           "PACKAGE_NAME",
@@ -2106,7 +2098,6 @@
           "jsonLoader",
           "textLoader",
           "createGzipLoader",
-          "limitWasmMemory",
           "createBoundedPngDecoder",
           "DEFAULT_IMAGE_WORKING_BYTES",
           "RegisteredAssetLoader",
@@ -26723,15 +26714,15 @@
   "statistics": {
     "totalTypeScriptFiles": 335,
     "totalModules": 24,
-    "totalLinesOfCode": 160360,
-    "totalExports": 3388,
+    "totalLinesOfCode": 160359,
+    "totalExports": 3387,
     "totalClasses": 212,
     "totalInterfaces": 624,
     "totalFunctions": 551,
     "totalTypeGuards": 28,
     "totalEnums": 0,
     "totalConstants": 499,
-    "totalReExports": 2148,
+    "totalReExports": 2147,
     "totalTypeOnlyImports": 428,
     "runtimeCircularDeps": 0,
     "typeOnlyCircularDeps": 7,

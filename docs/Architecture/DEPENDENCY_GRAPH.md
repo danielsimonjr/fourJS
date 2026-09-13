@@ -653,7 +653,6 @@ graph LR
 | `./gltf.js` | `GltfAsset, createGltfLoader` | Re-export |
 | `./loaders.js` | `ImageAsset, binaryLoader, createImageLoader, jsonLoader, textLoader` | Re-export |
 | `./gzip.js` | `createGzipLoader` | Re-export |
-| `./wasm-memory.js` | `limitWasmMemory` | Re-export |
 | `./bounded-png.js` | `createBoundedPngDecoder, DEFAULT_IMAGE_WORKING_BYTES` | Re-export |
 | `./loader-registry.js` | `RegisteredAssetLoader` | Re-export (type-only) |
 | `./asset-manager.js` | `AbortHandle, AbortSignalLike, AssetGraph, AssetGraphLoadOptions, AssetLoadOptions, AssetLoader, AssetManagerOptions, AssetProgressEvent, AssetWatchLike, AssetWithDependencies, ByteReaderLike, FetchInit, FetchLike, FetchResponse, ReadableBodyLike, ResponseHeadersLike, TimerLike, WorkerLike` | Re-export (type-only) |
@@ -667,7 +666,7 @@ graph LR
 
 **Exports:**
 - Constants: `PACKAGE_NAME`
-- Re-exports: `ASSET_LOADERS`, `AssetLoaderRegistry`, `AssetManager`, `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`, `CONTENT_HASH_ALGORITHM`, `loadFromManifest`, `manifestLoader`, `manifestUrl`, `parseAssetManifest`, `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`, `TextureAsset`, `createTextureDecoder`, `createTextureLoader`, `GltfAsset`, `createGltfLoader`, `ImageAsset`, `binaryLoader`, `createImageLoader`, `jsonLoader`, `textLoader`, `createGzipLoader`, `limitWasmMemory`, `createBoundedPngDecoder`, `DEFAULT_IMAGE_WORKING_BYTES`, `RegisteredAssetLoader`, `AbortHandle`, `AbortSignalLike`, `AssetGraph`, `AssetGraphLoadOptions`, `AssetLoadOptions`, `AssetLoader`, `AssetManagerOptions`, `AssetProgressEvent`, `AssetWatchLike`, `AssetWithDependencies`, `ByteReaderLike`, `FetchInit`, `FetchLike`, `FetchResponse`, `ReadableBodyLike`, `ResponseHeadersLike`, `TimerLike`, `WorkerLike`, `DigestLike`, `TextDecodeLike`, `AssetManifest`, `AssetManifestEntry`, `ManifestLoadOptions`, `DecodedTexels`, `TexelDecodeLike`, `TexelProbeLike`, `TextureColorSpace`, `TextureFilterMode`, `TextureLoaderOptions`, `TextureWrapMode`, `GltfAnimationRecord`, `GltfChannelPath`, `GltfChannelRecord`, `GltfLoaderOptions`, `GltfMaterialRecord`, `GltfMeshRecord`, `GltfNodeRecord`, `GltfPrimitiveMode`, `GltfPrimitiveRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `ImageBitmapLike`, `ImageDecodeLike`, `ImageLoaderOptions`, `GzipDecodeLike`, `GzipLoaderOptions`, `GzipReader`, `BoundedPngDecoderOptions`
+- Re-exports: `ASSET_LOADERS`, `AssetLoaderRegistry`, `AssetManager`, `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`, `CONTENT_HASH_ALGORITHM`, `loadFromManifest`, `manifestLoader`, `manifestUrl`, `parseAssetManifest`, `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`, `TextureAsset`, `createTextureDecoder`, `createTextureLoader`, `GltfAsset`, `createGltfLoader`, `ImageAsset`, `binaryLoader`, `createImageLoader`, `jsonLoader`, `textLoader`, `createGzipLoader`, `createBoundedPngDecoder`, `DEFAULT_IMAGE_WORKING_BYTES`, `RegisteredAssetLoader`, `AbortHandle`, `AbortSignalLike`, `AssetGraph`, `AssetGraphLoadOptions`, `AssetLoadOptions`, `AssetLoader`, `AssetManagerOptions`, `AssetProgressEvent`, `AssetWatchLike`, `AssetWithDependencies`, `ByteReaderLike`, `FetchInit`, `FetchLike`, `FetchResponse`, `ReadableBodyLike`, `ResponseHeadersLike`, `TimerLike`, `WorkerLike`, `DigestLike`, `TextDecodeLike`, `AssetManifest`, `AssetManifestEntry`, `ManifestLoadOptions`, `DecodedTexels`, `TexelDecodeLike`, `TexelProbeLike`, `TextureColorSpace`, `TextureFilterMode`, `TextureLoaderOptions`, `TextureWrapMode`, `GltfAnimationRecord`, `GltfChannelPath`, `GltfChannelRecord`, `GltfLoaderOptions`, `GltfMaterialRecord`, `GltfMeshRecord`, `GltfNodeRecord`, `GltfPrimitiveMode`, `GltfPrimitiveRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `ImageBitmapLike`, `ImageDecodeLike`, `ImageLoaderOptions`, `GzipDecodeLike`, `GzipLoaderOptions`, `GzipReader`, `BoundedPngDecoderOptions`
 
 ---
 
@@ -6551,11 +6550,11 @@ graph LR
 | `packages/scene/src/node` | 4 files | 9 files |
 | `packages/animation/src/controller` | 9 files | 3 files |
 | `packages/render-webgpu/src/wgpu-bindings` | 1 file | 11 files |
-| `packages/assets/src/index` | 11 files | 0 files |
 | `packages/diagnostics/src/index` | 11 files | 0 files |
 | `packages/physics/src/collider` | 8 files | 3 files |
 | `packages/physics/src/rigid-body` | 4 files | 7 files |
 | `packages/render/src/render-target` | 2 files | 9 files |
+| `packages/assets/src/index` | 10 files | 0 files |
 | `packages/geometry/src/index` | 10 files | 0 files |
 | `packages/math/src/index` | 10 files | 0 files |
 | `packages/render/src/render-list` | 6 files | 4 files |
@@ -6962,9 +6961,9 @@ graph TD
 |----------|-------|
 | Total TypeScript Files | 335 |
 | Total Modules | 24 |
-| Total Lines of Code | 160360 |
-| Total Exports | 3388 |
-| Total Re-exports | 2148 |
+| Total Lines of Code | 160359 |
+| Total Exports | 3387 |
+| Total Re-exports | 2147 |
 | Total Classes | 212 |
 | Total Interfaces | 624 |
 | Total Functions | 551 |

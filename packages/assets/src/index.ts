@@ -120,7 +120,6 @@ export {
 
 export { createGzipLoader } from "./gzip.js";
 export type { GzipDecodeLike, GzipLoaderOptions, GzipReader } from "./gzip.js";
-export { limitWasmMemory } from "./wasm-memory.js";
 export {
   createBoundedPngDecoder,
   DEFAULT_IMAGE_WORKING_BYTES,

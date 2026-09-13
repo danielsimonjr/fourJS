@@ -520,7 +520,7 @@
       "package": "@fourjs/assets",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 129
+      "loc": 128
     },
     {
       "file": "packages/assets/src/loader-registry.ts",
@@ -6183,7 +6183,7 @@
       "package": "(root)",
       "area": "tools",
       "disposition": "tool",
-      "loc": 5209
+      "loc": 5222
     },
     {
       "file": "vitest.coverage.config.ts",
