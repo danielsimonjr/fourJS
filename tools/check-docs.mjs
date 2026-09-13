@@ -491,7 +491,7 @@ for (const rel of prosePaths()) {
 //    row and compares it to a directory listing. Adding a package, a suite, or
 //    a browser spec without updating the sentence fails here, which is the
 //    defect `tests/README.md` carried (8 determinism suites, 6+1 integration,
-//    9 browser specs, `pnpm test:suites`) until 2026-09-06.
+//    9 browser specs, `bun run test:suites`) until 2026-09-06.
 // ---------------------------------------------------------------------------
 
 /** Immediate child files of `rel` whose names end with `suffix`. */

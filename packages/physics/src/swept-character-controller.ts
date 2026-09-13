@@ -236,7 +236,7 @@
  * `tests/determinism/swept-character.test.ts` is the golden, on real Rapier 3D.
  */
 
-import { DEV_WARNING_PREFIX } from "@fourjs/core";
+import { DEV_WARNING_PREFIX, FourError } from "@fourjs/core";
 import type { Component, ComponentHost } from "@fourjs/core";
 import { Vector3 } from "@fourjs/math";
 import {
@@ -1296,6 +1296,31 @@ export class SweptCharacterSystem implements SimulationSystem {
   /** Node ids already warned about, so a per-step mistake is reported once. */
   #warned: Set<string> | undefined;
 
+  /** Set by {@link SweptCharacterSystem.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link SweptCharacterSystem.dispose} has run. Disposal is terminal
+   * (§83): a disposed system refuses its mutating entry points with
+   * `INVALID_APPLICATION_STATE` (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "SweptCharacterSystem is disposed; advancing nodes through a disposed system is a " +
+          "lifetime mistake (§83), and a new system is a new " +
+          "SweptCharacterSystem.",
+        { context: { system: "SweptCharacterSystem" } },
+      );
+    }
+  }
+
   constructor(options: SweptCharacterSystemOptions = {}) {
     this.priority = options.priority ?? PRIORITY_KINEMATICS;
   }
@@ -1317,6 +1342,7 @@ export class SweptCharacterSystem implements SimulationSystem {
    * The node need not carry a controller yet; it is looked up every step.
    */
   track(node: Node): Node {
+    this.#requireLive();
     this.#tracked.add(node);
     return node;
   }
@@ -1343,6 +1369,7 @@ export class SweptCharacterSystem implements SimulationSystem {
 
   /** Advances every tracked, enabled, active controller by `fixedDeltaTime`. */
   fixedUpdate(context: FixedUpdateContext): void {
+    this.#requireLive();
     const dt = context.time.fixedDeltaTime;
     for (const node of this.#tracked) {
       if (!node.enabled) {
@@ -1399,6 +1426,10 @@ export class SweptCharacterSystem implements SimulationSystem {
 
   /** Drops every tracked node (§39 teardown). */
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     this.#tracked.clear();
     this.#warned = undefined;
   }

@@ -547,3 +547,27 @@ describe("Callback contract (plan D4)", () => {
     ).toBeUndefined();
   });
 });
+
+describe("a throwing fixed step (2026-09-11 audit)", () => {
+  it("rolls the step counter and simulation time back with the accumulator it leaves holding", () => {
+    let calls = 0;
+    const scheduler = new Scheduler({
+      fixedDeltaTime: 1 / 60,
+      onFixedStep: () => {
+        calls += 1;
+        if (calls === 1) throw new Error("system failed");
+      },
+    });
+    expect(() => scheduler.step(1 / 60)).toThrow("system failed");
+    // The step was not consumed: accumulator still holds one step and the
+    // counters the callback saw advanced are back where they were.
+    expect(scheduler.accumulator).toBeCloseTo(1 / 60, 12);
+    expect(scheduler.time.simulationStep).toBe(0);
+    expect(scheduler.time.simulationTime).toBe(0);
+    // The next frame re-runs exactly that step.
+    scheduler.step(0);
+    expect(calls).toBe(2);
+    expect(scheduler.time.simulationStep).toBe(1);
+    expect(scheduler.accumulator).toBeCloseTo(0, 12);
+  });
+});

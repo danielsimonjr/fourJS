@@ -27,7 +27,7 @@
  * `baseURL`), `physics-playground` on 4174, `mechanism` on 4175 and `blending`
  * on 4176. {@link BLENDING_URL} restates that port for the reason the scene
  * constants below are restated rather than imported — see "Method notes". Run
- * `pnpm blending:build` before `pnpm test:browser`, or the preview server has no
+ * `bun run blending:build` before `bun run test:browser`, or the preview server has no
  * `dist` to serve.
  *
  * ## What is measured, and against what
@@ -74,6 +74,8 @@
 import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+
+import { framesFor, readFrameCount, waitForFrames } from "./helpers/wait.js";
 
 /** A decoded, unfiltered 8-bit image: `pixels` is `width * height` samples. */
 interface DecodedImage {
@@ -876,7 +878,7 @@ test.describe("§110: animated ↔ kinematic ↔ physical control in the browser
 
     // A loop that throws on its first frames does so after `running`, so keep
     // the page alive long enough for that to be collected.
-    await page.waitForTimeout(1000);
+    await waitForFrames(page, framesFor(1));
     expect(errors).toEqual([]);
   });
 

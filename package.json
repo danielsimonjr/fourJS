@@ -47,6 +47,7 @@
     "twin:build": "bunx vite build examples/flagship/motor-digital-twin",
     "typecheck:examples": "node node_modules/typescript/bin/tsc --noEmit -p examples",
     "typecheck:tests": "node node_modules/typescript/bin/tsc --noEmit -p tests",
+    "typecheck:benchmarks": "node node_modules/typescript/bin/tsc -p benchmarks/tsconfig.typecheck.json",
     "ui-demo:build": "bunx vite build examples/ui-demo",
     "gltf-model:build": "bunx vite build examples/gltf-model",
     "typecheck:config": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",

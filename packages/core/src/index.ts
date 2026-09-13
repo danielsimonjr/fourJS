@@ -41,7 +41,8 @@ export type { EventListener, Unsubscribe } from "./events.js";
 export { EventEmitter } from "./events.js";
 // §81 plugin system (RFC 0002, A-3, 2026-08-28). `core` owns the machinery and
 // names no registry: the capability tokens live in the packages that own what
-// they hand over (`four/plugins.ts` today). See `plugin.ts` for the §96 posture
+// they hand over (each package's `capabilities.ts`; the `fourJS` umbrella's
+// `plugins.ts` re-exports the same objects). See `plugin.ts` for the §96 posture
 // — a plugin is a value the application installs, never a name from a document.
 export type {
   DefineCapabilityOptions,

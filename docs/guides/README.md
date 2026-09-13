@@ -29,7 +29,11 @@ assumes the ones above it:
    §47 cameras, §48 viewports, and the full pixel → NDC → world → pick path
    (§71/§72), including pointer input, dragging, `hitTestMode = "gpu"`,
    `registerPickingPipeline` / `createPickingService`, and
-   `createPickProvider` / `PointerInput.pickProvider`.
+   `createPickProvider` / `PointerInput.pickProvider`. (WebGL 2's other
+   registration seams — `registerShadowPipeline`, `registerEffectPipeline`,
+   `registerParticlePipeline`, `registerStandardPipeline`, 2026-09-11 — are
+   listed in
+   [materials and the render graph](materials-and-render-graph.md).)
 3. **[Fixed-step simulation](fixed-step-simulation.md)** — §9 time domains, the
    §10 accumulator, §39 system ordering, and §43 interpolated rendering
    (including skin palettes via `Skeleton.update(..., worldOf)`).

@@ -29,8 +29,8 @@ import type { RenderTarget } from "./render-target.js";
  * In the discipline of `TextureSource`, `FetchLike`, `PointerSurface`, and
  * `SurfaceObserver`: the engine names a shape, the host supplies a value, and
  * the browser adapter is a few lines in the application. `@fourjs/render`
- * compiles with no `lib.dom`, so a seam naming `HTMLCanvasElement` would not
- * even compile (RFC 0004, alternative F). The adapter the discipline promises:
+ * names no DOM type anywhere in its public surface — a seam rule (RFC 0004,
+ * alternative F), not a compiler guarantee: no workspace tsconfig pins `lib`. The adapter the discipline promises:
  *
  * ```ts
  * const canvas = new OffscreenCanvas(256, 256);

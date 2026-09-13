@@ -317,6 +317,13 @@ function countingGl(options = {}) {
   };
 }
 
+/**
+ * The host double the service reads. Typed against the renderer's own host
+ * contract so a member the service starts asking for (as `particleBatches()`
+ * did in #86) fails `bun run typecheck:benchmarks` instead of the run.
+ *
+ * @returns {import("@fourjs/render-webgl").PickingRendererHost}
+ */
 function createHost(counter) {
   const geometries = new GeometryCache(counter.gl);
   const renderTargets = new RenderTargetCache(counter.gl);
@@ -324,6 +331,9 @@ function createHost(counter) {
     context: () => counter.gl,
     geometries: () => geometries,
     renderTargets: () => renderTargets,
+    // No particle systems in these scenes (the header says so); the service
+    // still asks the host for the batch cache before the id pass (#86).
+    particleBatches: () => null,
     surfaceWidth: () => SURFACE_WIDTH,
     surfaceHeight: () => SURFACE_HEIGHT,
     contextLost: () => false,
@@ -375,6 +385,7 @@ function listWork(scene, view, items, viewItems, frustum, viewProjection) {
   return visible.length;
 }
 
+/** @returns {Record<string, any>} the summary keys are built by `summaryFields` */
 function runTimed(iteration, warmupIterations, measuredIterations) {
   const { warmup, measured } = measure(iteration, {
     warmupIterations,
@@ -565,7 +576,7 @@ const r8Largest = passRows.find((row) => row.nodes === 100000);
 const host = hostRecord();
 const hostCaveat =
   hostGpu.webgl2 === false
-    ? "CI container, no WebGL 2, no GPU. Id-pass and pick numbers are the service plus a counting GL seam, not driver or GPU time. WebGPU has no PickingService (mapAsync pick path does not exist)."
+    ? "CI container, no WebGL 2, no GPU. Id-pass and pick numbers are the service plus a counting GL seam, not driver or GPU time. WebGPU's PickingService (mapAsync, 2026-09-09) is not exercised here: no WebGPU device in this container."
     : hostGpu.fenceEntryPoints
       ? "WebGL 2 is present; fence entry points are present. Numbers still include this process's wall clock around the public API, not a GPU timer query."
       : "WebGL 2 is present without the fence group; only the stalling readPixels path exists on this host.";

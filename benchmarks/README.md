@@ -16,8 +16,8 @@ integration"_; the runner landed with A-27's two CPU benchmarks, and **CI integr
 still absent** — see [The runner](#the-runner).)
 
 ```sh
-pnpm run build               # every script imports the built dist, not src
-pnpm bench                   # runs every registered benchmark, one process each
+bun run build               # every script imports the built dist, not src
+bun run bench                   # runs every registered benchmark, one process each
 node benchmarks/harness.mjs  # prints the suite index and how to run it
 ```
 
@@ -55,7 +55,7 @@ verdict; see each script's header.
 ### The unmeasured §86 rows, and why
 
 Until 2026-08-05 this section said the remaining rows "are GPU-bound, UI-tier or already
-covered elsewhere — the payload row is gated by `pnpm size`, and the GPU rows need a GPU".
+covered elsewhere — the payload row is gated by `bun run size`, and the GPU rows need a GPU".
 That reads as though a GPU is the only thing missing. It is not: **four of these rows name
 a feature the engine does not have**, so there is nothing to measure even on ideal
 hardware. The distinction matters when planning work — a **hardware** row becomes a
@@ -81,7 +81,7 @@ of the row is GPU submission. Both rows are
 | animated glyphs         | **half**    | **Amended 2026-08-13 (R-28).** Read _"the draw half stays **feature**-blocked — §56 ships a bitmap tier whose atlas cannot be addressed per glyph"_ until then; §55's `frame` (R-29) and §49's `Text` node closed that, and 20 000 glyphs are now **one** `drawElements` over one atlas material instead of 20 000 texture binds. Both CPU halves are measured by `text-layout.mjs` — `layoutText` producing the quads, and the `Text` geometry rebuild that turns them into vertex buffers; the **submission** half needs a GPU, exactly as the two batching rows say of theirs. Shaping and SDF are staged (S-6) |
 | 100 000+ GPU particles  | hardware    | The CPU path is measured by `particles-100k.mjs`. A GPU/compute path is not implemented **and** would need a GPU to measure; count it as blocked twice                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | retained UI nodes       | **half**    | The **layout-and-state** half is measured (`ui-layout.mjs`): `@fourjs/ui` has no renderer dependency by design, so §74's two passes over the tree are the whole of what the package does per frame. The **draw** half needs a real GPU rather than SwiftShader. It no longer pays the per-glyph texture cut the row above used to (R-28, 2026-08-13), though a `WidgetSkin` has to be rewritten onto `Text` to stop paying it                                                                                                                                                                                        |
-| bundle payload          | —           | Not unmeasured: gated by `pnpm size` (size-limit) in CI, the one §86 row that _is_ enforced                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| bundle payload          | —           | Not unmeasured: gated by `bun run size` (size-limit) in CI, the one §86 row that _is_ enforced                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | idle scene / near-zero  | —           | Not unmeasured: `scene-propagation.mjs` covers the scene-graph half                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | §86 row                 | blocked by  | detail                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ----------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -91,7 +91,7 @@ of the row is GPU submission. Both rows are
 | animated glyphs         | **half**    | The **layout** half is measured (`text-layout.mjs`): `layoutText` produces the quads on the CPU. The **draw** half stays **feature**-blocked — §56 ships a bitmap tier whose atlas cannot be addressed per glyph, so drawing one cell means cutting it into its own `Texture` (the documented workaround in `examples/first-2d-scene` and `examples/ui-demo`) and a glyph is a texture bind and a draw call. Shaping and SDF are staged (S-6)         |
 | 100 000+ GPU particles  | hardware    | The CPU path is measured by `particles-100k.mjs`. A GPU/compute path is not implemented **and** would need a GPU to measure; count it as blocked twice                                                                                                                                                                                                                                                                                                |
 | retained UI nodes       | **half**    | The **layout-and-state** half is measured (`ui-layout.mjs`): `@fourjs/ui` has no renderer dependency by design, so §74's two passes over the tree are the whole of what the package does per frame. The **draw** half needs a real GPU rather than SwiftShader, and pays the same per-glyph texture cut as the row above                                                                                                                                |
-| bundle payload          | —           | Not unmeasured: gated by `pnpm size` (size-limit) in CI, the one §86 row that _is_ enforced                                                                                                                                                                                                                                                                                                                                                           |
+| bundle payload          | —           | Not unmeasured: gated by `bun run size` (size-limit) in CI, the one §86 row that _is_ enforced                                                                                                                                                                                                                                                                                                                                                           |
 | idle scene / near-zero  | —           | Not unmeasured: `scene-propagation.mjs` covers the scene-graph half                                                                                                                                                                                                                                                                                                                                                                                   |
 
 So the honest summary is: one §86 row is gated, seven are measured or partly measured, one
@@ -119,7 +119,7 @@ A benchmark here **records** numbers. It is never a gate.
   host (CPU model, core count, Node version, platform) and writes it into its result file.
   Quoting a number without its host is a misquote.
 - **A script is standalone Node with no new dependencies.** It imports the built `dist`
-  through the workspace package names, so `pnpm run build` has to have run first. Phase 11
+  through the workspace package names, so `bun run build` has to have run first. Phase 11
   answered the "adopt a benchmarking framework?" question with `harness.mjs` — under 400 lines of
   plain ESM, still no new dependency.
 - **Wall clocks are the instrument, never the simulation.** `performance.now()` lives in
@@ -157,9 +157,9 @@ check before quoting anything above it.
 name: no configuration, no new dependency, no scheduling beyond a `for` loop.
 
 ```sh
-pnpm bench                        # all eight, in SUITE order
-pnpm bench ui-layout text-layout  # a subset, named by record or by filename
-pnpm bench --list                 # what would run, and which record each writes
+bun run bench                        # all eight, in SUITE order
+bun run bench ui-layout text-layout  # a subset, named by record or by filename
+bun run bench --list                 # what would run, and which record each writes
 ```
 
 - **A process per script.** Every benchmark here is a program with top-level side effects,
@@ -337,7 +337,7 @@ below which nothing in this file is a finding.
 ### `particles-100k.mjs` — §112's particle budget (WP-9.4, Phase 9)
 
 ```sh
-pnpm run build
+bun run build
 node benchmarks/particles-100k.mjs
 ```
 

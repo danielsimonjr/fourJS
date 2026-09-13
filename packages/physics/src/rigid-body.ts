@@ -1377,6 +1377,30 @@ export class RigidBody
     );
   }
 
+  /** Set by {@link RigidBody.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link RigidBody.dispose} has run. Disposal is terminal (§83): a
+   * disposed component refuses its §26/§32 commands and world registration with
+   * `INVALID_APPLICATION_STATE` (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "RigidBody is disposed; commanding or registering a disposed body " +
+          "is a lifetime mistake (§83), and a new body is a new RigidBody.",
+        { context: { component: "RigidBody" } },
+      );
+    }
+  }
+
   // --- §26 forces and impulses, §32 sleep commands --------------------------
 
   /**
@@ -1395,11 +1419,13 @@ export class RigidBody
    * leaves the later command standing.
    */
   wake(): void {
+    this.#requireLive();
     this.#commands.sleepCommand = "wake";
   }
 
   /** Requests that the solver put this body to sleep (§23, §32). See {@link RigidBody.wake}. */
   sleep(): void {
+    this.#requireLive();
     this.#commands.sleepCommand = "sleep";
   }
 
@@ -1416,6 +1442,7 @@ export class RigidBody
    * is caught by the solver, not here.
    */
   applyForce(force: Vector3Input): void {
+    this.#requireLive();
     this.#commands.force.add(widenToVector3(force, this.#scratch));
   }
 
@@ -1430,6 +1457,7 @@ export class RigidBody
    * adapter, which has both, does the decomposition.
    */
   applyForceAtPoint(force: Vector3Input, worldPoint: Vector3Input): void {
+    this.#requireLive();
     const commands = this.#commands;
     const slot = pointLoadSlot(commands.pointForces, commands.pointForceCount);
     widenToVector3(force, slot.value);
@@ -1442,6 +1470,7 @@ export class RigidBody
    * +Z (plan P5-3). Acts for one fixed step, like {@link RigidBody.applyForce}.
    */
   applyTorque(torque: TorqueInput): void {
+    this.#requireLive();
     this.#commands.torque.add(
       resolveAngularVelocity(WIDENING_DIMENSION, torque, this.#scratch),
     );
@@ -1455,6 +1484,7 @@ export class RigidBody
    * buffer, so a single call changes momentum exactly once.
    */
   applyImpulse(impulse: Vector3Input): void {
+    this.#requireLive();
     this.#commands.impulse.add(widenToVector3(impulse, this.#scratch));
   }
 
@@ -1463,6 +1493,7 @@ export class RigidBody
    * See {@link RigidBody.applyForceAtPoint} for why the point is kept.
    */
   applyImpulseAtPoint(impulse: Vector3Input, worldPoint: Vector3Input): void {
+    this.#requireLive();
     const commands = this.#commands;
     const slot = pointLoadSlot(
       commands.pointImpulses,
@@ -1478,6 +1509,7 @@ export class RigidBody
    * the scalar about +Z (plan P5-3).
    */
   applyAngularImpulse(impulse: TorqueInput): void {
+    this.#requireLive();
     this.#commands.angularImpulse.add(
       resolveAngularVelocity(WIDENING_DIMENSION, impulse, this.#scratch),
     );
@@ -1495,6 +1527,7 @@ export class RigidBody
    * descriptor.
    */
   validateFor(dimension: PhysicsDimension): void {
+    this.#requireLive();
     validateRigidBodyDescriptor(this.toDescriptor(), dimension);
   }
 
@@ -1585,6 +1618,10 @@ export class RigidBody
    * body from its world is the world's business, not the component's.
    */
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     this.removeAllListeners();
     clearRigidBodyCommands(this);
   }

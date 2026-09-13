@@ -34,7 +34,7 @@ import {
 } from "@fourjs/assets";
 import { instantiateGltf } from "fourJS";
 import { createRenderStatistics, resetRenderStatistics } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import { WebglRenderer, registerStandardPipeline } from "@fourjs/render-webgl";
 import {
   OrthographicCamera,
   Scene,
@@ -92,6 +92,9 @@ const views: Viewport[] = [
   { ...createFullscreenViewport(camera), clearColor: [0, 0, 0, 1] },
 ];
 
+// The loader assembles a `StandardMaterial`, and §59's pipeline is a
+// registration seam on WebGL 2 since 2026-09-11.
+registerStandardPipeline();
 const renderer = new WebglRenderer();
 const statistics = createRenderStatistics();
 renderer.statistics = statistics;

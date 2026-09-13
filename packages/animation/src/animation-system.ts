@@ -56,6 +56,7 @@
  * iterated in insertion order only.
  */
 
+import { FourError } from "@fourjs/core";
 import {
   PRIORITY_ANIMATION_TARGETS,
   type FixedUpdateContext,
@@ -146,6 +147,31 @@ export class AnimationSystem implements SimulationSystem {
   /** Tracked players in insertion order (§33: deterministic iteration). */
   readonly #tracked = new Set<Advanceable>();
 
+  /** Set by {@link AnimationSystem.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link AnimationSystem.dispose} has run. Disposal is terminal
+   * (§83): a disposed system refuses its mutating entry points with
+   * `INVALID_APPLICATION_STATE` (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "AnimationSystem is disposed; advancing players through a disposed system is a " +
+          "lifetime mistake (§83), and a new system is a new " +
+          "AnimationSystem.",
+        { context: { system: "AnimationSystem" } },
+      );
+    }
+  }
+
   constructor(options: AnimationSystemOptions = {}) {
     this.priority = options.priority ?? PRIORITY_ANIMATION_TARGETS;
   }
@@ -169,6 +195,7 @@ export class AnimationSystem implements SimulationSystem {
    * until something calls `play()` on it.
    */
   track<T extends Advanceable>(item: T): T {
+    this.#requireLive();
     this.#tracked.add(item);
     return item;
   }
@@ -208,6 +235,7 @@ export class AnimationSystem implements SimulationSystem {
    * Allocates nothing.
    */
   fixedUpdate(context: FixedUpdateContext): void {
+    this.#requireLive();
     const dt = context.time.fixedDeltaTime;
     for (const item of this.#tracked) {
       item.advance(dt);
@@ -225,6 +253,10 @@ export class AnimationSystem implements SimulationSystem {
    * application may still be scrubbing or serializing.
    */
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     this.#tracked.clear();
   }
 }

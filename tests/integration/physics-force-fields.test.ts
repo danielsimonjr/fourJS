@@ -15,7 +15,7 @@
  * 1. **Assignability.** Every built-in field factory in `@fourjs/particles`
  *    produces a value assignable to `@fourjs/physics`' `ForceField`, with no
  *    adapter, no cast and no import in either direction. The assignment happens
- *    in ordinary source, so `tsc` (via `tests/tsconfig.json` and `pnpm run
+ *    in ordinary source, so `tsc` (via `tests/tsconfig.json` and `bun run
  *    docs`) is the real check and the runtime assertions only confirm the
  *    values arrive.
  * 2. **The units mean what §41 says.** A particle field authored as an

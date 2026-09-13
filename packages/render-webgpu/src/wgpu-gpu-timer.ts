@@ -25,6 +25,8 @@
  *   separate encoders; summing them is a follow-up, not this packet.
  */
 
+import { FourError } from "@fourjs/core";
+
 import {
   GPU_BUFFER_USAGE,
   GPU_MAP_MODE,
@@ -70,8 +72,33 @@ export class WgpuGpuTimer {
 
   #wroteThisFrame = false;
 
+  /** Set by {@link WgpuGpuTimer.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link WgpuGpuTimer.dispose} has run. Disposal is terminal (§83): a
+   * disposed timer refuses arming and per-frame timestamp writes with
+   * `INVALID_APPLICATION_STATE` (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "WgpuGpuTimer is disposed; timing through a disposed timer is a " +
+          "lifetime mistake (§83), and a new timer is a new WgpuGpuTimer.",
+        { context: { timer: "WgpuGpuTimer" } },
+      );
+    }
+  }
+
   /** Start issuing timestamps on subsequent views passes. */
   arm(): void {
+    this.#requireLive();
     this.#armed = true;
   }
 
@@ -103,6 +130,7 @@ export class WgpuGpuTimer {
         readonly endingOfPassWriteIndex: number;
       }
     | undefined {
+    this.#requireLive();
     this.#wroteThisFrame = false;
     if (!this.#armed || !this.isSupported(device)) {
       return undefined;
@@ -183,6 +211,12 @@ export class WgpuGpuTimer {
       }
       captured.buffer.unmap?.();
       captured.busy = false;
+    }, () => {
+      // A `mapAsync` still in flight when the device is lost or the timer is
+      // disposed rejects (`AbortError` / `OperationError`). The sample is
+      // simply dropped; the slot must not stay `busy` forever, and nothing
+      // may surface as an unhandled rejection at the host (§61, §89).
+      captured.busy = false;
     });
   }
 
@@ -201,6 +235,10 @@ export class WgpuGpuTimer {
 
   /** Releases query-set and buffers on a live device (§83). */
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     this.#querySet?.destroy();
     this.#resolve?.destroy();
     const slots = this.#slots;

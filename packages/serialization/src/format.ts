@@ -273,9 +273,21 @@ function asArray(value: unknown, path: string): readonly unknown[] {
   return value as readonly unknown[];
 }
 
+/**
+ * Ceiling on any single string field a document carries (ids, names, tags,
+ * types, authority, …). `maximumTextLength` bounds the document; this bounds
+ * the one field that becomes a `Map` key or an error message (§96).
+ */
+const MAXIMUM_STRING_LENGTH = 4096;
+
 function asString(value: unknown, path: string): string {
   if (typeof value !== "string") {
     throw new TypeError(`${path} must be a string.`);
+  }
+  if (value.length > MAXIMUM_STRING_LENGTH) {
+    throw new TypeError(
+      `${path} is ${String(value.length)} characters, over the ${String(MAXIMUM_STRING_LENGTH)}-character limit (§96).`,
+    );
   }
   return value;
 }

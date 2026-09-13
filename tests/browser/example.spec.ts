@@ -22,6 +22,8 @@ import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { framesFor, waitForFrames } from "./helpers/wait.js";
+
 /** A decoded, unfiltered 8-bit image: `pixels` is `width * height` samples. */
 interface DecodedImage {
   readonly width: number;
@@ -256,7 +258,7 @@ test.describe("examples/first-2d-scene", () => {
     // drawing to start — and, when it never does, wait out the whole budget so
     // a late throw is still collected.
     await waitForDrawnFrame(canvas);
-    await page.waitForTimeout(FRAME_GAP_SECONDS * 1000);
+    await waitForFrames(page, framesFor(FRAME_GAP_SECONDS));
     expect(errors).toEqual([]);
   });
 
@@ -304,7 +306,7 @@ test.describe("examples/first-2d-scene", () => {
       "canvas never drew, so there is nothing to animate",
     ).toBeGreaterThanOrEqual(MINIMUM_DISTINCT_COLORS);
 
-    await page.waitForTimeout(FRAME_GAP_SECONDS * 1000);
+    await waitForFrames(page, framesFor(FRAME_GAP_SECONDS));
     const second = await grab(canvas);
 
     const changed = changedPixels(first, second);

@@ -40,7 +40,7 @@ import {
   supportsScreenEffects,
   type EffectRenderPass,
 } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import { WebglRenderer, registerEffectPipeline } from "@fourjs/render-webgl";
 import {
   OrthographicCamera,
   Scene,
@@ -55,6 +55,12 @@ import {
   createRecordingGl,
   type RecordingGl,
 } from "./helpers/recording-gl.js";
+
+// §70's fixed effects are a registration seam on WebGL 2 since 2026-09-11
+// (the skinning shape): one explicit call links the full-screen program, and
+// the renderer compiles it on the first effect pass. Registered for the file,
+// as an application registers once at setup.
+registerEffectPipeline();
 
 interface Harness {
   readonly recorder: RecordingGl;
@@ -226,25 +232,35 @@ describe("R-6 — the no-post path is byte-identical (§70)", () => {
     expect(aliasHandles(test.recorder.transcript())).toEqual(FRAME_BEFORE_R6);
   });
 
-  it("compiles the effect pipeline once, at initialization, and never in a frame", async () => {
-    // §61 forbids throwing from inside a frame, and a shader compile is
-    // exactly the operation that can. So the fifth program is built beside the
-    // other four — the one thing R-6 costs an application that runs no effect.
+  it("compiles the effect pipeline once, on the first effect pass, and never again", async () => {
+    // Until 2026-09-11 the program was built at initialize beside the other
+    // pipelines (R-6's §61 argument: a compile inside a frame can throw).
+    // Behind `registerEffectPipeline()` it compiles on the first effect pass
+    // instead, inside that pass's own `try` with a fail-once latch — so an
+    // application that runs no effect carries neither the program nor its
+    // shaders, and one that does pays the compile exactly once per context.
     const test = await harness();
     const { target, offscreenRoot, offscreenViews } = twoPassScene(test);
     resolve(test, offscreenRoot);
     test.renderer.render(offscreenRoot, offscreenViews, undefined, target);
     test.recorder.reset();
 
-    test.renderer.render(test.scene, test.views);
-    test.renderer.renderEffect({
+    const present: EffectRenderPass = {
       kind: "effect",
       source: target.colorTexture,
       effect: COPY_EFFECT,
-    });
+    };
+    test.renderer.renderEffect(present);
+    expect(test.recorder.countOf("createProgram")).toBe(1);
+    expect(test.recorder.countOf("drawArrays")).toBe(1);
+
+    test.recorder.reset();
+    test.renderer.render(test.scene, test.views);
+    test.renderer.renderEffect(present);
 
     expect(test.recorder.countOf("createProgram")).toBe(0);
     expect(test.recorder.countOf("compileShader")).toBe(0);
+    expect(test.recorder.countOf("drawArrays")).toBe(1);
   });
 });
 

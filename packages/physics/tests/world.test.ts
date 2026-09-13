@@ -1756,3 +1756,42 @@ describe("§23 a dynamic body with no way to derive inertia", () => {
   });
 });
 
+
+describe("event interest (2026-09-11): the adapter is told when nobody listens for collisionstay", () => {
+  it("forwards the interest only on change, from the registered bodies' listener counts", async () => {
+    const { adapter, world } = await readyWorld();
+    const calls: { collisionstay: boolean }[] = [];
+    (adapter as { setEventInterest?: (i: { collisionstay: boolean }) => void }).setEventInterest =
+      (interest) => calls.push({ ...interest });
+    const node = dynamicNode();
+    world.addBody(node);
+    const body = node.getComponent(RigidBody);
+    if (body === null) throw new Error("body");
+
+    world.step(1 / 60);
+    world.step(1 / 60);
+    expect(calls).toEqual([{ collisionstay: false }]);
+
+    const off = body.on("collisionstay", () => {});
+    world.step(1 / 60);
+    world.step(1 / 60);
+    expect(calls).toEqual([{ collisionstay: false }, { collisionstay: true }]);
+
+    off();
+    world.step(1 / 60);
+    expect(calls).toEqual([
+      { collisionstay: false },
+      { collisionstay: true },
+      { collisionstay: false },
+    ]);
+    world.dispose();
+  });
+
+  it("issues no call at all to an adapter without the member", async () => {
+    const { adapter, world } = await readyWorld();
+    expect("setEventInterest" in adapter).toBe(false);
+    world.addBody(dynamicNode());
+    expect(() => world.step(1 / 60)).not.toThrow();
+    world.dispose();
+  });
+});

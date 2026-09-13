@@ -189,7 +189,10 @@ import {
 } from "fourJS/physics";
 import { registerRapierSolver } from "fourJS/physics-rapier";
 import { Renderable, Texture } from "fourJS/render";
-import { registerWebglRenderer } from "fourJS/render-webgl";
+import {
+  registerParticlePipeline,
+  registerWebglRenderer,
+} from "fourJS/render-webgl";
 import {
   DEFAULT_LAYER_MASK,
   DirectionalLight,
@@ -334,6 +337,10 @@ uiView.layerMask = UI_LAYER;
 // Explicit calls, never side-effect imports — see the module header.
 registerWebglRenderer();
 registerRapierSolver();
+// §36's instanced particle pipeline is a registration seam on WebGL 2
+// (2026-09-11), the skinning/picking shape: the embers and sparks below are
+// skipped with one warning unless the application links it here.
+registerParticlePipeline();
 
 /** Backends `"auto"` passed over, as `"<backend>: <reason>"` (§62, §37). */
 const fallbacks: string[] = [];

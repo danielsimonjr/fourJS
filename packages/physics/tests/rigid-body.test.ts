@@ -1105,3 +1105,46 @@ describe("RigidBody writes that reach no solver (§23, §37; 2026-08-06)", () =>
     warn.mockRestore();
   });
 });
+
+describe("RigidBody disposal (§83 stability audit, 2026-09-11)", () => {
+  it("disposes idempotently and refuses commands and registration afterwards", () => {
+    const body = dynamicBody();
+    const listener = vi.fn();
+    body.on("sleep", listener);
+    body.applyForce(new Vector3(1, 0, 0));
+    expect(body.disposed).toBe(false);
+
+    body.dispose();
+    expect(body.disposed).toBe(true);
+    expect(body.commands.force).toEqual(new Vector3(0, 0, 0));
+    expect(body.listenerCount("sleep")).toBe(0);
+    // A second dispose is a no-op (§83: idempotent), not an error.
+    expect(() => body.dispose()).not.toThrow();
+    expect(body.disposed).toBe(true);
+
+    // Disposal is terminal (§83): the §26/§32 commands and the world's
+    // registration gate refuse with §89's INVALID_APPLICATION_STATE.
+    expect(
+      expectValidationError(() => body.applyForce(new Vector3(1, 0, 0)))
+        .message,
+    ).toMatch(/RigidBody is disposed.*§83/s);
+    expectValidationError(() =>
+      body.applyForceAtPoint(new Vector3(), new Vector3()),
+    );
+    expectValidationError(() => body.applyTorque(1));
+    expectValidationError(() => body.applyImpulse(new Vector3(1, 0, 0)));
+    expectValidationError(() =>
+      body.applyImpulseAtPoint(new Vector3(), new Vector3()),
+    );
+    expectValidationError(() => body.applyAngularImpulse(1));
+    expectValidationError(() => body.wake());
+    expectValidationError(() => body.sleep());
+    expectValidationError(() => body.validateFor("3d"));
+    // Nothing leaked into the queue on the way to the throw.
+    expect(body.commands.force).toEqual(new Vector3(0, 0, 0));
+    expect(body.commands.sleepCommand).toBeNull();
+    // Reads and the descriptor snapshot stay answerable for teardown code.
+    expect(body.type).toBe("dynamic");
+    expect(body.toDescriptor().type).toBe("dynamic");
+  });
+});

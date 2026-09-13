@@ -48,7 +48,7 @@ import {
   Renderable,
   Texture,
 } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import { WebglRenderer, registerEffectPipeline } from "@fourjs/render-webgl";
 import {
   DirectionalLight,
   OrthographicCamera,
@@ -64,6 +64,12 @@ import {
   createRecordingGl,
   type RecordingGl,
 } from "./helpers/recording-gl.js";
+
+// §70's fixed effects are a registration seam on WebGL 2 since 2026-09-11
+// (the skinning shape): one explicit call links the full-screen program, and
+// the renderer compiles it on the first effect pass. Registered for the file,
+// as an application registers once at setup.
+registerEffectPipeline();
 
 interface Harness {
   readonly recorder: RecordingGl;

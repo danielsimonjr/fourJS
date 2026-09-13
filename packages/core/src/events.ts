@@ -193,10 +193,17 @@ export class EventEmitter<EventMap> {
     if (records === undefined || records.length === 0) {
       return;
     }
-    const snapshot = records.slice();
+    // No per-emit copy (2026-09-11): the loop captures `length` now, so a
+    // listener added during dispatch (pushed past it) is not delivered — rule
+    // 3 unchanged — and `#remove` defers its splice while `type` is being
+    // dispatched (see `#remove`), so indices stay stable; `removed` is the
+    // per-record skip either way. Physics emits each contact on two bodies,
+    // which made the old `slice()` hundreds of allocations per fixed step.
+    const length = records.length;
     this.#dispatching.add(type);
     try {
-      for (const record of snapshot) {
+      for (let i = 0; i < length; i += 1) {
+        const record = records[i];
         if (record.removed) {
           continue;
         }
@@ -209,6 +216,27 @@ export class EventEmitter<EventMap> {
       }
     } finally {
       this.#dispatching.delete(type);
+      this.#compact(type);
+    }
+  }
+
+  /** Drops the records `#remove` left in place during a dispatch of `type`. */
+  #compact(type: PropertyKey): void {
+    const records = this.#listeners.get(type);
+    if (records === undefined) {
+      return;
+    }
+    let write = 0;
+    for (let read = 0; read < records.length; read += 1) {
+      const record = records[read];
+      if (!record.removed) {
+        records[write] = record;
+        write += 1;
+      }
+    }
+    records.length = write;
+    if (write === 0) {
+      this.#listeners.delete(type);
     }
   }
 
@@ -236,6 +264,11 @@ export class EventEmitter<EventMap> {
     record.removed = true;
     const records = this.#listeners.get(type);
     if (records === undefined) {
+      return;
+    }
+    if (this.#dispatching.has(type)) {
+      // Splicing under a live index loop would skip the next listener;
+      // `#dispatch` compacts once the loop is done.
       return;
     }
     const index = records.indexOf(record);

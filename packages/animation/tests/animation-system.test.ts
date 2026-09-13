@@ -1,3 +1,4 @@
+import { isFourError } from "@fourjs/core";
 import { Vector3 } from "@fourjs/math";
 import {
   DEFAULT_FIXED_DELTA_TIME,
@@ -25,6 +26,19 @@ import { Timeline } from "../src/timeline.js";
 import { AnimationTrack } from "../src/track.js";
 import { numberAdapter } from "../src/values.js";
 import { animate, tween } from "../src/tween.js";
+
+/** Runs `run`, expecting a `FourError` with `INVALID_APPLICATION_STATE` (§83, §89). */
+function expectDisposedError(run: () => void): Error {
+  let caught: unknown;
+  try {
+    run();
+  } catch (error) {
+    caught = error;
+  }
+  expect(isFourError(caught)).toBe(true);
+  expect((caught as { code: string }).code).toBe("INVALID_APPLICATION_STATE");
+  return caught as Error;
+}
 
 const DT = DEFAULT_FIXED_DELTA_TIME;
 
@@ -428,5 +442,36 @@ describe("AnimationSystem — driven by the real Scheduler (§10)", () => {
     };
 
     expect(run()).toEqual(run());
+  });
+});
+
+describe("AnimationSystem disposal (§83 stability audit, 2026-09-11)", () => {
+  it("disposes idempotently and refuses tracking and stepping afterwards", () => {
+    const system = new AnimationSystem();
+    const player: Advanceable = {
+      state: "idle",
+      finished: false,
+      advance: () => undefined,
+    };
+    expect(system.disposed).toBe(false);
+    system.track(player);
+    expect(system.size).toBe(1);
+
+    system.dispose();
+    expect(system.disposed).toBe(true);
+    expect(system.size).toBe(0);
+    // A second dispose is a no-op (§83: idempotent), not an error.
+    expect(() => system.dispose()).not.toThrow();
+    expect(system.disposed).toBe(true);
+
+    // Disposal is terminal (§83): the mutating entry points refuse with §89's
+    // INVALID_APPLICATION_STATE instead of silently working on a dead system.
+    expect(expectDisposedError(() => system.track(player)).message).toMatch(
+      /AnimationSystem is disposed.*§83/s,
+    );
+    expectDisposedError(() => system.fixedUpdate(makeContext()));
+    expect(system.size).toBe(0);
+    // Reads stay answerable, so teardown code can still inspect the system.
+    expect(system.has(player)).toBe(false);
   });
 });

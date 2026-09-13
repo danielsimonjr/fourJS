@@ -48,7 +48,7 @@ import {
   isStandardItem,
   type RenderItem,
 } from "@fourjs/render";
-import { WebglRenderer } from "@fourjs/render-webgl";
+import { WebglRenderer, registerStandardPipeline } from "@fourjs/render-webgl";
 import {
   DirectionalLight,
   OrthographicCamera,
@@ -64,6 +64,12 @@ import {
   createRecordingGl,
   type RecordingGl,
 } from "./helpers/recording-gl.js";
+
+// §59's standard surface is a registration seam on WebGL 2 since 2026-09-11
+// (owner decision; the skinning shape): one explicit call links the program,
+// and the renderer compiles it on the first `StandardMaterial` draw.
+// Registered for the file, as an application registers once at setup.
+registerStandardPipeline();
 
 interface Harness {
   readonly recorder: RecordingGl;
@@ -287,11 +293,16 @@ describe("R-13 — a scene without a StandardMaterial is byte-identical (§59)",
     expect(aliasHandles(test.recorder.transcript())).toEqual(FRAME_BEFORE_R13);
   });
 
-  it("compiles the standard pipeline once, at initialization, and never in a frame", async () => {
-    // §61 forbids throwing from inside a frame, and a shader compile is
-    // exactly the operation that can. So the sixth program is built beside the
-    // other five — the one thing R-13 costs an application that never uses
-    // §59, and the one thing it deliberately does cost.
+  it("compiles the standard pipeline once, on the first standard item, and never again", async () => {
+    // Until 2026-09-11 the sixth program was built at initialize beside the
+    // other five (R-13's §61 argument: a compile inside a frame can throw).
+    // Behind `registerStandardPipeline()` — an owner decision — it compiles
+    // on the first `"standard"` item instead, inside the frame's own `try`
+    // with a fail-once latch, so a scene that never uses §59 carries neither
+    // the program nor its shaders, and one that does pays the compile exactly
+    // once per context: a frame of older pipelines compiles nothing, the
+    // frame that first meets a StandardMaterial compiles one program, and
+    // the frame after that compiles nothing again.
     const test = await harness();
     everyOlderPipeline(test);
     resolveWorldTransforms(test.scene);
@@ -299,12 +310,18 @@ describe("R-13 — a scene without a StandardMaterial is byte-identical (§59)",
     test.recorder.reset();
 
     test.renderer.render(test.scene, test.views);
+    expect(test.recorder.countOf("createProgram")).toBe(0);
+
     test.scene.add(
       new Renderable(boxGeometry(), new StandardMaterial({ metalness: 1 })),
     );
     resolveWorldTransforms(test.scene);
+    test.recorder.reset();
     test.renderer.render(test.scene, test.views);
+    expect(test.recorder.countOf("createProgram")).toBe(1);
 
+    test.recorder.reset();
+    test.renderer.render(test.scene, test.views);
     expect(test.recorder.countOf("createProgram")).toBe(0);
     expect(test.recorder.countOf("compileShader")).toBe(0);
   });

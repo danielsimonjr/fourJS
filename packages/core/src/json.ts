@@ -30,6 +30,8 @@
  * `NaN`) is not representable, and it is better to say so in the type than to
  * discover it as a silent `null` after a reload.
  */
+import { FourError } from "./errors.js";
+
 export type JsonValue =
   | null
   | boolean
@@ -52,16 +54,34 @@ export type JsonValue =
  * @throws TypeError if the value is not representable JSON
  */
 export function cloneJsonValue(value: unknown, path = "value"): JsonValue {
-  return cloneJson(value, path, new Set<object>());
+  return cloneJson(value, path, new Set<object>(), 1);
 }
+
+/**
+ * Nesting ceiling for {@link cloneJsonValue} — the same figure
+ * `parseUntrustedJson` enforces (`DEFAULT_MAXIMUM_DEPTH`, §96), restated here
+ * because `json.ts` sits below `untrusted.ts`. A value that reaches this deep
+ * is not a scene; the recursion below would otherwise be the stack-exhaustion
+ * a document parsed by plain `JSON.parse` can force (the migration entry
+ * point documents that pairing).
+ */
+const MAXIMUM_CLONE_DEPTH = 1024;
 
 function cloneJson(
   value: unknown,
   path: string,
   ancestors: Set<object>,
+  depth: number,
 ): JsonValue {
   if (value === null) {
     return null;
+  }
+  if (depth > MAXIMUM_CLONE_DEPTH) {
+    throw new FourError(
+      "UNTRUSTED_INPUT_REJECTED",
+      `${path} is nested deeper than ${String(MAXIMUM_CLONE_DEPTH)} levels (§96).`,
+      { context: { limitName: "maximumDepth", limit: MAXIMUM_CLONE_DEPTH, path } },
+    );
   }
   switch (typeof value) {
     case "boolean":
@@ -92,7 +112,9 @@ function cloneJson(
       const source = object as readonly unknown[];
       const copy: JsonValue[] = [];
       for (let i = 0; i < source.length; i += 1) {
-        copy.push(cloneJson(source[i], `${path}[${String(i)}]`, ancestors));
+        copy.push(
+          cloneJson(source[i], `${path}[${String(i)}]`, ancestors, depth + 1),
+        );
       }
       return Object.freeze(copy);
     }
@@ -118,7 +140,7 @@ function cloneJson(
           `${path}.${key} is undefined; JSON would drop the key.`,
         );
       }
-      copy[key] = cloneJson(entry, `${path}.${key}`, ancestors);
+      copy[key] = cloneJson(entry, `${path}.${key}`, ancestors, depth + 1);
     }
     return Object.freeze(copy);
   } finally {

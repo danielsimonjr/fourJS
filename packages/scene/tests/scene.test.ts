@@ -685,3 +685,14 @@ describe("Scene and Group as nodes", () => {
     expect(scene.children).toEqual([group]);
   });
 });
+
+describe("node id reservation ceiling (§96, 2026-09-11)", () => {
+  it("keeps a document id at or above 2^52 without parking the counter beside saturation", () => {
+    const huge = new Group({ id: `node-${String(2 ** 52)}` });
+    expect(huge.id).toBe(`node-${String(2 ** 52)}`);
+    const a = Number(/^node-(\d+)$/.exec(new Group().id)?.[1]);
+    const b = Number(/^node-(\d+)$/.exec(new Group().id)?.[1]);
+    expect(b).toBe(a + 1);
+    expect(a).toBeLessThan(2 ** 52);
+  });
+});

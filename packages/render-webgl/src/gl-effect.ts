@@ -53,19 +53,16 @@ import {
   type GlUniformLocation,
   type WebglContext,
 } from "./gl-program.js";
+import {
+  EFFECT_TEXTURE_UNIT,
+  EFFECT_VERTEX_COUNT,
+  setEffectPipelineFactory,
+} from "./gl-effect-registry.js";
 
-/**
- * The texture unit an effect samples its source from.
- *
- * Unit 0, like every other pipeline in this tier — an effect binds exactly one
- * texture, and §77's multi-texture materials are what will need a unit
- * allocator. Naming it keeps the `activeTexture` call in `webgl-renderer.ts`
- * and the sampler upload here from drifting apart.
- */
-export const EFFECT_TEXTURE_UNIT = 0;
-
-/** Vertices in the full-screen triangle; see the module header. */
-export const EFFECT_VERTEX_COUNT = 3;
+// `EFFECT_TEXTURE_UNIT` and `EFFECT_VERTEX_COUNT` moved to the registry module
+// on 2026-09-11 so `renderEffect` can read them without linking this module;
+// re-exported here so every existing import keeps resolving.
+export { EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT };
 
 /**
  * The full-screen-triangle vertex stage: three clip-space corners and their uv,
@@ -168,8 +165,11 @@ const gradeScratch = new Float32Array(3);
  * §70's full-screen effect pipeline (R-6) — see the module header.
  *
  * Owns its GL program and nothing else: the texture it samples belongs to
- * `gl-render-target.ts`'s cache, and the renderer re-creates this program on
- * context restore exactly as it re-creates the other four (§61).
+ * `gl-render-target.ts`'s cache. Since 2026-09-11 it compiles **lazily**, on
+ * the renderer's first fixed effect pass, and only once
+ * {@link registerEffectPipeline} has been called — the renderer drops it on
+ * context loss and re-acquires it on the next effect (§61), exactly as it
+ * handles the skinned pair.
  */
 export class EffectProgram implements Disposable {
   readonly #gl: WebglContext;
@@ -369,4 +369,30 @@ export class EffectProgram implements Disposable {
     this.#disposed = true;
     this.#gl.deleteProgram(this.#program);
   }
+}
+
+/**
+ * Opts this process's `WebglRenderer`s into §70's fixed effects — copy,
+ * colour grade, and §60a's output transform (§62; 2026-09-11).
+ *
+ * ```ts
+ * import { registerEffectPipeline } from "@fourjs/render-webgl";
+ * registerEffectPipeline();            // once, at application setup
+ * ```
+ *
+ * Calling it is what links this module — the full-screen program and its two
+ * shaders — into the bundle; a build that never calls it carries none of it.
+ * The program still compiles **lazily, on each renderer's first fixed effect
+ * pass**, never here and never at renderer initialize, so registration alone
+ * changes no GL transcript. Without it, `renderEffect` skips the pass with
+ * one development warning. §60's graph effects need
+ * `registerNodeMaterialPipeline()` instead, not this. Idempotent; calling it
+ * twice re-installs the same factory.
+ */
+export function registerEffectPipeline(): void {
+  setEffectPipelineFactory({
+    create(gl: WebglContext): EffectProgram {
+      return EffectProgram.create(gl);
+    },
+  });
 }

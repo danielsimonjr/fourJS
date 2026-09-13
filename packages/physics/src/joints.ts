@@ -550,6 +550,7 @@ export abstract class Joint extends EventEmitter<JointEventMap> {
 
   /** The fields every descriptor shares, for {@link Joint.toDescriptor}. */
   protected describeBase(binding: JointBinding): JointDescriptorBase {
+    this.#requireLive();
     const base: JointDescriptorBase = {
       bodyA: binding.bodyA,
       bodyB: binding.bodyB,
@@ -576,6 +577,30 @@ export abstract class Joint extends EventEmitter<JointEventMap> {
     this.#commands.motorDirty = true;
   }
 
+  /** Set by {@link Joint.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link Joint.dispose} has run. Disposal is terminal (§83): a
+   * disposed joint refuses world registration with `INVALID_APPLICATION_STATE`
+   * (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        JOINT_ERROR_CODE,
+        `This ${this.type} joint is disposed; registering a disposed joint ` +
+          "is a lifetime mistake (§83), and a new joint is a new Joint.",
+        { context: { type: this.type } },
+      );
+    }
+  }
+
   // --- §83 lifecycle --------------------------------------------------------
 
   /**
@@ -583,6 +608,10 @@ export abstract class Joint extends EventEmitter<JointEventMap> {
    * world's business, exactly as it is for `RigidBody`.
    */
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     this.removeAllListeners();
   }
 }

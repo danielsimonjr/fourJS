@@ -176,16 +176,23 @@ function refuseLookAt(node: Node, reason: string): FourError {
  * the counter is simply left where it is, so generated ids stay distinct from
  * it and from each other.
  */
+const MAXIMUM_RESERVED_NODE_ID = 2 ** 52;
+
 function reserveNodeId(id: string): void {
   const match = ENGINE_NODE_ID.exec(id);
   if (match === null) {
     return;
   }
   const value = Number(match[1]);
+  // Reservation ceiling (2026-09-11): a document naming `node-<2^52>` would
+  // otherwise park the counter one increment from the saturation the guard
+  // above describes, so every later auto id collides. Ids at or above the
+  // ceiling are kept verbatim (opaque strings, §79) and simply not reserved —
+  // a generated id cannot reach 2^52 in any process.
   if (
     Number.isSafeInteger(value) &&
     value >= nextNodeId &&
-    value < Number.MAX_SAFE_INTEGER
+    value < MAXIMUM_RESERVED_NODE_ID
   ) {
     nextNodeId = value + 1;
   }

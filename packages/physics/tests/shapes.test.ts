@@ -3,6 +3,7 @@ import { Vector2, Vector3 } from "@fourjs/math";
 import { describe, expect, it } from "vitest";
 
 import type { CollisionShape } from "../src/shapes.js";
+import { MAXIMUM_SHAPE_POINTS } from "../src/shapes.js";
 import {
   COLLISION_SHAPE_TYPES_2D,
   COLLISION_SHAPE_TYPES_3D,
@@ -706,5 +707,14 @@ describe("validateCollisionShape — polygons (§24, §85)", () => {
         });
       }).message,
     ).toContain("encloses no area");
+  });
+});
+
+describe("shape point ceiling (§96, 2026-09-11)", () => {
+  it("refuses a triangle mesh with more than MAXIMUM_SHAPE_POINTS vertices", () => {
+    const vertices = new Array<[number, number, number]>(MAXIMUM_SHAPE_POINTS + 1).fill([0, 0, 0]);
+    expect(() =>
+      validateCollisionShape({ type: "triangle-mesh", vertices, indices: [0, 1, 2] } as never),
+    ).toThrowError(expect.objectContaining({ code: "UNTRUSTED_INPUT_REJECTED" }) as Error);
   });
 });

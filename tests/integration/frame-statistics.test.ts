@@ -240,7 +240,7 @@ async function harness(
   // `OrthographicCameraOptions` has neither field — the object was accepted and
   // every one of its properties ignored, leaving the default unit box
   // `[-1, 1]²`. (Excess-property checking would have caught it; these suites are
-  // not part of any `tsc` project, which is the same hole `pnpm run docs`
+  // not part of any `tsc` project, which is the same hole `bun run docs`
   // catches for package sources.) The harness lays quads out at `x = 0…3`, so
   // all but the first two were off screen and the draw counts asserted below
   // were counts of invisible draws. Frustum culling removed them and exposed

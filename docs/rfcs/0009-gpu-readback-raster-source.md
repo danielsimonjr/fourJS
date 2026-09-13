@@ -13,7 +13,8 @@ RFC 0004 §6 deferred **GPU readback as a raster source** on purpose:
 > "wants an RFC, not a packet"; it is a different determinism argument and
 > must not ride in on this one.
 
-A-11 and RFC 0005 have since closed (2026-08-29). `Renderer.readPixels`
+A-11 closed and RFC 0005 was implemented (2026-08-29; its one open
+residue, the WebGPU skinned id pass, does not touch readback). `Renderer.readPixels`
 exists on both shipped GPU backends: asynchronous, tightly packed RGBA8,
 rows bottom-to-top, `region` in target texels from the bottom-left.
 `RasterSource.readPixels` is the opposite shape: **synchronous**,

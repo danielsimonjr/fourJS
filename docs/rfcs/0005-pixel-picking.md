@@ -2,7 +2,7 @@
 
 - **Status:** accepted (owner, 2026-08-21 — "Continue with the remaining WPs and the RFCs"; the recommended dispositions of the flagged questions are adopted)
 - **Date:** 2026-08-21
-- **Owner decision:** accepted (2026-08-21)
+- **Owner decision:** accepted (2026-08-21); implemented 2026-08-29 (WebGL, analytic tier A-11), 2026-09-09 (WebGPU `PickingService`, particle ids, WebGL skinned ids, §72 `PickProvider` dispatch, §86 measurements); residue (WebGPU skinned id pass) closed 2026-09-10 (#91). **No spec amendments-table row was added until revision 1.16 (2026-09-11)** — dispositions live in source and MEMORY only (see corrections below).
 - **Spec sections affected:** §71 (primary), §6b, §33, §34, §45, §47, §48, §55, §61, §62, §63, §72, §73, §85, §89, §90, §92, §96, §98
 
 ## Context
@@ -343,3 +343,61 @@ exist yet. What the implementing packet must measure, in the shape §86 already 
    testing and Canvas 2D has `isPointInPath`; both could answer `"pixel"` natively and
    _better_ than an id buffer. Declaring the tier absent is honest and simple; emulating it
    means §71's result quality varies by backend in a way §62's tiers would have to document.
+
+## Post-acceptance corrections (2026-09-10 review pass)
+
+Decision text left as accepted. The Context section is a 2026-08-21
+snapshot; everything it calls absent has since landed. Verified 2026-09-10:
+
+- **Spec.** No amendments-table row exists for this RFC; §71 still lists
+  `"custom"` and §86 has no picking row (`benchmarks/README.md` proposes
+  one). Owner action: add the row, or record here that the spec is not
+  amended.
+- **Context "`pick.ts` (471 lines) ships exactly one of the seven",
+  "`node.hitTestMode` does not exist", "analytic tier unwritten",
+  "`readPixels` staged", "`Rectangle2` does not exist".** All landed
+  2026-08-29: `pick.ts` ships bounds, `alphaMask`, `triangles` (ray/triangle)
+  and `hitTestMode` dispatch plus `PickProvider`; `HitTestMode =
+  "bounds" | "geometry" | "pixel" | "gpu"` on `Node` (`null` = engine
+  chooses; `"custom"` deliberately absent) — all four values arrived
+  together, not "two of them"; `Rectangle2` in `@fourjs/math`;
+  `Renderer.readPixels?` with the §61 contract.
+- **§1 sketch.** Shipped shapes differ (marked "sketch, not final"):
+  `update(root: Node, view: Viewport)`; `PickingService` has `disposed` +
+  `dispose()` rather than `extends Disposable`; `frame` is the service's
+  update ordinal from 1 (`packages/render/src/picking.ts`).
+- **§1 / Prototype "costs 0 B where unused".** Pass and service are 0 B; the
+  `createPickingService` seam rides every `WebglRenderer` bundle at
+  +0.15–0.17 kB gzip, +~0.4 kB where `pick()` rides (MEMORY 2026-08-29).
+- **Alternative D "recommended as well".** Landed: `PickableAlphaMask`
+  composes under `null` mode.
+- **Compatibility.** Additive surface is larger than listed: `MAX_PICK_CANDIDATES`,
+  `assertEncodableCandidateCount`, `collectPickCandidates`, `encodePickId`,
+  `decodePickId`, `supportsPicking`, `Renderer.createPickingService?`;
+  input adds `PickableAlphaMask`, `PickableTriangles`,
+  `PointerInputOptions.pickProvider`; scene adds `HitTestMode`.
+  **§79 did move:** `hitTestMode` is serialized (unset scenes byte-identical).
+  §62 gains no `RendererCapabilities` row — the capability is the presence of
+  `createPickingService` (Q6 adopted). The real `COMPATIBILITY.md` §71 row
+  reads "id-buffer + fence read-back, behind `registerPickingPipeline()` …
+  one id per `Renderable`, one id per particle emitter, deformed silhouette
+  for skinned meshes (`SkinnedIdProgram`, 2026-09-09)". The `Rectangle2`
+  prerequisite is satisfied, and the service reads its texel through its own
+  PBO/fence path, never through `Renderer.readPixels`. RFC 0002 never gained
+  the "picking strategies" registration point this RFC asked for.
+- **Q2 "§72 propagation cannot dispatch".** Landed 2026-09-09:
+  `PointerInputOptions.pickProvider`, per-pointer queueing, ray-tier fallback.
+- **Prototype "None run" and "one frame late".** `benchmarks/pick-latency.mjs`
+  (2026-09-09): 64 nodes id pass 1.025× the list; 10k 3.56×; 100k 4.27×;
+  fence 0.0025 ms vs stall 0.0008 ms with `extraFrames` 0 — all on the
+  counting-GL seam (`hostGpu.source: "none"`). "One frame late" is
+  **unmeasured on real hardware**. The results file's caveat "WebGPU has no
+  `PickingService`" predates the same-day landing and should be re-recorded.
+- **Wrong when written:** "if RFC 0002 is accepted" — it was accepted in the
+  same decision, the same day.
+
+**Residue: closed 2026-09-10 (#91).** The WebGPU skinned id pass landed as a
+private pipeline on `WebgpuPickingService` (`wgpu-picking.ts`: `skinMatrix()`
+plus the 3072-byte palette group at bind group 1, fail-once skip, never
+bind-pose). Spec revision 1.16 records §71's shipped form. The plan written for
+it (`docs/plans/RFC-0005-RESIDUE_PLAN.md`) is retained as a record only.

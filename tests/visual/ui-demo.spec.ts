@@ -27,7 +27,7 @@
  * ## Refreshing goldens
  *
  * ```sh
- * pnpm examples:build
+ * bun run examples:build
  * npx playwright test --project visual --update-snapshots
  * ```
  *

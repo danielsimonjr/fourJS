@@ -98,7 +98,7 @@ describe("the §37 seam is dimension-independent (WP-5.5 verification)", () => {
     // `RapierBodyAccess` is only *structurally* identical to `SolverBodyAccess`.
     // WP-5.4 had the compiler verify the 2D adapter; the 3D one had never been
     // assigned to `PhysicsWorldAdapter` anywhere. `PHYSICS_WORLD_ADAPTERS`
-    // declares that type, so `pnpm typecheck:tests` is the real
+    // declares that type, so `bun run typecheck:tests` is the real
     // assertion here and this case only proves the factories run.
     const adapters = PHYSICS_WORLD_ADAPTERS.map((create) => create());
     expect(adapters.map((adapter) => adapter.name)).toEqual([

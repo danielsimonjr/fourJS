@@ -26,6 +26,7 @@
  * same claim as "the simulation advanced correctly".
  */
 
+import { isFourError } from "@fourjs/core";
 import { constructionCount, resetConstructionCount } from "@fourjs/math";
 import { describe, expect, it } from "vitest";
 
@@ -38,6 +39,19 @@ import {
   type SteppableEmitter,
 } from "../src/particle-system.js";
 import { ParticlePool } from "../src/pool.js";
+
+/** Runs `run`, expecting a `FourError` with `INVALID_APPLICATION_STATE` (§83, §89). */
+function expectDisposedError(run: () => void): Error {
+  let caught: unknown;
+  try {
+    run();
+  } catch (error) {
+    caught = error;
+  }
+  expect(isFourError(caught)).toBe(true);
+  expect((caught as { code: string }).code).toBe("INVALID_APPLICATION_STATE");
+  return caught as Error;
+}
 
 /** §45 `fixedTimeStep`, in seconds (§7a: never milliseconds). */
 const FIXED_DELTA_TIME = 1 / 60;
@@ -409,5 +423,32 @@ describe("ParticleSystem: it really advances the simulation", () => {
     run(system, 300);
 
     expect(constructionCount()).toBe(0);
+  });
+});
+
+describe("ParticleSystem disposal (§83 stability audit, 2026-09-11)", () => {
+  it("disposes idempotently and refuses tracking and stepping afterwards", () => {
+    const system = new ParticleSystem();
+    const emitter = new StubEmitter("a");
+    expect(system.disposed).toBe(false);
+    system.track(emitter);
+    expect(system.size).toBe(1);
+
+    system.dispose();
+    expect(system.disposed).toBe(true);
+    expect(system.size).toBe(0);
+    // A second dispose is a no-op (§83: idempotent), not an error.
+    expect(() => system.dispose()).not.toThrow();
+    expect(system.disposed).toBe(true);
+
+    // Disposal is terminal (§83): the mutating entry points refuse with §89's
+    // INVALID_APPLICATION_STATE instead of silently working on a dead system.
+    expect(expectDisposedError(() => system.track(emitter)).message).toMatch(
+      /ParticleSystem is disposed.*§83/s,
+    );
+    expectDisposedError(() => system.fixedUpdate(contextAt(1)));
+    expect(system.size).toBe(0);
+    // Reads stay answerable, so teardown code can still inspect the system.
+    expect(system.has(emitter)).toBe(false);
   });
 });

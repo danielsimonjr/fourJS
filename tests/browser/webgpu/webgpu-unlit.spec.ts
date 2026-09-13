@@ -81,7 +81,7 @@ interface TriangleResult {
  * {@link inPage}: this repository pins no WebGPU typings (`@webgpu/types` is
  * not in the §3.2 pin set, and the backend describes the device structurally
  * for that reason), so `GPUBufferUsage` and friends have no ambient types here
- * and a real function would not survive `pnpm typecheck:tests`. The page is
+ * and a real function would not survive `bun run typecheck:tests`. The page is
  * where those globals exist, and a string is how they get there.
  */
 const PAGE_SCRIPT = `async (options) => {

@@ -225,3 +225,70 @@ None run. What the packet must measure, in priority order:
 4. **§17's track-type list should be re-read.** If §2 above is accepted, §17's _"morph weight"_ and _"skeletal joint"_ entries are satisfied by binding forms rather than by track types, and the staged note in `track.ts:40-45` is wrong about what it promised. Worth a spec-revisit item so a future reader does not add the enum members anyway.
 5. **What happens when a skeleton exceeds `maximumSkinningJoints`?** This RFC proposes refusing at setup with `UNSUPPORTED_GPU_FEATURE`. The alternatives are splitting the mesh into per-palette submeshes (real work, and it changes draw counts) or falling back to CPU skinning (which does not exist yet). Confirm the refusal.
 6. **Is `Bone` worth being a subclass at all**, rather than an ordinary `Node` referenced by a `Skeleton`? A subclass gives a `typeName` for §79 and a place to hang a debug-draw hook; a plain `Node` avoids a class whose only content is its name. Minor, but it is a public type either way.
+
+## Post-acceptance corrections (2026-09-10 review pass)
+
+Decision text left as accepted (2026-08-21; implemented 2026-08-28; spec
+revision 1.10). Verified against the tree 2026-09-10:
+
+- **`Bone` "carries `static readonly typeName = "bone"`".** Deliberately
+  **no `typeName`** (that key is the §6a component key); §79 identity is the
+  node type `"scene:bone"` (`packages/scene/src/skeleton.ts:72-82`,
+  `packages/fourjs/src/scene-serializers.ts`). RFC 0004 §2b's `CanvasViewWidget`
+  follows the same rule.
+- **`Skeleton.update(skinRoot: Node)`.** Now `update(skinRoot, worldOf?)`
+  (§43-interpolated palettes, 2026-09-09): the interpolated list composes
+  local poses, then the palette product — palettes are never lerped.
+- **§5 / Compatibility: `RendererCapabilities.maximumSkinningJoints` is
+  required, "breaking for any third-party `Renderer`".** Shipped
+  **optional** (`packages/render/src/renderer.ts:288`; absent = not reported)
+  under WP-R1.1's widening law; the "breaking" bullet is void.
+- **§5 "N is bounded by `MAX_VERTEX_UNIFORM_VECTORS / 4`", "the WebGL 2
+  tier's value is device-dependent".** The limit is the **declared constant
+  `MAX_SKINNING_JOINTS = 48`** (`packages/render/src/mesh.ts:95`; 192 of the
+  guaranteed 256 vec4s), reported by both GPU backends, 0 on the null
+  renderer; spec §62 and revision 1.10 say "declared portability constant
+  rather than a device query". WebGPU shares it via a 3072-byte palette bind
+  group (`wgpu-skinning.ts`).
+- **§5 / §8 "two skinned programs" in `render-webgl`.** Four now: the unlit
+  and lit colour pair, `SkinnedShadowProgram` (2026-09-09, lazily via
+  `acquireShadow()`) and `SkinnedIdProgram` for the §71 id pass (2026-09-09,
+  `gl-picking.ts`). WebGPU has the colour pair only (`registerSkinningPipeline()`,
+  2026-09-09); its skinned id pass (#91) and skinned shadow caster (#92)
+  landed 2026-09-10 — WebGPU now matches WebGL's four.
+- **§5 `RenderItemKind` "or `pipelineId` if RFC 0001's follow-up lands
+  first".** The kinds `"skinned-unlit"` / `"skinned-lit"` landed; `pipelineId`
+  did not.
+- **§6 "`pick.ts` already defers analytic picking to `R-23`".** Analytic
+  picking landed 2026-08-29 as A-11 / RFC 0005 Q3 (`node.hitTestMode`,
+  `Pickable.triangles`); `R-23` is not the label. Skinned picking is bind-pose
+  bounds on the CPU and deformed-silhouette ids on WebGL.
+- **§7 "every geometry buffer uploads `STATIC_DRAW`".** True of geometry;
+  particle instance streams are `DYNAMIC_DRAW` (`gl-particles.ts`).
+- **§8 "one pixel golden of a two-bone skinned quad".** No golden; the
+  acceptance is a counted-pixel Playwright gate (`tests/browser/skinning.spec.ts`,
+  "Why there is no golden").
+- **§8 "Defers … the glTF loader".** Shipped 2026-08-29 (A-19,
+  `packages/fourjs/src/gltf.ts` builds `Bone`/`Skeleton` from skins).
+- **Prototype "None run".** Done 2026-09-09: `benchmarks/skinning-resolve.mjs`
+  + `results/skinning-resolve.json` (60 bones ×1/×10 vs Group topology,
+  `Skeleton.update`, 180-channel clip through mixer and controller;
+  alternative A does not return). Items 1 and 4 were measured at landing
+  (byte-identical A/B; +0.75–0.80 kB gzip for the seam, pipelines 0 B unless
+  registered).
+- **Compatibility "the packet must state whether `Skeleton` is a document-
+  level resource".** Decided: inline on the mesh as bone ids + inverse bind
+  matrices (spec §54, revision 1.10).
+- **Open questions 1–6** are all resolved by revision 1.10 (no bone-axis
+  convention, +Y helper only; four influences at locations 4/5 with
+  `JOINTS_1`/`WEIGHTS_1` next; amendment row; refusal over the limit;
+  `Bone` subclass kept, without `typeName`).
+- **§1's dev-only weight-sum warning** was never implemented; weights are
+  "not validated or renormalized" (`buffer-geometry.ts`, spec §54) — a
+  not-adopted proposal, not a fact.
+
+**Residue (open, `TODO.md` "RFC 0003 residue"):** GPU morph path (plumbing
+only — `MorphWeights`, `Mesh.morphTargetWeights`, `morphWeights` on render
+items, `createArrayElementBinding`; zero morph code in either backend), CPU
+skinning (nothing), bone-texture palette (nothing). The WebGPU skinned shadow
+and id passes closed 2026-09-10 (#91, #92). Plan: `docs/plans/RFC-0003-RESIDUE_PLAN.md`.

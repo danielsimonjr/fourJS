@@ -133,9 +133,13 @@
  * meaningful), so a trajectory must not be mutated while it is being followed.
  */
 
-import type { Component, ComponentHost } from "@fourjs/core";
+import { FourError, type Component, type ComponentHost } from "@fourjs/core";
 import { Quaternion, Vector3 } from "@fourjs/math";
-import { warnAuthorityConflict, type Node, type Transform } from "@fourjs/scene";
+import {
+  warnAuthorityConflict,
+  type Node,
+  type Transform,
+} from "@fourjs/scene";
 
 import {
   CharacterController,
@@ -609,6 +613,31 @@ export class KinematicSystem implements SimulationSystem {
   /** Tracked nodes in insertion order (§33: deterministic iteration). */
   readonly #tracked = new Set<Node>();
 
+  /** Set by {@link KinematicSystem.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link KinematicSystem.dispose} has run. Disposal is terminal
+   * (§83): a disposed system refuses its mutating entry points with
+   * `INVALID_APPLICATION_STATE` (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "KinematicSystem is disposed; advancing nodes through a disposed system is a " +
+          "lifetime mistake (§83), and a new system is a new " +
+          "KinematicSystem.",
+        { context: { system: "KinematicSystem" } },
+      );
+    }
+  }
+
   constructor(options: KinematicSystemOptions = {}) {
     this.priority = options.priority ?? PRIORITY_KINEMATICS;
   }
@@ -631,6 +660,7 @@ export class KinematicSystem implements SimulationSystem {
    * every step, so tracking first and attaching later is fine.
    */
   track(node: Node): Node {
+    this.#requireLive();
     this.#tracked.add(node);
     return node;
   }
@@ -660,6 +690,7 @@ export class KinematicSystem implements SimulationSystem {
    * `time.fixedDeltaTime`, in the order documented on the class.
    */
   fixedUpdate(context: FixedUpdateContext): void {
+    this.#requireLive();
     const dt = context.time.fixedDeltaTime;
     for (const node of this.#tracked) {
       if (!node.enabled) {
@@ -699,6 +730,10 @@ export class KinematicSystem implements SimulationSystem {
 
   /** Drops every tracked node (§39 teardown). */
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     this.#tracked.clear();
   }
 }

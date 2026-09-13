@@ -20,6 +20,7 @@
  * `tests/determinism/swept-character.test.ts` pins a 300-step run to a golden.
  */
 
+import { isFourError } from "@fourjs/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Vector3 } from "@fourjs/math";
@@ -44,6 +45,19 @@ import {
 } from "../src/swept-character-controller.js";
 import type { ShapeCastQuery } from "../src/queries.js";
 import type { PhysicsWorld, WorldShapeCastHit } from "../src/world.js";
+
+/** Runs `run`, expecting a `FourError` with `INVALID_APPLICATION_STATE` (§83, §89). */
+function expectDisposedError(run: () => void): Error {
+  let caught: unknown;
+  try {
+    run();
+  } catch (error) {
+    caught = error;
+  }
+  expect(isFourError(caught)).toBe(true);
+  expect((caught as { code: string }).code).toBe("INVALID_APPLICATION_STATE");
+  return caught as Error;
+}
 
 /** The fixed step every test below uses, in seconds (§7a: never milliseconds). */
 const DT = 1 / 60;
@@ -923,5 +937,32 @@ describe("SweptCharacterSystem — §39 step 4, §42 kinematic", () => {
     expect(node.transform.position.z).toBe(0);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toMatch(/"kinematic"/);
+  });
+});
+
+describe("SweptCharacterSystem disposal (§83 stability audit, 2026-09-11)", () => {
+  it("disposes idempotently and refuses tracking and stepping afterwards", () => {
+    const system = new SweptCharacterSystem();
+    const node = new Group();
+    expect(system.disposed).toBe(false);
+    system.track(node);
+    expect(system.size).toBe(1);
+
+    system.dispose();
+    expect(system.disposed).toBe(true);
+    expect(system.size).toBe(0);
+    // A second dispose is a no-op (§83: idempotent), not an error.
+    expect(() => system.dispose()).not.toThrow();
+    expect(system.disposed).toBe(true);
+
+    // Disposal is terminal (§83): the mutating entry points refuse with §89's
+    // INVALID_APPLICATION_STATE instead of silently working on a dead system.
+    expect(expectDisposedError(() => system.track(node)).message).toMatch(
+      /SweptCharacterSystem is disposed.*§83/s,
+    );
+    expectDisposedError(() => system.fixedUpdate(fixedContext()));
+    expect(system.size).toBe(0);
+    // Reads stay answerable, so teardown code can still inspect the system.
+    expect(system.has(node)).toBe(false);
   });
 });

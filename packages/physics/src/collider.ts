@@ -399,6 +399,7 @@ export class Collider
    * registration (WP-5.3); not a per-step path.
    */
   validateFor(dimension: PhysicsDimension): void {
+    this.#requireLive();
     validateColliderDescriptor(this.toDescriptor(UNRESOLVED_BODY), dimension);
   }
 
@@ -415,6 +416,7 @@ export class Collider
    * them.
    */
   toDescriptor(body: PhysicsBodyHandle): ColliderDescriptor {
+    this.#requireLive();
     const descriptor: ColliderDescriptor = {
       shape: this.shape,
       body,
@@ -432,6 +434,30 @@ export class Collider
     return descriptor;
   }
 
+  /** Set by {@link Collider.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link Collider.dispose} has run. Disposal is terminal (§83): a
+   * disposed component refuses world registration with
+   * `INVALID_APPLICATION_STATE` (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "Collider is disposed; registering a disposed collider is a " +
+          "lifetime mistake (§83), and a new collider is a new Collider.",
+        { context: { component: "Collider" } },
+      );
+    }
+  }
+
   // --- §6a lifecycle --------------------------------------------------------
 
   /**
@@ -439,6 +465,10 @@ export class Collider
    * runs only from an explicit `dispose()` or `ComponentRegistry.disposeAll`.
    */
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     this.removeAllListeners();
   }
 }

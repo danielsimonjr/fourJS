@@ -48,6 +48,12 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
+import {
+  framesFor,
+  installFrameCounter,
+  waitUntilFrameCount,
+} from "./helpers/wait.js";
+
 /** Where the playground's `vite preview` server listens (`PLAYGROUND_PORT`). */
 const PLAYGROUND_URL = "http://localhost:4174/";
 
@@ -90,7 +96,9 @@ async function openPlayground(
     route.fulfill({ status: 200, contentType: "image/x-icon", body: "" }),
   );
   await page.goto(PLAYGROUND_URL, { waitUntil: "load" });
-  return { errors, loadedAt: Date.now() };
+  // `loadedAt` is a frame count, not a wall-clock instant: "N seconds since
+  // load" is measured in animation frames drawn since this point.
+  return { errors, loadedAt: await installFrameCounter(page) };
 }
 
 /** Reads one numeric `data-*` attribute off `#status`. */
@@ -134,10 +142,9 @@ test.describe("§39 step 8: sensor bookkeeping between the solve and the listene
     // Once everything is at rest, the two accounts must tell the same story:
     // the delta-accumulated §29 counter and the absolute §30 re-measure.
     // Reference run: 3 = 3 in both halves.
-    const remaining = loadedAt + SETTLE_SECONDS * 1000 - Date.now();
-    if (remaining > 0) {
-      await page.waitForTimeout(remaining);
-    }
+    // `loadedAt` is the frame count at load, so this is "SETTLE_SECONDS of
+    // frames since load" — at least that much wall clock, never fewer frames.
+    await waitUntilFrameCount(page, loadedAt + framesFor(SETTLE_SECONDS));
     for (const half of ["2d", "3d"] as const) {
       const counter = await readCount(page, `zone${half}`);
       const tally = await readCount(page, `tally${half}`);

@@ -229,3 +229,35 @@ None run. What the packet must measure:
 3. **Revocability defaults.** This RFC defaults capabilities to non-revocable and makes `uninstall` refuse. The alternative default (revocable, with each registry gaining removal) is more useful and much more work. Confirm the conservative default.
 4. **Does the `RENDER_GRAPH` token belong in the MVP?** Handing a plugin the application's `RenderGraph` is not the same as §81's "render passes" extension point (there is no pass _registry_), but it is the only useful thing available and is what a post-processing plugin would actually want. Include it as a real-but-differently-shaped capability, or leave "render passes" absent until a pass registry exists?
 5. **Plugin API version starting point and cadence.** `1.0.0` implies a stability promise for a surface with five of eleven points unimplemented. `0.1.0` is more honest and makes every range in the wild `^0.1`, which under semver means "no compatible range at all". Owner call.
+
+## Post-acceptance corrections (2026-09-10 review pass)
+
+Decision text left as accepted (2026-08-21; implemented 2026-08-28). Verified
+against the tree 2026-09-10:
+
+- **§2's token table ("five real, one partial, five absent").** As of
+  2026-09-06 **all eleven** §81 points have a token: the six of the landing
+  packet (`RENDER_GRAPH` included — Q4 adopted "include") plus
+  `ASSET_LOADERS`, `SHADER_OPERATORS`, `UI_CONTROLS`, `EDITOR_TOOLS`,
+  `COMPUTE_WORKLOADS` with minimal registries (`packages/fourjs/src/plugins.ts:13-25`).
+  The "Defers: tokens for the five absent points" line is closed; the
+  revocability deferral (only `SIMULATION_SYSTEMS` is revocable) still holds.
+- **`constructor(capabilities?: PluginCapabilityMap)`.** Shipped as an
+  **ordered list**, `readonly PluginCapabilityBinding[]` built with
+  `bindCapability()` (`packages/core/src/plugin.ts:181-199`), so the order
+  capabilities are provided is a property of the value (§33).
+- **"`PLUGIN_API_VERSION` starts at `1.0.0`".** Q5's recommendation was
+  adopted: it starts at **`0.1.0`** (`plugin.ts:60`; `docs/COMPATIBILITY.md`
+  §5), where a caret range is minor-locked.
+- **"five capability tokens exported from their owning packages".** Six at
+  landing, eleven now. Tokens moved to their owning packages 2026-08-29; the
+  umbrella's `plugins.ts` re-exports the same objects.
+- **"one capability token from each of render, physics, serialization,
+  motion".** `serialization` always had two (`COMPONENT_SERIALIZERS`,
+  `SCENE_MIGRATIONS`), as this RFC's own list says.
+- **Boundary test.** `tests/integration/plugin-boundary.test.ts` now splits
+  host machinery (banned outside core/umbrella) from token *declaration*
+  (`defineCapability`, allowed in owning packages, dated).
+- Verified consistent: token name strings (`fourJS:…`), the restricted range
+  grammar, `defineCapability`'s non-revocable default, `ApplicationOptions.plugins`
+  (Q1 option a), spec revision 1.9.

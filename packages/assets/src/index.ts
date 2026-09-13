@@ -43,6 +43,7 @@ export type {
   AssetGraph,
   AssetGraphLoadOptions,
   AssetLoadOptions,
+  AssetLoadContext,
   AssetLoader,
   AssetManagerOptions,
   AssetProgressEvent,
@@ -68,6 +69,7 @@ export type {
   AssetManifest,
   AssetManifestEntry,
   ManifestLoadOptions,
+  ManifestParseOptions,
 } from "./manifest.js";
 export {
   loadFromManifest,

@@ -16,7 +16,7 @@
  * members are its own public methods with matching signatures, and the fourth is
  * optional. {@link PHYSICS_WORLD_AS_REPLAY_TARGET} states exactly that as a
  * compiling assignment, so a drift in either declaration fails
- * `pnpm typecheck:tests` here.
+ * `bun run typecheck:tests` here.
  *
  * What `PhysicsWorld` does *not* have — and should not have — is
  * `applyInput(step, payload)`. A solver world has no idea what an application's
@@ -44,7 +44,7 @@
  * 3. **The two snapshot declarations are checked against each other.**
  *    `createSnapshot` returns `PhysicsWorld`'s `PhysicsSnapshot` where a
  *    `ReplaySnapshot` is demanded — that direction compiles as written, and
- *    a drift in either declaration fails `pnpm typecheck:tests`. The consume
+ *    a drift in either declaration fails `bun run typecheck:tests`. The consume
  *    direction does **not**, and saying it did was this header's own bug until
  *    2026-08-21: `ReplaySnapshot.configuration` is `unknown` where
  *    `PhysicsSnapshot.configuration` is `PhysicsSnapshotConfiguration`, for the

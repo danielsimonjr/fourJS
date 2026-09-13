@@ -666,7 +666,26 @@ describe("buffers (§96)", () => {
     ]);
   });
 
-  it("passes absolute and scheme-carrying uris through unresolved", async () => {
+  it("refuses absolute, protocol-relative and root-relative uris by default (§96, 2026-09-11)", async () => {
+    const { bytes } = pack(TRI_POSITIONS, TRI_INDICES);
+    const seen: string[] = [];
+    for (const uri of ["/abs/data.bin", "https://cdn.example/data.bin", "//cdn.example/data.bin", "file:///etc/data.bin"]) {
+      const document = corrupt(triangleDocument(), (c) => {
+        (c["buffers"] as { uri: string }[])[0].uri = uri;
+      });
+      await expect(
+        createGltfLoader({
+          fetch: (url) => {
+            seen.push(url);
+            return Promise.resolve(bytesResponse(bytes));
+          },
+        }).load(jsonResponse(document), "/models/model.gltf"),
+      ).rejects.toThrow(/allowAbsoluteUris/);
+    }
+    expect(seen).toEqual([]);
+  });
+
+  it("passes absolute and scheme-carrying uris through unresolved when opted in", async () => {
     const { bytes } = pack(TRI_POSITIONS, TRI_INDICES);
     const seen: string[] = [];
     for (const uri of ["/abs/data.bin", "https://cdn.example/data.bin"]) {
@@ -674,6 +693,7 @@ describe("buffers (§96)", () => {
         (c["buffers"] as { uri: string }[])[0].uri = uri;
       });
       await createGltfLoader({
+        allowAbsoluteUris: true,
         fetch: (url) => {
           seen.push(url);
           return Promise.resolve(bytesResponse(bytes));
@@ -2570,5 +2590,25 @@ describe("disposal (§83)", () => {
     expect(texture?.isDisposed).toBe(true);
     // Records stay readable — they are plain data.
     expect(asset.meshes).toHaveLength(1);
+  });
+});
+
+describe("sub-resource abort signal (2026-09-11)", () => {
+  it("forwards the parent request's signal to the injected transport, and nothing when there is none", async () => {
+    const { bytes } = pack(TRI_POSITIONS, TRI_INDICES);
+    const inits: unknown[] = [];
+    const document = corrupt(triangleDocument(), (c) => {
+      (c["buffers"] as { uri: string }[])[0].uri = "data.bin";
+    });
+    const loader = createGltfLoader({
+      fetch: (_url, init) => {
+        inits.push(init);
+        return Promise.resolve(bytesResponse(bytes));
+      },
+    });
+    const signal = { aborted: false };
+    await loader.load(jsonResponse(document), "/m/model.gltf", { signal });
+    await loader.load(jsonResponse(document), "/m/model.gltf");
+    expect(inits).toEqual([{ signal }, undefined]);
   });
 });

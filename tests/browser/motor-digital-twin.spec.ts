@@ -84,6 +84,12 @@ import { inflateSync } from "node:zlib";
 
 import { expect, test, type Page } from "@playwright/test";
 
+import {
+  framesFor,
+  waitForFrames,
+  waitForSimulationSeconds,
+} from "./helpers/wait.js";
+
 // ---------------------------------------------------------------------------
 // PNG decoding (see "Method notes")
 // ---------------------------------------------------------------------------
@@ -522,7 +528,7 @@ async function clickControl(page: Page, name: string): Promise<void> {
   if (point === undefined || box === null) return;
 
   await page.mouse.move(box.x + point.x, box.y + point.y);
-  await page.waitForTimeout(150);
+  await waitForFrames(page, framesFor(0.15));
   if (name !== "setpoint") {
     expect(
       (await readStatus(page))["hover"],
@@ -530,9 +536,9 @@ async function clickControl(page: Page, name: string): Promise<void> {
     ).toBe(name);
   }
   await page.mouse.down();
-  await page.waitForTimeout(60);
+  await waitForFrames(page, framesFor(0.06));
   await page.mouse.up();
-  await page.waitForTimeout(150);
+  await waitForFrames(page, framesFor(0.15));
 }
 
 /** Presses Tab until `name` holds the §75 focus, and fails if it never does. */
@@ -540,7 +546,7 @@ async function focusControl(page: Page, name: string): Promise<void> {
   for (let attempt = 0; attempt < 10; attempt += 1) {
     if ((await readStatus(page))["focused"] === name) return;
     await page.keyboard.press("Tab");
-    await page.waitForTimeout(80);
+    await waitForFrames(page, framesFor(0.08));
   }
   expect(
     (await readStatus(page))["focused"],
@@ -670,7 +676,7 @@ test.describe("examples/flagship/motor-digital-twin (§119)", () => {
     let changed = 0;
     let angleAfter = angleBefore;
     for (let sample = 0; sample < 3; sample += 1) {
-      await page.waitForTimeout(180);
+      await waitForFrames(page, framesFor(0.18));
       const after = await shoot(page);
       changed = Math.max(changed, changedIn(before, after, MACHINE_BAY));
       angleAfter = Number((await readStatus(page))["angle"]);
@@ -790,7 +796,7 @@ test.describe("examples/flagship/motor-digital-twin (§119)", () => {
 
     // A strip chart scrolls. Half a second is 15 of the 90 samples in the
     // window, so a sixth of every trace is new.
-    await page.waitForTimeout(600);
+    await waitForSimulationSeconds(page, 0.6);
     const after = await shoot(page);
     expect(
       changedIn(before, after, CHART_A) + changedIn(before, after, CHART_B),
@@ -821,7 +827,7 @@ test.describe("examples/flagship/motor-digital-twin (§119)", () => {
     expect(parkedCaliper, "the caliper is not on screen").not.toBeNaN();
 
     await clickControl(page, "rub");
-    await page.waitForTimeout(2500);
+    await waitForSimulationSeconds(page, 2.5);
 
     const rubbing = await readStatus(page);
     const pressed = await shoot(page);
@@ -847,7 +853,7 @@ test.describe("examples/flagship/motor-digital-twin (§119)", () => {
     ).toBeGreaterThan(10);
 
     await clickControl(page, "rub");
-    await page.waitForTimeout(1200);
+    await waitForSimulationSeconds(page, 1.2);
     expect((await readStatus(page))["fault"]).toBe("none");
 
     // The second fault: a supply sag, expressed as a controller whose actuator
@@ -855,7 +861,7 @@ test.describe("examples/flagship/motor-digital-twin (§119)", () => {
     // one no amount of integration can close, and (because §111's own
     // anti-windup is doing the work) one that is stable rather than growing.
     await clickControl(page, "sag");
-    await page.waitForTimeout(2500);
+    await waitForSimulationSeconds(page, 2.5);
     const sagging = await readStatus(page);
     expect(sagging["fault"]).toContain("sag");
     expect(Number(sagging["ceiling"])).toBeCloseTo(SAG_CEILING, 3);
@@ -876,7 +882,7 @@ test.describe("examples/flagship/motor-digital-twin (§119)", () => {
     expect((await readStatus(page))["paused"]).toBe("true");
 
     const frozen = await shoot(page);
-    await page.waitForTimeout(400);
+    await waitForFrames(page, framesFor(0.4));
     const stillFrozen = await shoot(page);
     // Exactly zero, not "few": the accumulator stops accumulating, every system
     // sees no fixed step, and the renderer draws the same interpolated pose.
@@ -970,7 +976,7 @@ test.describe("examples/flagship/motor-digital-twin (§119)", () => {
 
     // And the twin keeps running afterwards.
     const before = Number((await readStatus(page))["steps"]);
-    await page.waitForTimeout(600);
+    await waitForSimulationSeconds(page, 0.6);
     expect(Number((await readStatus(page))["steps"])).toBeGreaterThan(before);
   });
 
@@ -1009,7 +1015,7 @@ test.describe("examples/flagship/motor-digital-twin (§119)", () => {
       const point = points.get(name);
       if (point === undefined) continue;
       await page.mouse.move(box.x + point.x, box.y + point.y);
-      await page.waitForTimeout(150);
+      await waitForFrames(page, framesFor(0.15));
       expect((await readStatus(page))["hover"]).toBe(name);
     }
     // Every control the page publishes is inside the canvas and in its right
@@ -1027,7 +1033,7 @@ test.describe("examples/flagship/motor-digital-twin (§119)", () => {
     await focusControl(page, "pause");
     const before = await readStatus(page);
     await page.keyboard.press("Enter");
-    await page.waitForTimeout(200);
+    await waitForFrames(page, framesFor(0.2));
     const after = await readStatus(page);
     expect(Number(after["activations"])).toBe(
       Number(before["activations"]) + 1,

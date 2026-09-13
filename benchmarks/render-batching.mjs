@@ -4,7 +4,7 @@
  * 2026-08-09; §64 stages 4–6, §92's *"CPU time"* and *"draw calls"* metrics).
  *
  * ```sh
- * pnpm run build          # this script imports the built dist, not src
+ * bun run build          # this script imports the built dist, not src
  * node benchmarks/render-batching.mjs
  * ```
  *

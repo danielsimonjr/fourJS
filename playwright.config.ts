@@ -35,22 +35,22 @@ import { defineConfig } from "@playwright/test";
  * because both sides of its comparison are SwiftShader. See the comment on the
  * `visual` project for the scope of the exception.
  *
- * Run **all ten** builds first — or just `pnpm examples:build`, which is the
+ * Run **all ten** builds first — or just `bun run examples:build`, which is the
  * one place they are listed: the web servers below serve the *built* `dist`
  * directories, which are gitignored and may be absent.
  *
  * ```sh
- * pnpm example:build          # examples/first-2d-scene/dist
- * pnpm first-3d-scene:build   # examples/first-3d-scene/dist
- * pnpm playground:build       # examples/physics-playground/dist
- * pnpm mechanism:build        # examples/mechanism/dist
- * pnpm blending:build         # examples/blending/dist
- * pnpm particles-demo:build   # examples/particles-demo/dist
- * pnpm ui-demo:build          # examples/ui-demo/dist
- * pnpm flagship:build         # examples/flagship/one-scene-everything-moves/dist
- * pnpm twin:build             # examples/flagship/motor-digital-twin/dist
- * pnpm character:build        # examples/character-controller/dist
- * pnpm test:browser
+ * bun run example:build          # examples/first-2d-scene/dist
+ * bun run first-3d-scene:build   # examples/first-3d-scene/dist
+ * bun run playground:build       # examples/physics-playground/dist
+ * bun run mechanism:build        # examples/mechanism/dist
+ * bun run blending:build         # examples/blending/dist
+ * bun run particles-demo:build   # examples/particles-demo/dist
+ * bun run ui-demo:build          # examples/ui-demo/dist
+ * bun run flagship:build         # examples/flagship/one-scene-everything-moves/dist
+ * bun run twin:build             # examples/flagship/motor-digital-twin/dist
+ * bun run character:build        # examples/character-controller/dist
+ * bun run test:browser
  * ```
  *
  * `use.baseURL` stays the first site's, so every pre-existing spec keeps
@@ -376,7 +376,7 @@ export default defineConfig({
     },
   ],
   // All ten sites are started before the first test and torn down after the
-  // last, so one `pnpm test:browser` run covers every spec in `testDir`. The
+  // last, so one `bun run test:browser` run covers every spec in `testDir`. The
   // entries use different ports, so they coexist rather than race for one.
   webServer: [
     {

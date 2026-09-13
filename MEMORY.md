@@ -142,7 +142,8 @@ readable; never delete the pointer itself.
   (`SKINNING_GLSL` in `gl-skinning-glsl.ts`, spliced into the id
   fragment). Lives in `gl-picking.ts` so `registerPickingPipeline` does
   not link the colour pair. Lazy compile, fail-once skip, same palette
-  upload as the colour pass. WebGPU still skips: no RFC 0003 skinned
+  upload as the colour pass. WebGPU still skips (superseded 2026-09-09: the
+  colour pair landed; the id pass is still absent): no RFC 0003 skinned
   pipelines there. RFC 0005 checkbox stays `[ ]`.
 
 - **2026-09-09 — Size budgets after #86.** Main CI failed at `bun run size`
@@ -403,6 +404,91 @@ readable; never delete the pointer itself.
   waves, an anti-hallucination table per plan citing file:line, and "stop and
   report" rules for network-gated steps (harfbuzzjs install, Noto download).
 
+- **2026-09-10 — Accepted RFCs 0001–0006 audited; corrections appended.**
+  Standing facts worth not re-deriving: the RFCs are decision records —
+  drift is recorded in a dated *Post-acceptance corrections* section, never
+  by rewriting the accepted text. `PLUGIN_API_VERSION` is `0.1.0`; all
+  eleven §81 tokens exist; `Bone` and `CanvasViewWidget` carry no `typeName`
+  (node type is the §79 identity); `maximumSkinningJoints` is optional and
+  the limit is the declared constant 48 on both GPU backends; the node-
+  material program cache keys on emitted source; `"uv"` is nameable in the
+  screen domain; RFC 0005 never received a spec amendments row; the
+  display-only scan's umbrella allowlist entry was `"four"` (a directory that
+  does not exist) until this date. Bun in the container was 1.3.11 and could
+  not parse the v2 lockfile — `npm install -g bun@1.4.2` restores parity.
+  Residue plans: `docs/plans/RFC-000{1,3,4,5}-RESIDUE_PLAN.md`.
+  Same day, hygiene applied: spec revision 1.15 (§71 RFC 0005 shipped form,
+  §91 Oxlint); `pnpm` → `bun run` in live docs and comments only — the dated
+  audit and gap-analysis documents keep their original commands on purpose.
+  `benchmarks/pick-latency.mjs` no longer runs against `dist` (pre-existing).
+
+- **2026-09-11 — Sync after #91/#92; gate repair.** The size gate was red on
+  main after #92: a feature spliced into the lit/standard programs costs every
+  bundle ~0.5 kB gzip, light-free ones included, because those programs
+  compile at init — the node class itself tree-shakes (verified in the built
+  bundle: only the collector branch, three `SceneLights` fields, the GLSL
+  chunk and `HemisphereLightUniforms` ride). Trimming the GLSL recovered
+  ~25 B; budgets rose with the A/B in `tools/size-budgets.mjs`. Rule worth
+  keeping: **an A/B against the parent commit before every lighting / program
+  change**, because `bun run size` runs in CI and the failure lands on the
+  next PR, not the one that caused it. `pick-latency.mjs`'s host double must
+  mirror every member `WebglPickingService` reads (`particleBatches()` since
+  #86). Spec revision numbers: check the table's tail before minting — #91
+  and this branch both took 1.15; the audit row is 1.16.
+
+- **2026-09-11 — Security / stability / performance pass.** Facts to keep:
+  glTF subresource URIs are **relative-only by default** (`allowAbsoluteUris`
+  opts in) — a glTF is a §96 document that drives fetches; `cloneJsonValue`
+  has the same 1024 depth ceiling as `parseUntrustedJson`, so the
+  `JSON.parse` → `migrateSceneDocument` path is bounded; Rapier snapshot meta
+  is shape-checked. The render list's default sort is skipped whenever no
+  item sorts before its predecessor (a stable sort's fixed point), not only
+  for homogeneous lists. Two WebGPU `mapAsync` sites now convert rejections
+  (GPU timer drops the sample; readback → `DEVICE_LOST` with `cause`).
+  Audit reports were subagent output; every applied item was re-read in
+  source before editing. Unapplied items are in TODO with file:line.
+
+- **2026-09-11 — "Fix all" follow-through.** Closed TODO rows live in
+  `docs/archive/TODO-DONE.md` (moved, not rewritten; MEMORY stays append-only
+  and unsplit because `check-docs` and its own convention say so). The
+  workspace now pins `lib: ["ES2022"]` — a package naming a DOM type fails to
+  build; browser specs and examples pin DOM themselves. `setEventInterest`
+  gates event *translation* only: fingerprints identical with/without it. The
+  2026-08-08 `physics-step` record was stale after the Rapier 0.20 bump — a
+  benchmark record's checksums must be re-recorded with every solver bump,
+  not only the goldens. WebGPU has one loss code, `DEVICE_LOST`.
+  `typecheck:benchmarks` exists because the pick-latency host double rotted
+  silently once. Pending in worktree agents at this commit: WebGL register
+  seams (shadow/effect/particles) and the Playwright sleep removal.
+
+- **2026-09-11 — Dispose discipline.** The house pattern is `#disposed` +
+  `get disposed()` + idempotent `dispose()` + a `#requireLive()` that throws
+  `INVALID_APPLICATION_STATE` with `CanvasTexture.update`'s message shape
+  (§83). Two deliberate exceptions, now written down: `DragManager` may be
+  reused after dispose (no owned resource; `makeDraggable` re-establishes
+  subscriptions) and `createSnapshotSystem` is a stateless factory — the
+  `PoseBuffer` is the resource. `RigidBody.dispose()` while registered never
+  makes a step throw: the world drains through package-internal helpers.
+
+- **2026-09-11 — Register seams for shadow / effect / particles (WebGL).**
+  The A-3 rule held again: a module `let` + `register*()` is the only thing
+  that takes a compiled-at-init program out of a bundle; lazy compile alone
+  does not. Four programs compile at init now (unlit, sprite, lit, standard;
+  standard's seam is a follow-up in flight). Constants a renderer needs from
+  a heavy module (`EFFECT_TEXTURE_UNIT`, `particleItemFloats`) move to the
+  registry module and are re-exported from the old one. Two worktree agents
+  running Playwright at once collide on ports 4173–4183: serialise browser
+  gates. `bun run graph` regenerates `docs/Architecture/*` — commit it with
+  the packet that changed the graph.
+
+- **2026-09-11 — Standard seam + GL mirrors.** Three programs compile at
+  init on WebGL (unlit, sprite, lit); seven register seams (standard,
+  shadow, effect, particles, skinning, picking, node materials). A CPU
+  uniform mirror must hold **doubles**: a `Float32Array` mirror never equals
+  the material's `0.2`, so the skip silently never fires — measure the
+  skip, do not assume it. Two Playwright runs on this machine collide on
+  ports 4173–4183; run browser gates one at a time.
+
 - **2026-09-06 — Rapier 0.20 goldens re-recorded.** Deliberate solver bump
   (the exception each golden's `_warning` names). Values came from the
   scenario helpers, not from editing hashes by hand. 0.20 contact persistence
@@ -589,7 +675,7 @@ readable; never delete the pointer itself.
   (deepthinking-mcp `524ada7f`, fzf-mcp `387ee494`, MathTS `c0dd0d12`) before it was written down.
 
 - **2026-09-05 — TypeScript-on-Bun toolchain (RFC 0006).** The workspace package
-  manager and script runner is Bun (≥ 1.2). `package.json` declares
+  manager and script runner is Bun (≥ 1.4.2 since the lockfile v2 bump; was ≥ 1.2). `package.json` declares
   `"workspaces": ["packages/*"]`; committed lockfile is text `bun.lock`;
   `bunfig.toml` sets `saveTextLockfile` / `exact`. CI uses `oven-sh/setup-bun`
   and `bun install --frozen-lockfile`. Library emit stays `tsc -b` (composite

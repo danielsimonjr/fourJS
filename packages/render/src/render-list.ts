@@ -1023,26 +1023,38 @@ interface SortTracker {
   renderOrder: number;
 }
 
-/** Records one item's §66 keys; sets {@link SortTracker.permute} when they differ. */
+/**
+ * Records one item's §66 keys against the **previous** item's; sets
+ * {@link SortTracker.permute} only when this item sorts *before* the one
+ * generated ahead of it — i.e. when the default comparator would actually
+ * move something. A list that is merely heterogeneous but already in §66
+ * order (opaque items first, then transparent; ascending `renderOrder`) is a
+ * fixed point of the stable sort, so it skips the O(n log n) pass entirely
+ * (2026-09-11; until then any mixed scene re-sorted every frame). The three
+ * comparisons mirror `compareDefaultRenderItems` key for key.
+ */
 function noteSortKeys(tracker: SortTracker, item: MutableRenderItem): void {
   if (item.clip?.maskPass === true) {
     tracker.permute = true;
     return;
   }
-  if (!tracker.seen) {
-    tracker.renderLayer = item.renderLayer;
-    tracker.transparent = item.transparent;
-    tracker.renderOrder = item.renderOrder;
-    tracker.seen = true;
-    return;
+  if (tracker.seen && !tracker.permute) {
+    if (item.renderLayer !== tracker.renderLayer) {
+      if (item.renderLayer < tracker.renderLayer) {
+        tracker.permute = true;
+      }
+    } else if (item.transparent !== tracker.transparent) {
+      if (tracker.transparent) {
+        tracker.permute = true;
+      }
+    } else if (item.renderOrder < tracker.renderOrder) {
+      tracker.permute = true;
+    }
   }
-  if (
-    item.renderLayer !== tracker.renderLayer ||
-    item.transparent !== tracker.transparent ||
-    item.renderOrder !== tracker.renderOrder
-  ) {
-    tracker.permute = true;
-  }
+  tracker.renderLayer = item.renderLayer;
+  tracker.transparent = item.transparent;
+  tracker.renderOrder = item.renderOrder;
+  tracker.seen = true;
 }
 
 /** §46 layer test inlined for the default {@link ALL_LAYERS} build-time mask. */

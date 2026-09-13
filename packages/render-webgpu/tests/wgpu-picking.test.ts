@@ -1203,24 +1203,24 @@ describe("WebgpuPickingService.pick — mapAsync read-back", () => {
     );
   });
 
-  it("rejects CONTEXT_LOST for a buffer that predates a loss or era change", async () => {
+  it("rejects DEVICE_LOST for a buffer that predates a loss or era change", async () => {
     const rig = createRig();
     rig.service.update(drawable(), rig.view);
 
     rig.state.deviceLost = true;
-    expect((await rejection(pickedAt(rig, 0))).code).toBe("CONTEXT_LOST");
+    expect((await rejection(pickedAt(rig, 0))).code).toBe("DEVICE_LOST");
     rig.state.deviceLost = false;
 
     rig.state.geometries = new WgpuGeometryCache(rig.state.device as GpuDevice);
-    expect((await rejection(pickedAt(rig, 0))).code).toBe("CONTEXT_LOST");
+    expect((await rejection(pickedAt(rig, 0))).code).toBe("DEVICE_LOST");
   });
 
-  it("rejects CONTEXT_LOST when the device goes down mid-flight", async () => {
+  it("rejects DEVICE_LOST when the device goes down mid-flight", async () => {
     const rig = createRig();
     rig.service.update(drawable(), rig.view);
     const pending = pickedAt(rig, 0);
     rig.state.deviceLost = true;
-    expect((await rejection(pending)).code).toBe("CONTEXT_LOST");
+    expect((await rejection(pending)).code).toBe("DEVICE_LOST");
   });
 
   it("rejects when the service is disposed mid-flight (§83)", async () => {

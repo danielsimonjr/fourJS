@@ -50,6 +50,7 @@ import {
   type GlUniformLocation,
   type WebglContext,
 } from "./gl-program.js";
+import { setShadowPipelineFactory } from "./gl-shadow-registry.js";
 
 /**
  * The caster vertex stage: object space → the light's clip space.
@@ -104,8 +105,11 @@ void main() {
  * program.setModel(item.worldMatrix);              // once per caster
  * ```
  *
- * Owns its GL objects and nothing else; the renderer re-creates it on context
- * restore exactly as it re-creates the other six (§61).
+ * Owns its GL objects and nothing else. Since 2026-09-11 it compiles
+ * **lazily**, on the first frame whose light asks for a shadow map, and only
+ * once {@link registerShadowPipeline} has been called — the renderer drops
+ * it on context loss and re-acquires it on the next shadowed frame (§61),
+ * exactly as it handles the skinned pair.
  */
 export class ShadowProgram implements Disposable {
   readonly #gl: WebglContext;
@@ -200,4 +204,29 @@ export class ShadowProgram implements Disposable {
     this.#disposed = true;
     this.#gl.deleteProgram(this.#program);
   }
+}
+
+/**
+ * Opts this process's `WebglRenderer`s into §69's shadow pass (§62;
+ * 2026-09-11).
+ *
+ * ```ts
+ * import { registerShadowPipeline } from "@fourjs/render-webgl";
+ * registerShadowPipeline();            // once, at application setup
+ * ```
+ *
+ * Calling it is what links this module — the depth-only caster program and
+ * its two shaders — into the bundle; a build that never calls it carries none
+ * of it. The program still compiles **lazily, on each renderer's first
+ * shadowed frame**, never here and never at renderer initialize, so
+ * registration alone changes no GL transcript. Without it, a light that asks
+ * for a shadow map gets one development warning and the frame's lit surfaces
+ * draw unshadowed. Idempotent; calling it twice re-installs the same factory.
+ */
+export function registerShadowPipeline(): void {
+  setShadowPipelineFactory({
+    create(gl: WebglContext): ShadowProgram {
+      return ShadowProgram.create(gl);
+    },
+  });
 }

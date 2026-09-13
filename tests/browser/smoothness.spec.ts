@@ -79,6 +79,8 @@ import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { framesFor, waitForFrames } from "./helpers/wait.js";
+
 declare global {
   interface Window {
     /** rAF callbacks delivered by {@link useVirtualFrameClock}. */
@@ -729,7 +731,7 @@ async function collectSamples(
 ): Promise<readonly Sample[]> {
   const samples: Sample[] = [];
   for (let i = 0; i < SAMPLE_COUNT; i++) {
-    if (i > 0) await page.waitForTimeout(SAMPLE_INTERVAL_SECONDS * 1000);
+    if (i > 0) await waitForFrames(page, framesFor(SAMPLE_INTERVAL_SECONDS));
     const startedAt = Date.now();
     const image = await grab(canvas);
     samples.push({ image, startedAt, finishedAt: Date.now() });

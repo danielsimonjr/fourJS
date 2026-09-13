@@ -74,6 +74,7 @@
  * on a new context.
  */
 
+import { FourError } from "@fourjs/core";
 import {
   RenderBatcher,
   type RenderBatch,
@@ -249,6 +250,31 @@ export class WgpuBatching implements WgpuRenderBatching {
   /** Slots handed out this frame; reset by {@link WgpuBatching.beginFrame}. */
   #slot = 0;
 
+  /** Set by {@link WgpuBatching.dispose}; disposal is terminal (§83). */
+  #disposed = false;
+
+  /**
+   * Whether {@link WgpuBatching.dispose} has run. Disposal is terminal (§83): a
+   * disposed uploader refuses its per-frame entry points with
+   * `INVALID_APPLICATION_STATE` (§89) rather than silently working.
+   */
+  get disposed(): boolean {
+    return this.#disposed;
+  }
+
+  /** §83's "disposed resource still in use", made loud (§89). */
+  #requireLive(): void {
+    if (this.#disposed) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "WgpuBatching is disposed; drawing through a disposed uploader is " +
+          "a lifetime mistake (§83), and a new uploader is a new " +
+          "WgpuBatching.",
+        { context: { uploader: "WgpuBatching" } },
+      );
+    }
+  }
+
   constructor(options: RenderBatchOptions = {}) {
     this.#batcher = new RenderBatcher(options);
   }
@@ -264,6 +290,7 @@ export class WgpuBatching implements WgpuRenderBatching {
   }
 
   beginFrame(): void {
+    this.#requireLive();
     this.#slot = 0;
   }
 
@@ -272,6 +299,7 @@ export class WgpuBatching implements WgpuRenderBatching {
     pass: GpuRenderPassEncoder,
     batch: RenderBatch,
   ): void {
+    this.#requireLive();
     if (this.#device !== device) {
       // A different device — the first draw, or the first after a loss. The
       // old handles belong to a device that is gone: dropped, never destroyed,
@@ -305,6 +333,10 @@ export class WgpuBatching implements WgpuRenderBatching {
   }
 
   dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
     for (const slot of this.#slots) {
       slot.vertexBuffer.destroy();
       slot.indexBuffer.destroy();

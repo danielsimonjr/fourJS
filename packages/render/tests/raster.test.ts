@@ -93,7 +93,7 @@ describe("§85 validation at construction", () => {
 
   it("admits no string where a source is expected (§96)", () => {
     // A URL, a module specifier, and anything a scene document could carry are
-    // all strings; the type system is where the refusal lives (`pnpm
+    // all strings; the type system is where the refusal lives (`bun run
     // typecheck:tests` runs the integration twin of this assertion), and the
     // runtime backstop is that a string has no integer `width`.
     expect(

@@ -4,7 +4,7 @@
  * time … contacts"* metrics; plan §6j P11-4, WP-11.4).
  *
  * ```sh
- * pnpm run build          # this script imports the built dist, not src
+ * bun run build          # this script imports the built dist, not src
  * node benchmarks/physics-step.mjs
  * ```
  *

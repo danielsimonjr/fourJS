@@ -27,8 +27,8 @@ and §23's **density-derived mass** — no body in the scene authors a mass.
 ## Running it
 
 ```sh
-pnpm run build              # the packages the example imports as `four/…`
-pnpm run playground:build   # bundles to examples/physics-playground/dist
+bun run build              # the packages the example imports as `four/…`
+bun run playground:build   # bundles to examples/physics-playground/dist
 npx vite preview examples/physics-playground
 ```
 

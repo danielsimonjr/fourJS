@@ -36,8 +36,8 @@ displacement by one fixed delta (measured at 60 m/s from a 2 m/s animation, WP-7
 ## Running it
 
 ```sh
-pnpm run build            # the packages the example imports as `four/…`
-pnpm run blending:build   # bundles to examples/blending/dist
+bun run build            # the packages the example imports as `four/…`
+bun run blending:build   # bundles to examples/blending/dist
 npx vite preview examples/blending
 ```
 
