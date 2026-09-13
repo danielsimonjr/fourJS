@@ -5,7 +5,6 @@
     "declaration": false,
     "declarationMap": false,
     "noEmit": true,
-    "types": ["node"],
     "module": "ESNext",
     "moduleResolution": "bundler"
   },

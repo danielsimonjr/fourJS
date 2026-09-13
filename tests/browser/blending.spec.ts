@@ -75,7 +75,7 @@ import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-import { framesFor, readFrameCount, waitForFrames } from "./helpers/wait.js";
+import { framesFor, waitForFrames } from "./helpers/wait.js";
 
 /** A decoded, unfiltered 8-bit image: `pixels` is `width * height` samples. */
 interface DecodedImage {

@@ -543,7 +543,15 @@ if (!existsSync(docPath)) {
     `${docRelative} does not exist — this tool refreshes a section, it does not create the document`,
   );
 }
-const doc = readFileSync(docPath, "utf8");
+// Normalised to LF before anything compares it. `core.autocrlf=true` is the
+// Windows git default and this repo ships no .gitattributes, so a Windows
+// checkout materialises this file with CRLF while git and this generator both
+// use LF. The check below splits on "\n", which leaves a trailing "\r" on
+// every committed line and makes EVERY line compare unequal - so `--check`
+// failed on any Windows clone, and printed a "first difference" whose two
+// lines looked identical because the "\r" is invisible. That is a
+// line-ending REPRESENTATION difference being reported as content drift.
+const doc = readFileSync(docPath, "utf8").replace(/\r\n/g, "\n");
 const solverSplice = spliceBlock(doc, SOLVER_BEGIN, SOLVER_END, generatedSolverBlock);
 const rendererSplice = spliceBlock(
   solverSplice.next,
