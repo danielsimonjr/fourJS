@@ -48,7 +48,7 @@
     },
     "packages/animation": {
       "name": "@fourjs/animation",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -58,18 +58,18 @@
     },
     "packages/assets": {
       "name": "@fourjs/assets",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
       },
     },
     "packages/core": {
       "name": "@fourjs/core",
-      "version": "0.0.0",
+      "version": "0.1.0",
     },
     "packages/diagnostics": {
       "name": "@fourjs/diagnostics",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -78,7 +78,7 @@
     },
     "packages/fourjs": {
       "name": "fourJS",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/animation": "workspace:*",
         "@fourjs/assets": "workspace:*",
@@ -107,7 +107,7 @@
     },
     "packages/geometry": {
       "name": "@fourjs/geometry",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -115,7 +115,7 @@
     },
     "packages/input": {
       "name": "@fourjs/input",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -124,7 +124,7 @@
     },
     "packages/materials": {
       "name": "@fourjs/materials",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -132,7 +132,7 @@
     },
     "packages/math": {
       "name": "@fourjs/math",
-      "version": "0.0.0",
+      "version": "0.1.0",
     },
     "packages/motion": {
       "name": "@fourjs/motion",
@@ -145,7 +145,7 @@
     },
     "packages/particles": {
       "name": "@fourjs/particles",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -189,7 +189,7 @@
     },
     "packages/render": {
       "name": "@fourjs/render",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/geometry": "workspace:*",
@@ -200,7 +200,7 @@
     },
     "packages/render-canvas": {
       "name": "@fourjs/render-canvas",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -209,7 +209,7 @@
     },
     "packages/render-svg": {
       "name": "@fourjs/render-svg",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -218,7 +218,7 @@
     },
     "packages/render-webgl": {
       "name": "@fourjs/render-webgl",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -227,7 +227,7 @@
     },
     "packages/render-webgpu": {
       "name": "@fourjs/render-webgpu",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -236,7 +236,7 @@
     },
     "packages/scene": {
       "name": "@fourjs/scene",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -244,7 +244,7 @@
     },
     "packages/serialization": {
       "name": "@fourjs/serialization",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
@@ -253,17 +253,17 @@
     },
     "packages/text": {
       "name": "@fourjs/text",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/geometry": "workspace:*",
         "@fourjs/math": "workspace:*",
-        "harfbuzzjs": "0.4.13",
+        "harfbuzzjs": "1.6.1",
       },
     },
     "packages/ui": {
       "name": "@fourjs/ui",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@fourjs/core": "workspace:*",
         "@fourjs/input": "workspace:*",
@@ -652,7 +652,7 @@
 
     "fsevents": ["fsevents@2.3.3", "", { "os": "darwin" }, "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw=="],
 
-    "harfbuzzjs": ["harfbuzzjs@0.4.13", "", {}, "sha512-EC0q1K9Axs2IhgzDcTlYSv0m/Xo3VU36BQXtRoUS/4eMpy0rsMHePHwIjHKdhaouVO5O03sfUOwHP6ZzZ3HwFA=="],
+    "harfbuzzjs": ["harfbuzzjs@1.6.1", "", {}, "sha512-+JeJmO+HzXjDwpfCOdGSyM2bNP8WzJNFKl/8TKivbInMYDtfRIuPIDLtnBNmQzcJw6GptbhHY6o5gaH6deCMEw=="],
 
     "human-id": ["human-id@4.2.1", "", { "bin": { "human-id": "dist/cli.js" } }, "sha512-zPGsiS+dWoTZtZ4AtpA9Y+BdSFSNWvnouNlWNoUFyAM6xHOHmdCvqO3k8AIbdamCOv4gUFUVNPf6rJFfc4UiJw=="],
 
