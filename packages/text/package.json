@@ -25,6 +25,6 @@
     "@fourjs/core": "workspace:*",
     "@fourjs/geometry": "workspace:*",
     "@fourjs/math": "workspace:*",
-    "harfbuzzjs": "0.4.13"
+    "harfbuzzjs": "1.6.1"
   }
 }
