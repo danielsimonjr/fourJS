@@ -70,6 +70,12 @@ updates:
       # staying on js-yaml 4. Lift when both copies move together.
       - dependency-name: 'js-yaml'
         versions: ['>=5']
+      # harfbuzzjs 1.x removed the explicit Wasm initialization and resource-disposal APIs
+      # (hb.js / hbjs.js) that packages/text/src/harfbuzz uses, so the optional shaping adapter
+      # cannot load. #96 merged that bump on 2026-09-12 and d9347f2 restored 0.4.13, the
+      # supported ABI; #103 proposed it again on 2026-09-14. Lift only with an adapter migration.
+      - dependency-name: 'harfbuzzjs'
+        versions: ['>=1']
 
   # Keep the action versions current. Grouped so a week of bumps is one PR, not six.
   - package-ecosystem: 'github-actions'
