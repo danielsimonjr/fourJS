@@ -1720,6 +1720,13 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       always uploads). Making batching the
       default still needs A-4's build-time pipeline-selection seam (the opt-in
       seam already costs every bundle +0.17 kB).
+- [ ] **Two comments send readers to a closed ticket: "batching-default needs A-4's
+      build-time pipeline-selection seam".** A-4 closed 2026-08-07 (build-mode tier)
+      and its remainder closed 2026-09-07, but this row and
+      `packages/render-webgl/src/gl-batch.ts`'s header both still name it as the
+      blocker. Establish whether what A-4 shipped (`__FOUR_DEV__`) is that seam; if
+      it is not, correct both comments so the next reader is not sent chasing a
+      discharged blocker.
 - [x] **`buildRenderList` is now ~40% of a 100 000-sprite frame's preparation**
       DONE 2026-09-06 — homogeneous sort skip, sprite fast path, and
       `ALL_LAYERS` layer test. `benchmarks/results/render-batching.json`
