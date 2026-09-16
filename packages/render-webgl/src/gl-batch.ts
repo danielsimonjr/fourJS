@@ -35,8 +35,38 @@
  *
  * The transparency §65 asks for is then true of everything *above* the switch:
  * no node, material, geometry, render item or scene knows whether batching is
- * on, and turning it on changes no API. Making it the default is a one-line
- * change the day the build-time pipeline-selection seam A-4 records exists.
+ * on, and turning it on changes no API.
+ *
+ * ## Why "the day A-4's seam exists" was the wrong thing to wait for
+ *
+ * This header used to end: *"Making it the default is a one-line change the day
+ * the build-time pipeline-selection seam A-4 records exists."* A-4 closed on
+ * 2026-08-07 and its remainder on 2026-09-07, and what it shipped is **not that
+ * seam** (corrected 2026-09-16).
+ *
+ * A-4 shipped `__FOUR_DEV__` — a build **mode** flag, and the only build-time
+ * define in this repository. `@fourjs/core`'s `dev.ts` states its contract:
+ * only warnings, assertions, measurement and diagnostic bookkeeping may sit
+ * behind it, and *"if deleting the guarded block changed any number the engine
+ * computes, the block does not belong behind this flag"*. Batching changes what
+ * the engine computes — it is the difference between 13 draws and 3 — so it is
+ * barred from that flag by the same §33 rule, not merely unimplemented on it.
+ * (`TODO.md`'s A-4 remainder records step 3 as WON'T-DO for exactly this
+ * reason: the §33 simulation envelope.)
+ *
+ * What this repository actually uses to keep an unused pipeline out of a bundle
+ * is a **runtime** seam, called at application setup: `registerShadowPipeline`,
+ * `registerStandardPipeline`, `registerSkinningPipeline`,
+ * `registerParticlePipeline` and the rest. Calling one is what links its module;
+ * a build that never calls it carries none of it. {@link createGlBatching} is
+ * already that shape, so batching is not missing a seam — it *is* the seam.
+ *
+ * So making batching the default is not a one-line change waiting on a ticket.
+ * A default-on switch has to link this module in every bundle that carries
+ * `WebglRenderer`, and the only way back to zero bytes for the application that
+ * never batches is for that application to configure something — which is what
+ * opting in already is, one call shorter. Turning it on by default is therefore
+ * an owner decision about who pays, not a blocked one; nothing is missing.
  *
  * ## What one draw becomes
  *
