@@ -893,6 +893,23 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       command (`bunx vite examples/<name>`) is in the root `README.md` only, which is not
       where a reader browsing `examples/` is looking.
 
+- [ ] **`cameras-and-coordinate-conversion.md` tells the reader `CameraShake` is unavailable; it
+      shipped 2026-09-06.** Dogfooding cycle 8 (`.dogfood/cycle8`), consumer seat on
+      `@fourjs/motion`. The guide says so twice — line 260, _"`CameraShake` (shake/impulse)
+      remains staged — blocked on choosing an interpolated value-noise function rather than
+      per-step white noise (§33)"_, and the **Honest state** bullet, _"shake is still staged"_.
+      Both are false, and this repository's own records already say so: `CHANGELOG.md` lists
+      _"`CameraShake` (interpolated value-noise)"_, and this file's complexity index records
+      _"Staged rigs … DONE 2026-09-06 (trackball, fly snippet, `CameraShake`)"_. The named
+      blocker is exactly what the implementation uses: `camera-shake.ts` samples a quintic-fade,
+      integer-hashed value noise (C², bit-identical per §33) — the interpolated function, not
+      white noise. `CameraShake` is exported from the `motion` barrel, carries
+      `CAMERA_SHAKE_SERIALIZER`, and has its own test file. Measured from a consumer seat:
+      attached with `camera.addComponent(...)`, `ConstraintSystem` advanced it on **119/120**
+      fixed steps with **0** skipped, peak offset **0.396575 m** against the **0.519615 m**
+      amplitude bound, trauma decaying **1 → 0** over 2 s at `traumaDecay: 0.5`. Same defect
+      class as cycle 4 — a guide teaching that a shipped call does not exist.
+
 - [ ] **Dogfooding coverage map (standing assignment) — surfaces DONE, so they are not redone.**
       Verified from a clean consumer against the staged published-name packages, each with a
       control: JS runtime · TypeScript types (strict, `skipLibCheck: false`) · publish/staging
