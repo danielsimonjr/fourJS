@@ -245,6 +245,32 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 
 ## Now
 
+- [x] **`check-docs` counted visual goldens off the DISK, so it failed on any host that had
+      run the visual tier.** **FIXED 2026-09-16.** _Found mid-flight_ — not planned work; it
+      surfaced while verifying an unrelated claim, so it is filed and ticked in one pass.
+      `countNested("tests/visual", ".png")` walked the filesystem. The visual tier writes a
+      per-platform snapshot beside each committed one and `.gitignore` excludes every
+      non-Linux variant, so a host that had ever run `bun run test:browser` counted the
+      ignored `-visual-win32.png` artifacts: `visual row claims 3 goldens, but
+      tests/visual/**/*.png counts 4`. CI never saw it — a fresh checkout has no such files —
+      so the gate passed everywhere it ran and failed only for the developer.
+      Reproduced by planting one ignored `-visual-win32.png` on an otherwise untouched tree:
+      exit 0 → exit 1, and back to exit 0 with the fix. Now counted with `git ls-files`,
+      which is what the table already claimed ("**3** committed PNG goldens") and the idiom
+      this same file already used for `examples/`. `countNested` had no other caller and is
+      removed rather than left as a trap for the next recursive count.
+      · **This completes the 2026-09-07 mitigation in Stage 1b above, which was half-finished.**
+      That change gitignored the stray `-visual-win32/-darwin.png` files so a Windows run
+      "cannot leak goldens that could never match CI" — but nothing updated the gate, so the
+      leak it closed in git kept arriving through the filesystem.
+      · Corrects my own earlier framing: I had this filed as "missing `-win32` goldens".
+      That was backwards. The repo deliberately does not want win32 goldens — CI is ubuntu and
+      a win32 golden could never match it. There was no missing artifact, only a gate reading
+      the wrong source of truth.
+      · Negative test kept: corrupting the row to claim 9 goldens still fails
+      (`but git tracks 3 .png files under tests/visual/`), so the counter was repaired, not
+      disabled.
+
 - [x] **`smoothness.spec.ts:794` is still flaky, and this time it is PROVEN, not suspected.**
       **FIXED 2026-09-09 (second pass).** Pause-during-grab was necessary but not
       sufficient. `waitForVirtualFrameCount` pumped the _patched_ rAF, so each

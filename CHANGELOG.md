@@ -8,6 +8,35 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-16 — `check-docs` counted visual goldens from the disk, so it failed on any host that had run the visual tier
+
+#### Fixed
+
+- **`tools/check-docs.mjs` pinned the visual-golden count with a filesystem walk
+  (`countNested("tests/visual", ".png")`), not with git.** The visual tier writes a
+  per-platform snapshot beside each committed one, and `.gitignore` excludes every
+  non-Linux variant. So on a host that had ever run `bun run test:browser`, the walk
+  counted the ignored `-visual-win32.png` artifacts and the gate reported
+  `visual row claims 3 goldens, but tests/visual/**/*.png counts 4` — a failure nobody
+  else could reproduce, because CI checks out a fresh tree and never has those files.
+  Reproduced by planting one ignored `-visual-win32.png`: the gate went from exit 0 to
+  exit 1 on an otherwise untouched tree, and back to exit 0 with the fix in place.
+  The count now comes from `git ls-files`, which is both what the table already
+  claimed ("**3** committed PNG goldens") and the idiom this same file already used
+  for `examples/` ("the source of truth for *exists*"). `countNested` had no other
+  caller and is removed rather than left as a trap.
+  · This completes a mitigation that was left half-finished on 2026-09-07. That change
+  gitignored the stray `-visual-win32/-darwin.png` files so a Windows run "cannot leak
+  goldens that could never match CI", but the gate was still counting them off the
+  disk, so the leak it prevented in git kept arriving through the filesystem.
+  · `tests/README.md` said the numbers were pinned "against the filesystem … and
+  `**/*.png`", which is no longer true of the golden count; it now states the split and
+  why. The gate's own error message said the same thing and now names git.
+  · Gates on the final tree: check-docs OK, prettier --check clean, build exit 0,
+  oxlint --type-aware exit 0. Negative test: corrupting the row to claim 9 goldens
+  still fails the gate (`but git tracks 3 .png files under tests/visual/`), so the
+  counter was repaired, not disabled.
+
 ### 2026-09-16 — batching-default was not blocked on A-4; two comments said it was
 
 #### Fixed
