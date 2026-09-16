@@ -27,6 +27,7 @@
     "first-3d-scene:build": "bunx vite build examples/first-3d-scene",
     "flagship:build": "bunx vite build examples/flagship/one-scene-everything-moves",
     "format": "bunx prettier --write .",
+    "format:check": "bunx prettier --check .",
     "graph": "bun tools/create-dependency-graph/create-dependency-graph.ts --root=.",
     "graph:check": "bun tools/query-dependency-graph/query-dependency-graph.mjs --check-browser-safety",
     "graph:duplicates": "bun tools/create-dependency-graph/check-duplicates.mjs --no-regen",
