@@ -9,3 +9,14 @@ coverage
 # wants to expand it; the `graph` CI step would then rewrite it compact again, so a format gate would
 # fail on every run forever and the file would drift from its generator. Ignore, never format.
 docs/Architecture/dependency-summary.compact.json
+
+# PRETTIER IS NON-IDEMPOTENT ON THESE TWO FILES - excluded because of a named upstream defect, not
+# to silence a gate. Measured 2026-09-16 with prettier 3.9.6: three consecutive `--write` passes
+# produced three DIFFERENT sha256 hashes (c4096885 -> 2dc765a6 -> c0c498a8) and `--check` warned
+# after every one. 17 oscillating hunks, 596 lines churning, line count identical each pass.
+# The construct is deeply-indented nested list content containing markdown tables (~38 spaces of
+# indent wrapping a |---|---| table); prettier re-wraps it differently on each run and never
+# converges. Including these in a `prettier --check` gate would make CI permanently red with no
+# action any contributor could take to fix it.
+TODO.md
+docs/archive/TODO-DONE.md
