@@ -893,6 +893,24 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       command (`bunx vite examples/<name>`) is in the root `README.md` only, which is not
       where a reader browsing `examples/` is looking.
 
+- [x] **`cameras-and-coordinate-conversion.md` tells the reader `CameraShake` is unavailable; it
+      shipped 2026-09-06.** DONE — both claims replaced by a worked `addComponent` example plus
+      the `trauma` / `traumaDecay` semantics. Dogfooding cycle 8 (`.dogfood/cycle8`), consumer seat on
+      `@fourjs/motion`. The guide says so twice — line 260, _"`CameraShake` (shake/impulse)
+      remains staged — blocked on choosing an interpolated value-noise function rather than
+      per-step white noise (§33)"_, and the **Honest state** bullet, _"shake is still staged"_.
+      Both are false, and this repository's own records already say so: `CHANGELOG.md` lists
+      _"`CameraShake` (interpolated value-noise)"_, and this file's complexity index records
+      _"Staged rigs … DONE 2026-09-06 (trackball, fly snippet, `CameraShake`)"_. The named
+      blocker is exactly what the implementation uses: `camera-shake.ts` samples a quintic-fade,
+      integer-hashed value noise (C², bit-identical per §33) — the interpolated function, not
+      white noise. `CameraShake` is exported from the `motion` barrel, carries
+      `CAMERA_SHAKE_SERIALIZER`, and has its own test file. Measured from a consumer seat:
+      attached with `camera.addComponent(...)`, `ConstraintSystem` advanced it on **119/120**
+      fixed steps with **0** skipped, peak offset **0.396575 m** against the **0.519615 m**
+      amplitude bound, trauma decaying **1 → 0** over 2 s at `traumaDecay: 0.5`. Same defect
+      class as cycle 4 — a guide teaching that a shipped call does not exist.
+
 - [ ] **Dogfooding coverage map (standing assignment) — surfaces DONE, so they are not redone.**
       Verified from a clean consumer against the staged published-name packages, each with a
       control: JS runtime · TypeScript types (strict, `skipLibCheck: false`) · publish/staging
@@ -954,6 +972,17 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       cannot rasterise; staged texels still resolve through the §33 table.
       Engine: **clean**. Guide index patched. WebGPU still skips skinned
       items. Checkbox stays `[ ]`.
+      **Numbering note (added 2026-09-16) — two blocks in this row are both labelled
+      "Cycle 4", and counting by the row alone gives the wrong answer.** The
+      `2026-09-07, .dogfood/cycle4` block and the `2026-09-13, EVO` block immediately
+      below are *separate* cycles that share a label, and the EVO one is filed after
+      cycles 6 and 7 instead of in date order. So the last cycle header a reader meets
+      in this row says "Cycle 4", which reads as though the row stops there. That
+      undercount misled a dispatch on 2026-09-16 (a cycle briefed as "6" when 6 and 7
+      were already done). **`MEMORY.md` is the authority for the cycle count** — its
+      dated `Dogfood cycle N` entries are one per cycle and in order. The EVO block's
+      own label is left exactly as its author wrote it; renumbering another agent's
+      record is not a call this note makes.
       **Cycle 4 (2026-09-13, EVO) — the full consumer seat, run end to end.** Staged the 24
       published-name packages, packed real tarballs, installed them into a project OUTSIDE the
       workspace, and compiled against the SHIPPED declarations. Results, all measured:
@@ -968,6 +997,24 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       package name (`@fourjs/render-webgl`) into built artifacts, so the message telling a user to
       register a pipeline named a package they cannot install. `publish-names:test` passes
       regardless — it unit-tests the mapper, not the staged output.
+      **Cycle 8 (2026-09-16, `.dogfood/cycle8`) — `packages/motion` + `packages/input`, the two
+      packages never dogfooded.** Consumer seat: both imported only through the published umbrella
+      subpaths (`fourJS/motion`, `fourJS/input`), never from `src/`. One Node scene ties them
+      together — `KeyboardState` over a fake `KeySurface` feeds a `SteeringAgent`
+      (`seek` → `beginSteering`/`addSteering`/`endSteering`/`integrate`), which moves a player that
+      an `OrbitRig` + `LookAtConstraint` camera tracks under §42 `"constraint"` authority, advanced
+      by `ConstraintSystem` inside a `SystemRegistry`. Measured: the `motion` subpath resolves
+      **100** exports and `input` **16**; held keys `{KeyD, KeyW}` clear to **0** on `blur`; the
+      player reaches **(3.819185, 0, −2.546123)** at **3.467706 m/s** after 120 fixed steps; the
+      camera holds **6.06 m** from it against the rig's `distance: 6`; two runs are **identical**
+      (§33); and a consumer typecheck under `strict` + `skipLibCheck: false` reports **0 errors**.
+      Engine: **clean** — nothing missing from the umbrella, no taught call that throws, no
+      strict-TS failure. Docs were the defect again: the cameras guide said `CameraShake` was
+      staged when it shipped 2026-09-06 (filed and fixed above). Judged **not worth filing**:
+      `KeyboardState`, `SteeringAgent`, `Scheduler`, `SpatialHash`, `solveTwoBoneIK` and the
+      trajectory classes have **zero** `docs/guides/` coverage — a coverage gap rather than a
+      defect, since the package READMEs and TypeDoc do cover them, and no guide teaches a wrong
+      call about them. Standing: next cycle picks a new surface, not motion or input.
 
 
 - [x] **`registerRapierSolver()` throws on a second call — awkward for anything building more than

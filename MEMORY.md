@@ -30,6 +30,31 @@ readable; never delete the pointer itself.
 
 ## Decisions
 
+- **2026-09-16 — Dogfood cycle 8: `motion` + `input`, the two packages
+  never dogfooded.** Consumer seat through the umbrella subpaths only
+  (`fourJS/motion` 100 exports, `fourJS/input` 16) — never `src/`.
+  `KeyboardState` over a fake `KeySurface` feeds `SteeringAgent` `seek`;
+  an `OrbitRig` + `LookAtConstraint` camera tracks the player under §42
+  `"constraint"`, advanced by `ConstraintSystem` in a `SystemRegistry`.
+  Held keys clear to 0 on `blur`; player (3.819185, 0, −2.546123) at
+  3.467706 m/s after 120 fixed steps; camera holds 6.06 m against the
+  rig's `distance: 6`; two runs identical (§33); consumer typecheck under
+  `strict` + `skipLibCheck: false` reports 0 errors. Engine **clean** —
+  nothing missing from the umbrella, no taught call that throws. Docs
+  were the defect again: the cameras guide said `CameraShake` "remains
+  staged" when it shipped 2026-09-06, and the blocker it named
+  (interpolated value noise rather than white noise) is precisely what
+  `camera-shake.ts` already uses — quintic-fade integer-hashed noise, C²
+  per §33. Measured 119/120 steps advanced by `ConstraintSystem`, 0
+  skipped, peak offset 0.396575 m vs a 0.519615 m amplitude bound, trauma
+  1 → 0 over 2 s. Guide patched. Growing offsets and a non-decaying
+  trauma were **my** measurement errors (the camera tracking a moving
+  player; `traumaDecay` defaults to 0), not engine defects. Zero
+  `docs/guides/` coverage for `KeyboardState` / `SteeringAgent` /
+  `Scheduler` / `SpatialHash` / `solveTwoBoneIK` / trajectories is judged
+  a gap, not a defect — READMEs and TypeDoc cover them. Standing
+  checkbox stays `[ ]`.
+
 - **2026-09-10 — Hemisphere light (§68).** `HemisphereLight` is a
   two-colour directional ambient, not a punctual slot. First-match like
   the sun. Sky axis is the node's **+Y** (world up), deliberately not the
