@@ -81,7 +81,7 @@ are accepted; spec revision 1.16 records the §56 shaping decision. This pass do
   map parity, multi-directional/area/clustered lights, wider shadows, IBL and tone mapping
   remain open.
 - R-1 deferred graph pooling/barriers/staging rings/GPU-field/depth-collision work,
-  shaded instancing/atlas packing, R-33 physical-GPU evidence, first npm publication,
+  shaded instancing/atlas packing, first npm publication,
   and standing dogfooding remain open. No hardware result or release is fabricated.
 
 Final validation evidence is recorded in CHANGELOG and the pull request. The historical
@@ -208,7 +208,7 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 - Follow-ups the R-1 plan explicitly defers
 - PH-11c — character/dynamics push interaction — DONE 2026-09-06 (`pushMass` / reduced-mass impulse / wake).
 - R-32 — textured / rotated / soft particles — DONE 2026-09-06 (opt-in 10-float stream).
-- R-33 — §112's exit, rendered as well as simulated. Split landed 2026-09-09; exit still needs non-SwiftShader.
+- R-33 — §112's exit, rendered as well as simulated — DONE 2026-09-16 (100,403 particles at 60.0 fps on a Radeon 8060S; simulate 2.42 + present 7.65 ms). Recorded, not gated: the gate still pins SwiftShader by design.
 - R-31 — GPU particle simulation integrator tier — DONE 2026-08-29 (`simulation: "gpu"`); §27 GPU fields / depth-buffer collision / GPU snapshots remain under R-31 residue.
 - PH-22 residue (re-read 2026-08-21): PH-22f anchors DONE 2026-09-06; path-planning RFC 0007 accepted and implemented 2026-09-11.
 - R-8 follow-ups:
@@ -1580,13 +1580,29 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
 - [x] **R-32 — textured / rotated / soft particles.** DONE 2026-09-06 — opt-in
       10-float stream (`rotation` + `softness`); default 8-float stream and
       goldens unchanged. WebGL appearance program is lazy.
-- [ ] **R-33 — §112's exit, rendered as well as simulated.** Owner: the browser-gate
-      packet, on non-SwiftShader hardware. Now has headroom (see R-34).
+- [x] **R-33 — §112's exit, rendered as well as simulated.** **DONE 2026-09-16** —
+      §112's exit (*"at least 100,000 simple particles can be simulated and
+      rendered at interactive rates on suitable hardware"*) is **MET**, measured
+      on an AMD Radeon 8060S (`ANGLE (AMD, ... Direct3D11)`): **100,403 live
+      particles at 60.0 fps**, 150 sampled frames, zero dropped frames (longest
+      frame 16.8 ms) and zero console errors. Inside a vsync-locked 16.67 ms
+      frame the split is **simulate 2.42 ms + present 7.65 ms = 10.07 ms mean**
+      (p95 12.3 ms) — about 40% headroom. The same page on SwiftShader manages
+      **1.43 fps** (699.86 ms mean frame): a 42x separation, which is why the
+      gate refuses to measure rasterised work on software.
       ~~Report simulate-ms and present-ms separately~~ **DONE 2026-09-09**:
       `examples/particles-demo` publishes `data-simulate` / `data-present`
       (seconds, §7a) on `#status`; the browser gate asserts they exist as
-      two finite non-negative attributes. **No fps budget** — SwiftShader is
-      not suitable hardware; the exit itself is still open.
+      two finite non-negative attributes.
+      **The gate still measures SwiftShader and still asserts no fps budget, by
+      design**: `playwright.config.ts` pins `--use-angle=swiftshader` in global
+      `use.launchOptions`, so a GPU that *is* present cannot change what CI
+      measures. This number is therefore **recorded, never gated**, like every
+      figure under `benchmarks/`. Reproduce: copy `examples/particles-demo` with
+      `FOUNTAIN_CAPACITY = 110000` and `emissionRate: 50000`, build it, and
+      launch Chromium with `--use-angle=default --ignore-gpu-blocklist
+      --enable-gpu`. CPU half on the same host: 2.24 ms/step mean, 3.63 ms p95
+      for 100,000 particles against the 16.667 ms budget.
 - [x] **R-31 — GPU particle simulation integrator tier.** DONE 2026-08-29 (WP-R1.8 +
       R-31 residue) — `simulation: "gpu"` on `ParticleEmitter` with a bound
       `ParticleGpuSimulation`; CPU spawn, GPU semi-implicit Euler under constant
