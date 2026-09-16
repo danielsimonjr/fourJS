@@ -13,9 +13,14 @@ colocated in each package (`packages/<name>/tests/`); performance measurements l
 | [`browser/`](browser/)         | `bun run test:browser` (project `chromium`) | **36** Playwright specs                  |
 | [`visual/`](visual/)           | `bun run test:browser` (project `visual`)   | **2** specs, **3** committed PNG goldens |
 
-The bold numbers are pinned by `tools/check-docs.mjs` against the filesystem
-(`tests/determinism/*.test.ts` and `golden/*.json`, `tests/integration/*.test.ts`,
-`tests/browser/*.spec.ts`, `tests/visual/*.spec.ts` and `**/*.png`). Adding a
+The bold numbers are pinned by `tools/check-docs.mjs`. Suite and spec counts come
+from the filesystem (`tests/determinism/*.test.ts` and `golden/*.json`,
+`tests/integration/*.test.ts`, `tests/browser/*.spec.ts`, `tests/visual/*.spec.ts`).
+The visual golden count comes from `git ls-files`, not from a disk walk: the
+visual tier writes a per-platform snapshot beside each committed one, and
+`.gitignore` keeps every non-Linux variant out of the repo. A disk walk counts
+those ignored artifacts, so the gate failed on any host that had run
+`test:browser` while CI, which checks out a fresh tree, always passed. Adding a
 file without updating this table fails that gate.
 
 ## `determinism/` — §33, §92

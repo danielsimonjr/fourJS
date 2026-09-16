@@ -503,20 +503,22 @@ function countDirect(rel, suffix) {
   ).length;
 }
 
-/** Files under `rel` (any depth) whose names end with `suffix`. */
-function countNested(rel, suffix) {
-  const dir = join(root, rel);
-  if (!existsSync(dir)) return 0;
-  let n = 0;
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) {
-      n += countNested(join(rel, name), suffix);
-    } else if (name.endsWith(suffix)) {
-      n += 1;
-    }
-  }
-  return n;
+/**
+ * TRACKED files under `rel` (any depth) whose names end with `suffix`, from git.
+ *
+ * Deliberately git rather than the filesystem: the visual tier writes
+ * per-platform snapshots next to the committed ones, and `.gitignore` keeps
+ * every non-Linux variant out of the repo. A disk walk counts those ignored
+ * artifacts, so a Windows or macOS host that had run `test:browser` failed this
+ * gate with a count nobody else could reproduce — CI checks out a fresh tree and
+ * never sees them. The table says "committed", so the count must mean committed.
+ */
+function countTracked(rel, suffix) {
+  const out = execFileSync("git", ["ls-files", "--", `${rel}/`], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  return out.split("\n").filter((path) => path.endsWith(suffix)).length;
 }
 
 const packageCount = existsSync(join(root, "packages"))
@@ -530,7 +532,7 @@ const determinismGoldens = countDirect("tests/determinism/golden", ".json");
 const integrationSuites = countDirect("tests/integration", ".test.ts");
 const browserSpecs = countDirect("tests/browser", ".spec.ts");
 const visualSpecs = countDirect("tests/visual", ".spec.ts");
-const visualGoldens = countNested("tests/visual", ".png");
+const visualGoldens = countTracked("tests/visual", ".png");
 
 const readme = read("README.md");
 if (readme === null) {
@@ -644,7 +646,7 @@ if (testsReadme === null) {
       if (nums[1] !== visualGoldens) {
         errors.push(
           `${testsReadmeRel}: visual row claims ${String(nums[1])} goldens, ` +
-            `but tests/visual/**/*.png counts ${String(visualGoldens)}`,
+            `but git tracks ${String(visualGoldens)} .png files under tests/visual/`,
         );
       }
     }
