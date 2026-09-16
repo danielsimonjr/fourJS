@@ -257,16 +257,43 @@ p.x += cp * sy * forward * dt; p.y += sp * forward * dt; p.z += cp * cy * forwar
 ```
 
 Strafe is the same pattern with the horizontal right vector
-`(cy, 0, −sy)`. `CameraShake` (shake/impulse) remains staged — blocked on
-choosing an interpolated value-noise function rather than per-step white noise
-(§33).
+`(cy, 0, −sy)`.
+
+### Shake
+
+`CameraShake` (shake/impulse) ships. It is a component, so `ConstraintSystem`
+advances it **after** the placement rigs: the rig writes the camera's position,
+then the shake offsets it.
+
+```ts
+import { CameraShake } from "fourJS/motion";
+
+const shake = camera.addComponent(
+  new CameraShake({
+    amplitude: new Vector3(0.08, 0.08, 0.04),
+    frequency: 12,
+    seed: 7,
+    traumaDecay: 1.5,
+  }),
+);
+camera.transformAuthority = "constraint";
+constraints.track(camera);
+shake.impulse(1);
+```
+
+`trauma` is a unitless 0–1 envelope and the sampled offset is scaled by
+`trauma²`. `impulse()` raises it; `traumaDecay` is the drop per second, and its
+default is `0` — a shake with no decay runs at full amplitude until the
+application turns it down. The offset is interpolated hash value noise sampled
+at `simulationTime · frequency`, so two shakes that share a seed and a time are
+bit-identical (§33).
 
 ## Honest state
 
 - Camera **rigs** ship in `@fourjs/motion` (`OrbitRig`, `FollowRig`,
   `LookAtConstraint`, `FirstPersonLook` + `CharacterController`) and
-  `TrackballRig` in `@fourjs/scene`. Fly is the application snippet above; shake
-  is still staged.
+  `TrackballRig` in `@fourjs/scene`. Fly is the application snippet above;
+  `CameraShake` ships as the component shown above (2026-09-06).
 - `PerspectiveCamera` is exercised by exactly one example,
   `examples/first-3d-scene` (written 2026-08-07); every other shipped example
   uses an orthographic camera. This bullet claimed the same example did until

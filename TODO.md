@@ -893,8 +893,9 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       command (`bunx vite examples/<name>`) is in the root `README.md` only, which is not
       where a reader browsing `examples/` is looking.
 
-- [ ] **`cameras-and-coordinate-conversion.md` tells the reader `CameraShake` is unavailable; it
-      shipped 2026-09-06.** Dogfooding cycle 8 (`.dogfood/cycle8`), consumer seat on
+- [x] **`cameras-and-coordinate-conversion.md` tells the reader `CameraShake` is unavailable; it
+      shipped 2026-09-06.** DONE — both claims replaced by a worked `addComponent` example plus
+      the `trauma` / `traumaDecay` semantics. Dogfooding cycle 8 (`.dogfood/cycle8`), consumer seat on
       `@fourjs/motion`. The guide says so twice — line 260, _"`CameraShake` (shake/impulse)
       remains staged — blocked on choosing an interpolated value-noise function rather than
       per-step white noise (§33)"_, and the **Honest state** bullet, _"shake is still staged"_.
@@ -985,6 +986,24 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       package name (`@fourjs/render-webgl`) into built artifacts, so the message telling a user to
       register a pipeline named a package they cannot install. `publish-names:test` passes
       regardless — it unit-tests the mapper, not the staged output.
+      **Cycle 8 (2026-09-16, `.dogfood/cycle8`) — `packages/motion` + `packages/input`, the two
+      packages never dogfooded.** Consumer seat: both imported only through the published umbrella
+      subpaths (`fourJS/motion`, `fourJS/input`), never from `src/`. One Node scene ties them
+      together — `KeyboardState` over a fake `KeySurface` feeds a `SteeringAgent`
+      (`seek` → `beginSteering`/`addSteering`/`endSteering`/`integrate`), which moves a player that
+      an `OrbitRig` + `LookAtConstraint` camera tracks under §42 `"constraint"` authority, advanced
+      by `ConstraintSystem` inside a `SystemRegistry`. Measured: the `motion` subpath resolves
+      **100** exports and `input` **16**; held keys `{KeyD, KeyW}` clear to **0** on `blur`; the
+      player reaches **(3.819185, 0, −2.546123)** at **3.467706 m/s** after 120 fixed steps; the
+      camera holds **6.06 m** from it against the rig's `distance: 6`; two runs are **identical**
+      (§33); and a consumer typecheck under `strict` + `skipLibCheck: false` reports **0 errors**.
+      Engine: **clean** — nothing missing from the umbrella, no taught call that throws, no
+      strict-TS failure. Docs were the defect again: the cameras guide said `CameraShake` was
+      staged when it shipped 2026-09-06 (filed and fixed above). Judged **not worth filing**:
+      `KeyboardState`, `SteeringAgent`, `Scheduler`, `SpatialHash`, `solveTwoBoneIK` and the
+      trajectory classes have **zero** `docs/guides/` coverage — a coverage gap rather than a
+      defect, since the package READMEs and TypeDoc do cover them, and no guide teaches a wrong
+      call about them. Standing: next cycle picks a new surface, not motion or input.
 
 
 - [x] **`registerRapierSolver()` throws on a second call — awkward for anything building more than

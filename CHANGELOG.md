@@ -31,6 +31,21 @@ specification; until then, entries are grouped by date under **Unreleased**.
   an owner decision about who pays the 0.75–1.9 kB compile-at-init pipeline law, not a
   blocked change. No code behaviour changed; the default remains opt-in.
 
+### Fixed — documentation
+
+- **The cameras guide told readers that `CameraShake` was unavailable.**
+  `docs/guides/cameras-and-coordinate-conversion.md` said the feature _"remains
+  staged — blocked on choosing an interpolated value-noise function rather than
+  per-step white noise (§33)"_, and its **Honest state** section repeated _"shake
+  is still staged"_. `CameraShake` shipped 2026-09-06, and the blocker the guide
+  named is precisely what the implementation uses: `camera-shake.ts` samples a
+  quintic-fade, integer-hashed value noise (C², bit-identical per §33). Both
+  claims are replaced by a worked `addComponent` example and the
+  `trauma` / `traumaDecay` semantics. Found by dogfooding cycle 8 from a consumer
+  seat, which measured `ConstraintSystem` advancing the component on 119 of 120
+  fixed steps, 0 skipped, peak offset 0.396575 m against a 0.519615 m amplitude
+  bound, and trauma decaying 1 → 0 over 2 s.
+
 ## [0.1.0] — 2026-09-13 — first public release
 
 The first publish to npm: all 24 packages at 0.1.0 under the `@danielsimonjr` scope
