@@ -245,6 +245,28 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 
 ## Now
 
+- [x] **No job in any of the five workflows had `timeout-minutes`, so a wedged run could hold a
+      runner to the 6-hour ceiling.** **FIXED 2026-09-16.** Planned work, not discovered — it was
+      assigned directly, and it is recorded ticked because it was already complete when filed.
+      Saying so beats retro-filing it as open to move a counter.
+      Verified absent by grep across `.github/workflows/` returning zero, with `runs-on` as the
+      control proving the empty result was a real negative and not a broken query.
+      Six jobs bounded; the seventh, `release.yml`'s `ci:`, is a `uses:` caller that cannot carry
+      the setting and inherits `ci.yml`'s bound instead.
+      · Cost of the gap: run `35096863762` wedged 48m23s on `Browser test` against a measured
+      6m39s–7m09s envelope and ignored a cancel for minutes. One-off, not reproducible — I first
+      reported PR #113 as hanging the same way and that was WRONG (it ran 7m11s, inside envelope;
+      the empty-conclusion steps I cited were steps not yet reached).
+      · `release:` matters most for a reason that is not duration: `concurrency: group: release,
+      cancel-in-progress: false` means a hung job holds the group, queuing every later release.
+      · Multiples are deliberately uneven — `ci:`/`release:` ~2.7×/~2.3× off five-run samples,
+      but `visual-goldens.yml record:` has n=1 and `dependabot-bun-lock.yml regenerate-lockfile:`
+      has NO real sample (every run skipped by its `if:` guard). Where the measurement is weak the
+      bound is sized to the work, because the multiple should track confidence, not a house number.
+      · Still open, separately: `prettier --check` fails on **1,211 files** repo-wide with no CI
+      format gate. That is an ADR-shaped call (should `format` become a gate?) and is deliberately
+      NOT bundled here.
+
 - [x] **`check-docs` counted visual goldens off the DISK, so it failed on any host that had
       run the visual tier.** **FIXED 2026-09-16.** _Found mid-flight_ — not planned work; it
       surfaced while verifying an unrelated claim, so it is filed and ticked in one pass.

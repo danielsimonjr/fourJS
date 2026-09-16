@@ -18,6 +18,14 @@ jobs:
   ci:
     name: Build, test, and checks
     runs-on: ubuntu-latest
+    # Measured 2026-09-16: five consecutive runs took 10m30s-11m20s. This bound is ~2.7x that
+    # p100 - high enough never to cut a legitimately slow run, low enough that a wedge fails
+    # fast. Run 35096863762 hung 48m23s on "Browser test" against that same envelope and
+    # ignored a cancel request for minutes; with no bound, nothing would have stopped it
+    # before GitHub's 6-hour job ceiling. release.yml's `ci:` job calls this workflow with
+    # `uses:`, and a reusable-workflow caller cannot carry timeout-minutes, so this line is
+    # also the only bound the release pipeline's CI stage will ever have.
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7

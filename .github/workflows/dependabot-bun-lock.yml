@@ -36,6 +36,11 @@ jobs:
         || github.event.pull_request.user.login == 'dependabot[bot]')
       && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    # NO measured envelope exists: every run of this workflow to date was `skipped` by the
+    # `if:` guard above in 1-4s, so nothing has ever executed its steps. A workflow that has
+    # never actually run is the worst possible place to trust a percentile, so this bound is
+    # sized to the WORK (a `bun install` and a push, not a test tier) rather than to history.
+    timeout-minutes: 10
     # Repo default workflow permissions are read (2026-09-05). Write is
     # required to push bun.lock; actions:write is required to dispatch CI
     # onto that commit (GITHUB_TOKEN pushes do not retrigger workflows).
