@@ -972,6 +972,17 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       cannot rasterise; staged texels still resolve through the §33 table.
       Engine: **clean**. Guide index patched. WebGPU still skips skinned
       items. Checkbox stays `[ ]`.
+      **Numbering note (added 2026-09-16) — two blocks in this row are both labelled
+      "Cycle 4", and counting by the row alone gives the wrong answer.** The
+      `2026-09-07, .dogfood/cycle4` block and the `2026-09-13, EVO` block immediately
+      below are *separate* cycles that share a label, and the EVO one is filed after
+      cycles 6 and 7 instead of in date order. So the last cycle header a reader meets
+      in this row says "Cycle 4", which reads as though the row stops there. That
+      undercount misled a dispatch on 2026-09-16 (a cycle briefed as "6" when 6 and 7
+      were already done). **`MEMORY.md` is the authority for the cycle count** — its
+      dated `Dogfood cycle N` entries are one per cycle and in order. The EVO block's
+      own label is left exactly as its author wrote it; renumbering another agent's
+      record is not a call this note makes.
       **Cycle 4 (2026-09-13, EVO) — the full consumer seat, run end to end.** Staged the 24
       published-name packages, packed real tarballs, installed them into a project OUTSIDE the
       workspace, and compiled against the SHIPPED declarations. Results, all measured:
