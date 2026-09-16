@@ -32,7 +32,9 @@ describe("dev-warnings", () => {
     const read = (): number => count;
     const baseline = beginFrameAllocationCheck(read);
     count = 3;
-    expect(endFrameAllocationCheck(baseline, read, { label: "test-span" })).toBe(3);
+    expect(
+      endFrameAllocationCheck(baseline, read, { label: "test-span" }),
+    ).toBe(3);
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
@@ -61,7 +63,9 @@ describe("dev-warnings", () => {
   it("endFrameAllocationCheck returns zero delta when nothing was allocated", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const read = (): number => 5;
-    expect(endFrameAllocationCheck(beginFrameAllocationCheck(read), read)).toBe(0);
+    expect(endFrameAllocationCheck(beginFrameAllocationCheck(read), read)).toBe(
+      0,
+    );
     expect(warn).not.toHaveBeenCalled();
   });
 

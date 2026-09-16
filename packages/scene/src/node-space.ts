@@ -80,7 +80,10 @@ export class NodeSpace implements Component {
 }
 
 function isSpaceMode(value: unknown): value is SpaceMode {
-  return typeof value === "string" && (SPACE_MODES as readonly string[]).includes(value);
+  return (
+    typeof value === "string" &&
+    (SPACE_MODES as readonly string[]).includes(value)
+  );
 }
 
 function readVector(value: JsonValue | undefined, fallback: Vector3): Vector3 {
@@ -122,7 +125,10 @@ export const NODE_SPACE_SERIALIZER: NodeSpaceSerializerShape<NodeSpace> = {
   deserialize(data: JsonValue): NodeSpace {
     const record =
       typeof data === "object" && data !== null && !Array.isArray(data)
-        ? (data as { readonly space?: JsonValue; readonly planeNormal?: JsonValue })
+        ? (data as {
+            readonly space?: JsonValue;
+            readonly planeNormal?: JsonValue;
+          })
         : {};
     return new NodeSpace({
       space: isSpaceMode(record.space) ? record.space : DEFAULT_SPACE_MODE,

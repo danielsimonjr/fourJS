@@ -525,9 +525,10 @@ export class ParticleEmitter {
       );
     }
     this.#collisions = collisions;
-    this.#texture = options.texture === true || typeof options.texture === "object"
-      ? options.texture
-      : undefined;
+    this.#texture =
+      options.texture === true || typeof options.texture === "object"
+        ? options.texture
+        : undefined;
     this.#alignToVelocity = options.alignToVelocity === true;
     this.#softness =
       options.softness === undefined
@@ -539,9 +540,7 @@ export class ParticleEmitter {
       );
     }
     this.#instanceFloats =
-      this.#texture !== undefined ||
-      this.#alignToVelocity ||
-      this.#softness > 0
+      this.#texture !== undefined || this.#alignToVelocity || this.#softness > 0
         ? 10
         : 8;
 

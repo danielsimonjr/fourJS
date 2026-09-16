@@ -39,13 +39,9 @@ describe("auditFrameAllocations", () => {
 
   it("respects a non-zero threshold", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    expect(
-      auditFrameAllocations(0, 2, { threshold: 2 }).excessive,
-    ).toBe(false);
+    expect(auditFrameAllocations(0, 2, { threshold: 2 }).excessive).toBe(false);
     expect(warn).not.toHaveBeenCalled();
-    expect(auditFrameAllocations(0, 3, { threshold: 2 }).excessive).toBe(
-      true,
-    );
+    expect(auditFrameAllocations(0, 3, { threshold: 2 }).excessive).toBe(true);
     expect(warn).toHaveBeenCalledTimes(1);
   });
 });

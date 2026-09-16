@@ -197,19 +197,19 @@ not node subclasses.
 [materials-and-render-graph](../guides/materials-and-render-graph.md),
 [custom-shaders](../guides/custom-shaders.md) · **Spec:** §57–§68
 
-| Symbol                                                                 | Contract                                                                                                                             |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `Renderer` (`four/render`)                                             | The §61 backend-independent interface: `initialize`, `render(scene, views, interpolation?)`, `resize`, `dispose`.                    |
-| `WebglRenderer` (`four/render-webgl`)                                  | The shipped WebGL 2 backend (§120 MVP tier).                                                                                         |
-| `NullRenderer` (`four/render`)                                         | Headless no-op backend for tests and servers.                                                                                        |
-| `Renderable`                                                           | A node with a `BufferGeometry` and a material — the mesh/shape type.                                                                 |
-| `Sprite` / `Texture`                                                   | §55/§77 textured quad tier; a `Texture` wraps an RGBA8 buffer you own.                                                               |
-| `UnlitMaterial` / `LitMaterial` (`four/materials`)                     | Flat color vs. Lambert-diffuse + scene-ambient color (§68 MVP); both carry a `readonly kind` discriminant that selects the pipeline. |
-| `SpriteMaterial`                                                       | Texture + tint for sprites; sprites and particles are the only blended passes (§66).                                                 |
-| `boxGeometry` / `planeGeometry` / `circleGeometry2D` (`four/geometry`) | Procedural primitives returning `BufferGeometry` (box/plane carry per-face normals for the lit path).                                |
-| `buildRenderList` / `buildInterpolatedRenderList`                      | The scene→draw-list step (§64–§66); interpolated path also refreshes skin palettes from composed §43 poses (never a lerp of `jointMatrices`).                    |
-| `Mesh`                                                                     | §54 renderable that can carry a `Skeleton`; skinned when geometry has `joints`/`weights`.                                            |
-| `collectSceneLights`                                                   | §68 light discovery: first `DirectionalLight` in DFS order + `Scene.ambientLight`.                                                   |
+| Symbol                                                                 | Contract                                                                                                                                      |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Renderer` (`four/render`)                                             | The §61 backend-independent interface: `initialize`, `render(scene, views, interpolation?)`, `resize`, `dispose`.                             |
+| `WebglRenderer` (`four/render-webgl`)                                  | The shipped WebGL 2 backend (§120 MVP tier).                                                                                                  |
+| `NullRenderer` (`four/render`)                                         | Headless no-op backend for tests and servers.                                                                                                 |
+| `Renderable`                                                           | A node with a `BufferGeometry` and a material — the mesh/shape type.                                                                          |
+| `Sprite` / `Texture`                                                   | §55/§77 textured quad tier; a `Texture` wraps an RGBA8 buffer you own.                                                                        |
+| `UnlitMaterial` / `LitMaterial` (`four/materials`)                     | Flat color vs. Lambert-diffuse + scene-ambient color (§68 MVP); both carry a `readonly kind` discriminant that selects the pipeline.          |
+| `SpriteMaterial`                                                       | Texture + tint for sprites; sprites and particles are the only blended passes (§66).                                                          |
+| `boxGeometry` / `planeGeometry` / `circleGeometry2D` (`four/geometry`) | Procedural primitives returning `BufferGeometry` (box/plane carry per-face normals for the lit path).                                         |
+| `buildRenderList` / `buildInterpolatedRenderList`                      | The scene→draw-list step (§64–§66); interpolated path also refreshes skin palettes from composed §43 poses (never a lerp of `jointMatrices`). |
+| `Mesh`                                                                 | §54 renderable that can carry a `Skeleton`; skinned when geometry has `joints`/`weights`.                                                     |
+| `collectSceneLights`                                                   | §68 light discovery: first `DirectionalLight` in DFS order + `Scene.ambientLight`.                                                            |
 
 ```typescript
 import { planeGeometry } from "fourJS/geometry";
@@ -329,7 +329,7 @@ keyframe (animation) or by force (physics).
 | `SpringDamper`                                                                                       | Exact zero-order-hold matrix-exponential step — unconditionally stable smoothing for setpoints and cameras.                                                       |
 | `solveTwoBoneIK` / `createTwoBoneIKSolution`                                                         | Analytic two-bone IK over positions.                                                                                                                              |
 | `predictBallistic` / `predictLinear` / `interceptPoint` / `interceptTime`                            | Ballistic and intercept prediction.                                                                                                                               |
-| `SeededRandom`                                                                                       | Deterministic xorshift128 RNG (§33) — canonical home is `@fourjs/core`; re-exported here.                                                                           |
+| `SeededRandom`                                                                                       | Deterministic xorshift128 RNG (§33) — canonical home is `@fourjs/core`; re-exported here.                                                                         |
 
 ```typescript
 import { PIDController } from "fourJS/motion";
@@ -700,7 +700,7 @@ console.log(player.verifyChecksum()); // true ⇔ the run reproduced the recordi
 | `SeededRandom`                                         | xorshift128 + splitmix32 seeding (§33) — canonical home; re-exported by `four/motion` and `four/particles` with bit-identical streams. |
 | `JsonValue` / `cloneJsonValue`                         | Structured-clone-safe JSON with `__proto__` refusal (TypeError, not silent re-parenting).                                              |
 | `Vector2/3/4`, `Quaternion`, `Matrix3/4` (`four/math`) | Mutable types with `out`-parameter hot paths (§7b, D7: the loop allocates nothing per frame); shortest-arc `slerp`.                    |
-| `ColorRGBA`, `DepthRange`                              | Color tuple type (canonical home `@fourjs/math`); depth-range parameterization for projections (D8).                                     |
+| `ColorRGBA`, `DepthRange`                              | Color tuple type (canonical home `@fourjs/math`); depth-range parameterization for projections (D8).                                   |
 
 ---
 
@@ -710,8 +710,8 @@ Five packages are **deliberate placeholders** — their `index.ts` exports only
 `PACKAGE_NAME`, their READMEs say "interface reserved; not yet implemented",
 and nothing here should be documented as usable:
 
-| Package               | Reserved for                       |
-| --------------------- | ---------------------------------- |
+| Package                 | Reserved for                       |
+| ----------------------- | ---------------------------------- |
 | `@fourjs/render-webgpu` | §62 WebGPU backend tier            |
 | `@fourjs/render-canvas` | §62 Canvas 2D backend tier         |
 | `@fourjs/render-svg`    | §62 SVG backend tier               |

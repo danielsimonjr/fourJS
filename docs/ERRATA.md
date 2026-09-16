@@ -13,23 +13,23 @@ between the two.
 
 The PDF contains two distinct parts both labelled `Part VII`:
 
-| Occurrence | Heading | Covers (PDF numbering) |
-|---|---|---|
-| First | `Part VII - Complete Graphics, Rendering, Application, and Platform Architecture` | §45 *Application Model* → §67 *Clipping, Masks, and Stencils* (continuing to §97) |
-| Second | `Part VII - Package Architecture` | §45 *Proposed Monorepo* → §49 *Solver Packages* |
+| Occurrence | Heading                                                                           | Covers (PDF numbering)                                                            |
+| ---------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| First      | `Part VII - Complete Graphics, Rendering, Application, and Platform Architecture` | §45 _Application Model_ → §67 _Clipping, Masks, and Stencils_ (continuing to §97) |
+| Second     | `Part VII - Package Architecture`                                                 | §45 _Proposed Monorepo_ → §49 _Solver Packages_                                   |
 
 **Resolution applied in `SPECIFICATION.md`:** the second occurrence became a new
 `Part VIII - Package Architecture`, and every later part shifted by one:
 
-| PDF | SPECIFICATION.md |
-|---|---|
+| PDF                                                                             | SPECIFICATION.md     |
+| ------------------------------------------------------------------------------- | -------------------- |
 | Part VII - Complete Graphics, Rendering, Application, and Platform Architecture | Part VII (unchanged) |
-| Part VII - Package Architecture | **Part VIII** |
-| Part VIII - Implementation Plan | **Part IX** |
-| Part IX - Public API Examples | **Part X** |
-| Part X - Flagship Demonstrations | **Part XI** |
-| Part XI - Revised MVP | **Part XII** |
-| Part XII - Final Design Statement | **Part XIII** |
+| Part VII - Package Architecture                                                 | **Part VIII**        |
+| Part VIII - Implementation Plan                                                 | **Part IX**          |
+| Part IX - Public API Examples                                                   | **Part X**           |
+| Part X - Flagship Demonstrations                                                | **Part XI**          |
+| Part XI - Revised MVP                                                           | **Part XII**         |
+| Part XII - Final Design Statement                                               | **Part XIII**        |
 
 ## E-2 — Section numbers 45–67 were assigned twice — ✅ RESOLVED
 
@@ -40,40 +40,40 @@ twice and bare references like "§49" are ambiguous.
 range was renumbered by **+53** to §98–120, giving a single sequence 1–120. Map for the
 renumbered sections:
 
-| PDF § | SPECIFICATION.md § | Title |
-|---|---|---|
-| 45 | 98 | Proposed Monorepo |
-| 46 | 99 | Motion Package |
-| 47 | 100 | Animation Package |
-| 48 | 101 | Physics Package |
-| 49 | 102 | Solver Packages |
-| 50 | 103 | Phase 0 - Project Foundation |
-| 51 | 104 | Phase 1 - Math, Scene, and Time |
-| 52 | 105 | Phase 2 - Motion Foundation |
-| 53 | 106 | Phase 3 - Renderer Foundation |
-| 54 | 107 | Phase 4 - Animation Core |
-| 55 | 108 | Phase 5 - Physics API and First Solver Adapter |
-| 56 | 109 | Phase 6 - Joints and Constraints |
-| 57 | 110 | Phase 7 - Physics-Animation Integration |
-| 58 | 111 | Phase 8 - Advanced Motion |
-| 59 | 112 | Phase 9 - Particles and GPU Motion |
-| 60 | 113 | Phase 10 - Replay, Snapshots, and Diagnostics |
-| 61 | 114 | Basic Animated Object |
-| 62 | 115 | Dynamic Physics Object |
-| 63 | 116 | Motorized Hinge |
-| 64 | 117 | Physics and Animation Blend |
-| 65 | 118 | "One Scene, Everything Moves" |
-| 66 | 119 | Engineering Demonstration |
-| 67 | 120 | MVP Requirements |
+| PDF § | SPECIFICATION.md § | Title                                          |
+| ----- | ------------------ | ---------------------------------------------- |
+| 45    | 98                 | Proposed Monorepo                              |
+| 46    | 99                 | Motion Package                                 |
+| 47    | 100                | Animation Package                              |
+| 48    | 101                | Physics Package                                |
+| 49    | 102                | Solver Packages                                |
+| 50    | 103                | Phase 0 - Project Foundation                   |
+| 51    | 104                | Phase 1 - Math, Scene, and Time                |
+| 52    | 105                | Phase 2 - Motion Foundation                    |
+| 53    | 106                | Phase 3 - Renderer Foundation                  |
+| 54    | 107                | Phase 4 - Animation Core                       |
+| 55    | 108                | Phase 5 - Physics API and First Solver Adapter |
+| 56    | 109                | Phase 6 - Joints and Constraints               |
+| 57    | 110                | Phase 7 - Physics-Animation Integration        |
+| 58    | 111                | Phase 8 - Advanced Motion                      |
+| 59    | 112                | Phase 9 - Particles and GPU Motion             |
+| 60    | 113                | Phase 10 - Replay, Snapshots, and Diagnostics  |
+| 61    | 114                | Basic Animated Object                          |
+| 62    | 115                | Dynamic Physics Object                         |
+| 63    | 116                | Motorized Hinge                                |
+| 64    | 117                | Physics and Animation Blend                    |
+| 65    | 118                | "One Scene, Everything Moves"                  |
+| 66    | 119                | Engineering Demonstration                      |
+| 67    | 120                | MVP Requirements                               |
 
 Citation convention: plain section references (e.g. "§102") now mean `SPECIFICATION.md`
 numbering. When citing the PDF, say so explicitly (e.g. "PDF §49, second range").
 
 ## E-3 — Solver packages contradiction — ✅ RESOLVED
 
-The PDF's *Solver Packages* section (PDF §49, second range) named four solver adapter packages
-(`physics-rapier`, `physics-box2d`, `physics-matter`, `physics-cannon`), while the *Proposed
-Monorepo* tree (PDF §45, second range) listed only `physics-rapier`, `physics-box2d`, and
+The PDF's _Solver Packages_ section (PDF §49, second range) named four solver adapter packages
+(`physics-rapier`, `physics-box2d`, `physics-matter`, `physics-cannon`), while the _Proposed
+Monorepo_ tree (PDF §45, second range) listed only `physics-rapier`, `physics-box2d`, and
 `physics-soft` (a soft-body package, not a solver adapter). A full cross-check of every
 `@fourjs/<pkg>` reference found no other mismatches.
 
@@ -110,6 +110,6 @@ Recorded so they are not "rediscovered" later:
 
 - **Section 65 (PDF second range; now §118) is not missing.** Its title begins with a
   typographic quote (`"One Scene, Everything Moves"`), which heading scans can miss.
-- **Repeated low numbers (1., 2., 3., …) scattered through the text are numbered *lists*,**
-  not sections — e.g. the four fundamentals in §1 *Vision*. Only the PDF's 45–67 range was a
+- **Repeated low numbers (1., 2., 3., …) scattered through the text are numbered _lists_,**
+  not sections — e.g. the four fundamentals in §1 _Vision_. Only the PDF's 45–67 range was a
   genuine collision.

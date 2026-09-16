@@ -29,8 +29,16 @@ export interface ValidationNodeLike {
 }
 
 export interface ValidationTransformLike {
-  readonly position: { readonly x: number; readonly y: number; readonly z: number };
-  readonly scale: { readonly x: number; readonly y: number; readonly z: number };
+  readonly position: {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+  };
+  readonly scale: {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+  };
 }
 
 function checkEnabled(
@@ -226,15 +234,25 @@ export function validateSceneNode(
 ): number {
   if (!DEV) return 0;
   const context = `node ${node.id}`;
-  assertFiniteVec3(node.transform.position, `${context}.position`, options.finite);
+  assertFiniteVec3(
+    node.transform.position,
+    `${context}.position`,
+    options.finite,
+  );
   assertFiniteVec3(node.transform.scale, `${context}.scale`, options.finite);
   let warnings = 0;
   if (
-    warnCoordinateEnvelope(node.transform.position, context, options.coordinateEnvelope)
+    warnCoordinateEnvelope(
+      node.transform.position,
+      context,
+      options.coordinateEnvelope,
+    )
   ) {
     warnings += 1;
   }
-  if (warnSingularScale(node.transform.scale, context, options.singularTransform)) {
+  if (
+    warnSingularScale(node.transform.scale, context, options.singularTransform)
+  ) {
     warnings += 1;
   }
   if (warnUnstableScale(node.transform.scale, context, options.unstableScale)) {

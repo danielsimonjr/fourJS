@@ -27,12 +27,20 @@
     },
     {
       "names": ["VERSION"],
-      "filesGlob": ["core/src/index.ts", "plot/src/index.ts", "workbook/src/contract.ts"],
+      "filesGlob": [
+        "core/src/index.ts",
+        "plot/src/index.ts",
+        "workbook/src/contract.ts"
+      ],
       "reason": "package-specific version string"
     },
     {
       "names": ["DEFAULT_CONFIG"],
-      "filesGlob": ["core/src/config.ts", "core/src/factory/factory.ts", "matrix/src/config.ts"],
+      "filesGlob": [
+        "core/src/config.ts",
+        "core/src/factory/factory.ts",
+        "matrix/src/config.ts"
+      ],
       "reason": "package/module-specific default config — three genuinely distinct shapes for distinct subsystems: core/src/config.ts's ConfigOptions (mathjs-style relTol/absTol/matrix/number/predictable tolerance config, internal-only), core/src/factory/factory.ts's MathTSConfig (the public factory-registry/backend-routing config: precision/preferredBackend/wasmThreshold/gpuThreshold/parallelEnabled), and matrix/src/config.ts's MatrixConfig (backend enable/preference/threshold + adaptive-tuning + profiling settings, matrix-only fields). functions/src/core/config.ts's former byte-identical copy of core's ConfigOptions/DEFAULT_CONFIG was consolidated to a re-export shim instead of allowlisted (see @danielsimonjr/mathts-core/internal)."
     },
     {
@@ -48,7 +56,11 @@
         "Index",
         "DenseMatrix"
       ],
-      "filesGlob": ["core/src/is.ts", "expression/src/utils/is.ts", "functions/src/utils/is.ts"],
+      "filesGlob": [
+        "core/src/is.ts",
+        "expression/src/utils/is.ts",
+        "functions/src/utils/is.ts"
+      ],
       "reason": "rides with keep-local hot-path is* guard types (project-all-libraries-build-on-core); byte-identical duck-typing interfaces paired 1:1 with the already-allowlisted is* functions in the same 3 files. 2026-07 type-dedup pass."
     },
     {
@@ -71,7 +83,10 @@
     },
     {
       "names": ["Matrix"],
-      "filesGlob": ["functions/src/matrix/sqrtm.ts", "functions/src/matrix/utils/zerosAndOnes.ts"],
+      "filesGlob": [
+        "functions/src/matrix/sqrtm.ts",
+        "functions/src/matrix/utils/zerosAndOnes.ts"
+      ],
       "reason": "additional minimal per-consumer structural views of Matrix beyond the is.ts guard pair — each file declares only the fields/methods it actually reads (sqrtm.ts's spectral helpers; zerosAndOnes.ts's construction path). 2026-07 type-dedup pass."
     },
     {
@@ -148,7 +163,10 @@
     },
     {
       "names": ["BackendType", "MatrixBackend"],
-      "filesGlob": ["core/src/types/interfaces.ts", "matrix/src/backends/Backend.ts"],
+      "filesGlob": [
+        "core/src/types/interfaces.ts",
+        "matrix/src/backends/Backend.ts"
+      ],
       "reason": "core's copies are part of a self-contained, never-consumed-outside-core speculative abstraction layer (only imported by core/src/index.ts + its own test); matrix's are the real backend contract (DenseMatrix-based, async initialize(), 4-way BackendType union including 'parallel' vs core's 3-way). Different shapes serving unrelated designs. 2026-07 type-dedup pass."
     },
     {
@@ -161,17 +179,26 @@
     },
     {
       "names": ["ComplexConstructor"],
-      "filesGlob": ["core/src/types/unit/unit-types.ts", "functions/src/type/complex/Complex.ts"],
+      "filesGlob": [
+        "core/src/types/unit/unit-types.ts",
+        "functions/src/type/complex/Complex.ts"
+      ],
       "reason": "core's is a minimal {readonly I} view for the Unit factory; functions' is the full Complex constructor contract (new/callable/prototype/fromPolar/...). 2026-07 type-dedup pass."
     },
     {
       "names": ["BigNumberValue"],
-      "filesGlob": ["core/src/bignumber-formatter.ts", "core/src/types/unit/unit-types.ts"],
+      "filesGlob": [
+        "core/src/bignumber-formatter.ts",
+        "core/src/types/unit/unit-types.ts"
+      ],
       "reason": "two distinct structural views within core itself: bignumber-formatter.ts's is a decimal.js-shaped formatting view (e/isFinite/isNaN/gt/...), unit-types.ts's is a minimal {div, times} view for the Unit factory's angle constants. 2026-07 type-dedup pass."
     },
     {
       "names": ["UnitDef"],
-      "filesGlob": ["core/src/types/unit-definitions.ts", "core/src/types/unit/unit-types.ts"],
+      "filesGlob": [
+        "core/src/types/unit-definitions.ts",
+        "core/src/types/unit/unit-types.ts"
+      ],
       "reason": "two coexisting unit-table shapes within core: unit-definitions.ts's legacy multiplier/offset/dimensions/prefixable table vs unit/unit-types.ts's active mathjs-derived name/base/prefixes/value/offset/dimensions/reciprocal table for the merged Unit factory. 2026-07 type-dedup pass; possible follow-up to fully retire the legacy table is out of scope here."
     },
     {
@@ -184,37 +211,58 @@
     },
     {
       "names": ["CholeskyResult"],
-      "filesGlob": ["functions/src/typed/matrix-ops.ts", "matrix/src/operations/cholesky.ts"],
+      "filesGlob": [
+        "functions/src/typed/matrix-ops.ts",
+        "matrix/src/operations/cholesky.ts"
+      ],
       "reason": "functions' L is a plain number[][]; matrix's L is a DenseMatrix instance — different representations for different consumers. 2026-07 type-dedup pass."
     },
     {
       "names": ["CompiledExpression"],
-      "filesGlob": ["expression/src/compiler/compile.ts", "expression/src/node/Node.ts"],
+      "filesGlob": [
+        "expression/src/compiler/compile.ts",
+        "expression/src/node/Node.ts"
+      ],
       "reason": "near-miss, deliberately not merged: compile.ts's evaluate() accepts Record<string, unknown> | Scope, Node.ts's accepts only Record<string, unknown> — Node.ts is imported by compile.ts so redirecting the other way risks a circular import for a one-parameter-type difference. Flagged for a future follow-up rather than forced now. 2026-07 type-dedup pass."
     },
     {
       "names": ["ConfigOptions"],
-      "filesGlob": ["core/src/config.ts", "functions/src/core/function/config.ts"],
+      "filesGlob": [
+        "core/src/config.ts",
+        "functions/src/core/function/config.ts"
+      ],
       "reason": "functions' copy is Partial<MathJsConfig> & {epsilon}, a legacy-compat partial wrapper for the config() function's overload — not a copy of core's full ConfigOptions (which functions/src/core/config.ts already re-exports as-is from @danielsimonjr/mathts-core/internal). 2026-07 type-dedup pass."
     },
     {
       "names": ["ExecutionMode"],
-      "filesGlob": ["parallel/src/strategies/threshold.ts", "workbook/src/types.ts"],
+      "filesGlob": [
+        "parallel/src/strategies/threshold.ts",
+        "workbook/src/types.ts"
+      ],
       "reason": "unrelated domains sharing a name: parallel dispatch mode ('parallel' | 'sequential') vs workbook cell-execution mode ('reactive' | 'sequential' | 'manual'). 2026-07 type-dedup pass."
     },
     {
       "names": ["FFTResult"],
-      "filesGlob": ["functions/src/signal/fft.ts", "matrix/src/backends/wasm/fft-wasm.ts"],
+      "filesGlob": [
+        "functions/src/signal/fft.ts",
+        "matrix/src/backends/wasm/fft-wasm.ts"
+      ],
       "reason": "functions' is a Complex-object-array representation (spectrum/originalLength/paddedLength); matrix's WASM bridge uses raw split real/imag Float64Arrays for performance — different representations by design. 2026-07 type-dedup pass."
     },
     {
       "names": ["WasmModule"],
-      "filesGlob": ["functions/src/wasm/WasmLoader.ts", "matrix/src/backends/WasmLoader.ts"],
+      "filesGlob": [
+        "functions/src/wasm/WasmLoader.ts",
+        "matrix/src/backends/WasmLoader.ts"
+      ],
       "reason": "matrix cannot import from functions (functions depends on matrix; importing the other way would create a cycle), and each package's WasmModule binds a genuinely different subset of the AssemblyScript exports (functions needs the full breadth including signal/geometry/special-function kernels; matrix only needs matrix-relevant exports) — a real content difference, not just an artifact of the import-cycle constraint. `LoadingMetrics`/`WasmManifest` (same architectural constraint, but byte-identical shapes) have been consolidated onto `@danielsimonjr/mathts-core/internal` instead of allowlisted here (2026-07 type-dedup pass) — core/internal is reachable from both packages without creating the functions<->matrix cycle."
     },
     {
       "names": ["MatrixConstructor"],
-      "filesGlob": ["functions/src/matrix/utils/zerosAndOnes.ts", "functions/src/types.ts"],
+      "filesGlob": [
+        "functions/src/matrix/utils/zerosAndOnes.ts",
+        "functions/src/types.ts"
+      ],
       "reason": "zerosAndOnes.ts's is a callable matrix-factory shape; types.ts's is a constructible-with-index-signature shape — different contracts. 2026-07 type-dedup pass."
     },
     {
@@ -227,12 +275,18 @@
     },
     {
       "names": ["ParallelResult"],
-      "filesGlob": ["packages/workerpool/src/index.ts", "parallel/src/ComputePool.ts"],
+      "filesGlob": [
+        "packages/workerpool/src/index.ts",
+        "parallel/src/ComputePool.ts"
+      ],
       "reason": "deliberate, already-documented divergence: parallel's public ParallelResult<T> drops workerpool's internal workersUsed field (see ComputePool.ts's toParallelResult() comment 'drops workersUsed'). 2026-07 type-dedup pass."
     },
     {
       "names": ["TypeTest"],
-      "filesGlob": ["functions/src/core/function/typed.ts", "packages/typed-function/src/index.ts"],
+      "filesGlob": [
+        "functions/src/core/function/typed.ts",
+        "packages/typed-function/src/index.ts"
+      ],
       "reason": "functions' is a plain (value: unknown) => boolean; typed-function's is generic (x: unknown) => x is T (a type predicate) — different signatures. 2026-07 type-dedup pass."
     },
     {
@@ -250,7 +304,10 @@
     },
     {
       "names": ["TypeDef", "ConversionDef"],
-      "filesGlob": ["core/src/typed/mathts-typed.ts", "packages/typed-function/src/index.ts"],
+      "filesGlob": [
+        "core/src/typed/mathts-typed.ts",
+        "packages/typed-function/src/index.ts"
+      ],
       "reason": "no valid import path exists: core depends on the external typed-function (github:danielsimonjr/typed-function) fork, NOT on the workspace's @danielsimonjr/mathts-typed-function package — these are declarations for two independently-versioned type systems that coincide in shape today but could diverge; core has no dependency edge to add without introducing an unrelated coupling. 2026-07 type-dedup pass."
     },
     {
@@ -308,7 +365,10 @@
     },
     {
       "names": ["pinv", "lowRankApprox", "singularValues", "normFro", "cond"],
-      "filesGlob": ["matrix/src/operations/svd.ts", "matrix/src/operations/pinv.ts"],
+      "filesGlob": [
+        "matrix/src/operations/svd.ts",
+        "matrix/src/operations/pinv.ts"
+      ],
       "reason": "dispatch-variant: the functions typed wrapper (functions/src/typed/matrix-ops.ts) is a `mathTyped(...)` registration that routes to these matrix-package SVD/pinv primitives (matrixCond/matrixPinv/matrixSingularValues/matrixLowRankApprox/matrixNormFro), verified by reading the call chain — the matrix package owns the single canonical body, so there is no second implementation to drift (native-accel pattern, project-two-decomposition-layers-prefer-matrix). The functions definer is auto-tagged DISPATCH_VARIANT; only these matrix PLAIN primitives need allowlisting. `cond`'s former shadowed power-iteration body in functions/src/typed/numeric.ts was removed (dead/unreachable) in the same slice. 2026-07 dedup campaign, matrix-domain routing slice."
     },
     {
@@ -322,12 +382,18 @@
     },
     {
       "names": ["cholesky"],
-      "filesGlob": ["matrix/src/operations/cholesky.ts", "functions/src/typed/matrix-ops.ts"],
+      "filesGlob": [
+        "matrix/src/operations/cholesky.ts",
+        "functions/src/typed/matrix-ops.ts"
+      ],
       "reason": "matrix/src/operations/cholesky.ts is the canonical, oracle-pinned DenseMatrix Cholesky primitive. functions/src/typed/matrix-ops.ts's `number[][]` cholesky was an independent body; it now ROUTES to the matrix primitive (native-accel, project-two-decomposition-layers-prefer-matrix), keeping only a symmetry pre-check (the matrix primitive reads the lower triangle only, so it would silently accept asymmetric input this surface must reject) and converting DenseMatrix→number[][] for its contract. Pre-routing NumPy audit (np.linalg.cholesky over an SPD corpus) confirmed BOTH bodies were already correct to full double precision — no bug. Guarded by functions/tests/gap-matrix-domain-dedup-parity.test.ts (NumPy oracle + functions≡matrix parity). 2026-07 dedup campaign, matrix-domain routing slice."
     },
     {
       "names": ["trace", "diag", "dotMultiply", "row", "column", "subset"],
-      "filesGlob": ["functions/src/factories/index.ts", "matrix/src/types/dense/reduction.ts"],
+      "filesGlob": [
+        "functions/src/factories/index.ts",
+        "matrix/src/types/dense/reduction.ts"
+      ],
       "reason": "independent-by-design, not copy-paste: functions/ exposes the mathjs-derived factory body over the mathjs Matrix / number[][] contract (createTrace/createDiag/createDotMultiply/createRow/createColumn/createSubset in functions/src/factories/index.ts, wired into the factory scope); matrix/ dispatches the same mathematical op over its own DenseMatrix type (matrix/src/typed-operations.ts, already auto-tagged DISPATCH_VARIANT). Different type surfaces across two packages with genuinely different call contracts (e.g. subset: mathjs `index(i,j)` object vs matrix scalar `(row,col)`). The matrix typed-op definer is DISPATCH_VARIANT; the PLAIN definers allowlisted are the functions factory bodies (all six) plus matrix/src/types/dense/reduction.ts (the DenseMatrix.trace() primitive that trace() dispatches to). Pinned together by functions/tests/gap-matrix-domain-dedup-parity.test.ts (functions≡matrix on overlapping inputs + NumPy trace). 2026-07 dedup campaign, matrix-domain routing slice."
     },
 
@@ -373,7 +439,11 @@
     },
     {
       "names": ["format"],
-      "filesGlob": ["core/src/number.ts", "core/src/bignumber-formatter.ts", "core/src/string.ts"],
+      "filesGlob": [
+        "core/src/number.ts",
+        "core/src/bignumber-formatter.ts",
+        "core/src/string.ts"
+      ],
       "reason": "type-specific formatters within core, not copies: core/src/number.ts formats a number, core/src/bignumber-formatter.ts formats a BigNumber (arbitrary precision), core/src/string.ts is the generic value dispatcher over them. Different input types; functions/src/typed/string.ts is the auto-tagged DISPATCH_VARIANT over the same. 2026-07 dedup campaign, closing tail slice."
     },
     {
@@ -403,7 +473,10 @@
     },
     {
       "names": ["norm2"],
-      "filesGlob": ["core/src/numeric/stable.ts", "matrix/src/operations/svd.ts"],
+      "filesGlob": [
+        "core/src/numeric/stable.ts",
+        "matrix/src/operations/svd.ts"
+      ],
       "reason": "same name, different function: core/src/numeric/stable.ts's norm2(xs: ArrayLike<number>) is the stable vector 2-norm (pairwise); matrix/src/operations/svd.ts's norm2(matrix, options) is the matrix spectral 2-norm (largest singular value). functions/src/typed/matrix-ops.ts is the auto-tagged DISPATCH_VARIANT. Distinct-by-domain. 2026-07 dedup campaign, closing tail slice."
     },
     {
@@ -454,7 +527,10 @@
     },
     {
       "names": ["shouldParallelize"],
-      "filesGlob": ["functions/src/typed/arithmetic.ts", "parallel/src/strategies/chunk.ts"],
+      "filesGlob": [
+        "functions/src/typed/arithmetic.ts",
+        "parallel/src/strategies/chunk.ts"
+      ],
       "reason": "parallelization threshold heuristic: functions/src/typed/arithmetic.ts inlines the i32 hot-path check; parallel/src/strategies/chunk.ts and .../threshold.ts (threshold.ts left canonical) are the strategy-layer copies. Kept local per project-all-libraries-build-on-core. 2026-07 dedup campaign, closing tail slice."
     },
     {
@@ -465,7 +541,10 @@
 
     {
       "names": ["factory"],
-      "filesGlob": ["expression/src/utils/factory.ts", "functions/src/utils/factory.ts"],
+      "filesGlob": [
+        "expression/src/utils/factory.ts",
+        "functions/src/utils/factory.ts"
+      ],
       "reason": "genuinely distinct generic constraints on TDeps (same reason as the already-allowlisted FactoryFunction/CreateFunction types: core Record<string,unknown> vs expression object vs functions Record<string,any>) — redirecting to one shape breaks tsc at real call sites in the other packages. core/src/factory.ts's factory stays canonical. 2026-07 dedup campaign, closing tail slice."
     },
     {
@@ -511,7 +590,16 @@
       "reason": "mathjs factory-layer reimplementations (the `math.create({...})` plugin escape-hatch) of the core primitives in core/src/arithmetic/scalar.ts / core/src/array.ts. The scalar arith ops (add/subtract/multiply/divideScalar) + isNumeric are the SAME semantics as core and are guarded functions≡core≡oracle by functions/tests/gap-factory-core-parity.test.ts; the array ops (concat/filter/flatten/forEach/map/reshape/resize/squeeze) are the mathjs Matrix-aware factory contracts over core's pure-array primitives (oracle-pinned in the same test); `number` is distinct-by-contract (functions parses strings/units, core coerces a NumericScalar). core stays canonical. NOTE (surfaced): the deeper 'collapse the factory layer into typed' ADR is Daniel's open call — allowlist-with-parity is the interim divergence guard, not a resolution. 2026-07 dedup campaign, closing tail slice."
     },
     {
-      "names": ["zeros", "ones", "size", "matrix", "identity", "bignumber", "fraction", "sparse"],
+      "names": [
+        "zeros",
+        "ones",
+        "size",
+        "matrix",
+        "identity",
+        "bignumber",
+        "fraction",
+        "sparse"
+      ],
       "filesGlob": ["compat/src/shims.ts", "functions/src/factories/index.ts"],
       "reason": "compat mathjs-API shim (compat/src/shims.ts) vs the functions mathjs factory (functions/src/factories/index.ts) — self-contained independent bodies with DIFFERENT return types (compat matrix constructors return DenseMatrix; functions return arrays / mathjs types; matrix/src/typed-operations.ts is the auto-tagged DISPATCH_VARIANT). compat's zeros/ones(n) return a length-n VECTOR matching mathjs (single-arg), and zeros/ones(r,c) an r×c matrix (fixed 2026-07-18 floor-decisions slice — formerly an n×n square, which diverged from mathjs). Guarded by compat/tests/parity-oracle.test.ts (each pinned to the mathjs/numpy oracle). 2026-07 dedup campaign."
     },
@@ -538,7 +626,10 @@
 
     {
       "names": ["fft", "ifft"],
-      "filesGlob": ["functions/src/factories/index.ts", "matrix/src/backends/wasm/fft-wasm.ts"],
+      "filesGlob": [
+        "functions/src/factories/index.ts",
+        "matrix/src/backends/wasm/fft-wasm.ts"
+      ],
       "reason": "Bucket-D domain-FFT split: functions/src/signal/fft.ts (left canonical) is the public Complex-object FFT toolkit; functions/src/factories/index.ts is the mathjs `fft`/`ifft` factory wrapper; matrix/src/backends/wasm/fft-wasm.ts is the coherent (currently-unreferenced) WASM-FFT accelerator bridge over split Float64Arrays (assembly/src/ops/fft.ts already allowlisted; FFTResult already allowlisted as a distinct representation). Kept as coherent scaffolding (feedback-dont-auto-delete-coherent-api). 2026-07 dedup campaign, closing tail slice."
     },
     {
@@ -559,12 +650,18 @@
 
     {
       "names": ["qr"],
-      "filesGlob": ["functions/src/factories/index.ts", "matrix/src/operations/qr.ts"],
+      "filesGlob": [
+        "functions/src/factories/index.ts",
+        "matrix/src/operations/qr.ts"
+      ],
       "reason": "distinct-contract dispatch-variant, KEEP both (routing would drop the WASM path + the mathjs Matrix contract): functions/src/algebra/decomposition/qr.ts (`createQr`, wired via functions/src/factories/index.ts) is the mathjs `Matrix`/`SparseMatrix` factory — Householder QR with a `qr_wasm` fast path (full Q m×m, R m×n), Array input ⇒ {Q:number[][],R:number[][]}; matrix/src/operations/qr.ts is the DenseMatrix primitive (Gram-Schmidt w/ re-orthogonalisation, reduced|full mode). Different call contracts, different algorithms, both needed. Guarded by functions/tests/gap-qr-parity.test.ts, which pins functions ≡ matrix ≡ NumPy on |diag R| (sign-invariant) + A=Q·R reconstruction + Qᵀ·Q=I — no divergence found (full double precision). 2026-07 dedup campaign, floor-decisions slice (Daniel keep-vs-route ADR = keep)."
     },
     {
       "names": ["WasmLoader", "wasmLoader"],
-      "filesGlob": ["functions/src/wasm/WasmLoader.ts", "matrix/src/backends/WasmLoader.ts"],
+      "filesGlob": [
+        "functions/src/wasm/WasmLoader.ts",
+        "matrix/src/backends/WasmLoader.ts"
+      ],
       "reason": "genuinely different runtime, not copy-paste: the two WasmLoader classes bind DIFFERENT allocation models — functions/src/wasm/WasmLoader.ts uses the simple single-pointer model (`__new(byteLength, 2)`, ptr IS the data pointer), while matrix/src/backends/WasmLoader.ts implements the AssemblyScript managed-runtime model (a 12-byte header + separate data block, an `Allocation<T>` handle with ptr/dataPtr/array, plus `readReturnedFloat64Array`/`initWasm`) — and each binds its own package-scoped `WasmModule` ABI subset (already allowlisted as a distinct type). matrix can't import from functions (cycle). The SHARED, byte-identical parts (SHA-384 integrity `sha384OfBuffer`/`verifyWasmIntegrity`/`loadWasmManifest` + path resolution `resolvePackagedWasm`/`defaultWasmLocation`) WERE consolidated to @danielsimonjr/mathts-core/internal (core/src/wasm-loader.ts); both packages' integrity.ts/resolve.ts now re-export it and inject their own import.meta.url. Only the allocation-divergent class + its singleton remain per-package. SHA-384 verify-before-instantiate preserved byte-for-byte; guarded by functions+matrix tests/security/wasm-integrity.test.ts. 2026-07 dedup campaign, floor-decisions slice (Daniel security ADR = consolidate shared logic, keep divergent loaders)."
     },
     {
@@ -577,7 +674,10 @@
     },
     {
       "names": ["initializePool", "terminatePool"],
-      "filesGlob": ["functions/src/typed/arithmetic.ts", "packages/workerpool/src/index.ts"],
+      "filesGlob": [
+        "functions/src/typed/arithmetic.ts",
+        "packages/workerpool/src/index.ts"
+      ],
       "reason": "same name, DIFFERENT pool target (distinct-by-target, NOT a reimplementation to consolidate): functions/src/typed/arithmetic.ts's initializePool/terminatePool are thin lifecycle wrappers over the `computePool` singleton (a ComputePool from @danielsimonjr/mathts-parallel — the pool that functions' own parallel matmul/transpose/matvec/outer actually use); packages/workerpool/src/index.ts's operate on the `mathWorkerPool` singleton (a MathWorkerPool). Verified (RFL R4): ComputePool wraps its OWN MathWorkerPool instance, distinct from workerpool's module-global — so delegating functions→workerpool (the original dedup hypothesis) would initialize the WRONG pool and leave functions' ComputePool uninitialised, a real regression. Two thin wrappers over two different pool singletons that coincidentally share a name; distinct-by-domain like the other lifecycle homonyms. Independent of #27 (structure unchanged). 2026-07 dedup campaign, floor-decisions slice."
     },
     {
@@ -607,22 +707,34 @@
         "PARTICLE_ROTATION_OFFSET",
         "PARTICLE_SOFTNESS_OFFSET"
       ],
-      "filesGlob": ["packages/particles/src/particle-renderable.ts", "packages/render/src/particles.ts"],
+      "filesGlob": [
+        "packages/particles/src/particle-renderable.ts",
+        "packages/render/src/particles.ts"
+      ],
       "reason": "fourJS: deliberate duck-typed cross-package contract, NOT a copy to consolidate — the dependency matrix forbids the particles↔render edge (MEMORY 2026-08-02, Phase 9: 'ParticleDrawable + ParticleSystem's SimulationSystem are DUCK-TYPED cross-package contracts (matrix forbids the edges; drift caught by tests)'). Each side pins the instance stride and the R-32 wide-layout offsets independently and the shared tests catch drift. 2026-08-04 gate wiring; R-32 offsets added 2026-09-06."
     },
     {
       "names": ["TRAIL_VERTEX_FLOATS"],
-      "filesGlob": ["packages/particles/src/trail.ts", "packages/render/src/particles.ts"],
+      "filesGlob": [
+        "packages/particles/src/trail.ts",
+        "packages/render/src/particles.ts"
+      ],
       "reason": "fourJS: deliberate duck-typed cross-package contract for CPU particle trail ribbon vertices (position xyz + rgba), same matrix constraint as PARTICLE_INSTANCE_FLOATS — @fourjs/particles builds the mesh and @fourjs/render types the render-item stride without a forbidden particles↔render dependency edge; drift is caught by shared tests. 2026-09-06 trail tier gate wiring."
     },
     {
       "names": ["requireNonNegative"],
-      "filesGlob": ["packages/geometry/src/primitive-support.ts", "packages/ui/src/numbers.ts"],
+      "filesGlob": [
+        "packages/geometry/src/primitive-support.ts",
+        "packages/ui/src/numbers.ts"
+      ],
       "reason": "fourJS: same name, different §85 contracts (distinct-by-domain, NOT a copy to consolidate): geometry's requireNonNegative(name, value) validates a primitive extent where zero is degenerate-but-meaningful (a cone's tip radius — R-20, 2026-08-07) with geometry's error-message shape; ui's requireNonNegative(owner, name, value) is A-12's control-value guard (2026-08-07) carrying the widget owner in Label's §85 message style. Different signatures, different message formats pinned by each package's tests; both are module-internal helpers (not in either barrel). Hoisting to core would flatten two deliberate message conventions into one and buy nothing — each is three lines. 2026-08-07 wave-3 gate wiring."
     },
     {
       "names": ["CacheableGeometry"],
-      "filesGlob": ["packages/render-webgl/src/gl-geometry.ts", "packages/render-webgpu/src/wgpu-geometry.ts"],
+      "filesGlob": [
+        "packages/render-webgl/src/gl-geometry.ts",
+        "packages/render-webgpu/src/wgpu-geometry.ts"
+      ],
       "reason": "fourJS: backend-local structural view of the geometry a resource cache consumes (types only, no runtime body) — the PARTICLE_INSTANCE_FLOATS class of deliberate per-backend duck typing. Each backend declares the narrowed shape it reads so the cache's requirements live in the file that enforces them and neither backend names the other; the shared render-list consumption harness catches drift. 2026-08-21, WP-R1.1 gate wiring."
     },
     {

@@ -91,9 +91,9 @@ describe("GlGpuTimer", () => {
 
   it("is unsupported without the extension or query methods", () => {
     expect(armedTimer().isSupported(fakeGl({ extension: null }))).toBe(false);
-    expect(
-      armedTimer().isSupported(fakeGl({ createQuery: undefined })),
-    ).toBe(false);
+    expect(armedTimer().isSupported(fakeGl({ createQuery: undefined }))).toBe(
+      false,
+    );
     expect(hasDisjointTimerQuery({})).toBe(false);
     expect(hasDisjointTimerQuery({ getExtension: () => null })).toBe(false);
     expect(

@@ -249,13 +249,20 @@ export class SpatialHash<T> {
     const centerIx = cellIndex(cx, cellSize);
     const centerIy = cellIndex(cy, cellSize);
     const centerIz = cellIndex(cz, cellSize);
-    const cellRadius =
-      radius === 0 ? 0 : Math.ceil(radius / cellSize);
+    const cellRadius = radius === 0 ? 0 : Math.ceil(radius / cellSize);
 
     const matches: StoredEntry<T>[] = [];
     for (let iz = centerIz - cellRadius; iz <= centerIz + cellRadius; iz += 1) {
-      for (let iy = centerIy - cellRadius; iy <= centerIy + cellRadius; iy += 1) {
-        for (let ix = centerIx - cellRadius; ix <= centerIx + cellRadius; ix += 1) {
+      for (
+        let iy = centerIy - cellRadius;
+        iy <= centerIy + cellRadius;
+        iy += 1
+      ) {
+        for (
+          let ix = centerIx - cellRadius;
+          ix <= centerIx + cellRadius;
+          ix += 1
+        ) {
           const bucket = this.#buckets.get(cellKey(ix, iy, iz));
           if (bucket === undefined) {
             continue;
@@ -312,13 +319,20 @@ export class SpatialHash<T> {
     const centerIx = cellIndex(cx, cellSize);
     const centerIy = cellIndex(cy, cellSize);
     const centerIz = cellIndex(cz, cellSize);
-    const cellRadius =
-      radius === 0 ? 0 : Math.ceil(radius / cellSize);
+    const cellRadius = radius === 0 ? 0 : Math.ceil(radius / cellSize);
 
     const matches: StoredEntry<T>[] = [];
     for (let iz = centerIz - cellRadius; iz <= centerIz + cellRadius; iz += 1) {
-      for (let iy = centerIy - cellRadius; iy <= centerIy + cellRadius; iy += 1) {
-        for (let ix = centerIx - cellRadius; ix <= centerIx + cellRadius; ix += 1) {
+      for (
+        let iy = centerIy - cellRadius;
+        iy <= centerIy + cellRadius;
+        iy += 1
+      ) {
+        for (
+          let ix = centerIx - cellRadius;
+          ix <= centerIx + cellRadius;
+          ix += 1
+        ) {
           const bucket = this.#buckets.get(cellKey(ix, iy, iz));
           if (bucket === undefined) {
             continue;

@@ -439,9 +439,7 @@ export interface DirectionalLightOptions {
  * Numeric tuples are copied as-is (already linear); CSS strings are parsed
  * as sRGB and decoded (§60a) so the GPU still sees the same uniform type.
  */
-function resolveLightColor(
-  color: LightColorInput | undefined,
-): ColorRGB {
+function resolveLightColor(color: LightColorInput | undefined): ColorRGB {
   if (typeof color === "string") {
     const linear: ColorRGB = [0, 0, 0];
     srgbToLinearRGB(parseColorRGB(color), linear);

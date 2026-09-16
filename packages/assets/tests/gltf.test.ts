@@ -669,7 +669,12 @@ describe("buffers (§96)", () => {
   it("refuses absolute, protocol-relative and root-relative uris by default (§96, 2026-09-11)", async () => {
     const { bytes } = pack(TRI_POSITIONS, TRI_INDICES);
     const seen: string[] = [];
-    for (const uri of ["/abs/data.bin", "https://cdn.example/data.bin", "//cdn.example/data.bin", "file:///etc/data.bin"]) {
+    for (const uri of [
+      "/abs/data.bin",
+      "https://cdn.example/data.bin",
+      "//cdn.example/data.bin",
+      "file:///etc/data.bin",
+    ]) {
       const document = corrupt(triangleDocument(), (c) => {
         (c["buffers"] as { uri: string }[])[0].uri = uri;
       });

@@ -1,4 +1,8 @@
-import { Vector3, constructionCount, resetConstructionCount } from "@fourjs/math";
+import {
+  Vector3,
+  constructionCount,
+  resetConstructionCount,
+} from "@fourjs/math";
 import { describe, expect, it } from "vitest";
 
 import { rk4, type IntegratorState } from "../src/integrators.js";

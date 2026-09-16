@@ -2055,7 +2055,9 @@ describe("snapshot envelope hardening (§96, 2026-09-11)", () => {
       JSON.stringify({ ...original, nextColliderId: 1.5 }),
       JSON.stringify({ ...original, nextJointId: "3" }),
     ]) {
-      expect(() => adapter.restoreSnapshot(withMeta(snapshot, meta))).toThrowError(
+      expect(() =>
+        adapter.restoreSnapshot(withMeta(snapshot, meta)),
+      ).toThrowError(
         expect.objectContaining({ code: "UNTRUSTED_INPUT_REJECTED" }) as Error,
       );
     }

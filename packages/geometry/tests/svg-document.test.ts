@@ -96,9 +96,9 @@ describe("parseSvgDocument — §96 refusals", () => {
     expect(() => parseSvgDocument(null as unknown as string)).toThrow(
       /must be a string/,
     );
-    expect(() =>
-      parseSvgDocument("<svg/>", { maximumTextLength: 0 }),
-    ).toThrow(RangeError);
+    expect(() => parseSvgDocument("<svg/>", { maximumTextLength: 0 })).toThrow(
+      RangeError,
+    );
   });
 });
 
@@ -251,16 +251,20 @@ describe("parseSvgDocument — elements and presentation", () => {
 
 describe("parseSvgDocument — syntax refusals", () => {
   it("refuses an unterminated comment and start tag", () => {
-    expect(() => parseSvgDocument("<svg><!-- oops")).toThrow(/unterminated comment/);
-    expect(() => parseSvgDocument("<svg><rect")).toThrow(/unterminated start tag/);
+    expect(() => parseSvgDocument("<svg><!-- oops")).toThrow(
+      /unterminated comment/,
+    );
+    expect(() => parseSvgDocument("<svg><rect")).toThrow(
+      /unterminated start tag/,
+    );
   });
 
   it("refuses unquoted attributes and unknown transforms", () => {
-    expect(() => parseSvgDocument(`<svg><rect x=1 /></svg>`)).toThrow(
-      /quoted/,
-    );
+    expect(() => parseSvgDocument(`<svg><rect x=1 /></svg>`)).toThrow(/quoted/);
     expect(() =>
-      parseSvgDocument(`<svg><rect transform="skewX(10)" width="1" height="1"/></svg>`),
+      parseSvgDocument(
+        `<svg><rect transform="skewX(10)" width="1" height="1"/></svg>`,
+      ),
     ).toThrow(/unsupported transform/);
   });
 
@@ -275,28 +279,44 @@ describe("parseSvgDocument — syntax refusals", () => {
 
   it("refuses transform arity errors, exponents without digits, and bad numbers", () => {
     expect(() =>
-      parseSvgDocument(`<svg><rect transform="translate()" width="1" height="1"/></svg>`),
+      parseSvgDocument(
+        `<svg><rect transform="translate()" width="1" height="1"/></svg>`,
+      ),
     ).toThrow(/translate/);
     expect(() =>
-      parseSvgDocument(`<svg><rect transform="scale()" width="1" height="1"/></svg>`),
+      parseSvgDocument(
+        `<svg><rect transform="scale()" width="1" height="1"/></svg>`,
+      ),
     ).toThrow(/scale/);
     expect(() =>
-      parseSvgDocument(`<svg><rect transform="rotate(1 2)" width="1" height="1"/></svg>`),
+      parseSvgDocument(
+        `<svg><rect transform="rotate(1 2)" width="1" height="1"/></svg>`,
+      ),
     ).toThrow(/rotate/);
     expect(() =>
-      parseSvgDocument(`<svg><rect transform="matrix(1 2 3)" width="1" height="1"/></svg>`),
+      parseSvgDocument(
+        `<svg><rect transform="matrix(1 2 3)" width="1" height="1"/></svg>`,
+      ),
     ).toThrow(/matrix/);
     expect(() =>
-      parseSvgDocument(`<svg><rect transform="translate(1e)" width="1" height="1"/></svg>`),
+      parseSvgDocument(
+        `<svg><rect transform="translate(1e)" width="1" height="1"/></svg>`,
+      ),
     ).toThrow(/exponent/);
     expect(() =>
-      parseSvgDocument(`<svg><rect transform="translate(.)" width="1" height="1"/></svg>`),
+      parseSvgDocument(
+        `<svg><rect transform="translate(.)" width="1" height="1"/></svg>`,
+      ),
     ).toThrow(/transform number/);
   });
 
   it("refuses missing '=', '<' in values, and unterminated quotes / PI", () => {
-    expect(() => parseSvgDocument(`<svg><rect x /></svg>`)).toThrow(/missing a value/);
-    expect(() => parseSvgDocument(`<svg><rect x="1<2"/></svg>`)).toThrow(/not allowed/);
+    expect(() => parseSvgDocument(`<svg><rect x /></svg>`)).toThrow(
+      /missing a value/,
+    );
+    expect(() => parseSvgDocument(`<svg><rect x="1<2"/></svg>`)).toThrow(
+      /not allowed/,
+    );
     expect(() => parseSvgDocument(`<svg><rect x="1`)).toThrow(
       /unterminated attribute/,
     );
@@ -310,9 +330,9 @@ describe("parseSvgDocument — syntax refusals", () => {
     expect(() => parseSvgDocument(`<svg><circle r="-1"/></svg>`)).toThrow(
       /non-negative/,
     );
-    expect(() => parseSvgDocument(`<svg><ellipse rx="-1" ry="1"/></svg>`)).toThrow(
-      /non-negative/,
-    );
+    expect(() =>
+      parseSvgDocument(`<svg><ellipse rx="-1" ry="1"/></svg>`),
+    ).toThrow(/non-negative/);
     expect(() =>
       parseSvgDocument(`<svg><polygon points="0 0 1"/></svg>`),
     ).toThrow(/pairs/);
@@ -320,7 +340,9 @@ describe("parseSvgDocument — syntax refusals", () => {
       parseSvgDocument(`<svg><rect fill="&#;" width="1" height="1"/></svg>`),
     ).toThrow(/character reference/);
     expect(() =>
-      parseSvgDocument(`<svg><rect fill="&#x110000;" width="1" height="1"/></svg>`),
+      parseSvgDocument(
+        `<svg><rect fill="&#x110000;" width="1" height="1"/></svg>`,
+      ),
     ).toThrow(/invalid numeric/);
   });
 });

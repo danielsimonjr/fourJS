@@ -47,12 +47,12 @@ format, solver adapters, or plugin surface.
 
 ## Alternatives
 
-| Alternative | Why it loses |
-|---|---|
-| Keep pnpm; add Bun only as an optional runtime | Leaves two install contracts and does not deliver the requested migration. |
-| Migrate tests to `bun:test` in the same change | Couples a lockfile/CI cutover to rewriting every `vitest` import and re-proving coverage; high blast radius. |
-| Emit packages with `bun build` instead of `tsc -b` | Would change declaration emit, composite references, and TypeDoc input in one step; deferred. |
-| Dual lockfiles (pnpm + Bun) | Guarantees drift; rejected. |
+| Alternative                                        | Why it loses                                                                                                 |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Keep pnpm; add Bun only as an optional runtime     | Leaves two install contracts and does not deliver the requested migration.                                   |
+| Migrate tests to `bun:test` in the same change     | Couples a lockfile/CI cutover to rewriting every `vitest` import and re-proving coverage; high blast radius. |
+| Emit packages with `bun build` instead of `tsc -b` | Would change declaration emit, composite references, and TypeDoc input in one step; deferred.                |
+| Dual lockfiles (pnpm + Bun)                        | Guarantees drift; rejected.                                                                                  |
 
 ## Consequences
 

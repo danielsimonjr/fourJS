@@ -251,8 +251,7 @@ export function buildTrailRibbonMesh(
     const tNorm = normalizedAge(ages[particle], lifetime);
     const sizeBase = particle * sizeStride;
     const startSize = sizes[sizeBase];
-    const particleSize =
-      startSize + (sizes[sizeBase + 1] - startSize) * tNorm;
+    const particleSize = startSize + (sizes[sizeBase + 1] - startSize) * tNorm;
 
     const colorBase = particle * colorStride;
     const r0 = colors[colorBase];
@@ -399,7 +398,8 @@ export function resolveTrailOptions(
       `ParticleEmitter: trail.minDistance must be a finite number >= 0; received ${String(minDistance)}`,
     );
   }
-  const tailWidthFactor = trail.tailWidthFactor ?? DEFAULT_TRAIL_TAIL_WIDTH_FACTOR;
+  const tailWidthFactor =
+    trail.tailWidthFactor ?? DEFAULT_TRAIL_TAIL_WIDTH_FACTOR;
   if (
     !Number.isFinite(tailWidthFactor) ||
     tailWidthFactor < 0 ||

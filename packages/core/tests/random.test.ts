@@ -104,32 +104,36 @@ function draw(seed: number, count: number): number[] {
   return values;
 }
 
-describe("SeededRandom — known answers (xorshift128, §33)", { timeout: 30_000 }, () => {
-  it("matches the pinned first eight outputs for five seeds", () => {
-    for (const { seed, first8 } of KNOWN_ANSWERS) {
-      expect(draw(seed, 8), `seed ${seed}`).toEqual([...first8]);
-    }
-  });
-
-  it("matches the pinned state after 1000 draws", () => {
-    for (const { seed, draw1000 } of KNOWN_ANSWERS) {
-      const values = draw(seed, 1000);
-      expect(values[999], `seed ${seed}`).toBe(draw1000);
-    }
-  });
-
-  it("agrees with an independent BigInt reference over 500 draws", () => {
-    for (const { seed } of KNOWN_ANSWERS) {
-      const random = new SeededRandom(seed);
-      const reference = referenceStream(seed);
-      for (let i = 0; i < 500; i += 1) {
-        expect(random.nextUint32(), `seed ${seed}, draw ${i}`).toBe(
-          reference(),
-        );
+describe(
+  "SeededRandom — known answers (xorshift128, §33)",
+  { timeout: 30_000 },
+  () => {
+    it("matches the pinned first eight outputs for five seeds", () => {
+      for (const { seed, first8 } of KNOWN_ANSWERS) {
+        expect(draw(seed, 8), `seed ${seed}`).toEqual([...first8]);
       }
-    }
-  });
-});
+    });
+
+    it("matches the pinned state after 1000 draws", () => {
+      for (const { seed, draw1000 } of KNOWN_ANSWERS) {
+        const values = draw(seed, 1000);
+        expect(values[999], `seed ${seed}`).toBe(draw1000);
+      }
+    });
+
+    it("agrees with an independent BigInt reference over 500 draws", () => {
+      for (const { seed } of KNOWN_ANSWERS) {
+        const random = new SeededRandom(seed);
+        const reference = referenceStream(seed);
+        for (let i = 0; i < 500; i += 1) {
+          expect(random.nextUint32(), `seed ${seed}, draw ${i}`).toBe(
+            reference(),
+          );
+        }
+      }
+    });
+  },
+);
 
 describe("SeededRandom — seed contract", { timeout: 30_000 }, () => {
   it("rejects a non-finite seed", () => {

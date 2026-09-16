@@ -115,7 +115,10 @@ describe("evaluateLifetimeRampColor — multi-stop ramps", () => {
     const duplicate = {
       start: 0,
       end: 1,
-      stops: [{ t: 0.5, value: 0.5 }, { t: 0.5, value: 0.75 }],
+      stops: [
+        { t: 0.5, value: 0.5 },
+        { t: 0.5, value: 0.75 },
+      ],
     };
     expect(evaluateLifetimeRampNumber(duplicate, 0.5)).toBe(0.5);
 
@@ -128,9 +131,9 @@ describe("evaluateLifetimeRampColor — multi-stop ramps", () => {
   });
 
   it("treats an empty stops array as a two-endpoint lerp", () => {
-    expect(evaluateLifetimeRampNumber({ start: 0, end: 10, stops: [] }, 0.5)).toBe(
-      5,
-    );
+    expect(
+      evaluateLifetimeRampNumber({ start: 0, end: 10, stops: [] }, 0.5),
+    ).toBe(5);
     expect(
       evaluateLifetimeRampColor(
         {
@@ -317,9 +320,7 @@ describe("buildTrailRibbonMesh", () => {
     const ages = new Float32Array([0.5]);
     const lifetimes = new Float32Array([1]);
     const sizes = new Float32Array([1, 0]);
-    const colors = new Float32Array([
-      1, 0, 0, 1, 0, 0, 1, 0,
-    ]);
+    const colors = new Float32Array([1, 0, 0, 1, 0, 0, 1, 0]);
     const out = new Float32Array(6 * 2 * TRAIL_VERTEX_FLOATS);
     const count = buildTrailRibbonMesh(
       store,
@@ -348,9 +349,7 @@ describe("buildTrailRibbonMesh", () => {
     const ages = new Float32Array([0.5]);
     const lifetimes = new Float32Array([1]);
     const sizes = new Float32Array([1, 0]);
-    const colors = new Float32Array([
-      1, 0, 0, 1, 0, 0, 1, 0,
-    ]);
+    const colors = new Float32Array([1, 0, 0, 1, 0, 0, 1, 0]);
     const out = new Float32Array(6 * 4 * TRAIL_VERTEX_FLOATS);
     const count = buildTrailRibbonMesh(
       store,
@@ -375,9 +374,7 @@ describe("buildTrailRibbonMesh", () => {
     const ages = new Float32Array([-1]);
     const lifetimes = new Float32Array([0]);
     const sizes = new Float32Array([1, 2]);
-    const colors = new Float32Array([
-      1, 0, 0, 1, 0, 1, 0, 1,
-    ]);
+    const colors = new Float32Array([1, 0, 0, 1, 0, 1, 0, 1]);
     const out = new Float32Array(6 * TRAIL_VERTEX_FLOATS);
     expect(
       buildTrailRibbonMesh(
@@ -429,7 +426,9 @@ describe("resolveTrailOptions", () => {
 
   it("rejects invalid trail configuration", () => {
     expect(() => resolveTrailOptions({ length: 1 })).toThrow(/length/);
-    expect(() => resolveTrailOptions({ length: 4, width: -1 })).toThrow(/width/);
+    expect(() => resolveTrailOptions({ length: 4, width: -1 })).toThrow(
+      /width/,
+    );
     expect(() =>
       resolveTrailOptions({ length: 4, minDistance: Number.NaN }),
     ).toThrow(/minDistance/);

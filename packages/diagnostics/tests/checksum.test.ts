@@ -12,19 +12,23 @@ import { createChecksum, hashFloats } from "../src/checksum.js";
  * determinism suites). They must never be "updated to match" a new
  * implementation — the implementation is updated to match them.
  */
-const KNOWN_ANSWERS: ReadonlyArray<readonly [string, readonly number[], number]> =
-  [
-    // Empty sequence digests to the bare FNV-1a offset basis.
-    ["empty", [], 2166136261],
-    ["zero", [0], 2615243109],
-    ["pair", [1.5, -2.25], 4216389416],
-    ["mixed", [1e5, -1e5, 0.000001], 2854210778],
-  ];
+const KNOWN_ANSWERS: ReadonlyArray<
+  readonly [string, readonly number[], number]
+> = [
+  // Empty sequence digests to the bare FNV-1a offset basis.
+  ["empty", [], 2166136261],
+  ["zero", [0], 2615243109],
+  ["pair", [1.5, -2.25], 4216389416],
+  ["mixed", [1e5, -1e5, 0.000001], 2854210778],
+];
 
 describe("hashFloats known answers", () => {
-  it.each(KNOWN_ANSWERS)("hashes %s to its committed digest", (_name, xs, expected) => {
-    expect(hashFloats(xs)).toBe(expected);
-  });
+  it.each(KNOWN_ANSWERS)(
+    "hashes %s to its committed digest",
+    (_name, xs, expected) => {
+      expect(hashFloats(xs)).toBe(expected);
+    },
+  );
 
   it("returns uint32 values", () => {
     for (const [, xs, expected] of KNOWN_ANSWERS) {

@@ -203,7 +203,10 @@ describe("SeededRandom — derived draws", () => {
     for (let i = 0; i < 20000; i += 1) {
       const value = random.nextFloat01();
       const expected = twin.nextUint32() / 4294967296;
-      if (violation === undefined && (value !== expected || value < 0 || value >= 1)) {
+      if (
+        violation === undefined &&
+        (value !== expected || value < 0 || value >= 1)
+      ) {
         violation = `draw ${i}: got ${value}, expected ${expected} in [0, 1)`;
       }
       min = Math.min(min, value);

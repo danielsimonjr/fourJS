@@ -387,7 +387,8 @@ class ControlSystem implements SimulationSystem {
   fixedUpdate(context: FixedUpdateContext): void {
     const dt = context.time.fixedDeltaTime;
     const held = this.keys;
-    const forward = (held.isDown("KeyW") ? 1 : 0) - (held.isDown("KeyS") ? 1 : 0);
+    const forward =
+      (held.isDown("KeyW") ? 1 : 0) - (held.isDown("KeyS") ? 1 : 0);
     const right = (held.isDown("KeyD") ? 1 : 0) - (held.isDown("KeyA") ? 1 : 0);
     controller.setMoveIntent(forward, right);
     // ← is +yaw and → is −yaw: yaw is measured from +Z towards +X (§7a), so a

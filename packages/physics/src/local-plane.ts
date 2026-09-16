@@ -35,7 +35,9 @@ const DEFAULT_ORIGIN = Object.freeze(new Vector3(0, 0, 0)) as Vector3;
 const DEFAULT_NORMAL = Object.freeze(new Vector3(0, 0, 1)) as Vector3;
 const DEFAULT_X_AXIS = Object.freeze(new Vector3(1, 0, 0)) as Vector3;
 const DEFAULT_Y_AXIS = Object.freeze(new Vector3(0, 1, 0)) as Vector3;
-const DEFAULT_ROTATION = Object.freeze(new Quaternion(0, 0, 0, 1)) as Quaternion;
+const DEFAULT_ROTATION = Object.freeze(
+  new Quaternion(0, 0, 0, 1),
+) as Quaternion;
 
 /**
  * The XY plane — origin 0, normal +Z, xAxis +X. Shared; do not mutate.
@@ -87,7 +89,14 @@ export function resolveLocalPlane(plane?: LocalPlane): ResolvedLocalPlane {
     throw new FourError(
       PLANE_ERROR_CODE,
       `PhysicsWorldOptions.localPlane.normal must be a finite non-zero vector (§21, §85); got (${String(normal.x)}, ${String(normal.y)}, ${String(normal.z)}).`,
-      { context: { field: "localPlane.normal", x: normal.x, y: normal.y, z: normal.z } },
+      {
+        context: {
+          field: "localPlane.normal",
+          x: normal.x,
+          y: normal.y,
+          z: normal.z,
+        },
+      },
     );
   }
   normal.normalize();
@@ -99,7 +108,14 @@ export function resolveLocalPlane(plane?: LocalPlane): ResolvedLocalPlane {
       throw new FourError(
         PLANE_ERROR_CODE,
         `PhysicsWorldOptions.localPlane.xAxis must be a finite non-zero vector (§21, §85); got (${String(xAxis.x)}, ${String(xAxis.y)}, ${String(xAxis.z)}).`,
-        { context: { field: "localPlane.xAxis", x: xAxis.x, y: xAxis.y, z: xAxis.z } },
+        {
+          context: {
+            field: "localPlane.xAxis",
+            x: xAxis.x,
+            y: xAxis.y,
+            z: xAxis.z,
+          },
+        },
       );
     }
     // Gram-Schmidt: drop the normal component so the basis stays orthogonal.

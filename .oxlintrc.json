@@ -1,9 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "import"
-  ],
+  "plugins": ["typescript", "import"],
   "categories": {},
   "ignorePatterns": [
     "**/dist/**",
@@ -80,11 +77,7 @@
   },
   "overrides": [
     {
-      "files": [
-        "**/*.js",
-        "**/*.mjs",
-        "**/*.cjs"
-      ],
+      "files": ["**/*.js", "**/*.mjs", "**/*.cjs"],
       "rules": {
         "typescript/await-thenable": "off",
         "typescript/ban-ts-comment": "off",
@@ -132,9 +125,7 @@
       }
     },
     {
-      "files": [
-        "**/tests/**"
-      ],
+      "files": ["**/tests/**"],
       "rules": {
         "no-restricted-properties": "off",
         "no-unsafe-optional-chaining": "off",

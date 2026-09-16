@@ -653,7 +653,8 @@ describe("HemisphereLight (§68)", () => {
       RangeError,
     );
     expect(
-      () => new HemisphereLight({ groundColor: [0, Number.POSITIVE_INFINITY, 0] }),
+      () =>
+        new HemisphereLight({ groundColor: [0, Number.POSITIVE_INFINITY, 0] }),
     ).toThrow(/must be finite/);
     expect(() => new HemisphereLight({ intensity: Number.NaN })).toThrow(
       RangeError,

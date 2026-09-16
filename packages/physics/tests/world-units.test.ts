@@ -29,7 +29,9 @@ describe("PhysicsWorldOptions.units (§40)", () => {
 
     expect(baseline.world.units).toBeUndefined();
     expect(Object.is(baseline.world.gravity.y, DEFAULT_GRAVITY_Y)).toBe(true);
-    expect(Object.is(also.world.gravity.y, baseline.world.gravity.y)).toBe(true);
+    expect(Object.is(also.world.gravity.y, baseline.world.gravity.y)).toBe(
+      true,
+    );
     expect(Object.is(baseline.adapter.gravity.y, DEFAULT_GRAVITY_Y)).toBe(true);
     expect(baseline.world.toSiLength(2)).toBe(2);
     expect(baseline.world.fromSiLength(2)).toBe(2);

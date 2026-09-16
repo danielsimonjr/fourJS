@@ -256,7 +256,11 @@ test.describe("WebGPU sprites and batching, on a real adapter", () => {
         stepMode: "vertex",
         attributes: [
           { format: "float32x3", offset: 0, shaderLocation: 0 },
-          { format: "float32x2", offset: 12, shaderLocation: UV_SHADER_LOCATION },
+          {
+            format: "float32x2",
+            offset: 12,
+            shaderLocation: UV_SHADER_LOCATION,
+          },
         ],
       },
       strong: STRONG,

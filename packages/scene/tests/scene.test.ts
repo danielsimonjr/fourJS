@@ -1,4 +1,9 @@
-import { FourError, resetDevWarnings, type Component, type ComponentHost } from "@fourjs/core";
+import {
+  FourError,
+  resetDevWarnings,
+  type Component,
+  type ComponentHost,
+} from "@fourjs/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {

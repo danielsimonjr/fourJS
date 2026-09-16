@@ -18,43 +18,43 @@ Citation convention: plain "§N" means `SPECIFICATION.md` numbering.
 incompatible code in early phases (Phases 0–5, §103–108). **P2**: underspecified design that
 implementers will have to invent, risking later rework. **P3**: editorial/structural.
 
-| # | Priority | Area | Summary |
-|---|---|---|---|
-| R-1 | P1 | Physics | §23 vs §26 force API signatures disagree |
-| R-2 | P1 | Motion | §19 `MotionAuthority` vs §42 `TransformAuthority` overlap, undefined relationship |
-| R-3 | P1 | Time | §9 `TimeState` interface missing fields its own prose requires |
-| R-4 | P1 | Time | §10 accumulator has no substep cap; death-spiral policy undefined |
-| R-5 | P1 | Physics | 2D gravity sign in §21 implies a Y-down convention never stated |
-| R-6 | P1 | Scene | Component model used everywhere, specified nowhere |
-| R-7 | P1 | Packages | §52 requires an isolated tessellator package absent from §98 |
-| R-8 | P1 | Time | Milliseconds (animation) vs seconds (physics) never reconciled |
-| R-9 | P1 | Physics | §37 adapter interface cannot support the API the spec promises |
-| R-10 | P2 | Core | No coordinate-system conventions section |
-| R-11 | P2 | Core | Event system undefined despite pervasive use |
-| R-12 | P2 | Scene | §7 transform composition, pivot, and dirty semantics undefined |
-| R-13 | P2 | Math | No mutability/allocation convention for math types |
-| R-14 | P2 | Physics | 2D/3D typing strategy undecided |
-| R-15 | P2 | Physics | §23 `mass` vs `inverseMass` authority undefined |
-| R-16 | P2 | Determinism | §33 ignores the actual sources of nondeterminism |
-| R-17 | P2 | Animation | Timeline callback/scrub semantics and property binding undefined |
-| R-18 | P2 | Serialization | Identity, asset references, snapshot compatibility unspecified |
-| R-19 | P2 | All | No defaults are normative |
-| R-20 | P2 | Rendering | GPU device/context loss not addressed anywhere |
-| R-21 | P2 | Rendering | No color-management (linear workflow) section |
-| R-22 | P2 | Scope | Audio referenced but has no section, package, or non-goal entry |
-| R-23 | P2 | Scope | Networking implied (§42 "network", §33 rollback) but unscoped |
-| R-24 | P2 | Rendering | No large-world / precision strategy for the digital-twin use case |
-| R-25 | P2 | Packaging | Umbrella import vs tree-shaking; no bundle-size budgets |
-| R-26 | P3 | Platform | §88 shared-memory modes need COOP/COEP deployment note |
-| R-27 | P3 | Packages | Camera rigs have no owning package; 20 of 24 packages lack responsibility lists |
-| R-28 | P3 | Accessibility | Reduced-motion only binds the UI module, not the animation system |
-| R-29 | P3 | Rendering | Runtime WebGPU failure/fallback policy unstated |
-| R-30 | P3 | Testing | Per-backend visual baselines; headless backend is a test dependency scheduled last |
-| R-31 | P3 | Structure | Part VII is 53 sections — half the spec — with no internal structure |
-| R-32 | P3 | Structure | Conformance language (shall/should/may) undefined and inconsistently used |
-| R-33 | P3 | Structure | No glossary |
-| R-34 | P3 | Structure | Spec has no version stamp or change log of its own |
-| R-35 | P3 | Typesetting | §45 fence mixes example statements with an interface declaration |
+| #    | Priority | Area          | Summary                                                                            |
+| ---- | -------- | ------------- | ---------------------------------------------------------------------------------- |
+| R-1  | P1       | Physics       | §23 vs §26 force API signatures disagree                                           |
+| R-2  | P1       | Motion        | §19 `MotionAuthority` vs §42 `TransformAuthority` overlap, undefined relationship  |
+| R-3  | P1       | Time          | §9 `TimeState` interface missing fields its own prose requires                     |
+| R-4  | P1       | Time          | §10 accumulator has no substep cap; death-spiral policy undefined                  |
+| R-5  | P1       | Physics       | 2D gravity sign in §21 implies a Y-down convention never stated                    |
+| R-6  | P1       | Scene         | Component model used everywhere, specified nowhere                                 |
+| R-7  | P1       | Packages      | §52 requires an isolated tessellator package absent from §98                       |
+| R-8  | P1       | Time          | Milliseconds (animation) vs seconds (physics) never reconciled                     |
+| R-9  | P1       | Physics       | §37 adapter interface cannot support the API the spec promises                     |
+| R-10 | P2       | Core          | No coordinate-system conventions section                                           |
+| R-11 | P2       | Core          | Event system undefined despite pervasive use                                       |
+| R-12 | P2       | Scene         | §7 transform composition, pivot, and dirty semantics undefined                     |
+| R-13 | P2       | Math          | No mutability/allocation convention for math types                                 |
+| R-14 | P2       | Physics       | 2D/3D typing strategy undecided                                                    |
+| R-15 | P2       | Physics       | §23 `mass` vs `inverseMass` authority undefined                                    |
+| R-16 | P2       | Determinism   | §33 ignores the actual sources of nondeterminism                                   |
+| R-17 | P2       | Animation     | Timeline callback/scrub semantics and property binding undefined                   |
+| R-18 | P2       | Serialization | Identity, asset references, snapshot compatibility unspecified                     |
+| R-19 | P2       | All           | No defaults are normative                                                          |
+| R-20 | P2       | Rendering     | GPU device/context loss not addressed anywhere                                     |
+| R-21 | P2       | Rendering     | No color-management (linear workflow) section                                      |
+| R-22 | P2       | Scope         | Audio referenced but has no section, package, or non-goal entry                    |
+| R-23 | P2       | Scope         | Networking implied (§42 "network", §33 rollback) but unscoped                      |
+| R-24 | P2       | Rendering     | No large-world / precision strategy for the digital-twin use case                  |
+| R-25 | P2       | Packaging     | Umbrella import vs tree-shaking; no bundle-size budgets                            |
+| R-26 | P3       | Platform      | §88 shared-memory modes need COOP/COEP deployment note                             |
+| R-27 | P3       | Packages      | Camera rigs have no owning package; 20 of 24 packages lack responsibility lists    |
+| R-28 | P3       | Accessibility | Reduced-motion only binds the UI module, not the animation system                  |
+| R-29 | P3       | Rendering     | Runtime WebGPU failure/fallback policy unstated                                    |
+| R-30 | P3       | Testing       | Per-backend visual baselines; headless backend is a test dependency scheduled last |
+| R-31 | P3       | Structure     | Part VII is 53 sections — half the spec — with no internal structure               |
+| R-32 | P3       | Structure     | Conformance language (shall/should/may) undefined and inconsistently used          |
+| R-33 | P3       | Structure     | No glossary                                                                        |
+| R-34 | P3       | Structure     | Spec has no version stamp or change log of its own                                 |
+| R-35 | P3       | Typesetting   | §45 fence mixes example statements with an interface declaration                   |
 
 ---
 
@@ -87,13 +87,13 @@ concept.
 **Proposal:** merge into a single `TransformAuthority` owned by §42, adding `"blended"`.
 Define: exactly one authority per node; `"blended"` designates the §19 pipeline (animation
 pose → kinematic modification → physics solve → weighted combine) as the single authority;
-conflict warnings fire when a *second* system writes a transform it does not own. Rewrite §19
+conflict warnings fire when a _second_ system writes a transform it does not own. Rewrite §19
 to reference §42 rather than declaring its own enum.
 
 ### R-3 — `TimeState` (§9) omits fields its own prose requires
 
-The §9 prose requires six time domains including *animation time*, *scaled time*, and
-*unscaled time*, and the example uses `app.time.scale` / `app.time.paused` — but the
+The §9 prose requires six time domains including _animation time_, _scaled time_, and
+_unscaled time_, and the example uses `app.time.scale` / `app.time.paused` — but the
 `TimeState` interface has no `animationTime`, no scaled/unscaled pair, no `timeScale`, no
 `paused`, and no `unscaledDeltaTime`.
 
@@ -153,7 +153,7 @@ it should be specified before any implementation starts.
 can be replaced without changing the scene API." No such package exists in the §98 tree, and
 the scaffold (per ERRATA E-3 discipline) must match §98.
 
-**Proposal:** either amend §52 to "an isolated *module* with a stable interface inside
+**Proposal:** either amend §52 to "an isolated _module_ with a stable interface inside
 `@fourjs/geometry`" (recommended — avoids growing the package count for the MVP), or amend §98
 to add `packages/tessellate/`. Either way the two sections must agree, same class of defect as
 E-3.
@@ -221,7 +221,7 @@ DOM-style capture/target/bubble (§72), and `robot.on("impact", ...)` (§117) al
 event API that no section defines. `EventEmitter` appears once, as a Phase 1 component name
 (§104). Undefined: typed event maps, `off`/`once`/abort-signal unsubscription, listener
 ordering, whether scene-graph propagation applies only to input events or to all events, and
-*when* physics events dispatch (during `step`, after each fixed step, or coalesced per render
+_when_ physics events dispatch (during `step`, after each fixed step, or coalesced per render
 frame — §39 step 8 hints but doesn't bind it to the event API).
 
 **Proposal:** add an "Eventing" section to Part I: a typed `EventEmitter` mixin on `Node` and
@@ -299,7 +299,7 @@ so §92's determinism tests are implementable as written.
 
 ### R-17 — Timeline and tween semantics (§15–§16)
 
-§16 requires both "scrubbing" and "deterministic evaluation" *and* arbitrary callbacks
+§16 requires both "scrubbing" and "deterministic evaluation" _and_ arbitrary callbacks
 (`.at(1000, () => …)`). Undefined: do callbacks fire on seek/scrub across their time, on
 reverse, exactly-once per crossing? Property binding is by example only (`Four.tween(node,
 { opacity: 0.5 })`) — string paths, typed accessors, or property objects? What happens when
@@ -307,7 +307,7 @@ two active tweens target the same property (last-write-wins, priority, or an aut
 per §42)?
 
 **Proposal:** specify: evaluation is a pure function of timeline time for value tracks;
-callbacks are *event markers* with defined semantics (fire on forward crossing during `play`;
+callbacks are _event markers_ with defined semantics (fire on forward crossing during `play`;
 on `seek`, either suppressed or replayed per a per-marker policy — pick suppressed as
 default); binding is typed property references with string-path convenience resolved at
 creation; same-target conflicts resolve last-started-wins with a dev warning. Cross-reference
@@ -382,13 +382,13 @@ as a snapshot use case. There is no networking section and no non-goal entry, le
 ambiguous whether 1.0 has any transport, replication, or clock-sync obligations.
 
 **Proposal:** add to §5 non-goals: "a networking/replication layer". Keep `"network"`
-authority and rollback as *enablers* with one sentence each stating that transport and
+authority and rollback as _enablers_ with one sentence each stating that transport and
 protocol are out of scope and belong to plugins.
 
 ### R-24 — Large-world precision strategy
 
 §119's digital-twin ambitions (plant models, long-running simulations) collide with 32-bit
-float precision at large coordinates or long times. §41 explains *why* extreme scales are
+float precision at large coordinates or long times. §41 explains _why_ extreme scales are
 problematic but the spec offers no mitigation and reserves no design space (camera-relative
 rendering, floating origin, double-precision transform option, or emitter-local particle
 spaces).
@@ -450,8 +450,8 @@ Visual regression across WebGPU/WebGL/Canvas will never be pixel-identical; §92
 whether baselines are per-backend or shared, nor the comparison tolerance model. Also, §62
 ranks "headless/software" last as an extension, but §92's determinism tests and CI (§91) need
 headless execution from Phase 1. **Proposal:** per-backend baselines with perceptual-diff
-tolerance; clarify that *headless simulation* (no renderer — already implied by §104's exit
-criterion) is Phase 1, and headless *rendering* is the later extension.
+tolerance; clarify that _headless simulation_ (no renderer — already implied by §104's exit
+criterion) is Phase 1, and headless _rendering_ is the later extension.
 
 ### R-31 — Part VII structure
 

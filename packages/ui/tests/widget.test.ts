@@ -14,7 +14,11 @@ import {
   dispatchPointerEvent,
   type ScenePointerEventType,
 } from "@fourjs/input";
-import { Vector2, constructionCount, resetConstructionCount } from "@fourjs/math";
+import {
+  Vector2,
+  constructionCount,
+  resetConstructionCount,
+} from "@fourjs/math";
 import { Group, type Node } from "@fourjs/scene";
 import { afterEach, describe, expect, it, vi } from "vitest";
 

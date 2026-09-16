@@ -236,7 +236,10 @@ function effectiveLimit(value: number | undefined): number {
 function refuseDeclarations(text: string): void {
   const length = text.length;
   for (let i = 0; i + 1 < length; i += 1) {
-    if (text.charCodeAt(i) !== CHAR_LT || text.charCodeAt(i + 1) !== CHAR_BANG) {
+    if (
+      text.charCodeAt(i) !== CHAR_LT ||
+      text.charCodeAt(i + 1) !== CHAR_BANG
+    ) {
       continue;
     }
     if (text.startsWith("<!--", i)) {
@@ -320,7 +323,10 @@ function readOpenTag(scanner: { text: string; index: number }): OpenTag {
       scanner.index += 1;
       return { name, attributes, selfClosing: false };
     }
-    if (code === CHAR_SLASH && scanner.text.charCodeAt(scanner.index + 1) === CHAR_GT) {
+    if (
+      code === CHAR_SLASH &&
+      scanner.text.charCodeAt(scanner.index + 1) === CHAR_GT
+    ) {
       scanner.index += 2;
       return { name, attributes, selfClosing: true };
     }
@@ -391,7 +397,9 @@ function readAttributeValue(scanner: { text: string; index: number }): string {
     }
     scanner.index += 1;
   }
-  throw new SyntaxError("parseSvgDocument: unterminated attribute value (§85).");
+  throw new SyntaxError(
+    "parseSvgDocument: unterminated attribute value (§85).",
+  );
 }
 
 function decodeEntities(value: string): string {
@@ -462,7 +470,9 @@ function decodeNumericEntity(
     );
   }
   const digits = value.slice(start, i);
-  const codePoint = hex ? Number.parseInt(digits, 16) : Number.parseInt(digits, 10);
+  const codePoint = hex
+    ? Number.parseInt(digits, 16)
+    : Number.parseInt(digits, 10);
   if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) {
     throw new SyntaxError(
       "parseSvgDocument: invalid numeric character reference (§85).",
@@ -520,9 +530,7 @@ function skipElementTree(
     }
   }
   if (depth !== 0) {
-    throw new SyntaxError(
-      `parseSvgDocument: unterminated <${name}> (§85).`,
-    );
+    throw new SyntaxError(`parseSvgDocument: unterminated <${name}> (§85).`);
   }
 }
 
@@ -655,7 +663,9 @@ function circlePath(attributes: Map<string, string>): Path | undefined {
     return undefined;
   }
   if (r < 0) {
-    throw new SyntaxError("parseSvgDocument: circle r must be non-negative (§85).");
+    throw new SyntaxError(
+      "parseSvgDocument: circle r must be non-negative (§85).",
+    );
   }
   return new Path().ellipse(cx, cy, r, r, 0, 0, Math.PI * 2);
 }
@@ -812,7 +822,9 @@ function readTransformName(scanner: { text: string; index: number }): string {
     break;
   }
   if (scanner.index === start) {
-    throw new SyntaxError("parseSvgDocument: expected a transform function (§85).");
+    throw new SyntaxError(
+      "parseSvgDocument: expected a transform function (§85).",
+    );
   }
   return scanner.text.slice(start, scanner.index);
 }
@@ -988,7 +1000,17 @@ function applyTransformFunction(
         );
       }
       // SVG matrix(a b c d e f) → x' = a x + c y + e, y' = b x + d y + f
-      next.fromArray([args[0], args[1], 0, args[2], args[3], 0, args[4], args[5], 1]);
+      next.fromArray([
+        args[0],
+        args[1],
+        0,
+        args[2],
+        args[3],
+        0,
+        args[4],
+        args[5],
+        1,
+      ]);
       break;
     }
     default:

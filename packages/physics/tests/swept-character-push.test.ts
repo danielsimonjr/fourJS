@@ -71,7 +71,9 @@ function scriptedWorld(): {
 
 function makeController(
   world: PhysicsWorld,
-  options: Partial<ConstructorParameters<typeof SweptCharacterController>[0]> = {},
+  options: Partial<
+    ConstructorParameters<typeof SweptCharacterController>[0]
+  > = {},
 ): SweptCharacterController {
   return new SweptCharacterController({
     world,
@@ -260,11 +262,7 @@ describe("SweptCharacterController — PH-11c against a fake solver", () => {
     return { adapter, world };
   }
 
-  function addBox(
-    world: PhysicsWorld,
-    mass: number,
-    sleeping = false,
-  ): Group {
+  function addBox(world: PhysicsWorld, mass: number, sleeping = false): Group {
     const box = new Group();
     box.transformAuthority = "physics";
     box.transform.position.set(0, 0.3, -1);

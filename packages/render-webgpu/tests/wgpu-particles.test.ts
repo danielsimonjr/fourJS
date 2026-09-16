@@ -161,7 +161,9 @@ describe("the particle WGSL module", () => {
 
 describe("R-32 appearance WGSL (opt-in, default shader unchanged)", () => {
   it("rotates the billboard, samples map, and fades by view-Z when no depth", () => {
-    expect(PARTICLE_APPEARANCE_SHADER_SOURCE).toContain("cos(instanceRotation)");
+    expect(PARTICLE_APPEARANCE_SHADER_SOURCE).toContain(
+      "cos(instanceRotation)",
+    );
     expect(PARTICLE_APPEARANCE_SHADER_SOURCE).toContain("textureSample");
     expect(PARTICLE_APPEARANCE_SHADER_SOURCE).toContain(
       "abs(input.viewZ) * input.softness",

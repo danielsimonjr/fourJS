@@ -46,12 +46,8 @@ describe("Rapier wasm load cache (init.ts)", () => {
   });
 
   it("reports undefined module and version before the first successful load", async () => {
-    const {
-      rapier2dModule,
-      rapier2dVersion,
-      rapier3dModule,
-      rapier3dVersion,
-    } = await import("../src/init.js");
+    const { rapier2dModule, rapier2dVersion, rapier3dModule, rapier3dVersion } =
+      await import("../src/init.js");
     expect(rapier2dModule()).toBeUndefined();
     expect(rapier2dVersion()).toBeUndefined();
     expect(rapier3dModule()).toBeUndefined();

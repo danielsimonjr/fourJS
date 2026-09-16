@@ -288,9 +288,7 @@ describe("ComponentSerializerRegistry", () => {
     expect(isFourError(thrown) && thrown.code).toBe(
       "INVALID_APPLICATION_STATE",
     );
-    expect(isFourError(thrown) && thrown.message).toMatch(
-      /no static typeName/,
-    );
+    expect(isFourError(thrown) && thrown.message).toMatch(/no static typeName/);
     expect(isFourError(thrown) && thrown.message).not.toMatch(/Rogue/);
     expect(isFourError(thrown) && thrown.context).toEqual({
       node: "node-rogue",
@@ -417,9 +415,10 @@ describe("serializeScene", () => {
     // minifier rewrites the latter (dogfooding: `Renderable` → "Ur"). The
     // message must stay useful in the build every consumer ships.
     expect(String(thrown)).not.toMatch(/Mesh/);
-    expect(String(thrown), "names the built-in types a reader can act on").toMatch(
-      /"scene", "group"/,
-    );
+    expect(
+      String(thrown),
+      "names the built-in types a reader can act on",
+    ).toMatch(/"scene", "group"/);
     expect(String(thrown)).toMatch(/nodeTypeOf/);
   });
 

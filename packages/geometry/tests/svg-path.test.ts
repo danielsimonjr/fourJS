@@ -478,44 +478,48 @@ describe("parseSvgPathData — refusals (§85)", { timeout: 30_000 }, () => {
   });
 });
 
-describe("parseSvgPathData — untrusted input (§96)", { timeout: 30_000 }, () => {
-  it("refuses text longer than the limit, naming the policy that fired", () => {
-    const data = `M0 0${" L1 1".repeat(20)}`;
-    let thrown: FourError | undefined;
-    try {
-      parseSvgPathData(data, { maximumTextLength: 8 });
-    } catch (error) {
-      thrown = error as FourError;
-    }
-    expect(thrown).toBeInstanceOf(FourError);
-    expect(thrown?.code).toBe("UNTRUSTED_INPUT_REJECTED");
-    expect(thrown?.context).toEqual({
-      limitName: "maximumTextLength",
-      limit: 8,
-      observed: data.length,
+describe(
+  "parseSvgPathData — untrusted input (§96)",
+  { timeout: 30_000 },
+  () => {
+    it("refuses text longer than the limit, naming the policy that fired", () => {
+      const data = `M0 0${" L1 1".repeat(20)}`;
+      let thrown: FourError | undefined;
+      try {
+        parseSvgPathData(data, { maximumTextLength: 8 });
+      } catch (error) {
+        thrown = error as FourError;
+      }
+      expect(thrown).toBeInstanceOf(FourError);
+      expect(thrown?.code).toBe("UNTRUSTED_INPUT_REJECTED");
+      expect(thrown?.context).toEqual({
+        limitName: "maximumTextLength",
+        limit: 8,
+        observed: data.length,
+      });
     });
-  });
 
-  it("has a finite default, and an explicit in-source opt-out", () => {
-    expect(Number.isFinite(DEFAULT_MAXIMUM_PATH_DATA_LENGTH)).toBe(true);
-    expect(
-      parseSvgPathData("M0 0 L1 1", {
-        maximumTextLength: Number.POSITIVE_INFINITY,
-      }).commands,
-    ).toHaveLength(2);
-    expect(parseSvgPathData("M0 0", { maximumTextLength: 4 }).isEmpty).toBe(
-      false,
-    );
-  });
+    it("has a finite default, and an explicit in-source opt-out", () => {
+      expect(Number.isFinite(DEFAULT_MAXIMUM_PATH_DATA_LENGTH)).toBe(true);
+      expect(
+        parseSvgPathData("M0 0 L1 1", {
+          maximumTextLength: Number.POSITIVE_INFINITY,
+        }).commands,
+      ).toHaveLength(2);
+      expect(parseSvgPathData("M0 0", { maximumTextLength: 4 }).isEmpty).toBe(
+        false,
+      );
+    });
 
-  it("refuses a limit that is not a positive number", () => {
-    for (const limit of [0, -1, Number.NaN]) {
-      expect(() =>
-        parseSvgPathData("M0 0", { maximumTextLength: limit }),
-      ).toThrow(RangeError);
-    }
-  });
-});
+    it("refuses a limit that is not a positive number", () => {
+      for (const limit of [0, -1, Number.NaN]) {
+        expect(() =>
+          parseSvgPathData("M0 0", { maximumTextLength: limit }),
+        ).toThrow(RangeError);
+      }
+    });
+  },
+);
 
 describe("formatSvgPathData", { timeout: 30_000 }, () => {
   it("writes every command kind, absolute and uppercase", () => {
@@ -603,7 +607,9 @@ describe("formatSvgPathData", { timeout: 30_000 }, () => {
 
   it("rounds to a supplied precision without changing the default path", () => {
     const path = new Path().moveTo(1.23456, 7.891).lineTo(0.001, -2.6);
-    expect(formatSvgPathData(path, { precision: 2 })).toBe("M 1.23 7.89 L 0 -2.6");
+    expect(formatSvgPathData(path, { precision: 2 })).toBe(
+      "M 1.23 7.89 L 0 -2.6",
+    );
     expect(formatSvgPathData(path, { precision: 0 })).toBe("M 1 8 L 0 -3");
     const arc = new Path().arc(0, 0, 4, 0, Math.PI / 2);
     expect(formatSvgPathData(arc, { precision: 3 })).toContain("A 4 4");
@@ -614,8 +620,12 @@ describe("formatSvgPathData", { timeout: 30_000 }, () => {
     expect(() => formatSvgPathData(path, { precision: 1.5 })).toThrow(
       /precision/,
     );
-    expect(() => formatSvgPathData(path, { precision: -1 })).toThrow(RangeError);
-    expect(() => formatSvgPathData(path, { precision: 21 })).toThrow(RangeError);
+    expect(() => formatSvgPathData(path, { precision: -1 })).toThrow(
+      RangeError,
+    );
+    expect(() => formatSvgPathData(path, { precision: 21 })).toThrow(
+      RangeError,
+    );
   });
 });
 
@@ -688,38 +698,42 @@ describe("round trips", { timeout: 30_000 }, () => {
   });
 });
 
-describe("the Y axis is transcribed, not flipped (§7a)", { timeout: 30_000 }, () => {
-  it("keeps SVG's numbers, so imported content is mirrored until it is not", () => {
-    const path = parseSvgPathData("M 0 0 L 10 20");
-    expect(path.commands[1]).toEqual({ kind: "line", x: 10, y: 20 });
-  });
+describe(
+  "the Y axis is transcribed, not flipped (§7a)",
+  { timeout: 30_000 },
+  () => {
+    it("keeps SVG's numbers, so imported content is mirrored until it is not", () => {
+      const path = parseSvgPathData("M 0 0 L 10 20");
+      expect(path.commands[1]).toEqual({ kind: "line", x: 10, y: 20 });
+    });
 
-  it("lands SVG content in a Y-up world in one exact transform", () => {
-    // The documented one-liner: y ↦ height − y, column-major.
-    const height = 100;
-    const svgToWorld = new Matrix3().fromArray([
-      1,
-      0,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      height,
-      1,
-    ]);
-    const world = parseSvgPathData("M 0 0 L 10 20 A 5 5 0 0 1 30 20").transform(
-      svgToWorld,
-    );
-    expect(world.commands[0]).toEqual({ kind: "move", x: 0, y: 100 });
-    expect(world.commands[1]).toEqual({ kind: "line", x: 10, y: 80 });
-    // A reflection is a similarity, so the arc survives it (§51).
-    expect(world.commands[2].kind).toBe("arc");
-    // Negation is exact: the flip loses nothing and is its own inverse.
-    const back = world.transform(svgToWorld);
-    expect(back.commands[1]).toEqual({ kind: "line", x: 10, y: 20 });
-  });
-});
+    it("lands SVG content in a Y-up world in one exact transform", () => {
+      // The documented one-liner: y ↦ height − y, column-major.
+      const height = 100;
+      const svgToWorld = new Matrix3().fromArray([
+        1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        height,
+        1,
+      ]);
+      const world = parseSvgPathData(
+        "M 0 0 L 10 20 A 5 5 0 0 1 30 20",
+      ).transform(svgToWorld);
+      expect(world.commands[0]).toEqual({ kind: "move", x: 0, y: 100 });
+      expect(world.commands[1]).toEqual({ kind: "line", x: 10, y: 80 });
+      // A reflection is a similarity, so the arc survives it (§51).
+      expect(world.commands[2].kind).toBe("arc");
+      // Negation is exact: the flip loses nothing and is its own inverse.
+      const back = world.transform(svgToWorld);
+      expect(back.commands[1]).toEqual({ kind: "line", x: 10, y: 20 });
+    });
+  },
+);
 
 describe("hostile input is total (§96)", { timeout: 30_000 }, () => {
   /** The three error types the module documents, and nothing else. */

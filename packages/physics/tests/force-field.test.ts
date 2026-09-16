@@ -24,7 +24,11 @@
  *    contribution is dropped *and reported*, never turned into a `NaN` force.
  */
 
-import { Vector3, constructionCount, resetConstructionCount } from "@fourjs/math";
+import {
+  Vector3,
+  constructionCount,
+  resetConstructionCount,
+} from "@fourjs/math";
 import { Group } from "@fourjs/scene";
 import {
   PRIORITY_FORCES,
@@ -510,7 +514,9 @@ describe("ForceFieldSystem and a body with no mass (§23, §25)", () => {
     const messages = warn.mock.calls.map((call) => String(call[0]));
     expect(messages).toHaveLength(2);
     expect(messages.some((message) => message.includes("no mass"))).toBe(true);
-    expect(messages.some((message) => /never rotate it/.test(message))).toBe(true);
+    expect(messages.some((message) => /never rotate it/.test(message))).toBe(
+      true,
+    );
   });
 
   it("still applies force-unit fields to it, which need no mass", async () => {
@@ -690,26 +696,18 @@ describe("ForceFieldSystem batch path (§27 sampleAll)", () => {
       const velocity = velocities[i];
       batchedWorld.addBody(bodyNode({ mass: 1 + i, position }));
       scalarWorld.addBody(bodyNode({ mass: 1 + i, position }));
-      batchedAdapter.body(i + 1).position.set(
-        position[0],
-        position[1],
-        position[2],
-      );
-      scalarAdapter.body(i + 1).position.set(
-        position[0],
-        position[1],
-        position[2],
-      );
-      batchedAdapter.body(i + 1).linearVelocity.set(
-        velocity[0],
-        velocity[1],
-        velocity[2],
-      );
-      scalarAdapter.body(i + 1).linearVelocity.set(
-        velocity[0],
-        velocity[1],
-        velocity[2],
-      );
+      batchedAdapter
+        .body(i + 1)
+        .position.set(position[0], position[1], position[2]);
+      scalarAdapter
+        .body(i + 1)
+        .position.set(position[0], position[1], position[2]);
+      batchedAdapter
+        .body(i + 1)
+        .linearVelocity.set(velocity[0], velocity[1], velocity[2]);
+      scalarAdapter
+        .body(i + 1)
+        .linearVelocity.set(velocity[0], velocity[1], velocity[2]);
     }
     batchedWorld.step(1 / 60);
     scalarWorld.step(1 / 60);

@@ -29,12 +29,8 @@
       "packages/animation/src/index.ts",
       "packages/animation/src/tween.ts"
     ],
-    "packages/animation/src/mixer.ts": [
-      "packages/animation/src/index.ts"
-    ],
-    "packages/animation/src/timeline.ts": [
-      "packages/animation/src/index.ts"
-    ],
+    "packages/animation/src/mixer.ts": ["packages/animation/src/index.ts"],
+    "packages/animation/src/timeline.ts": ["packages/animation/src/index.ts"],
     "packages/animation/src/tween.ts": [
       "packages/animation/src/index.ts",
       "packages/animation/src/mixer.ts",
@@ -44,31 +40,17 @@
       "packages/assets/src/index.ts",
       "packages/assets/src/loaders.ts"
     ],
-    "packages/assets/src/loaders.ts": [
-      "packages/assets/src/index.ts"
-    ],
+    "packages/assets/src/loaders.ts": ["packages/assets/src/index.ts"],
     "packages/core/src/errors.ts": [
       "packages/core/src/component.ts",
       "packages/core/src/index.ts"
     ],
-    "packages/core/src/conventions.ts": [
-      "packages/core/src/index.ts"
-    ],
-    "packages/core/src/json.ts": [
-      "packages/core/src/index.ts"
-    ],
-    "packages/core/src/random.ts": [
-      "packages/core/src/index.ts"
-    ],
-    "packages/core/src/component.ts": [
-      "packages/core/src/index.ts"
-    ],
-    "packages/core/src/disposable.ts": [
-      "packages/core/src/index.ts"
-    ],
-    "packages/core/src/events.ts": [
-      "packages/core/src/index.ts"
-    ],
+    "packages/core/src/conventions.ts": ["packages/core/src/index.ts"],
+    "packages/core/src/json.ts": ["packages/core/src/index.ts"],
+    "packages/core/src/random.ts": ["packages/core/src/index.ts"],
+    "packages/core/src/component.ts": ["packages/core/src/index.ts"],
+    "packages/core/src/disposable.ts": ["packages/core/src/index.ts"],
+    "packages/core/src/events.ts": ["packages/core/src/index.ts"],
     "packages/diagnostics/src/checksum.ts": [
       "packages/diagnostics/src/index.ts"
     ],
@@ -87,16 +69,12 @@
     "packages/diagnostics/src/debug-draw.ts": [
       "packages/diagnostics/src/index.ts"
     ],
-    "packages/fourjs/src/application.ts": [
-      "packages/fourjs/src/index.ts"
-    ],
+    "packages/fourjs/src/application.ts": ["packages/fourjs/src/index.ts"],
     "packages/geometry/src/buffer-geometry.ts": [
       "packages/geometry/src/index.ts",
       "packages/geometry/src/primitives.ts"
     ],
-    "packages/geometry/src/primitives.ts": [
-      "packages/geometry/src/index.ts"
-    ],
+    "packages/geometry/src/primitives.ts": ["packages/geometry/src/index.ts"],
     "packages/input/src/pick.ts": [
       "packages/input/src/drag.ts",
       "packages/input/src/index.ts",
@@ -111,9 +89,7 @@
       "packages/input/src/drag.ts",
       "packages/input/src/index.ts"
     ],
-    "packages/input/src/drag.ts": [
-      "packages/input/src/index.ts"
-    ],
+    "packages/input/src/drag.ts": ["packages/input/src/index.ts"],
     "packages/materials/src/lit-material.ts": [
       "packages/materials/src/index.ts"
     ],
@@ -134,53 +110,33 @@
       "packages/math/src/vector3.ts",
       "packages/math/src/vector4.ts"
     ],
-    "packages/math/src/matrix3.ts": [
-      "packages/math/src/index.ts"
-    ],
-    "packages/math/src/matrix4.ts": [
-      "packages/math/src/index.ts"
-    ],
+    "packages/math/src/matrix3.ts": ["packages/math/src/index.ts"],
+    "packages/math/src/matrix4.ts": ["packages/math/src/index.ts"],
     "packages/math/src/quaternion.ts": [
       "packages/math/src/index.ts",
       "packages/math/src/matrix4.ts"
     ],
-    "packages/math/src/vector2.ts": [
-      "packages/math/src/index.ts"
-    ],
+    "packages/math/src/vector2.ts": ["packages/math/src/index.ts"],
     "packages/math/src/vector3.ts": [
       "packages/math/src/index.ts",
       "packages/math/src/matrix4.ts",
       "packages/math/src/quaternion.ts"
     ],
-    "packages/math/src/vector4.ts": [
-      "packages/math/src/index.ts"
-    ],
-    "packages/math/src/color.ts": [
-      "packages/math/src/index.ts"
-    ],
+    "packages/math/src/vector4.ts": ["packages/math/src/index.ts"],
+    "packages/math/src/color.ts": ["packages/math/src/index.ts"],
     "packages/motion/src/clock.ts": [
       "packages/motion/src/index.ts",
       "packages/motion/src/scheduler.ts",
       "packages/motion/src/systems.ts"
     ],
-    "packages/motion/src/ik.ts": [
-      "packages/motion/src/index.ts"
-    ],
-    "packages/motion/src/integrators.ts": [
-      "packages/motion/src/index.ts"
-    ],
+    "packages/motion/src/ik.ts": ["packages/motion/src/index.ts"],
+    "packages/motion/src/integrators.ts": ["packages/motion/src/index.ts"],
     "packages/motion/src/kinematic-controller.ts": [
       "packages/motion/src/index.ts"
     ],
-    "packages/motion/src/motion-component.ts": [
-      "packages/motion/src/index.ts"
-    ],
-    "packages/motion/src/pid.ts": [
-      "packages/motion/src/index.ts"
-    ],
-    "packages/motion/src/prediction.ts": [
-      "packages/motion/src/index.ts"
-    ],
+    "packages/motion/src/motion-component.ts": ["packages/motion/src/index.ts"],
+    "packages/motion/src/pid.ts": ["packages/motion/src/index.ts"],
+    "packages/motion/src/prediction.ts": ["packages/motion/src/index.ts"],
     "packages/motion/src/random.ts": [
       "packages/motion/src/index.ts",
       "packages/motion/src/steering.ts"
@@ -189,12 +145,8 @@
       "packages/motion/src/index.ts",
       "packages/motion/src/systems.ts"
     ],
-    "packages/motion/src/spring-damper.ts": [
-      "packages/motion/src/index.ts"
-    ],
-    "packages/motion/src/steering.ts": [
-      "packages/motion/src/index.ts"
-    ],
+    "packages/motion/src/spring-damper.ts": ["packages/motion/src/index.ts"],
+    "packages/motion/src/steering.ts": ["packages/motion/src/index.ts"],
     "packages/motion/src/systems.ts": [
       "packages/motion/src/index.ts",
       "packages/motion/src/kinematic-controller.ts",
@@ -222,9 +174,7 @@
       "packages/particles/src/index.ts",
       "packages/particles/src/particle-renderable.ts"
     ],
-    "packages/particles/src/fields.ts": [
-      "packages/particles/src/index.ts"
-    ],
+    "packages/particles/src/fields.ts": ["packages/particles/src/index.ts"],
     "packages/particles/src/particle-renderable.ts": [
       "packages/particles/src/index.ts"
     ],
@@ -308,9 +258,7 @@
       "packages/physics/src/index.ts",
       "packages/physics/src/world.ts"
     ],
-    "packages/physics/src/physics-system.ts": [
-      "packages/physics/src/index.ts"
-    ],
+    "packages/physics/src/physics-system.ts": ["packages/physics/src/index.ts"],
     "packages/physics/src/world.ts": [
       "packages/physics/src/index.ts",
       "packages/physics/src/physics-system.ts"
@@ -345,30 +293,22 @@
       "packages/physics-rapier/src/rapier2d-adapter.ts",
       "packages/physics-rapier/src/rapier3d-adapter.ts"
     ],
-    "packages/render/src/lights.ts": [
-      "packages/render/src/index.ts"
-    ],
+    "packages/render/src/lights.ts": ["packages/render/src/index.ts"],
     "packages/render/src/particles.ts": [
       "packages/render/src/index.ts",
       "packages/render/src/render-list.ts"
     ],
-    "packages/render/src/render-list.ts": [
-      "packages/render/src/index.ts"
-    ],
+    "packages/render/src/render-list.ts": ["packages/render/src/index.ts"],
     "packages/render/src/renderable.ts": [
       "packages/render/src/index.ts",
       "packages/render/src/render-list.ts"
     ],
-    "packages/render/src/renderer.ts": [
-      "packages/render/src/index.ts"
-    ],
+    "packages/render/src/renderer.ts": ["packages/render/src/index.ts"],
     "packages/render/src/sprite.ts": [
       "packages/render/src/index.ts",
       "packages/render/src/render-list.ts"
     ],
-    "packages/render/src/texture.ts": [
-      "packages/render/src/index.ts"
-    ],
+    "packages/render/src/texture.ts": ["packages/render/src/index.ts"],
     "packages/render-webgl/src/gl-program.ts": [
       "packages/render-webgl/src/gl-geometry.ts",
       "packages/render-webgl/src/gl-particles.ts",
@@ -413,31 +353,21 @@
       "packages/scene/src/index.ts",
       "packages/scene/src/viewport.ts"
     ],
-    "packages/scene/src/group.ts": [
-      "packages/scene/src/index.ts"
-    ],
+    "packages/scene/src/group.ts": ["packages/scene/src/index.ts"],
     "packages/scene/src/light.ts": [
       "packages/scene/src/index.ts",
       "packages/scene/src/scene.ts"
     ],
-    "packages/scene/src/interpolation.ts": [
-      "packages/scene/src/index.ts"
-    ],
-    "packages/scene/src/pose-target.ts": [
-      "packages/scene/src/index.ts"
-    ],
-    "packages/scene/src/scene.ts": [
-      "packages/scene/src/index.ts"
-    ],
+    "packages/scene/src/interpolation.ts": ["packages/scene/src/index.ts"],
+    "packages/scene/src/pose-target.ts": ["packages/scene/src/index.ts"],
+    "packages/scene/src/scene.ts": ["packages/scene/src/index.ts"],
     "packages/scene/src/transform.ts": [
       "packages/scene/src/index.ts",
       "packages/scene/src/node.ts",
       "packages/scene/src/pose-target.ts",
       "packages/scene/src/world-transforms.ts"
     ],
-    "packages/scene/src/viewport.ts": [
-      "packages/scene/src/index.ts"
-    ],
+    "packages/scene/src/viewport.ts": ["packages/scene/src/index.ts"],
     "packages/serialization/src/format.ts": [
       "packages/serialization/src/index.ts",
       "packages/serialization/src/migration.ts",
@@ -457,9 +387,7 @@
       "packages/text/src/index.ts",
       "packages/text/src/text-layout.ts"
     ],
-    "packages/text/src/text-layout.ts": [
-      "packages/text/src/index.ts"
-    ],
+    "packages/text/src/text-layout.ts": ["packages/text/src/index.ts"],
     "packages/ui/src/panel.ts": [
       "packages/ui/src/button.ts",
       "packages/ui/src/index.ts"
@@ -470,11 +398,7 @@
       "packages/ui/src/label.ts",
       "packages/ui/src/panel.ts"
     ],
-    "packages/ui/src/button.ts": [
-      "packages/ui/src/index.ts"
-    ],
-    "packages/ui/src/label.ts": [
-      "packages/ui/src/index.ts"
-    ]
+    "packages/ui/src/button.ts": ["packages/ui/src/index.ts"],
+    "packages/ui/src/label.ts": ["packages/ui/src/index.ts"]
   }
 }

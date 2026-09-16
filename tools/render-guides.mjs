@@ -252,14 +252,18 @@ function markdownToHtml(markdown) {
       }
       i += 1;
       const cls = lang ? ` class="language-${escapeHtml(lang)}"` : "";
-      out.push(`<pre><code${cls}>${escapeHtml(body.join("\n"))}\n</code></pre>`);
+      out.push(
+        `<pre><code${cls}>${escapeHtml(body.join("\n"))}\n</code></pre>`,
+      );
       continue;
     }
 
     if (/^#{1,6}\s/.test(line)) {
       flushParagraph();
       const level = line.match(/^#+/)[0].length;
-      out.push(`<h${level}>${inline(line.replace(/^#{1,6}\s+/, ""))}</h${level}>`);
+      out.push(
+        `<h${level}>${inline(line.replace(/^#{1,6}\s+/, ""))}</h${level}>`,
+      );
       i += 1;
       continue;
     }
@@ -395,7 +399,8 @@ const guideFiles = files.filter((name) => name !== "README.md");
 for (const name of files) {
   const markdown = readFileSync(join(guidesDir, name), "utf8");
   const title = firstHeading(markdown);
-  const htmlName = name === "README.md" ? "index.html" : name.replace(/\.md$/, ".html");
+  const htmlName =
+    name === "README.md" ? "index.html" : name.replace(/\.md$/, ".html");
   const html = page({
     title,
     sourceRel: `docs/guides/${name}`,

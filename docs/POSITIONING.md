@@ -1,7 +1,7 @@
 # Why fourJS exists
 
-One page, outward-facing. The specification says *what* fourJS is; this says *why anyone
-would use it*. Companion to [`SPECIFICATION.md`](SPECIFICATION.md) §1–5.
+One page, outward-facing. The specification says _what_ fourJS is; this says _why anyone
+would use it_. Companion to [`SPECIFICATION.md`](SPECIFICATION.md) §1–5.
 
 ## The problem
 
@@ -17,8 +17,8 @@ replay.
 ## The bet
 
 **The integration itself is the product.** fourJS puts 2D shapes, 3D meshes, text, UI,
-rigid bodies, joints, and particle emitters in *one* scene graph with *one* clock, *one*
-transform-authority model, *one* event system, and *one* set of conventions (Y-up, radians,
+rigid bodies, joints, and particle emitters in _one_ scene graph with _one_ clock, _one_
+transform-authority model, _one_ event system, and _one_ set of conventions (Y-up, radians,
 seconds — everywhere). Motion, animation, and physics are coequal with rendering, not
 bolted on. Deterministic fixed-step simulation with snapshots and replay is a first-class
 requirement (§33–34), which the glue-stack approach structurally cannot offer.

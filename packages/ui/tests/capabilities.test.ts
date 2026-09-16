@@ -56,7 +56,9 @@ describe("UIControlRegistry", () => {
       registry.register("Probe", Button);
       expect.unreachable("expected a FourError");
     } catch (error) {
-      expect(isFourError(error) && error.code).toBe("INVALID_APPLICATION_STATE");
+      expect(isFourError(error) && error.code).toBe(
+        "INVALID_APPLICATION_STATE",
+      );
       expect((error as Error).message).toMatch(/already registered/);
     }
   });

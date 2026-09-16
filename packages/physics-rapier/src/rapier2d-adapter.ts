@@ -350,7 +350,9 @@ function parseSnapshotMeta(bytes: Uint8Array): SnapshotMeta {
   if (
     typeof meta["adapter"] !== "string" ||
     typeof meta["version"] !== "string" ||
-    ids.some((id) => typeof id !== "number" || !Number.isSafeInteger(id) || id < 0)
+    ids.some(
+      (id) => typeof id !== "number" || !Number.isSafeInteger(id) || id < 0,
+    )
   ) {
     throw new FourError(
       "UNTRUSTED_INPUT_REJECTED",
@@ -1864,11 +1866,21 @@ export class Rapier2dAdapter
     }
     const metaLength = header.getUint32(8, true);
     const rapierLength = header.getUint32(12, true);
-    if (SNAPSHOT_HEADER_BYTES + metaLength + rapierLength > snapshot.byteLength) {
+    if (
+      SNAPSHOT_HEADER_BYTES + metaLength + rapierLength >
+      snapshot.byteLength
+    ) {
       throw new FourError(
         "UNTRUSTED_INPUT_REJECTED",
         `Snapshot envelope declares ${String(metaLength)} meta + ${String(rapierLength)} solver bytes but carries ${String(snapshot.byteLength - SNAPSHOT_HEADER_BYTES)} (§34, §96).`,
-        { context: { adapter: ADAPTER_NAME, metaLength, rapierLength, byteLength: snapshot.byteLength } },
+        {
+          context: {
+            adapter: ADAPTER_NAME,
+            metaLength,
+            rapierLength,
+            byteLength: snapshot.byteLength,
+          },
+        },
       );
     }
     const bytes = new Uint8Array(snapshot);

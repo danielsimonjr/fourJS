@@ -519,7 +519,10 @@ describe("root motion validation", () => {
   it("extracts rotation from a quaternion track", () => {
     const walker = animatedWalker();
     const from = new Quaternion();
-    const to = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+    const to = new Quaternion().setFromAxisAngle(
+      new Vector3(0, 1, 0),
+      Math.PI / 2,
+    );
     const clip = new AnimationClip({
       name: "turn",
       tracks: [
@@ -546,9 +549,15 @@ describe("root motion validation", () => {
 
   it("composes a quaternion delta onto the node's existing rotation", () => {
     const walker = animatedWalker();
-    walker.transform.rotation.setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+    walker.transform.rotation.setFromAxisAngle(
+      new Vector3(0, 1, 0),
+      Math.PI / 2,
+    );
     const from = new Quaternion();
-    const to = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+    const to = new Quaternion().setFromAxisAngle(
+      new Vector3(0, 1, 0),
+      Math.PI / 2,
+    );
     const clip = new AnimationClip({
       name: "turn",
       tracks: [
@@ -577,7 +586,10 @@ describe("root motion validation", () => {
   it("accumulates one full turn per loop with no snap back", () => {
     const walker = animatedWalker();
     const from = new Quaternion();
-    const to = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+    const to = new Quaternion().setFromAxisAngle(
+      new Vector3(0, 1, 0),
+      Math.PI / 2,
+    );
     const clip = new AnimationClip({
       name: "turn",
       tracks: [

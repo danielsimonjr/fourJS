@@ -738,13 +738,7 @@ export class ForceFieldSystem implements SimulationSystem {
     if (field.sampleAll !== undefined) {
       const scratch = this.#fieldScratch;
       scratch.fill(0, 0, count * 3);
-      field.sampleAll(
-        this.#positions,
-        this.#velocities,
-        count,
-        time,
-        scratch,
-      );
+      field.sampleAll(this.#positions, this.#velocities, count, time, scratch);
       this.#scaleAdd(count, scratch, scaleIsMass);
       return;
     }
@@ -780,11 +774,7 @@ export class ForceFieldSystem implements SimulationSystem {
    * kilograms. Component arithmetic rather than a vector helper so a
    * binary64 lane is never rounded through a `Vector3`.
    */
-  #scaleAdd(
-    count: number,
-    samples: Float64Array,
-    scaleIsMass: boolean,
-  ): void {
+  #scaleAdd(count: number, samples: Float64Array, scaleIsMass: boolean): void {
     const newtonAcc = this.#newtonAcc;
     const massFactors = this.#massFactors;
     for (let i = 0; i < count; i += 1) {

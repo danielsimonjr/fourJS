@@ -64,9 +64,7 @@ export function booleanPolygons(
   clipFill: FillRule = "nonzero",
 ): Point2D[][] {
   if (!BOOLEAN_OPS.includes(op)) {
-    throw new RangeError(
-      `booleanOp: unknown operation ${String(op)} (§85).`,
-    );
+    throw new RangeError(`booleanOp: unknown operation ${String(op)} (§85).`);
   }
   const subjectRings = usableRings(subject);
   const clipRings = usableRings(clip);
@@ -94,9 +92,7 @@ export function booleanPolygons(
 }
 
 /** Drops rings that cannot bound a filled region. */
-function usableRings(
-  rings: readonly (readonly Point2D[])[],
-): Point2D[][] {
+function usableRings(rings: readonly (readonly Point2D[])[]): Point2D[][] {
   const out: Point2D[][] = [];
   for (const ring of rings) {
     const copy = dedupeRing(ring);
@@ -117,10 +113,7 @@ function dedupeRing(ring: readonly Point2D[]): Point2D[] {
     }
     points.push({ x: point.x, y: point.y });
   }
-  if (
-    points.length > 1 &&
-    samePoint(points[0], points[points.length - 1])
-  ) {
+  if (points.length > 1 && samePoint(points[0], points[points.length - 1])) {
     points.pop();
   }
   return points;
@@ -206,7 +199,8 @@ function insideHalfPlane(
   c1: Point2D,
   leftIsInside: boolean,
 ): boolean {
-  const side = (c1.x - c0.x) * (point.y - c0.y) - (c1.y - c0.y) * (point.x - c0.x);
+  const side =
+    (c1.x - c0.x) * (point.y - c0.y) - (c1.y - c0.y) * (point.x - c0.x);
   return leftIsInside ? side >= 0 : side <= 0;
 }
 

@@ -1,10 +1,12 @@
 import { isFourError } from "@fourjs/core";
-import {Matrix3,
+import {
+  Matrix3,
   Quaternion,
   Vector2,
   Vector3,
   constructionCount,
-  resetConstructionCount} from "@fourjs/math";
+  resetConstructionCount,
+} from "@fourjs/math";
 import { PoseBuffer, createSnapshotSystem, Group } from "@fourjs/scene";
 import { SystemRegistry, createTimeState } from "@fourjs/motion";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -1756,13 +1758,13 @@ describe("§23 a dynamic body with no way to derive inertia", () => {
   });
 });
 
-
 describe("event interest (2026-09-11): the adapter is told when nobody listens for collisionstay", () => {
   it("forwards the interest only on change, from the registered bodies' listener counts", async () => {
     const { adapter, world } = await readyWorld();
     const calls: { collisionstay: boolean }[] = [];
-    (adapter as { setEventInterest?: (i: { collisionstay: boolean }) => void }).setEventInterest =
-      (interest) => calls.push({ ...interest });
+    (
+      adapter as { setEventInterest?: (i: { collisionstay: boolean }) => void }
+    ).setEventInterest = (interest) => calls.push({ ...interest });
     const node = dynamicNode();
     world.addBody(node);
     const body = node.getComponent(RigidBody);

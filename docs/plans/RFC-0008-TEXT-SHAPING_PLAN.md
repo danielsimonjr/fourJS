@@ -18,7 +18,7 @@ inventing the wasm API.
 The RFC §8 first packet, nothing more: (1) `ShapingEngine` and its records in
 `packages/text/src/shaping.ts` with an `IdentityShapingEngine` that reproduces today's
 code-point walk; (2) `GlyphAtlas.glyphsById` (optional) filled by `buildGlyphAtlas` for the
-built-in face with *code point = glyph id*; (3) `TextLayoutOptions.shaper?` and siblings,
+built-in face with _code point = glyph id_; (3) `TextLayoutOptions.shaper?` and siblings,
 `TextQuad.cluster?`, a per-run pen walk in `layoutText` that is **bit-identical** when no
 shaper is passed; (4) `HarfBuzzShapingEngine` over the `harfbuzzjs` package, exported only
 from the subpath `@fourjs/text/harfbuzz` (umbrella `fourJS/text/harfbuzz`), constructed
@@ -30,29 +30,29 @@ with `NOT_IMPLEMENTED`), SDF/MSDF, any font loader in `@fourjs/assets`, a 25th p
 
 ## 2. Anti-hallucination sheet (read the file, do not recall)
 
-| Fact | Pinned at |
-| --- | --- |
-| `@fourjs/text` depends on `core`, `math`, `geometry` only; `ui` depends on `text`; the umbrella `fourJS` re-exports `@fourjs/text` via `packages/fourjs/src/text.ts` (`export *`) | `packages/text/package.json`, `packages/ui/package.json`, plan §3.1 |
-| The umbrella package's **name is `fourJS`** (`packages/fourjs/package.json:2`); subpaths are declared in its `exports` map as `"./text": { types, import }` pointing at `dist/text.*` built from `src/text.ts` | that file |
-| `packages/text/package.json` `exports` today has only `"."`; adding `"./harfbuzz"` is the subpath mechanism | that file |
-| `layoutText(text, atlas, options)` — three positional args; options is `TextLayoutOptions { size, letterSpacing?, align? }`; the walk is `for (const char of text)` (code points) | `packages/text/src/text-layout.ts:122-160, 264-330` |
-| `TextQuad { x0, y0, x1, y1, u0, v0, u1, v1, … }` (read the full interface at `text-layout.ts:86-118` before adding `cluster?`) | that file |
-| `GlyphAtlas { width, height, data: Uint8Array, glyphs: ReadonlyMap<string, GlyphAtlasEntry>, fallback }`; `GlyphAtlasEntry { char, u0, v0, u1, v1, advance, blank, x, … }` | `packages/text/src/glyph-atlas.ts:90-150` |
-| The `Text` node (`packages/fourjs/src/text-node.ts`) and `Label` (`packages/ui/src/label.ts`) call `layoutText` and consume `TextLayout.quads`; neither imports wasm | those files |
-| `FourError(code, message, { context?, cause? })`; codes in use here: `UNTRUSTED_INPUT_REJECTED`, `INVALID_APPLICATION_STATE`, `NOT_IMPLEMENTED`; `isFourError` exists | `packages/core/src/errors.ts` |
-| A-23 error split: content over a limit → `UNTRUSTED_INPUT_REJECTED`; an application-built option that is non-finite/non-positive → `RangeError` (§85) | RFC 0008 §4; `packages/render/src/raster.ts:222-260` |
-| `Disposable` is `@fourjs/core`'s | `packages/core/src/disposable.ts` |
-| Ids minted by the engine are monotonic counters, never clocks (§33) | `packages/render/src/raster.ts:334` (`assignCanvasTextureId` precedent) |
-| Fixture licences: **Noto Sans is OFL 1.1**; Roboto is Apache-2.0 (acceptable, but not OFL). The licence text file ships beside the font | RFC 0008 prototype item 2 |
-| Existing fixtures dir: `tests/fixtures/gltf/`; fonts go in a new `tests/fixtures/fonts/` | `ls tests/fixtures` |
-| Vitest per package: `packages/text/tests/*.test.ts` import `../src/index.js`; cross-package suites in `tests/integration/` run via `bun run test:suites` | `packages/text/tests/text.test.ts` |
-| Umbrella subpath count is asserted in `packages/fourjs/tests/barrels.test.ts` (“all 25 umbrella subpath exports resolve”) — a new subpath must be added there | that file, MEMORY.md:515 |
-| Size gate: `.size-limit.json` limits on built examples (`bun run examples:build && bun run size`); ui-demo is 50 kB gzip and imports text | `.size-limit.json`, `tools/size-budgets.mjs` |
-| Rapier precedent for wasm in the tree: `@dimforge/rapier{2,3}d-compat` is base64-embedded and loaded by the adapter; COMPATIBILITY §1 records "WebAssembly, for physics" | `docs/COMPATIBILITY.md:102`, `packages/physics-rapier/src/init.ts` |
+| Fact                                                                                                                                                                                                           | Pinned at                                                               |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `@fourjs/text` depends on `core`, `math`, `geometry` only; `ui` depends on `text`; the umbrella `fourJS` re-exports `@fourjs/text` via `packages/fourjs/src/text.ts` (`export *`)                              | `packages/text/package.json`, `packages/ui/package.json`, plan §3.1     |
+| The umbrella package's **name is `fourJS`** (`packages/fourjs/package.json:2`); subpaths are declared in its `exports` map as `"./text": { types, import }` pointing at `dist/text.*` built from `src/text.ts` | that file                                                               |
+| `packages/text/package.json` `exports` today has only `"."`; adding `"./harfbuzz"` is the subpath mechanism                                                                                                    | that file                                                               |
+| `layoutText(text, atlas, options)` — three positional args; options is `TextLayoutOptions { size, letterSpacing?, align? }`; the walk is `for (const char of text)` (code points)                              | `packages/text/src/text-layout.ts:122-160, 264-330`                     |
+| `TextQuad { x0, y0, x1, y1, u0, v0, u1, v1, … }` (read the full interface at `text-layout.ts:86-118` before adding `cluster?`)                                                                                 | that file                                                               |
+| `GlyphAtlas { width, height, data: Uint8Array, glyphs: ReadonlyMap<string, GlyphAtlasEntry>, fallback }`; `GlyphAtlasEntry { char, u0, v0, u1, v1, advance, blank, x, … }`                                     | `packages/text/src/glyph-atlas.ts:90-150`                               |
+| The `Text` node (`packages/fourjs/src/text-node.ts`) and `Label` (`packages/ui/src/label.ts`) call `layoutText` and consume `TextLayout.quads`; neither imports wasm                                           | those files                                                             |
+| `FourError(code, message, { context?, cause? })`; codes in use here: `UNTRUSTED_INPUT_REJECTED`, `INVALID_APPLICATION_STATE`, `NOT_IMPLEMENTED`; `isFourError` exists                                          | `packages/core/src/errors.ts`                                           |
+| A-23 error split: content over a limit → `UNTRUSTED_INPUT_REJECTED`; an application-built option that is non-finite/non-positive → `RangeError` (§85)                                                          | RFC 0008 §4; `packages/render/src/raster.ts:222-260`                    |
+| `Disposable` is `@fourjs/core`'s                                                                                                                                                                               | `packages/core/src/disposable.ts`                                       |
+| Ids minted by the engine are monotonic counters, never clocks (§33)                                                                                                                                            | `packages/render/src/raster.ts:334` (`assignCanvasTextureId` precedent) |
+| Fixture licences: **Noto Sans is OFL 1.1**; Roboto is Apache-2.0 (acceptable, but not OFL). The licence text file ships beside the font                                                                        | RFC 0008 prototype item 2                                               |
+| Existing fixtures dir: `tests/fixtures/gltf/`; fonts go in a new `tests/fixtures/fonts/`                                                                                                                       | `ls tests/fixtures`                                                     |
+| Vitest per package: `packages/text/tests/*.test.ts` import `../src/index.js`; cross-package suites in `tests/integration/` run via `bun run test:suites`                                                       | `packages/text/tests/text.test.ts`                                      |
+| Umbrella subpath count is asserted in `packages/fourjs/tests/barrels.test.ts` (“all 25 umbrella subpath exports resolve”) — a new subpath must be added there                                                  | that file, MEMORY.md:515                                                |
+| Size gate: `.size-limit.json` limits on built examples (`bun run examples:build && bun run size`); ui-demo is 50 kB gzip and imports text                                                                      | `.size-limit.json`, `tools/size-budgets.mjs`                            |
+| Rapier precedent for wasm in the tree: `@dimforge/rapier{2,3}d-compat` is base64-embedded and loaded by the adapter; COMPATIBILITY §1 records "WebAssembly, for physics"                                       | `docs/COMPATIBILITY.md:102`, `packages/physics-rapier/src/init.ts`      |
 
 **The `harfbuzzjs` API is not in this table on purpose.** Before writing a line against
 it, A3 must open `node_modules/harfbuzzjs/README.md` and `node_modules/harfbuzzjs/hbjs.js`
-after install and copy the *actual* function names into the packet's *Verified API* note.
+after install and copy the _actual_ function names into the packet's _Verified API_ note.
 The names A3 should expect to find (verify, do not assume): `hb.createBlob(bytes)`,
 `hb.createFace(blob, index)`, `hb.createFont(face)`, `font.setScale(x, y)`,
 `hb.createBuffer()`, `buffer.addText(text)`, `buffer.guessSegmentProperties()`,
@@ -64,12 +64,12 @@ the README wins and the note records the difference.
 
 ## 3. Roster, ownership, waves
 
-| Agent | Owns | Wave |
-| --- | --- | --- |
-| **A1 — seam + identity engine + atlas ids** | `packages/text/src/shaping.ts` (new), `packages/text/src/glyph-atlas.ts` (edit: `glyphsById`), `packages/text/tests/shaping.test.ts` (new), `packages/text/tests/text.test.ts` (append: `glyphsById`) | 1 |
-| **A2 — layout consumer** | `packages/text/src/text-layout.ts` (edit), `packages/text/tests/text-layout-shaped.test.ts` (new), `packages/ui/src/label.ts` (edit: `shaper` pass-through), `packages/ui/tests/label.test.ts` (append), `packages/fourjs/src/text-node.ts` (edit: pass-through), `packages/fourjs/tests/text-node.test.ts` (append — locate the existing test for `Text` first) | 2 |
-| **A3 — HarfBuzz adapter + subpath** | `packages/text/package.json` (dependency + `./harfbuzz` export), `bun.lock` (via `bun add`), `packages/text/src/harfbuzz/index.ts` + `harfbuzz-shaping-engine.ts` (new), `packages/text/tsconfig.build.json` only if a second entry needs it, `packages/fourjs/package.json` (`./text/harfbuzz` export), `packages/fourjs/src/text-harfbuzz.ts` (new), `packages/fourjs/tests/barrels.test.ts` (edit), `packages/text/tests/harfbuzz.test.ts` (new) | 2 |
-| **A4 — fixtures, goldens, measurements** | `tests/fixtures/fonts/NotoSans-Regular.ttf` + `OFL.txt` (new), `tests/integration/text-shaping.test.ts` (new), `benchmarks/text-shaping-init.mjs` (new) + `benchmarks/results/text-shaping-init.json`, `tools/size-budgets.mjs` (append the A/B table row), `packages/text/src/index.ts` (edit: exports for A1/A2 names) | 2 (fixtures, index) → 3 (goldens after A3) |
+| Agent                                       | Owns                                                                                                                                                                                                                                                                                                                                                                                                                                                | Wave                                       |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| **A1 — seam + identity engine + atlas ids** | `packages/text/src/shaping.ts` (new), `packages/text/src/glyph-atlas.ts` (edit: `glyphsById`), `packages/text/tests/shaping.test.ts` (new), `packages/text/tests/text.test.ts` (append: `glyphsById`)                                                                                                                                                                                                                                               | 1                                          |
+| **A2 — layout consumer**                    | `packages/text/src/text-layout.ts` (edit), `packages/text/tests/text-layout-shaped.test.ts` (new), `packages/ui/src/label.ts` (edit: `shaper` pass-through), `packages/ui/tests/label.test.ts` (append), `packages/fourjs/src/text-node.ts` (edit: pass-through), `packages/fourjs/tests/text-node.test.ts` (append — locate the existing test for `Text` first)                                                                                    | 2                                          |
+| **A3 — HarfBuzz adapter + subpath**         | `packages/text/package.json` (dependency + `./harfbuzz` export), `bun.lock` (via `bun add`), `packages/text/src/harfbuzz/index.ts` + `harfbuzz-shaping-engine.ts` (new), `packages/text/tsconfig.build.json` only if a second entry needs it, `packages/fourjs/package.json` (`./text/harfbuzz` export), `packages/fourjs/src/text-harfbuzz.ts` (new), `packages/fourjs/tests/barrels.test.ts` (edit), `packages/text/tests/harfbuzz.test.ts` (new) | 2                                          |
+| **A4 — fixtures, goldens, measurements**    | `tests/fixtures/fonts/NotoSans-Regular.ttf` + `OFL.txt` (new), `tests/integration/text-shaping.test.ts` (new), `benchmarks/text-shaping-init.mjs` (new) + `benchmarks/results/text-shaping-init.json`, `tools/size-budgets.mjs` (append the A/B table row), `packages/text/src/index.ts` (edit: exports for A1/A2 names)                                                                                                                            | 2 (fixtures, index) → 3 (goldens after A3) |
 
 Wave 1: A1 alone. Wave 2: A2, A3, A4-first-half in parallel (A2 and A3 both code against
 A1's `shaping.ts`). Wave 3: A4's goldens and measurements once A3's adapter runs.
@@ -99,7 +99,7 @@ export class IdentityShapingEngine implements ShapingEngine {
   readonly name = "fourJS:identity";
   readonly version = "0.1.0";
   addFont(bytes: Uint8Array, options?: { maximumFontBytes?: number }): string; // "identity-font-<n>"
-  removeFont(fontId: string): void;      // unknown id → FourError INVALID_APPLICATION_STATE
+  removeFont(fontId: string): void; // unknown id → FourError INVALID_APPLICATION_STATE
   shape(query: ShapeQuery): readonly ShapedRun[]; // one run, direction from query (default "ltr"); "ttb"/"btt" → FourError NOT_IMPLEMENTED
   dispose(): void;
 }
@@ -132,7 +132,7 @@ written; A1 posts the export list to A4.
 **Edits `text-layout.ts`:**
 
 - `TextQuad` gains `readonly cluster?: number` (absent on the legacy path — do **not**
-  set it to keep the legacy output *shape* bit-identical; tests compare with `toEqual`).
+  set it to keep the legacy output _shape_ bit-identical; tests compare with `toEqual`).
 - `TextLayoutOptions` gains `shaper?: ShapingEngine`, `fontId?: string`, `script?`,
   `language?`, `direction?: ShapingDirection`, `features?: Readonly<Record<string, number>>`
   (all optional; `fontId` required when `shaper` is set → else `RangeError` §85).
@@ -172,7 +172,7 @@ tree already isolates wasm init failures); `packages/fourjs/package.json` export
 
 **Step 0 — dependency.** `cd packages/text && bun add --exact harfbuzzjs` (pin the version
 it resolves; record it in the module header). If the network policy blocks the install,
-**stop**: write the packet's *Blocked* line naming the command and error, and do not
+**stop**: write the packet's _Blocked_ line naming the command and error, and do not
 vendor or hand-write a wasm. Nothing else in this packet is possible without it.
 
 **Step 1 — verified API note.** Open the installed README and wrapper; list the exact names
@@ -184,17 +184,19 @@ used below in a comment block at the top of `harfbuzz-shaping-engine.ts`.
 export interface HarfBuzzShapingEngineOptions {
   /** The `hb.wasm` bytes or a compiled module — supplied by the application (RFC §4: no URL). */
   readonly wasm: BufferSource | WebAssembly.Module;
-  readonly maximumFontBytes?: number;    // default DEFAULT_MAXIMUM_FONT_BYTES
+  readonly maximumFontBytes?: number; // default DEFAULT_MAXIMUM_FONT_BYTES
 }
 export class HarfBuzzShapingEngine implements ShapingEngine {
   readonly name = "fourJS:harfbuzz";
-  readonly version: string;              // `harfbuzzjs@<pinned>`
+  readonly version: string; // `harfbuzzjs@<pinned>`
   /** Async because `WebAssembly.instantiate` is; the only async member. A wasm that fails to instantiate rejects with FourError `UNTRUSTED_INPUT_REJECTED` carrying `cause` (the bytes are content the application handed over). */
-  static create(options: HarfBuzzShapingEngineOptions): Promise<HarfBuzzShapingEngine>;
-  addFont(bytes, options?): string;      // validateFontBytes → createBlob/createFace/createFont; setScale(1000, 1000); id "harfbuzz-font-<n>"
-  removeFont(fontId): void;              // destroy font/face/blob; unknown → INVALID_APPLICATION_STATE
-  shape(query): readonly ShapedRun[];    // createBuffer, addText, set direction/script/language if given else guessSegmentProperties, hb.shape with `features` as "liga=1,kern=1" (check README for the accepted form), buffer.json() → ShapedGlyph[]; destroy buffer in `finally`
-  dispose(): void;                       // remove every font; subsequent calls → INVALID_APPLICATION_STATE
+  static create(
+    options: HarfBuzzShapingEngineOptions,
+  ): Promise<HarfBuzzShapingEngine>;
+  addFont(bytes, options?): string; // validateFontBytes → createBlob/createFace/createFont; setScale(1000, 1000); id "harfbuzz-font-<n>"
+  removeFont(fontId): void; // destroy font/face/blob; unknown → INVALID_APPLICATION_STATE
+  shape(query): readonly ShapedRun[]; // createBuffer, addText, set direction/script/language if given else guessSegmentProperties, hb.shape with `features` as "liga=1,kern=1" (check README for the accepted form), buffer.json() → ShapedGlyph[]; destroy buffer in `finally`
+  dispose(): void; // remove every font; subsequent calls → INVALID_APPLICATION_STATE
 }
 ```
 

@@ -18,12 +18,12 @@
 // that already-fresh report — the gate then adds only the JSON-diff cost
 // (well under a second). Run WITHOUT `--no-regen` manually or from CI when you
 // want a self-contained, always-fresh check.
-import { execSync } from 'child_process';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { execSync } from "child_process";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const ROOT_DIR = process.cwd();
-const SKIP_REGEN = process.argv.includes('--no-regen');
+const SKIP_REGEN = process.argv.includes("--no-regen");
 
 // Fixed literal command — no user input is ever interpolated into it, so
 // there is no shell-injection surface here. `shell` is required regardless
@@ -33,21 +33,22 @@ const SKIP_REGEN = process.argv.includes('--no-regen');
 // DEP0190 (args aren't escaped when a shell is involved), so this uses a
 // single pre-built string with execSync instead, which is the documented-safe
 // shape for that combination.
-const REGEN_COMMAND = 'npx tsx tools/create-dependency-graph/create-dependency-graph.ts --root=.';
+const REGEN_COMMAND =
+  "npx tsx tools/create-dependency-graph/create-dependency-graph.ts --root=.";
 
 function regenerateDuplicateSymbols() {
-  execSync(REGEN_COMMAND, { cwd: ROOT_DIR, stdio: 'pipe' });
+  execSync(REGEN_COMMAND, { cwd: ROOT_DIR, stdio: "pipe" });
 }
 
 function readJson(relPath) {
-  return JSON.parse(readFileSync(join(ROOT_DIR, relPath), 'utf-8'));
+  return JSON.parse(readFileSync(join(ROOT_DIR, relPath), "utf-8"));
 }
 
 /** New TRUE_DUPLICATE names in `current` (kind => name => files) not present
  *  in `baseline` (kind => name => files). Returns a flat list of findings. */
 function diffNewDuplicates(current, baseline) {
   const findings = [];
-  for (const kind of ['runtime', 'types']) {
+  for (const kind of ["runtime", "types"]) {
     const currentNames = current[kind] ?? {};
     const baselineNames = baseline[kind] ?? {};
     for (const [name, files] of Object.entries(currentNames)) {
@@ -61,47 +62,53 @@ function diffNewDuplicates(current, baseline) {
 
 function main() {
   if (SKIP_REGEN) {
-    console.log('check:duplicates --no-regen — reading existing duplicate-symbol analysis...');
+    console.log(
+      "check:duplicates --no-regen — reading existing duplicate-symbol analysis...",
+    );
   } else {
-    console.log('check:duplicates — regenerating duplicate-symbol analysis...');
+    console.log("check:duplicates — regenerating duplicate-symbol analysis...");
     try {
       regenerateDuplicateSymbols();
     } catch (err) {
-      console.error('Failed to regenerate docs/Architecture/duplicate-symbols.json:');
+      console.error(
+        "Failed to regenerate docs/Architecture/duplicate-symbols.json:",
+      );
       console.error(err.message);
       process.exit(1);
     }
   }
 
-  const report = readJson('docs/Architecture/duplicate-symbols.json');
-  const baseline = readJson('docs/Architecture/duplicate-baseline.json');
+  const report = readJson("docs/Architecture/duplicate-symbols.json");
+  const baseline = readJson("docs/Architecture/duplicate-baseline.json");
 
   const current = {
     runtime: Object.fromEntries(
       report.runtime
-        .filter((e) => e.tag === 'TRUE_DUPLICATE')
-        .map((e) => [e.name, e.definers.map((d) => d.file).sort()])
+        .filter((e) => e.tag === "TRUE_DUPLICATE")
+        .map((e) => [e.name, e.definers.map((d) => d.file).sort()]),
     ),
     types: Object.fromEntries(
       report.types
-        .filter((e) => e.tag === 'TRUE_DUPLICATE')
-        .map((e) => [e.name, e.definers.map((d) => d.file).sort()])
+        .filter((e) => e.tag === "TRUE_DUPLICATE")
+        .map((e) => [e.name, e.definers.map((d) => d.file).sort()]),
     ),
   };
 
   const newDuplicates = diffNewDuplicates(current, baseline);
 
-  const currentTotal = Object.keys(current.runtime).length + Object.keys(current.types).length;
+  const currentTotal =
+    Object.keys(current.runtime).length + Object.keys(current.types).length;
   const baselineTotal =
-    Object.keys(baseline.runtime ?? {}).length + Object.keys(baseline.types ?? {}).length;
+    Object.keys(baseline.runtime ?? {}).length +
+    Object.keys(baseline.types ?? {}).length;
 
   if (newDuplicates.length > 0) {
-    console.error('');
+    console.error("");
     console.error(
-      `FAIL: ${newDuplicates.length} new TRUE_DUPLICATE name(s) not in docs/Architecture/duplicate-baseline.json:`
+      `FAIL: ${newDuplicates.length} new TRUE_DUPLICATE name(s) not in docs/Architecture/duplicate-baseline.json:`,
     );
     for (const f of newDuplicates) {
-      console.error('');
+      console.error("");
       console.error(`  [${f.kind}] ${f.name}`);
       for (const file of f.files) console.error(`    - ${file}`);
       console.error(
@@ -111,19 +118,19 @@ function main() {
           `legitimately independent (e.g. a hot-path guard, an AssemblyScript mirror, or a ` +
           `per-package VERSION string), add it to tools/create-dependency-graph/duplicate-allowlist.json ` +
           `instead. If it's an accepted new item in the consolidation backlog, re-run ` +
-          `\`node tools/create-dependency-graph/gen-duplicate-baseline.mjs\` after review.`
+          `\`node tools/create-dependency-graph/gen-duplicate-baseline.mjs\` after review.`,
       );
     }
-    console.error('');
+    console.error("");
     console.error(
-      `check:duplicates: FAILED (${currentTotal} current TRUE_DUPLICATE vs ${baselineTotal} baselined)`
+      `check:duplicates: FAILED (${currentTotal} current TRUE_DUPLICATE vs ${baselineTotal} baselined)`,
     );
     process.exit(1);
   }
 
   console.log(
     `check:duplicates: PASSED (${currentTotal} current TRUE_DUPLICATE, ` +
-      `${baselineTotal} baselined, 0 new)`
+      `${baselineTotal} baselined, 0 new)`,
   );
 }
 

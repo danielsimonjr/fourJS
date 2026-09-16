@@ -840,10 +840,13 @@ test.describe("§108: gravity, collisions, impulses and sensors in the browser",
     // and after the screenshot must paint the empty colour; a zone already
     // entered is proven by the occupied half below instead of by a race.
     const occupancyOf = async (): Promise<readonly [string, string]> =>
-      status.evaluate((element) => [
-        element.getAttribute("data-zone2d") ?? "",
-        element.getAttribute("data-zone3d") ?? "",
-      ] as [string, string]);
+      status.evaluate(
+        (element) =>
+          [
+            element.getAttribute("data-zone2d") ?? "",
+            element.getAttribute("data-zone3d") ?? "",
+          ] as [string, string],
+      );
     const beforeGrab = await occupancyOf();
     const empty = await grab(canvas);
     const afterGrab = await occupancyOf();
@@ -851,7 +854,8 @@ test.describe("§108: gravity, collisions, impulses and sensors in the browser",
       [0, "2d", -HALF_CENTER_X],
       [1, "3d", HALF_CENTER_X],
     ] as const) {
-      const entered = /[1-9]/.test(beforeGrab[index]) || /[1-9]/.test(afterGrab[index]);
+      const entered =
+        /[1-9]/.test(beforeGrab[index]) || /[1-9]/.test(afterGrab[index]);
       if (entered) {
         continue; // a body was already inside during the grab — nothing to prove empty
       }

@@ -174,7 +174,13 @@ export class WgpuGpuTimer {
       return;
     }
     encoder.resolveQuerySet(querySet, 0, 2, resolve, 0);
-    encoder.copyBufferToBuffer(resolve, 0, slot.buffer, 0, TIMESTAMP_PAIR_BYTES);
+    encoder.copyBufferToBuffer(
+      resolve,
+      0,
+      slot.buffer,
+      0,
+      TIMESTAMP_PAIR_BYTES,
+    );
   }
 
   /**
@@ -196,28 +202,31 @@ export class WgpuGpuTimer {
     const captured = slot;
     captured.busy = true;
     this.#slot ^= 1;
-    void mapped.then(() => {
-      const range = captured.buffer.getMappedRange?.();
-      if (range !== undefined) {
-        const times = new BigUint64Array(range);
-        const begin = times[0];
-        const end = times[1];
-        if (begin !== undefined && end !== undefined && end >= begin) {
-          const seconds = Number(end - begin) * 1e-9;
-          if (Number.isFinite(seconds)) {
-            this.lastGpuFrameTimeSeconds = seconds;
+    void mapped.then(
+      () => {
+        const range = captured.buffer.getMappedRange?.();
+        if (range !== undefined) {
+          const times = new BigUint64Array(range);
+          const begin = times[0];
+          const end = times[1];
+          if (begin !== undefined && end !== undefined && end >= begin) {
+            const seconds = Number(end - begin) * 1e-9;
+            if (Number.isFinite(seconds)) {
+              this.lastGpuFrameTimeSeconds = seconds;
+            }
           }
         }
-      }
-      captured.buffer.unmap?.();
-      captured.busy = false;
-    }, () => {
-      // A `mapAsync` still in flight when the device is lost or the timer is
-      // disposed rejects (`AbortError` / `OperationError`). The sample is
-      // simply dropped; the slot must not stay `busy` forever, and nothing
-      // may surface as an unhandled rejection at the host (§61, §89).
-      captured.busy = false;
-    });
+        captured.buffer.unmap?.();
+        captured.busy = false;
+      },
+      () => {
+        // A `mapAsync` still in flight when the device is lost or the timer is
+        // disposed rejects (`AbortError` / `OperationError`). The sample is
+        // simply dropped; the slot must not stay `busy` forever, and nothing
+        // may surface as an unhandled rejection at the host (§61, §89).
+        captured.busy = false;
+      },
+    );
   }
 
   /**

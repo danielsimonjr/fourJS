@@ -666,12 +666,14 @@ test.describe("examples/particles-demo (§112, §36)", () => {
 
     const simulate = statusNumber(published.simulate ?? undefined);
     const present = statusNumber(published.present ?? undefined);
-    expect(Number.isFinite(simulate), `data-simulate=${published.simulate ?? ""}`).toBe(
-      true,
-    );
-    expect(Number.isFinite(present), `data-present=${published.present ?? ""}`).toBe(
-      true,
-    );
+    expect(
+      Number.isFinite(simulate),
+      `data-simulate=${published.simulate ?? ""}`,
+    ).toBe(true);
+    expect(
+      Number.isFinite(present),
+      `data-present=${published.present ?? ""}`,
+    ).toBe(true);
     expect(simulate).toBeGreaterThanOrEqual(0);
     expect(present).toBeGreaterThanOrEqual(0);
 

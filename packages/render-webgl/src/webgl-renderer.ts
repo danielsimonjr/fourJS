@@ -128,10 +128,7 @@ import {
   type NodeMaterialProgram,
   type NodeMaterialPrograms,
 } from "./node-pipeline-registry.js";
-import {
-  NORMAL_TEXTURE_UNIT,
-  OCCLUSION_TEXTURE_UNIT,
-} from "./gl-standard.js";
+import { NORMAL_TEXTURE_UNIT, OCCLUSION_TEXTURE_UNIT } from "./gl-standard.js";
 import {
   resolveShadowPipelineFactory,
   type ShadowCasterPipeline,
@@ -2108,10 +2105,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           // Back to the surface this frame is actually drawing into. The
           // on-screen path is `null`, which is where the shadow pass found
           // the binding; an off-screen frame re-binds its own target.
-          gl.bindFramebuffer(
-            GL.FRAMEBUFFER,
-            targetRecord?.framebuffer ?? null,
-          );
+          gl.bindFramebuffer(GL.FRAMEBUFFER, targetRecord?.framebuffer ?? null);
         }
       }
       // Whether the shaded pipelines may compare against a map this frame: the
@@ -2310,7 +2304,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                     mapUnitActive = true;
                     boundMapTexture = null;
                   }
-                  if (boundMapTexture !== batchTexture || boundMapKind !== activeKind) {
+                  if (
+                    boundMapTexture !== batchTexture ||
+                    boundMapKind !== activeKind
+                  ) {
                     gl.bindTexture(GL.TEXTURE_2D, batchTexture);
                     boundMapTexture = batchTexture;
                     boundMapKind = activeKind;
@@ -2378,7 +2375,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                   mapUnitActive = true;
                   boundMapTexture = null;
                 }
-                if (boundMapTexture !== texture || boundMapKind !== activeKind) {
+                if (
+                  boundMapTexture !== texture ||
+                  boundMapKind !== activeKind
+                ) {
                   gl.bindTexture(GL.TEXTURE_2D, texture);
                   boundMapTexture = texture;
                   boundMapKind = activeKind;
@@ -2443,7 +2443,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                   mapUnitActive = true;
                   boundMapTexture = null;
                 }
-                if (boundMapTexture !== texture || boundMapKind !== activeKind) {
+                if (
+                  boundMapTexture !== texture ||
+                  boundMapKind !== activeKind
+                ) {
                   gl.bindTexture(GL.TEXTURE_2D, texture);
                   boundMapTexture = texture;
                   boundMapKind = activeKind;
@@ -2823,7 +2826,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 mapUnitActive = true;
                 boundMapTexture = null;
               }
-              if (boundMapTexture !== litTexture || boundMapKind !== activeKind) {
+              if (
+                boundMapTexture !== litTexture ||
+                boundMapKind !== activeKind
+              ) {
                 gl.bindTexture(GL.TEXTURE_2D, litTexture);
                 boundMapTexture = litTexture;
                 boundMapKind = activeKind;
@@ -2905,7 +2911,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 mapUnitActive = true;
                 boundMapTexture = null;
               }
-              if (boundMapTexture !== standardTexture || boundMapKind !== activeKind) {
+              if (
+                boundMapTexture !== standardTexture ||
+                boundMapKind !== activeKind
+              ) {
                 gl.bindTexture(GL.TEXTURE_2D, standardTexture);
                 boundMapTexture = standardTexture;
                 boundMapKind = activeKind;

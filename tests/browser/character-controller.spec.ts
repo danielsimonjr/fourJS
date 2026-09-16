@@ -691,7 +691,13 @@ test.describe("§12: the character-controller family in the browser", () => {
     const before = await grab(canvas);
     const yaw0 = await readNumber(page, "yaw");
 
-    const yaw1 = await holdUntilMoved(page, "ArrowRight", "yaw", yaw0, YAW_MINIMUM);
+    const yaw1 = await holdUntilMoved(
+      page,
+      "ArrowRight",
+      "yaw",
+      yaw0,
+      YAW_MINIMUM,
+    );
     // → is −yaw: yaw is measured from +Z towards +X (§7a), so turning right
     // swings the forward axis the other way — the sign is part of the claim.
     expect(

@@ -371,7 +371,9 @@ if (!existsSync(renderBarrel)) {
 }
 const renderModule = await import(pathToFileURL(renderBarrel).href);
 if (typeof renderModule.NullRenderer !== "function") {
-  fail("@fourjs/render does not export NullRenderer — the headless §62 tier is missing");
+  fail(
+    "@fourjs/render does not export NullRenderer — the headless §62 tier is missing",
+  );
 }
 {
   const instance = new renderModule.NullRenderer();
@@ -503,7 +505,7 @@ const generatedRendererBlock = [
   "     `node tools/generate-compatibility.mjs --check` to verify.",
   "     Device-derived members (`maxTextureSize` on both GPU backends; most",
   "     WebGPU fields) stay at the construction-time floor until a context",
-  "     exists. Those floors mean \"not yet queried\", not \"this backend cannot\". -->",
+  '     exists. Those floors mean "not yet queried", not "this backend cannot". -->',
   "",
   rendererTable,
   "",
@@ -552,7 +554,12 @@ if (!existsSync(docPath)) {
 // lines looked identical because the "\r" is invisible. That is a
 // line-ending REPRESENTATION difference being reported as content drift.
 const doc = readFileSync(docPath, "utf8").replace(/\r\n/g, "\n");
-const solverSplice = spliceBlock(doc, SOLVER_BEGIN, SOLVER_END, generatedSolverBlock);
+const solverSplice = spliceBlock(
+  doc,
+  SOLVER_BEGIN,
+  SOLVER_END,
+  generatedSolverBlock,
+);
 const rendererSplice = spliceBlock(
   solverSplice.next,
   RENDERER_BEGIN,

@@ -9,12 +9,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import {
-  Path,
-  booleanOp,
-  type BooleanOp,
-  type Point2D,
-} from "../src/index.js";
+import { Path, booleanOp, type BooleanOp, type Point2D } from "../src/index.js";
 import { isConvex, sutherlandHodgman } from "../src/path-boolean.js";
 
 /** Axis-aligned rectangle as a closed CCW path. */
@@ -142,21 +137,21 @@ describe("booleanOp — disjoint and containment", () => {
   });
 
   it("returns the other operand when one side is empty", () => {
-    expect(booleanOp(new Path(), rect(0, 0, 1, 1), "union").flatten()).toHaveLength(
-      1,
-    );
-    expect(booleanOp(rect(0, 0, 1, 1), new Path(), "union").flatten()).toHaveLength(
-      1,
-    );
+    expect(
+      booleanOp(new Path(), rect(0, 0, 1, 1), "union").flatten(),
+    ).toHaveLength(1);
+    expect(
+      booleanOp(rect(0, 0, 1, 1), new Path(), "union").flatten(),
+    ).toHaveLength(1);
     expect(booleanOp(new Path(), rect(0, 0, 1, 1), "intersect").isEmpty).toBe(
       true,
     );
-    expect(booleanOp(rect(0, 0, 1, 1), new Path(), "subtract").flatten()).toHaveLength(
-      1,
-    );
-    expect(booleanOp(new Path(), rect(0, 0, 1, 1), "xor").flatten()).toHaveLength(
-      1,
-    );
+    expect(
+      booleanOp(rect(0, 0, 1, 1), new Path(), "subtract").flatten(),
+    ).toHaveLength(1);
+    expect(
+      booleanOp(new Path(), rect(0, 0, 1, 1), "xor").flatten(),
+    ).toHaveLength(1);
   });
 });
 
@@ -211,18 +206,16 @@ describe("booleanOp — refusals and flattening", () => {
   });
 
   it("treats an open subpath as closed (the fill rule)", () => {
-    const open = new Path()
-      .moveTo(0, 0)
-      .lineTo(2, 0)
-      .lineTo(2, 2)
-      .lineTo(0, 2);
+    const open = new Path().moveTo(0, 0).lineTo(2, 0).lineTo(2, 2).lineTo(0, 2);
     const result = booleanOp(open, rect(1, 1, 3, 3), "intersect");
     expect(filledArea(result)).toBeCloseTo(1, 9);
   });
 
   it("drops a degenerate zero-area ring", () => {
     const line = new Path().moveTo(0, 0).lineTo(1, 0).lineTo(2, 0).close();
-    expect(booleanOp(line, rect(0, 0, 1, 1), "union").flatten()).toHaveLength(1);
+    expect(booleanOp(line, rect(0, 0, 1, 1), "union").flatten()).toHaveLength(
+      1,
+    );
   });
 });
 

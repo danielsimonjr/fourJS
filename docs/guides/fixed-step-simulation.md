@@ -29,7 +29,6 @@ registering bodies or stepping (§37: a WebAssembly solver loads its module ther
 `examples/mechanism` shows the working sequence: both `initialize` calls, and only then
 the function that creates every body and joint.
 
-
 ## The accumulator (§10)
 
 `app.step(elapsedSeconds)` feeds real elapsed time into an accumulator. Each

@@ -179,20 +179,19 @@ export interface AccessibilityMirror extends Disposable {
  * which is the opposite of why this container exists. Written as individual
  * properties so CSP `style-src` without `'unsafe-inline'` stays satisfied.
  */
-const VISUALLY_HIDDEN: Readonly<
-  Omit<ElementStyleLike, "fontSize">
-> = Object.freeze({
-  position: "absolute",
-  width: "1px",
-  height: "1px",
-  padding: "0",
-  margin: "-1px",
-  overflow: "hidden",
-  clip: "rect(0, 0, 0, 0)",
-  clipPath: "inset(50%)",
-  whiteSpace: "nowrap",
-  border: "0",
-});
+const VISUALLY_HIDDEN: Readonly<Omit<ElementStyleLike, "fontSize">> =
+  Object.freeze({
+    position: "absolute",
+    width: "1px",
+    height: "1px",
+    padding: "0",
+    margin: "-1px",
+    overflow: "hidden",
+    clip: "rect(0, 0, 0, 0)",
+    clipPath: "inset(50%)",
+    whiteSpace: "nowrap",
+    border: "0",
+  });
 
 const CONTRAST_QUERY = "(prefers-contrast: more)";
 

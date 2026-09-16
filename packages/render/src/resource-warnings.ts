@@ -10,10 +10,7 @@
 import { DEV, devWarnOnce } from "@fourjs/core";
 
 /** Resource kinds this warning names today. */
-export type DisposedResourceKind =
-  | "geometry"
-  | "texture"
-  | "render-target";
+export type DisposedResourceKind = "geometry" | "texture" | "render-target";
 
 /**
  * Warns once that a disposed resource is still referenced (§83).

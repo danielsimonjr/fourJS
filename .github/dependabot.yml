@@ -21,20 +21,20 @@ updates:
   # (not frozen), commits bun.lock if it changed, and pushes so CI can go green without a
   # human commit (which would cost the PR its automerge). Revisit when Dependabot's bun parser
   # supports lockfileVersion 2.
-  - package-ecosystem: 'npm'
-    directory: '/'
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-      day: 'monday'
+      interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 10
     groups:
       dev-dependencies:
-        dependency-type: 'development'
+        dependency-type: "development"
       production-dependencies:
-        dependency-type: 'production'
+        dependency-type: "production"
     commit-message:
-      prefix: 'deps'
-      prefix-development: 'deps-dev'
+      prefix: "deps"
+      prefix-development: "deps-dev"
     ignore:
       # The TypeScript ignore is GONE as of 2026-09-08: the root runs typescript@7.0.2.
       # What unblocked it was not a typedoc release. TypeDoc moved into its own workspace
@@ -68,27 +68,27 @@ updates:
       # kept BYTE-IDENTICAL with the copy in llm-wiki (see .oxlintrc.json ignorePatterns) -- changing the
       # import here would guarantee the two copies drift, which is a worse outcome than
       # staying on js-yaml 4. Lift when both copies move together.
-      - dependency-name: 'js-yaml'
-        versions: ['>=5']
+      - dependency-name: "js-yaml"
+        versions: [">=5"]
       # harfbuzzjs is pinned at EXACTLY 0.4.13, the supported ABI for the optional shaping adapter.
       # - 1.x removed the explicit Wasm init and disposal APIs (hb.js / hbjs.js) that
       #   packages/text/src/harfbuzz uses (#96 merged 2026-09-12, reverted in d9347f2; #103 re-proposed).
       # - Any other version fails tests/harfbuzz.test.ts "pins wasm", which asserts the SHA-256 of the
       #   0.4.13 hb.wasm (#106 proposed 0.10.3 on 2026-09-15 and failed exactly there).
       # Lift only together with an adapter migration and a new wasm pin.
-      - dependency-name: 'harfbuzzjs'
-        versions: ['>0.4.13']
+      - dependency-name: "harfbuzzjs"
+        versions: [">0.4.13"]
 
   # Keep the action versions current. Grouped so a week of bumps is one PR, not six.
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-      day: 'monday'
+      interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     groups:
       actions:
         patterns:
-          - '*'
+          - "*"
     commit-message:
-      prefix: 'ci'
+      prefix: "ci"

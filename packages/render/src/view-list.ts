@@ -195,8 +195,11 @@ function isOutsideFrustum(item: RenderItem, frustum: Frustum): boolean {
     return !frustum.intersectsSphere(published.center, published.radius);
   }
   return (
-    computeWorldBoundingSphere(item.geometry, item.worldMatrix, scratchSphere) &&
-    !frustum.intersectsSphere(scratchSphere.center, scratchSphere.radius)
+    computeWorldBoundingSphere(
+      item.geometry,
+      item.worldMatrix,
+      scratchSphere,
+    ) && !frustum.intersectsSphere(scratchSphere.center, scratchSphere.radius)
   );
 }
 

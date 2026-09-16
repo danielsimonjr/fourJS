@@ -24,7 +24,10 @@
  * here: a type import is erased, so this module links nothing.
  */
 
-import { PARTICLE_INSTANCE_FLOATS, type ParticleRenderItem } from "@fourjs/render";
+import {
+  PARTICLE_INSTANCE_FLOATS,
+  type ParticleRenderItem,
+} from "@fourjs/render";
 import type { Matrix4 } from "@fourjs/math";
 
 import type {

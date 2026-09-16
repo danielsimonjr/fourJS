@@ -7704,7 +7704,9 @@ describe("WebglRenderer.renderEffect — drawing one (§70, R-6)", () => {
     // once-per-lifetime sampler upload with it — so the transcript below is
     // the steady-state pass, while `source` is still seen for the first
     // time, which the cache's allocation calls at its head depend on.
-    renderer.renderEffect(effectPass(new RenderTarget({ width: 4, height: 4 })));
+    renderer.renderEffect(
+      effectPass(new RenderTarget({ width: 4, height: 4 })),
+    );
     gl.reset();
 
     renderer.renderEffect(effectPass(source));
@@ -8035,7 +8037,9 @@ describe("WebglRenderer.render — untouched by §70 (R-6)", () => {
     // Since 2026-09-11 the effect program compiles on the first effect pass
     // rather than at initialize; run one so there is a handle to assert
     // against, then check the frame never selects it.
-    renderer.renderEffect(effectPass(new RenderTarget({ width: 4, height: 4 })));
+    renderer.renderEffect(
+      effectPass(new RenderTarget({ width: 4, height: 4 })),
+    );
     const effect = effectProgramHandle(gl);
     const root = createRoot();
     root.add(
@@ -13032,9 +13036,7 @@ describe("WebglRenderer.render — the §69 shadow seam (2026-09-11)", () => {
         uploadsAt(gl, litUniforms(gl).get("lightColor")).length,
       ).toBeGreaterThan(0);
       expect(warn).toHaveBeenCalledTimes(1);
-      expect(String(warn.mock.calls[0][0])).toContain(
-        "registerShadowPipeline",
-      );
+      expect(String(warn.mock.calls[0][0])).toContain("registerShadowPipeline");
     } finally {
       warn.mockRestore();
       resetDevWarnings();
@@ -13215,9 +13217,7 @@ describe("WebglRenderer.renderEffect — the §70 effect seam (2026-09-11)", () 
       expect(gl.countOf("drawArrays")).toBe(0);
       expect(gl.countOf("disable")).toBe(0);
       expect(warn).toHaveBeenCalledTimes(1);
-      expect(String(warn.mock.calls[0][0])).toContain(
-        "registerEffectPipeline",
-      );
+      expect(String(warn.mock.calls[0][0])).toContain("registerEffectPipeline");
     } finally {
       warn.mockRestore();
       resetDevWarnings();
@@ -13305,7 +13305,9 @@ describe("WebglRenderer.renderEffect — the §70 effect seam (2026-09-11)", () 
   it("disposes the compiled program with the renderer (§83)", async () => {
     registerEffectPipeline();
     const { renderer, gl } = await initialized();
-    renderer.renderEffect(effectPass(new RenderTarget({ width: 8, height: 8 })));
+    renderer.renderEffect(
+      effectPass(new RenderTarget({ width: 8, height: 8 })),
+    );
     gl.reset();
 
     renderer.dispose();
@@ -13998,7 +14000,9 @@ describe("bound-texture mirror — one bind per texture run on unit 0 (audit A6)
 
 describe("bound-texture mirror — the shaded and skinned map sites (audit A6)", () => {
   function bindsOf(gl: FakeGl): (object | null)[] {
-    return gl.callsOf("bindTexture").map((call) => call.args[1] as object | null);
+    return gl
+      .callsOf("bindTexture")
+      .map((call) => call.args[1] as object | null);
   }
 
   it("binds a map shared by two lit surfaces once", async () => {
@@ -14007,7 +14011,10 @@ describe("bound-texture mirror — the shaded and skinned map sites (audit A6)",
     const material = new TestLitMaterial();
     material.map = texture.asTexture;
     const root = new AmbientRoot([0.1, 0.1, 0.1]);
-    root.add(litRenderable(undefined, material), litRenderable(undefined, material));
+    root.add(
+      litRenderable(undefined, material),
+      litRenderable(undefined, material),
+    );
     const views = [createView(camera)];
     renderer.render(root, views);
     gl.reset();

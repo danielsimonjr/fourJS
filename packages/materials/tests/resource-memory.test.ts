@@ -125,12 +125,10 @@ describe("§83 material resource accounting (A-5)", () => {
     // lives on `auditResourceLeaks`, which this package does not import.
     vi.stubGlobal("__FOUR_DEV__", false);
     vi.resetModules();
-    const { UnlitMaterial: ProductionUnlit } = await import(
-      "../src/unlit-material.js"
-    );
-    const { liveMaterialCount: productionCount } = await import(
-      "../src/resource-memory.js"
-    );
+    const { UnlitMaterial: ProductionUnlit } =
+      await import("../src/unlit-material.js");
+    const { liveMaterialCount: productionCount } =
+      await import("../src/resource-memory.js");
     const before = productionCount();
     const material = new ProductionUnlit();
     expect(productionCount()).toBe(before + 1);

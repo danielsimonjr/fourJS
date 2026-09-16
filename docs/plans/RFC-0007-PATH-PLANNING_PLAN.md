@@ -30,40 +30,40 @@ one benchmark, and the tracking files. **No grid or navmesh planner ships in thi
 
 Each row is a fact an agent is likely to guess wrong. Read the file; do not rely on memory.
 
-| Fact | Where it is pinned |
-| --- | --- |
-| Imports use the `.js` suffix on relative paths (`./steering.js`), ESM, strict TS | any file in `packages/motion/src/` |
-| `@fourjs/motion` may import only `@fourjs/core`, `@fourjs/math`, `@fourjs/scene` — **never** `@fourjs/physics` or `@fourjs/geometry` | `packages/motion/package.json`; plan §3.1 |
-| `DeterminismLevel` lives in `packages/physics/src/types.ts` and is **unreachable** from motion; spell `PathPlannerDeterminism` locally (RFC §3) | RFC 0007 §3 |
-| `Disposable` is `import type { Disposable } from "@fourjs/core"` (`packages/core/src/disposable.ts`) | that file |
-| `defineCapability(name, options?)` returns `{ name, revocable: options?.revocable ?? false }` | `packages/core/src/plugin.ts:171` |
-| `SIMULATION_SYSTEMS` is declared `/* @__PURE__ */ defineCapability<SystemRegistry>("fourJS:simulation-systems", { revocable: true })` with a **type-only** import of the registry | `packages/motion/src/capabilities.ts` |
-| `Vector3` is mutable with `set/copy/clone/add/sub/scale/dot/cross/lengthSq/length/normalize/lerp/equalsApprox`; fields `x y z` | `packages/math/src/vector3.ts` |
-| `SteeringContext` = `{ position, velocity, maxSpeed, maxAcceleration }` (all readonly); behaviours write `out` **once** and allocate nothing | `packages/motion/src/steering.ts:113-148` and the module header |
-| `seek(context, target, out)` and `arrive(context, target, slowRadius, out)` are the existing signatures to compose | `packages/motion/src/steering.ts:243, 317` |
-| `assertFinite(value, what)` already exists (module-private) in `steering.ts`; reuse it, do not add a second | `packages/motion/src/steering.ts:543` |
-| `CatmullRomTrajectory` takes `{ points: readonly Vector3[] (≥ 2, copied), duration: number }` (seconds); `ParametricTrajectory` exists for the piecewise-linear form | `packages/motion/src/trajectories.ts:585-660, 1010-1060` |
-| `interceptPoint` returns `null` and leaves `out` untouched on "no solution" — the miss policy to copy | `packages/motion/src/prediction.ts:333-355` |
-| `SeededRandom` is re-exported by motion from `./random.js`; a planner needing randomness takes one **at construction** | `packages/motion/src/index.ts:120` |
-| All times are **seconds**; world is **Y-up** in 2D and 3D; a 2D planner keeps `z = 0` | `CLAUDE.md`, spec §7a |
-| §85 authoring errors are `RangeError` with a message ending in `(§85).`; engine failures are `new FourError(code, message, { context })` | `packages/motion/src/kinematic-controller.ts`, `packages/core/src/errors.ts:83` |
-| Per-package tests live in `packages/<pkg>/tests/*.test.ts`, import from `../src/index.js`, Vitest `describe/it/expect` | `packages/motion/tests/steering.test.ts` |
-| Coverage gate: ≥ 95 % per package, ≥ 80 % per file (`bun run coverage`) | `vitest.coverage.config.ts` |
-| The umbrella's motion barrel is `export * from "@fourjs/motion"`; tokens are additionally re-exported (same object, `toBe`) from `packages/fourjs/src/plugins.ts` and asserted in `packages/fourjs/tests/plugins.test.ts:286-320` | those files |
-| Cross-package determinism suites: `tests/determinism/<name>.test.ts` + `tests/determinism/helpers/<name>-scenario.ts`; run with `bun run test:suites` | `tests/determinism/phase2-motion.test.ts` as the model |
-| Benchmarks: `benchmarks/<name>.mjs` importing `./harness.mjs` (`measure`, `summarize`, `writeResult`, `hostRecord`, `printReport`); results land in `benchmarks/results/<name>.json`; recorded, never gated | `benchmarks/pick-latency.mjs`, `benchmarks/harness.mjs` |
-| Commands: `bun run build`, `bun run test`, `bun run test:suites`, `bun run lint`, `bun run coverage`, `bun run size` (after `bun run examples:build`), `bun run check-spec`, `node tools/check-docs.mjs` | root `package.json` |
+| Fact                                                                                                                                                                                                                              | Where it is pinned                                                              |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Imports use the `.js` suffix on relative paths (`./steering.js`), ESM, strict TS                                                                                                                                                  | any file in `packages/motion/src/`                                              |
+| `@fourjs/motion` may import only `@fourjs/core`, `@fourjs/math`, `@fourjs/scene` — **never** `@fourjs/physics` or `@fourjs/geometry`                                                                                              | `packages/motion/package.json`; plan §3.1                                       |
+| `DeterminismLevel` lives in `packages/physics/src/types.ts` and is **unreachable** from motion; spell `PathPlannerDeterminism` locally (RFC §3)                                                                                   | RFC 0007 §3                                                                     |
+| `Disposable` is `import type { Disposable } from "@fourjs/core"` (`packages/core/src/disposable.ts`)                                                                                                                              | that file                                                                       |
+| `defineCapability(name, options?)` returns `{ name, revocable: options?.revocable ?? false }`                                                                                                                                     | `packages/core/src/plugin.ts:171`                                               |
+| `SIMULATION_SYSTEMS` is declared `/* @__PURE__ */ defineCapability<SystemRegistry>("fourJS:simulation-systems", { revocable: true })` with a **type-only** import of the registry                                                 | `packages/motion/src/capabilities.ts`                                           |
+| `Vector3` is mutable with `set/copy/clone/add/sub/scale/dot/cross/lengthSq/length/normalize/lerp/equalsApprox`; fields `x y z`                                                                                                    | `packages/math/src/vector3.ts`                                                  |
+| `SteeringContext` = `{ position, velocity, maxSpeed, maxAcceleration }` (all readonly); behaviours write `out` **once** and allocate nothing                                                                                      | `packages/motion/src/steering.ts:113-148` and the module header                 |
+| `seek(context, target, out)` and `arrive(context, target, slowRadius, out)` are the existing signatures to compose                                                                                                                | `packages/motion/src/steering.ts:243, 317`                                      |
+| `assertFinite(value, what)` already exists (module-private) in `steering.ts`; reuse it, do not add a second                                                                                                                       | `packages/motion/src/steering.ts:543`                                           |
+| `CatmullRomTrajectory` takes `{ points: readonly Vector3[] (≥ 2, copied), duration: number }` (seconds); `ParametricTrajectory` exists for the piecewise-linear form                                                              | `packages/motion/src/trajectories.ts:585-660, 1010-1060`                        |
+| `interceptPoint` returns `null` and leaves `out` untouched on "no solution" — the miss policy to copy                                                                                                                             | `packages/motion/src/prediction.ts:333-355`                                     |
+| `SeededRandom` is re-exported by motion from `./random.js`; a planner needing randomness takes one **at construction**                                                                                                            | `packages/motion/src/index.ts:120`                                              |
+| All times are **seconds**; world is **Y-up** in 2D and 3D; a 2D planner keeps `z = 0`                                                                                                                                             | `CLAUDE.md`, spec §7a                                                           |
+| §85 authoring errors are `RangeError` with a message ending in `(§85).`; engine failures are `new FourError(code, message, { context })`                                                                                          | `packages/motion/src/kinematic-controller.ts`, `packages/core/src/errors.ts:83` |
+| Per-package tests live in `packages/<pkg>/tests/*.test.ts`, import from `../src/index.js`, Vitest `describe/it/expect`                                                                                                            | `packages/motion/tests/steering.test.ts`                                        |
+| Coverage gate: ≥ 95 % per package, ≥ 80 % per file (`bun run coverage`)                                                                                                                                                           | `vitest.coverage.config.ts`                                                     |
+| The umbrella's motion barrel is `export * from "@fourjs/motion"`; tokens are additionally re-exported (same object, `toBe`) from `packages/fourjs/src/plugins.ts` and asserted in `packages/fourjs/tests/plugins.test.ts:286-320` | those files                                                                     |
+| Cross-package determinism suites: `tests/determinism/<name>.test.ts` + `tests/determinism/helpers/<name>-scenario.ts`; run with `bun run test:suites`                                                                             | `tests/determinism/phase2-motion.test.ts` as the model                          |
+| Benchmarks: `benchmarks/<name>.mjs` importing `./harness.mjs` (`measure`, `summarize`, `writeResult`, `hostRecord`, `printReport`); results land in `benchmarks/results/<name>.json`; recorded, never gated                       | `benchmarks/pick-latency.mjs`, `benchmarks/harness.mjs`                         |
+| Commands: `bun run build`, `bun run test`, `bun run test:suites`, `bun run lint`, `bun run coverage`, `bun run size` (after `bun run examples:build`), `bun run check-spec`, `node tools/check-docs.mjs`                          | root `package.json`                                                             |
 
 **Never** invent an API not in this table or in the files it names. If something needed is
-missing, stop and report it in the packet's *Blocked* line rather than guessing.
+missing, stop and report it in the packet's _Blocked_ line rather than guessing.
 
 ## 3. Agent roster, file ownership, waves
 
-| Agent | Owns (creates / edits) | Wave |
-| --- | --- | --- |
-| **A1 — contract** | `packages/motion/src/path-planning.ts` (new), `packages/motion/src/capabilities.ts` (edit: add token), `packages/motion/tests/path-planning.test.ts` (new), `packages/motion/tests/capabilities.test.ts` (edit) | 1 |
-| **A2 — planner** | `packages/motion/src/waypoint-graph-planner.ts` (new), `packages/motion/tests/waypoint-graph-planner.test.ts` (new) | 2 |
-| **A3 — steering fold** | `packages/motion/src/steering.ts` (append only), `packages/motion/tests/steering.test.ts` (append only) | 2 |
+| Agent                           | Owns (creates / edits)                                                                                                                                                                                                                                                                                                             | Wave                                        |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **A1 — contract**               | `packages/motion/src/path-planning.ts` (new), `packages/motion/src/capabilities.ts` (edit: add token), `packages/motion/tests/path-planning.test.ts` (new), `packages/motion/tests/capabilities.test.ts` (edit)                                                                                                                    | 1                                           |
+| **A2 — planner**                | `packages/motion/src/waypoint-graph-planner.ts` (new), `packages/motion/tests/waypoint-graph-planner.test.ts` (new)                                                                                                                                                                                                                | 2                                           |
+| **A3 — steering fold**          | `packages/motion/src/steering.ts` (append only), `packages/motion/tests/steering.test.ts` (append only)                                                                                                                                                                                                                            | 2                                           |
 | **A4 — integration & evidence** | `packages/motion/src/index.ts` (edit), `packages/fourjs/src/plugins.ts` (edit), `packages/fourjs/tests/plugins.test.ts` (edit), `tests/determinism/path-planning.test.ts` + `tests/determinism/helpers/path-planning-scenario.ts` (new), `benchmarks/path-planning.mjs` (new), `benchmarks/results/path-planning.json` (generated) | 2 (starts after A1; final step after A2+A3) |
 
 Wave 1 is A1 alone (≈ 1 hour of work): every other agent imports A1's types. Wave 2 runs
@@ -87,11 +87,20 @@ import { Vector3 } from "@fourjs/math";
 
 import { CatmullRomTrajectory, type Trajectory } from "./trajectories.js";
 
-export interface PlannedPath { /* RFC §2, verbatim */ }
-export interface PathQuery { /* RFC §2, verbatim */ }
-export type PathPlannerDeterminism = "none" | "same-runtime" | "same-platform" | "cross-platform";
-export interface PathPlannerCapabilities { /* RFC §3 */ }
-export interface PathPlannerAdapter extends Disposable { /* RFC §3 */ }
+export interface PlannedPath {
+  /* RFC §2, verbatim */
+}
+export interface PathQuery {
+  /* RFC §2, verbatim */
+}
+export type PathPlannerDeterminism =
+  "none" | "same-runtime" | "same-platform" | "cross-platform";
+export interface PathPlannerCapabilities {
+  /* RFC §3 */
+}
+export interface PathPlannerAdapter extends Disposable {
+  /* RFC §3 */
+}
 
 /** Shared §85 guard every adapter calls first; exported so adapters do not re-spell it. */
 export function validatePathQuery(query: PathQuery): void;
@@ -100,7 +109,12 @@ export function validatePathQuery(query: PathQuery): void;
 // - maxExpansions, if present, finite and > 0 — non-positive is a RangeError (RFC §2)
 
 /** Deep-copies waypoints (and radii) so a planner never leaks its scratch vectors (RFC §2). */
-export function freezePlannedPath(planner: string, cost: number, waypoints: readonly Vector3[], radii?: readonly number[]): PlannedPath;
+export function freezePlannedPath(
+  planner: string,
+  cost: number,
+  waypoints: readonly Vector3[],
+  radii?: readonly number[],
+): PlannedPath;
 // - fewer than two waypoints → RangeError (§85); non-finite cost → RangeError
 // - radii, if given, must have waypoints.length − 1 entries, each finite ≥ 0
 
@@ -110,7 +124,10 @@ export interface PlannedPathToTrajectoryOptions {
   /** `"catmull-rom"` (default) or `"linear"`. */
   readonly form?: "catmull-rom" | "linear";
 }
-export function plannedPathToTrajectory(path: PlannedPath, options: PlannedPathToTrajectoryOptions): Trajectory;
+export function plannedPathToTrajectory(
+  path: PlannedPath,
+  options: PlannedPathToTrajectoryOptions,
+): Trajectory;
 // catmull-rom → new CatmullRomTrajectory({ points: path.waypoints, duration })
 // linear → a ParametricTrajectory (or a small local class implementing Trajectory) that
 //          walks segments at constant speed: t in [0, duration] maps to arc-length fraction.
@@ -118,14 +135,14 @@ export function plannedPathToTrajectory(path: PlannedPath, options: PlannedPathT
 //          change trajectories.ts.
 
 export class PathPlannerRegistry {
-  register(adapter: PathPlannerAdapter): void;   // duplicate name → FourError INVALID_APPLICATION_STATE
+  register(adapter: PathPlannerAdapter): void; // duplicate name → FourError INVALID_APPLICATION_STATE
   resolve(name: string): PathPlannerAdapter | null;
-  list(): readonly PathPlannerAdapter[];          // registration order (§33)
+  list(): readonly PathPlannerAdapter[]; // registration order (§33)
 }
 ```
 
 **Edits `packages/motion/src/capabilities.ts`:** add, below `SIMULATION_SYSTEMS`, with a
-doc comment that names RFC 0007 §6 and states *not revocable* (the `defineCapability`
+doc comment that names RFC 0007 §6 and states _not revocable_ (the `defineCapability`
 default):
 
 ```ts
@@ -171,7 +188,9 @@ export class WaypointGraphPlanner implements PathPlannerAdapter {
   readonly name = "fourJS:waypoint-graph";
   readonly version = "0.1.0";
   readonly capabilities: PathPlannerCapabilities = {
-    families: ["waypoint"], dimensions: ["2d", "3d"], determinism: "same-runtime",
+    families: ["waypoint"],
+    dimensions: ["2d", "3d"],
+    determinism: "same-runtime",
   };
   constructor(options?: WaypointGraphOptions);
   /** Returns the node index (insertion order). Position is copied. */
@@ -223,11 +242,19 @@ single-write rules), `seek`/`arrive`/`seekPoint`/`steerTowardVelocity` at lines 
 **Appends to `packages/motion/src/steering.ts`** (do not reorder existing code):
 
 ```ts
-export interface WaypointCursor { index: number; }
-export interface FollowWaypointsOptions { readonly agentRadius: number; readonly slowRadius?: number; }
+export interface WaypointCursor {
+  index: number;
+}
+export interface FollowWaypointsOptions {
+  readonly agentRadius: number;
+  readonly slowRadius?: number;
+}
 export function followWaypoints(
-  context: SteeringContext, path: PlannedPath, cursor: WaypointCursor,
-  options: FollowWaypointsOptions, out: Vector3,
+  context: SteeringContext,
+  path: PlannedPath,
+  cursor: WaypointCursor,
+  options: FollowWaypointsOptions,
+  out: Vector3,
 ): Vector3;
 ```
 
@@ -263,7 +290,7 @@ touches `out`.
    naming `slowRadius`.
 
 **Done when:** build + test green; `steering.ts` header's "what is still staged" list
-updated to strike *path following*; no new allocation in the hot path (a test may assert
+updated to strike _path following_; no new allocation in the hot path (a test may assert
 `out` identity: the returned vector `toBe(out)`).
 
 ### WP-PP.4 [S] Barrels, umbrella token, determinism suite, benchmark — **A4**
@@ -316,7 +343,7 @@ its helper, `benchmarks/pick-latency.mjs`, `benchmarks/harness.mjs`.
    (`bun run check-spec` afterwards).
 4. `MEMORY.md` decision entry; `TODO.md` — strike the P8-1 / PH-22 "path-planning adapters
    (RFC)" residues and the `prediction.ts` / `ik.ts` staging notes (edit those two headers
-   too); `CHANGELOG.md` *Unreleased* entry.
+   too); `CHANGELOG.md` _Unreleased_ entry.
 
 ## 6. Gate (run in this order, all must pass)
 
@@ -338,5 +365,5 @@ bun run graph:check         # no new §3.1 edge
   §4 supplies it through `FollowWaypointsOptions`.
 - `KinematicController.followPath` takes a `Trajectory`; the planner never calls it.
 - Do not add `packages/navigation` or any `@fourjs/physics` import (RFC alternatives B, C).
-- Do not implement grid A\* or a navmesh in this plan (RFC §8 *Deferred*).
+- Do not implement grid A\* or a navmesh in this plan (RFC §8 _Deferred_).
 - `SIMULATION_SYSTEMS` is revocable; `PATH_PLANNERS` is **not** — copy the pattern, not the option.

@@ -44,12 +44,10 @@ directly. Not dead; not shipped. No action needed.
 
 These files are not imported by any other file in the codebase:
 
-
 ## Unreferenced Anywhere (deletion candidates)
 
 Not imported by any other file AND not referenced within their own module — the true dead-code candidates. Verify each isn't consumed by a mechanism the
 parser can't see (dynamic access, docs examples, published-API contract) before deleting.
-
 
 ## Referenced In-Module (type contracts / helpers backing live exports)
 
@@ -76,4 +74,3 @@ interfaces typing live guards and per-package API completeness, not rot.
 ### `packages/text/src/shaping.ts`
 
 - `validateShapingDirection` (function) — 1 in-file ref
-

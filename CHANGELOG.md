@@ -23,7 +23,7 @@ specification; until then, entries are grouped by date under **Unreleased**.
   stopped it before GitHub's 6-hour job ceiling.
   · **`release:` is the bound that matters most, and not because of duration.** The workflow
   declares `concurrency: group: release, cancel-in-progress: false`, so a hung release job
-  *holds the group*: every later release queues behind it rather than failing fast. The cost of
+  _holds the group_: every later release queues behind it rather than failing fast. The cost of
   one wedge is therefore not one lost run — it is every run after it.
   · **The multiples are deliberately not uniform.** `ci:` 30 min (~2.7× a five-run 10m30s–11m20s
   p100) and `release:` 30 min (~2.3× of 11m39s–12m49s) are measured. `docs.yml` `build:` 15 and
@@ -33,7 +33,7 @@ specification; until then, entries are grouped by date under **Unreleased**.
   to date having been `skipped` by its `if:` guard in 1–4 s. Where the measurement is weak the
   bound is looser and sized to the work, because a multiple should track confidence in the
   measurement rather than a house number.
-  · A timeout does not prevent a hang; it removes a hang's *invisibility*. The 48-minute stall
+  · A timeout does not prevent a hang; it removes a hang's _invisibility_. The 48-minute stall
   consumed a runner and told nobody.
 
 ### 2026-09-16 — `check-docs` counted visual goldens from the disk, so it failed on any host that had run the visual tier
@@ -51,7 +51,7 @@ specification; until then, entries are grouped by date under **Unreleased**.
   exit 1 on an otherwise untouched tree, and back to exit 0 with the fix in place.
   The count now comes from `git ls-files`, which is both what the table already
   claimed ("**3** committed PNG goldens") and the idiom this same file already used
-  for `examples/` ("the source of truth for *exists*"). `countNested` had no other
+  for `examples/` ("the source of truth for _exists_"). `countNested` had no other
   caller and is removed rather than left as a trap.
   · This completes a mitigation that was left half-finished on 2026-09-07. That change
   gitignored the stray `-visual-win32/-darwin.png` files so a Windows run "cannot leak
@@ -74,24 +74,25 @@ specification; until then, entries are grouped by date under **Unreleased**.
   pipeline-selection seam". A-4 closed on 2026-08-07 (build-mode tier) and its
   remainder on 2026-09-07, so both sent readers chasing a discharged ticket — and
   the mechanism A-4 delivered is not that seam. A-4 shipped `__FOUR_DEV__`, a build
-  *mode* flag and the only build-time define in the repository; `packages/core/src/dev.ts`
+  _mode_ flag and the only build-time define in the repository; `packages/core/src/dev.ts`
   states the contract — only warnings, assertions, measurement and diagnostic
-  bookkeeping may ride it, and *"if deleting the guarded block changed any number the
-  engine computes, the block does not belong behind this flag"*. Batching changes what
+  bookkeeping may ride it, and _"if deleting the guarded block changed any number the
+  engine computes, the block does not belong behind this flag"_. Batching changes what
   the engine computes (13 draws become 3), so the §33 rule **bars** it from that flag
   rather than merely not having reached it; A-4's own remainder records step 3 as
   WON'T-DO for the same reason. What this repository actually uses to keep an unused
   pipeline out of a bundle is the **runtime** `register*Pipeline()` family
   (`registerShadowPipeline`, `registerStandardPipeline`, `registerSkinningPipeline`,
   `registerParticlePipeline`, …), and `createGlBatching` is already that shape —
-  batching is not missing a seam, it *is* one. Making batching the default is therefore
+  batching is not missing a seam, it _is_ one. Making batching the default is therefore
   an owner decision about who pays the 0.75–1.9 kB compile-at-init pipeline law, not a
   blocked change. No code behaviour changed; the default remains opt-in.
+
 ### Fixed — documentation
 
 - **RFC 0004's §6 deferral table pointed at a blocker that closed a month ago.** Three of its
-  seven deferrals — *Resize in place*, *Partial / dirty-rectangle upload*, and *Mipmaps and
-  filter modes for raster surfaces* — named `R-30` as the thing they wait on. R-30 landed in
+  seven deferrals — _Resize in place_, _Partial / dirty-rectangle upload_, and _Mipmaps and
+  filter modes for raster surfaces_ — named `R-30` as the thing they wait on. R-30 landed in
   both tiers (sampler state 2026-08-13, mipmaps and anisotropy 2026-08-21), so all three were
   stale. Each is now struck through with the evidence that discharges it, and a dated note
   under the table records how it was verified:
@@ -103,7 +104,7 @@ specification; until then, entries are grouped by date under **Unreleased**.
     `Texture.version` and invalidates every backend upload keyed on it.
 
   **Unblocked is not done** — each still needs its own packet and tests. What changed is that
-  the *stated reason for deferral no longer exists*, so the next reader re-triages on today's
+  the _stated reason for deferral no longer exists_, so the next reader re-triages on today's
   facts rather than re-deriving a closed blocker. Found while verifying every open `TODO.md`
   row against source instead of accepting its own description; the TODO row for RFC 0004 was
   already correct and needed no change — the RFC was the stale document, which is the reverse
@@ -462,7 +463,7 @@ hardware and release work. Coverage thresholds and the normative 150 kB budget r
   image requests too (RFC 0004 §6's A-18 half, the transport part).
 - **Asset manifests refuse other origins by default** (`scheme:` and
   `//host` URLs); same-origin shapes always pass; `parseAssetManifest(…,
-  { allowCrossOriginUrls: true })` opts in — the glTF `allowAbsoluteUris`
+{ allowCrossOriginUrls: true })` opts in — the glTF `allowAbsoluteUris`
   model.
 - **`TODO.md` holds open work only.** Every closed row (263) moved to
   `docs/archive/TODO-DONE.md` under its original heading; the tracker went from
@@ -592,7 +593,7 @@ recorded in `TODO.md` ("2026-09-11 audit follow-ups").
   is spelled; RFC 0005's pick-latency numbers cited as landed.
 
 - **Accepted RFCs 0001–0006 audited against the tree.** Each gains a dated
-  *Post-acceptance corrections* section (decision text untouched) recording
+  _Post-acceptance corrections_ section (decision text untouched) recording
   every statement the tree now contradicts, and the open residue with its plan.
 - **`tests/integration/raster-display-only.test.ts`** — the umbrella allowlist
   entry was `"four"`, matching no directory; now `"fourjs"` (behaviour unchanged;
@@ -625,7 +626,7 @@ recorded in `TODO.md` ("2026-09-11 audit follow-ups").
 
 ## 0.1.0 — open-TODO burndown (2026-09-09)
 
-Closed the remaining *contained* open items. Feature packets, RFC residues, the
+Closed the remaining _contained_ open items. Feature packets, RFC residues, the
 standing dogfooding map, first publish, and R-33 (needs non-SwiftShader hardware)
 stay on the tracker. A same-day audit recounts **12 open / 257 closed**
 (header had 249) and strikes leftover “remaining” prose on closed rows.
@@ -664,7 +665,7 @@ No packet closed.
 
 - **`smoothness.spec.ts` interpolation flake.** Two leaks, both required:
   Playwright's screenshot let the patched rAF advance 1.5Δ frames during
-  SwiftShader PNG encode (pause via `__fourPauseRaf`), *and* the wait helper
+  SwiftShader PNG encode (pause via `__fourPauseRaf`), _and_ the wait helper
   pumped that same patched rAF, adding a phantom frame per sample. Together
   they produced only even virtual frames (alpha 0.0). The wait now uses
   `__fourHostRaf`. `MINIMUM_MID_STEP_FRAMES` stays 2. `examples/first-2d-scene`
@@ -679,7 +680,6 @@ No packet closed.
   `uploadsAt(...)[0]?.[12]` indexed `unknown[]` (TS7053). The assertions
   now compare the full uploaded matrix, matching the existing particle
   program case.
-
 
 - **§79 diagnostics no longer interpolate `constructor.name`.** A minified
   `Renderable` reported as `"Ur"`. Messages and context now name authored
@@ -842,7 +842,6 @@ No packet closed.
   unknown mass mode, Rapier colliders the metadata dropped, a collider whose
   body left the envelope, and collisionstay without adapter body records.
 
-
 ### Documented
 
 - **Two follow-up rows were already shipped.** The §65 idle-scene batch
@@ -869,8 +868,8 @@ No packet closed.
 
 > **Note on the commit split, recorded because `git log` is misleading here.** This work
 > landed as two commits whose messages do not match their contents: `2d05ece`
-> (*"build: root is TypeScript 7 only…"*) contains **only** the `eslint.config.js`
-> deletion, and `75f0b34` (*"docs: …"*) contains the **entire** toolchain change plus the
+> (_"build: root is TypeScript 7 only…"_) contains **only** the `eslint.config.js`
+> deletion, and `75f0b34` (_"docs: …"_) contains the **entire** toolchain change plus the
 > docs. Cause: the staging command hit a bad pathspec and aborted, and I committed without
 > checking its exit code. History was already pushed, so it is left intact and corrected
 > here rather than rewritten. **Read `75f0b34` for the change.**
@@ -883,7 +882,7 @@ exactly **two** consumers, so neither could be removed alone; both were addresse
 - **Recorded what Bun does and does not offer for docs** (`docs/MIGRATION.md` 3.1b), so nobody
   re-researches it. **Bun ships no documentation generator** — verified three ways: `bun --help`
   (24 commands), `bun pm --help` (11 subcommands), and Bun's own documentation. The docgen work
-  in the Bun repo makes Bun's *own types consumable by* an external generator; it is not a
+  in the Bun repo makes Bun's _own types consumable by_ an external generator; it is not a
   generator.
 
   **A check that lied, worth knowing:** `bun docs` did **not** error — it ran this repo's `docs`
@@ -899,7 +898,8 @@ exactly **two** consumers, so neither could be removed alone; both were addresse
   **undocumented** — an observation, not a contract.
 
   Footgun documented: `bunx typedoc` at the repo root fails with `Cannot read properties of
-  undefined (reading 'PropertyDeclaration')`. Nothing is broken; use `bun run docs`.
+undefined (reading 'PropertyDeclaration')`. Nothing is broken; use `bun run docs`.
+
 ### Changed
 
 - **ESLint and typescript-eslint are gone; linting is Oxlint.** typescript-eslint refuses
@@ -944,9 +944,10 @@ exactly **two** consumers, so neither could be removed alone; both were addresse
   ignore named a dependency the repo no longer has. Both removed, with the reasons recorded.
   The `vitest` ignore stays — blocked by the coverage gap in `docs/MIGRATION.md` section 5,
   which is unrelated to TypeScript.
+
 ## 0.1.0 — TypeScript 7 and Bun 1.4.2
 
-The release gate that said *"wait for TypeDoc"* is gone. It was never the compiler's gate.
+The release gate that said _"wait for TypeDoc"_ is gone. It was never the compiler's gate.
 
 ### Fixed
 
@@ -956,18 +957,18 @@ The release gate that said *"wait for TypeDoc"* is gone. It was never the compil
 
   Two classes, both of them "four as a name, tag or handler":
   · **§81 capability tokens** — `four:renderer-registry`, `four:solver-registry`,
-    `four:asset-loaders`, `four:component-serializers` and the rest. These are a **public
-    extension-point API**: third-party plugins bind to these exact strings. Renaming is free
-    now and breaking later, which is the argument for doing it before 0.1 rather than after.
+  `four:asset-loaders`, `four:component-serializers` and the rest. These are a **public
+  extension-point API**: third-party plugins bind to these exact strings. Renaming is free
+  now and breaking later, which is the argument for doing it before 0.1 rather than after.
   · **WebGPU debug labels** — `four:frame`, `four:shadow`, `four:lights`, `four:draw-uniforms`.
-    These surface in browser GPU captures, so they are user-visible whenever anyone profiles.
+  These surface in browser GPU captures, so they are user-visible whenever anyone profiles.
 
   Verified not to be a data-format change first: the tokens are registry keys, never written
   into serialized scenes, and **no JSON, golden or snapshot** contains one.
 
   The rename is anchored on the string-literal openers (`"four:` and `` `four: ``) rather than on
-  the bare token, because this repo has prose that reads *"The remaining four: offset path"* and
-  *"Three decimals, not four:"*. A blanket substitution would have corrupted three English
+  the bare token, because this repo has prose that reads _"The remaining four: offset path"_ and
+  _"Three decimals, not four:"_. A blanket substitution would have corrupted three English
   sentences — they are deliberately untouched.
 
 - **`dev.ts` stopped shipping the retired brand in its own explanation.** The comment describing
@@ -987,6 +988,7 @@ The release gate that said *"wait for TypeDoc"* is gone. It was never the compil
   One assertion escaped the first sweep because it is a **regex** (`/\[four\] §10 dropped/`), where
   the brackets are escaped and a plain-string search walks straight past it. Same trap the rebrand
   hit in September; caught here by the test suite rather than by the search.
+
 ### Changed
 
 - **The library now builds and type-checks with `typescript@7.0.2`.** Verified from a clean
@@ -1022,10 +1024,11 @@ The release gate that said *"wait for TypeDoc"* is gone. It was never the compil
 
   **The finding that matters is that isolating TypeDoc alone buys nothing.** With TypeDoc
   isolated and the root on TS 7, the root immediately fails on `typescript-eslint does not
-  support TS 7.0`. `typescript@6.0.3` has two consumers, so removing one leaves the other
+support TS 7.0`. `typescript@6.0.3` has two consumers, so removing one leaves the other
   holding the root exactly where it was. Isolation + the Oxlint swap together take the root to
   **TypeScript 7.0.2 only**; either alone changes nothing. Both halves are now verified
   independently on this repository; neither is landed.
+
 - **`docs/MIGRATION.md` — blocker research and alternatives (2026-09-08).** Each blocker was
   tested on this repository rather than read about.
 
@@ -1050,6 +1053,7 @@ The release gate that said *"wait for TypeDoc"* is gone. It was never the compil
   **107 `isolatedDeclarations` annotations** away from a tsc-free `.d.ts` emit, with **9
   packages already clean**. That is a bounded task, not a blocker — the reason to keep `tsc -b`
   is now cost/benefit, not capability.
+
 - **`docs/MIGRATION.md`** — what TypeScript-on-Bun can and cannot do here, and why.
 
   Written because the question kept being answered from summary rather than from measurement,
@@ -1066,6 +1070,7 @@ The release gate that said *"wait for TypeDoc"* is gone. It was never the compil
   both resulting failures verbatim rather than describing them, states what is **not** a blocker
   so nobody re-investigates it, and carries the commands to re-measure every figure — a
   measurement expires when its instrument changes.
+
 - **`typecheck:ts6` — a CI gate for the two compilers disagreeing.** It earned itself
   immediately: TS 6.0.3 rejects the `.ts` import extensions in three §93 examples that 5.9 and
   7.0 both accept (`TS5097`). Without the gate the examples would have quietly become
@@ -1088,6 +1093,7 @@ The release gate that said *"wait for TypeDoc"* is gone. It was never the compil
 
 - Two false claims in `examples/tsconfig.json`'s own comment: the umbrella specifier is `fourJS/`,
   not `four/`, and this repo runs `bun`, not `pnpm`.
+
 ## 0.1.0 — a red gate nobody was reading, and two docs that had gone false
 
 Closes (D) and (E1) of the four decisions delegated on 2026-09-07, and fixes a failing test
@@ -1130,6 +1136,7 @@ gate found while running them.
 - **`TimeState` now states its unit.** Six of its duration fields never said "seconds", and both
   `performance.now()` and `requestAnimationFrame` hand out milliseconds — a substitution that
   type-checks and produces motion 1000x too fast rather than an error.
+
 ## 0.1.0 — the two capability gaps dogfooding found are closed
 
 Decisions (B) and (C) of the four delegated on 2026-09-07. Both were found by building a
@@ -1152,8 +1159,8 @@ runtime with NO transport still refuses loudly and still names `{ fetch }`.
 
 ### `KeyboardState`, the twenty lines every consumer rewrote
 
-`@fourjs/input` shipped without the thing "input" most obviously means — *is W down right
-now*. Three consumers in this repo had written it themselves and disagreed:
+`@fourjs/input` shipped without the thing "input" most obviously means — _is W down right
+now_. Three consumers in this repo had written it themselves and disagreed:
 `character-controller` keyed on `code`, a flight-sim probe on `key.toLowerCase()`.
 
 `KeyboardState(surface)` gives `isDown(code)`, a frozen live `held` view and an idempotent
@@ -1169,7 +1176,7 @@ with **no DOM**, instead of a comment claiming it.
 `examples/character-controller` I first wrote that it "had the bug". It did not — it handled
 `blur` correctly all along. That makes the case for the helper stronger, not weaker: the code
 was right and every consumer still had to write it, so whoever forgot the `blur` half walked
-forever after an alt-tab. Deleting a *correct* copy is the point.
+forever after an alt-tab. Deleting a _correct_ copy is the point.
 
 This does not close the `KeyboardInput` naming trap — that is (D). What it removes is the
 reason people reach for the wrong class: there is now a right one.
@@ -1199,10 +1206,10 @@ project's roadmap. It does not need to:
 
 - **TS 7 is the Go port of the compiler.** typedoc consumes the compiler API, so it CRASHES
   rather than warning — and a peer-range bump was never going to be the signal to watch for.
-- **The repo's own measured matrix already said the answer:** TS 7.0.2 gives *docs crash, lint
-  **passes***. Only the docs step blocks it.
-- **typedoc resolves its OWN TypeScript.** Verified: an isolated install printed *"Using
-  TypeScript 6.0.3 from ./node_modules/typescript"*.
+- **The repo's own measured matrix already said the answer:** TS 7.0.2 gives _docs crash, lint
+  **passes**_. Only the docs step blocks it.
+- **typedoc resolves its OWN TypeScript.** Verified: an isolated install printed _"Using
+  TypeScript 6.0.3 from ./node_modules/typescript"_.
 - **Proven end to end:** that isolated typedoc, run against this repo's real sources and
   `typedoc.json`, produced **0 errors / 24 warnings** — identical to the workspace baseline.
   The "TS 6.0.3 → docs 7 errors" recorded in `dependabot.yml` was `@types/node` unresolved
@@ -1220,16 +1227,16 @@ on `peerDependencies` from the `latest` tag alone: one signal, reported as resea
 
 ## 0.1.0 — Stage 2: the packages are `fourJS` / `@fourjs`, and it broke twice first
 
-Authorised by Daniel: *"Stage 2 @fourjs"*, *"All imports from four/* need to change to
-fourJS/*"*, *"We can't use four as a name or tag or handler for a library."* Nothing in the
+Authorised by Daniel: _"Stage 2 @fourjs"_, _"All imports from four/_ need to change to
+fourJS/_"_, _"We can't use four as a name or tag or handler for a library."_ Nothing in the
 workspace is called `four` any more.
 
-| | | |
-|---|---|---|
-| `@four/<pkg>` | `@fourjs/<pkg>` | 7,378 replacements, 848 files |
-| `four` | **`fourJS`** | umbrella package + every module specifier |
-| `packages/four` | `packages/fourjs` | directory (lowercase — see below) |
-| `four.js-monorepo` | `fourjs-monorepo` | root workspace |
+|                    |                   |                                           |
+| ------------------ | ----------------- | ----------------------------------------- |
+| `@four/<pkg>`      | `@fourjs/<pkg>`   | 7,378 replacements, 848 files             |
+| `four`             | **`fourJS`**      | umbrella package + every module specifier |
+| `packages/four`    | `packages/fourjs` | directory (lowercase — see below)         |
+| `four.js-monorepo` | `fourjs-monorepo` | root workspace                            |
 
 The case split is deliberate: the SCOPE is lowercase `@fourjs/*`, the package NAME is
 `fourJS`, and the DIRECTORY is lowercase. Published identity is untouched —
@@ -1392,12 +1399,12 @@ honest finding: this backlog is mostly deferred-by-decision packets, not stale b
   is a stated non-goal ("§84 does not name it").
 - **§65 glyph batching struck** from the batching row. CHANGELOG (R-28) and
   `four/src/text-node.ts:71` both say it outright: labels sharing a material merge into one
-  draw, which *"closes §65's glyph-batching strategy at the label level"*. The residue named
+  draw, which _"closes §65's glyph-batching strategy at the label level"_. The residue named
   there — grouping labels that do NOT share a material — is the atlas-grouping sub-part already
   listed separately, not a second open claim.
 - **RFC 0005's `Rectangle2` prerequisite struck** from the R-1 follow-ups.
-  `render/src/renderer.ts:464` states it directly: *"`readPixels` joined the interface when
-  `Rectangle2` landed in `@fourjs/math` (2026-08-29; RFC 0005's recorded prerequisite, cleared)"*.
+  `render/src/renderer.ts:464` states it directly: _"`readPixels` joined the interface when
+  `Rectangle2` landed in `@fourjs/math` (2026-08-29; RFC 0005's recorded prerequisite, cleared)"_.
 
 **One verifier was overruled.** It reported `A-1 follow-ups` should stay open. The synthetic
 bundle test it relied on is not the same claim as the real example bundle, so I rebuilt
@@ -1437,19 +1444,19 @@ from inside the suite.
 Swapping `WebglRenderer` → `WebgpuRenderer` in the cycle-3 app is **two lines** — the import and
 the constructor — and nothing else moved. Measured side by side on the same app:
 
-| | WebGL | WebGPU |
-|---|---|---|
-| glTF | loaded | loaded |
-| particles alive | 245 | 247 |
-| tween range | 1.025–1.550 | 1.050–1.575 |
-| lit pixels | 9,462 | 10,903 |
-| console errors | 0 | 0 |
+|                 | WebGL       | WebGPU      |
+| --------------- | ----------- | ----------- |
+| glTF            | loaded      | loaded      |
+| particles alive | 245         | 247         |
+| tween range     | 1.025–1.550 | 1.050–1.575 |
+| lit pixels      | 9,462       | 10,903      |
+| console errors  | 0           | 0           |
 
 Assets, particles, animation, UI and §42 authority all behaved identically across backends.
 
-The single WebGPU-only message is §10's dropped-time guard on the slower first frame — *"dropped
+The single WebGPU-only message is §10's dropped-time guard on the slower first frame — _"dropped
 0.0666s of simulation time this frame (maximumSubSteps=5) … TimeState.droppedTime is now
-0.0666s"*. That is the documented guard doing its job, and it names the field to inspect. It is
+0.0666s"_. That is the documented guard doing its job, and it names the field to inspect. It is
 also the same mechanism behind the look-key gate fixed earlier today, which is a useful
 consistency: the engine reports the thing that bit that test.
 
@@ -1488,7 +1495,7 @@ Two notes from building it:
 
 Cycle 3's fifth finding, fixed. §42's transform authority is mandatory knowledge for animating
 anything and appeared **0 times** in `README.md`. The note now sits in the blockquote that
-already sends readers on to *"authored animation"* — the precise step where the rule bites.
+already sends readers on to _"authored animation"_ — the precise step where the rule bites.
 
 The snippet is deliberately unchanged: it writes `circle.position` by hand, which is legal
 under the default `"manual"` owner, so it was never wrong. What was missing is the sentence
@@ -1508,7 +1515,7 @@ told, not about what the code does — which is its own signal at 0.1.
 
 - **`KeyboardInput` is a naming trap, and a DEV message did not fix it.** I wrote
   `new KeyboardInput({ target: window })` and `keys.isDown(…)`; both wrong. The class's own
-  comment *predicts that exact mistake*, and a DEV error was added for it on 2026-09-06 — yet I
+  comment _predicts that exact mistake_, and a DEV error was added for it on 2026-09-06 — yet I
   made it again from scratch with the mitigation in place. Worse, the gap it hides is real: a
   grep for `isDown`/`heldKeys`/`pressedKeys` across every package returns **zero**, and
   `examples/character-controller` hand-rolls `new Set<string>()` off DOM listeners. Every game
@@ -1562,12 +1569,12 @@ catalogue's home. Scene and physics keep unconditional `console.warn` with WeakM
 suppression, which is what `warnAuthorityConflict` settled on when step 4 came out.
 
 Method note: the first grep for the flag reported 3 hits in scene and 2 in physics. All five
-were **prose** — `authority.ts` literally says *"not `DEV` / `devWarnOnce`"*. Matching real
+were **prose** — `authority.ts` literally says _"not `DEV` / `devWarnOnce`"_. Matching real
 `import` statements instead returns zero across all six simulation packages.
 
 ## 0.1.0 — AUDIT-120 had drifted in both directions at once
 
-Chasing one TODO row — "qualify `AUDIT-120.md`'s *basic 3D meshes: shipped* row honestly" —
+Chasing one TODO row — "qualify `AUDIT-120.md`'s _basic 3D meshes: shipped_ row honestly" —
 turned up three defects, and the original row was wrong the opposite way round from the one
 the TODO assumed.
 
@@ -1652,20 +1659,21 @@ expect(status["gpuframe"]).toBe("nan")   Expected: "nan"   Received: "0.015531"
 **The code was right and the test was stale.** `A-1 (c)` shipped
 `Renderer.lastGpuFrameTimeSeconds` the day before; the runner's GL stack simply started
 answering `EXT_disjoint_timer_query`. The assertion had hard-coded the opposite, with a comment
-asserting it as fact: *"SwiftShader / CI has no `timestamp-query` / `EXT_disjoint_timer_query`."*
+asserting it as fact: _"SwiftShader / CI has no `timestamp-query` / `EXT_disjoint_timer_query`."_
 
 §84's GPU-frame row is a **capability**, not a contract, and pinning a capability makes the gate
-flip with the runner's GPU rather than with our code — a test that fails for a feature *working*.
+flip with the runner's GPU rather than with our code — a test that fails for a feature _working_.
 It now asserts what §84 actually promises: the `nan` sentinel, or a finite positive duration,
 never a counter with no producer quietly reading `0`. Same shape as the `contacts` row three
 lines above, corrected in #76.
 
 Also: the `contacts` assertion now reports the value it received. Chasing this failure locally
 cost two wrong turns that a message would have shortened — the local `dist/` predated `#74`, so
-the example ran pre-`A-5` code and failed on a *different* line, which looked like a second bug
+the example ran pre-`A-5` code and failed on a _different_ line, which looked like a second bug
 and was only stale build output. Verified after `bun run build`: 9/9 twin specs pass.
 
 ## 0.1.0 — pre-release history (2026-09-06 onward)
+
 ### 2026-09-06 — CI after #76
 
 - **`graph:duplicates`.** Allowlist the R-32 wide-layout constants
@@ -1806,7 +1814,6 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
 - **`@fourjs/motion`.** Uniform-grid spatial index with explicit rebuild;
   query returns insertion order for §33 determinism.
 
-
 ### 2026-09-06 — Smoothness interpolation waiter
 
 - **`waitForVirtualFrameCount`.** Poll `__fourVirtualFrames` through
@@ -1841,7 +1848,6 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
 - **`warnAuthorityConflict`** uses unconditional `console.warn` — `@fourjs/scene`
   cannot gate on `DEV` per `dev-build-mode.test.ts` (simulation envelope).
 
-
 ### 2026-09-06 — WebGL F13 / metal-roughness restore
 
 - **Unlit draw order.** Texture bind and `setFeatures` run before
@@ -1864,7 +1870,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
 - **§42.** `warnAuthorityConflict` emits through `devWarnOnce` (A-4
   remainder step 4). Production builds print nothing.
 - **§83 duplicate asset loads.** A second `AssetManager.load` of a
-  *settled* `(url, loader)` slot warns once via `devWarnOnce`. In-flight
+  _settled_ `(url, loader)` slot warns once via `devWarnOnce`. In-flight
   coalescing stays silent.
 
 ### 2026-09-06 — PoseTarget scale channel
@@ -1969,7 +1975,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
 - **#68 closed; `js-yaml >=5` ignored.** Dependabot re-proposed the dev-dependency group
   without eslint 10 (the earlier ignore working). Its lockfile was regenerated by hand —
   Dependabot cannot write `bun.lock`, so CI failed at install with `lockfile had changes,
-  but lockfile is frozen`. That got it past install, and it then failed on the
+but lockfile is frozen`. That got it past install, and it then failed on the
   architecture-invariants step:
 
   ```text
@@ -1993,7 +1999,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
 ### 2026-09-06 — `bun run lint` fails on a machine that has dogfooded
 
 - **`.dogfood/**` is now ignored by ESLint.** The dogfooding scratch directory holds
-  throwaway consumer apps written deliberately the way a *user* would write them, so they
+  throwaway consumer apps written deliberately the way a _user_ would write them, so they
   neither share this config's project service nor belong under the library's own rules.
   Without the ignore, `bun run lint` fails on any machine that has run a dogfooding pass
   while CI stays green — the directory is gitignored, so the runner never sees it.
@@ -2004,7 +2010,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
 
 - **Two Dependabot PRs closed, neither blocked on a rebase.**
   - **#65** (`@dimforge/rapier` 0.19.3 → 0.20.0) is the change merged as #63 and reverted
-    on 2026-09-05. CI red for the same recorded cause: four *behavioural* differences, not
+    on 2026-09-05. CI red for the same recorded cause: four _behavioural_ differences, not
     an API break — a bullet that no longer tunnels at a small CCD prediction distance, a
     contact distance of 0.005 where `<= 0` was expected, and a snapshot-restored joint at
     −0.75 where `> −0.22` was expected. Adopting 0.20 is a decision, and it needs the
@@ -2077,10 +2083,10 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
   `INVALID_APPLICATION_STATE`. Found by dogfooding, with a `makeWorld()` helper.
 
   Re-adding the **identical** registration is now a no-op returning the registry. A
-  *different* solver under a name already taken still throws, with the same message and
+  _different_ solver under a name already taken still throws, with the same message and
   context.
 
-  **Why this does not weaken §33.** The refusal exists to stop a silent *overwrite*:
+  **Why this does not weaken §33.** The refusal exists to stop a silent _overwrite_:
   which solver `"auto"` builds would otherwise depend on module evaluation order, and a
   simulation that changes solver for that reason is not reproducible. Adding the same
   entry twice overwrites nothing — the map holds the same registration, `solvers` keeps
@@ -2114,9 +2120,9 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
   Measured on Windows/SwiftShader: **1 of 4 passing → 3 of 4**.
 
 - **The remaining failure is understood but not fixed, and the attempted fix was rolled
-  back.** "RECOVER" asserts the centroid's *span* exceeds 0.2, and a span needs a full
+  back.** "RECOVER" asserts the centroid's _span_ exceeds 0.2, and a span needs a full
   wave period to reach both extremes. `WAVE_PERIOD` is **3.6 s**, and the watch runs for
-  4 s of *wall clock* — but §10 **drops simulation time** on a frame that cannot keep up,
+  4 s of _wall clock_ — but §10 **drops simulation time** on a frame that cannot keep up,
   so on a slow machine 4 s of clock is less than 3.6 s of simulation and the chain is
   sampled across a fraction of its wave. A running wave then measures 0.156.
 
@@ -2139,7 +2145,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
   The loader is not at fault. `resolveUri` in `@fourjs/assets` resolves a glTF's relative
   URIs against the asset's **URL**, lexically, splitting on `/`; its docblock says why
   (§33 — the package names no `URL` global, so resolution is identical everywhere). The
-  tests handed it `fileURLToPath(...)`, a *native* path. On Windows the separator is `\`,
+  tests handed it `fileURLToPath(...)`, a _native_ path. On Windows the separator is `\`,
   so `lastIndexOf("/")` is −1, the base collapses to `""`, and every relative URI
   resolves against the CWD. On POSIX a native path is also `/`-separated, which is why a
   determinism suite could prove determinism on CI and fail to open its own fixture here.
@@ -2154,8 +2160,8 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
 - **The DEV-gated `new Node()` warning is withdrawn.** It put `if (DEV && …)` in
   `packages/scene/src/node.ts`, and `tests/integration/dev-build-mode.test.ts` refuses
   that outright: `scene` is on its simulation list — `math`, `motion`, `scene`,
-  `physics`, `animation`, `particles` — and *"none of them may branch on the build mode
-  at all"*, because those are the packages a replay's numbers come out of (§33).
+  `physics`, `animation`, `particles` — and _"none of them may branch on the build mode
+  at all"_, because those are the packages a replay's numbers come out of (§33).
   Registering it in `GATED` was not an option either; that is the same test's other half.
 
   Nor could it simply drop the flag and run unconditionally: the message costs ~100 B
@@ -2220,7 +2226,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
 ### 2026-09-06 — `KeyboardInput` now refuses a malformed options object clearly
 
 - **`new KeyboardInput({ surface: window })` threw `TypeError: Cannot read properties of
-  undefined (reading 'focusTarget')`** — an internal property access naming a private
+undefined (reading 'focusTarget')`** — an internal property access naming a private
   field, with no hint of the real signature. The constructor takes **two** arguments,
   `(surface, { focusTarget })`, and `focusTarget` is required.
   It now throws a `FourError` naming the call shape, the way `SpringDamper` answers the
@@ -2229,7 +2235,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
   source-reading exercise.
 - **The message also says what the class is for**, because the name is what invites the
   mistake. In a package called `@fourjs/input`, `KeyboardInput` reads like "the way to read
-  the keyboard", but it routes events to a *focused scene node* and pairs with
+  the keyboard", but it routes events to a _focused scene node_ and pairs with
   `@fourjs/ui`'s `keyboardFocusTarget(root)`. Game code reading WASD wants neither, and
   four offers no first-class alternative: its own `examples/character-controller` uses
   plain DOM listeners. The error now points there rather than leaving a game developer to
@@ -2255,13 +2261,13 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
 
   Measured across both Chromium builds and four flag sets, on a served origin:
 
-  | binary | flags | `requestAdapter()` |
-  | --- | --- | --- |
-  | full | `--use-gl=angle --use-angle=swiftshader --enable-unsafe-webgpu` (previous) | **null** |
-  | shell | same | **null** |
-  | full | `--enable-unsafe-webgpu` only | nvidia / pascal, 20 features |
-  | full | `+ --use-webgpu-adapter=swiftshader` | google / swiftshader, 18 features |
-  | shell | `--use-gl=angle --enable-unsafe-webgpu` | nvidia / pascal, 20 features |
+  | binary | flags                                                                      | `requestAdapter()`                |
+  | ------ | -------------------------------------------------------------------------- | --------------------------------- |
+  | full   | `--use-gl=angle --use-angle=swiftshader --enable-unsafe-webgpu` (previous) | **null**                          |
+  | shell  | same                                                                       | **null**                          |
+  | full   | `--enable-unsafe-webgpu` only                                              | nvidia / pascal, 20 features      |
+  | full   | `+ --use-webgpu-adapter=swiftshader`                                       | google / swiftshader, 18 features |
+  | shell  | `--use-gl=angle --enable-unsafe-webgpu`                                    | nvidia / pascal, 20 features      |
 
   **`--use-angle=swiftshader` is the cause.** It governs ANGLE — WebGL's rasteriser —
   and remains exactly right for the `chromium` and `visual` projects, but on Windows it
@@ -2340,6 +2346,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
   `examples/*/main.ts` call `start()` exactly once, so the README was the only place in
   the repository that omitted it — which made the first program a new reader runs the one
   program here that could not run.
+
 - **`tools/check-docs.mjs` now gates the lifecycle**, because the fix alone would rot
   again: a fenced block is prose, and the paragraph under this one called the snippet
   "illustrative", which is what licensed the omission. The check flags any fenced
@@ -2350,7 +2357,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
     first version matched **zero** blocks — passing while catching nothing, which is the
     failure mode the check exists to prevent.
   - It binds to the application's identifier. A looser version flagged any block with
-    `.initialize()` and `.step()`, hitting four guides that step a *`PhysicsWorld`*
+    `.initialize()` and `.step()`, hitting four guides that step a _`PhysicsWorld`_
     (`world.step(1 / 60)`) and rightly never call `app.start()` — four false positives
     out of five hits.
 
@@ -2371,6 +2378,7 @@ and was only stale build output. Verified after `bun run build`: 9/9 twin specs 
   dependency had been renamed, resolved to nothing, and shipped broken on the first release, which
   is verbatim the failure this tool's header says it exists to prevent. The validator was right;
   the rewriter was one character short. `SCOPED_STRING` now matches subpath segments.
+
 - **Two renderer error messages named the workspace package to consumers who cannot have it.**
   `"…Call registerSkinningPipeline() from " + "@fourjs/render-webgl at application setup (RFC 0003)."`
   put the package name at the start of a prose string, where the rewriter deliberately does not
@@ -2387,16 +2395,17 @@ specifiers rewritten.
 - **Reverted the dev-dependency bump (#62).** It moved TypeScript 5.9.3 -> 7.0.2 together with
   vitest 3 -> 4, and that pair has **no working TypeScript version** in this repo:
 
-  | TypeScript | `bun run docs` | `bun run lint` |
-  |---|---|---|
-  | 7.0.2 | **crash** — `Cannot read properties of undefined (reading 'PropertyDeclaration')` | pass |
-  | 6.0.3 | 7 errors — `@types/node` unresolved in test files | 76 errors |
-  | 5.9.3 | **pass** | 38 errors |
+  | TypeScript | `bun run docs`                                                                    | `bun run lint` |
+  | ---------- | --------------------------------------------------------------------------------- | -------------- |
+  | 7.0.2      | **crash** — `Cannot read properties of undefined (reading 'PropertyDeclaration')` | pass           |
+  | 6.0.3      | 7 errors — `@types/node` unresolved in test files                                 | 76 errors      |
+  | 5.9.3      | **pass**                                                                          | 38 errors      |
 
   typedoc 0.28.20 is the latest published version and peers at TypeScript `<= 6.0.x`, so TS 7 has
   no supported typedoc at all; below TS 7, vitest 4's types degrade to `any`, which is what the
   lint errors are. The bump also caused 7 test failures by exposing a pre-existing test-isolation
   defect (the §42 authority warning fires an extra time; the affected tests pass in isolation).
+
 - **Reverted the production-dependency bump (#63)**, `@dimforge/rapier` 0.19.3 -> 0.20.0. Four
   physics tests failed on solver behaviour drift — a bullet that no longer tunnels at a tiny CCD
   prediction distance, a contact distance of 0.005 where `<= 0` was expected, and a snapshot-
@@ -2411,7 +2420,7 @@ specifiers rewritten.
 
 - **`@changesets/cli` kept at 3.0.1**, i.e. NOT reverted with the rest of #62. The workflow uses
   `changesets/action@v2` (from the #61 actions bump), which refuses CLI v2 outright:
-  *"This version of the Changesets action is designed to work with Changesets CLI v3."* That bump
+  _"This version of the Changesets action is designed to work with Changesets CLI v3."_ That bump
   is unrelated to the TypeScript/vitest conflict, so reverting it wholesale broke `Release` a
   second way. Restored surgically; `docs` and `lint` stay green.
 

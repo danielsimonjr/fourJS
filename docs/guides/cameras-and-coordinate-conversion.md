@@ -186,8 +186,7 @@ handover is untrack + authority write, in that order.
 ## Camera rigs (§44)
 
 §44 lists seven camera controls; most ship as components in `@fourjs/motion`
-(`OrbitRig`, `FollowRig`, `LookAtConstraint` + `ConstraintSystem` at §39 step
-7) or as composition (path animation, physics attachment — see
+(`OrbitRig`, `FollowRig`, `LookAtConstraint` + `ConstraintSystem` at §39 step 7) or as composition (path animation, physics attachment — see
 `tests/integration/camera-rigs.test.ts`). Rigs never read input: they take
 **numbers the application feeds in** so sensitivity and replay stay yours.
 
@@ -241,7 +240,12 @@ import { OrbitRig } from "fourJS/motion";
 import { PerspectiveCamera } from "fourJS/scene";
 import { Vector3 } from "fourJS/math";
 
-const camera = new PerspectiveCamera({ fieldOfView: Math.PI / 4, aspect: 16 / 9, near: 0.1, far: 200 });
+const camera = new PerspectiveCamera({
+  fieldOfView: Math.PI / 4,
+  aspect: 16 / 9,
+  near: 0.1,
+  far: 200,
+});
 const rig = new OrbitRig(); // state only — no target, no ConstraintSystem
 camera.transformAuthority = "manual";
 
@@ -249,11 +253,15 @@ camera.transformAuthority = "manual";
 rig.orbit(pointerDeltaX * 0.005, -pointerDeltaY * 0.005);
 
 // Each step, after reading WASD as `forward` metres per second (§7a):
-const cp = Math.cos(rig.pitch), sp = Math.sin(rig.pitch);
-const sy = Math.sin(rig.yaw), cy = Math.cos(rig.yaw);
+const cp = Math.cos(rig.pitch),
+  sp = Math.sin(rig.pitch);
+const sy = Math.sin(rig.yaw),
+  cy = Math.cos(rig.yaw);
 const p = camera.transform.position;
 camera.lookAt(new Vector3(p.x + cp * sy, p.y + sp, p.z + cp * cy));
-p.x += cp * sy * forward * dt; p.y += sp * forward * dt; p.z += cp * cy * forward * dt;
+p.x += cp * sy * forward * dt;
+p.y += sp * forward * dt;
+p.z += cp * cy * forward * dt;
 ```
 
 Strafe is the same pattern with the horizontal right vector

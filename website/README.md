@@ -18,7 +18,7 @@ and API documentation generated from TypeScript declarations.
   repository at `https://<owner>.github.io/four.js/`. A bundle built with the
   default base `"/"` requests its assets from the domain root and loads
   nothing. The example Vite configs deliberately do not hardcode a base: it
-  is a property of *where* a bundle is deployed, not of the example. Local
+  is a property of _where_ a bundle is deployed, not of the example. Local
   `vite preview` and the Playwright browser gate still serve at `/`.
   Deployed paths: `/examples/<name>/` (nested flagships keep the
   `flagship/<demo>` segment). `character-controller` is in the `EXAMPLES`
@@ -64,7 +64,7 @@ PR, once TypeDoc's peer range includes 7.x.
 ## What is still staged
 
 - **A live flagship embed as the site's centrepiece.** §93 wants the page
-  itself to *be* a scene. Since 2026-08-07 the flagship builds and deploys
+  itself to _be_ a scene. Since 2026-08-07 the flagship builds and deploys
   with the other demos; `index.html` is still a list of links, not an
   iframe or in-page canvas.
 - **Installation and quick start on this page.** Deferred to first publish

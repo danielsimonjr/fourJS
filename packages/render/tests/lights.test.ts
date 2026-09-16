@@ -670,8 +670,10 @@ describe("collectSceneLights — hemisphere (§68)", () => {
     collectSceneLights(scene, out);
     expect(out.hasHemisphereLight).toBe(false);
     expect(out.hemisphereSky).toEqual([0, 0, 0]);
-    expect([out.hemisphereUp.x, out.hemisphereUp.y, out.hemisphereUp.z]).toEqual(
-      [0, 1, 0],
-    );
+    expect([
+      out.hemisphereUp.x,
+      out.hemisphereUp.y,
+      out.hemisphereUp.z,
+    ]).toEqual([0, 1, 0]);
   });
 });

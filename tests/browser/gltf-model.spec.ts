@@ -93,7 +93,12 @@ test.describe("examples/gltf-model (§78)", () => {
         const context = surface.getContext("2d");
         if (context === null) throw new Error("no 2D context for the readback");
         context.drawImage(image, 0, 0);
-        const { data } = context.getImageData(0, 0, surface.width, surface.height);
+        const { data } = context.getImageData(
+          0,
+          0,
+          surface.width,
+          surface.height,
+        );
         let count = 0;
         for (let i = 0; i < data.length; i += 4) {
           const sum = (data[i] ?? 0) + (data[i + 1] ?? 0) + (data[i + 2] ?? 0);
@@ -113,6 +118,5 @@ test.describe("examples/gltf-model (§78)", () => {
     expect(lit, "the model loaded but nothing was drawn").toBeGreaterThan(
       MINIMUM_LIT_PIXELS,
     );
-
   });
 });

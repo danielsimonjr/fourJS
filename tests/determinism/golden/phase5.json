@@ -14,14 +14,8 @@
     "collisionEndCount": 6,
     "firstCollisionStartStep": 7,
     "lastCollisionEndStep": 260,
-    "triggerEnterSteps": [
-      25,
-      206
-    ],
-    "triggerExitSteps": [
-      42,
-      250
-    ],
+    "triggerEnterSteps": [25, 206],
+    "triggerExitSteps": [42, 250],
     "sleepCount": 4,
     "wakeCount": 4
   },
@@ -30,14 +24,8 @@
     "collisionEndCount": 6,
     "firstCollisionStartStep": 7,
     "lastCollisionEndStep": 260,
-    "triggerEnterSteps": [
-      25,
-      206
-    ],
-    "triggerExitSteps": [
-      42,
-      250
-    ],
+    "triggerEnterSteps": [25, 206],
+    "triggerExitSteps": [42, 250],
     "sleepCount": 4,
     "wakeCount": 4
   }

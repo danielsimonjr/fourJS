@@ -29,18 +29,18 @@ same license.
 The workspace is a **Bun** monorepo (Bun ≥ 1.2, ESM only, strict TypeScript; RFC 0006).
 Root scripts, and the level each one gates (plan §8, "Verification stack"):
 
-| Command | Purpose | Gate |
-|---|---|---|
-| `bun install --frozen-lockfile` | Install; never change the lockfile by hand | always |
-| `bun run build` | `tsc -b` across `packages/*` (sequential) | every change |
-| `bun run test` | Per-package unit tests (Vitest) | every change |
-| `bun run test:suites` | Root cross-package suites in `tests/` | phase exits |
-| `bun run lint` | ESLint (type-checked) | every change |
-| `bun run format` | Prettier write | as needed |
-| `bun run check-spec` | `tools/check-spec.mjs` — spec integrity | any change touching `docs/` |
-| `bun run docs` | TypeDoc API docs into `docs/api` | CI |
-| `bun run example:build` | Build `examples/first-2d-scene` | CI |
-| `bun run size` | size-limit — built example ≤ 150 kB gzip (§86) | CI |
+| Command                         | Purpose                                        | Gate                        |
+| ------------------------------- | ---------------------------------------------- | --------------------------- |
+| `bun install --frozen-lockfile` | Install; never change the lockfile by hand     | always                      |
+| `bun run build`                 | `tsc -b` across `packages/*` (sequential)      | every change                |
+| `bun run test`                  | Per-package unit tests (Vitest)                | every change                |
+| `bun run test:suites`           | Root cross-package suites in `tests/`          | phase exits                 |
+| `bun run lint`                  | ESLint (type-checked)                          | every change                |
+| `bun run format`                | Prettier write                                 | as needed                   |
+| `bun run check-spec`            | `tools/check-spec.mjs` — spec integrity        | any change touching `docs/` |
+| `bun run docs`                  | TypeDoc API docs into `docs/api`               | CI                          |
+| `bun run example:build`         | Build `examples/first-2d-scene`                | CI                          |
+| `bun run size`                  | size-limit — built example ≤ 150 kB gzip (§86) | CI                          |
 
 These scripts live in the root `package.json`. Toolchain versions are **pinned exactly** —
 do not install, upgrade, or add dependencies as part of an unrelated change.
@@ -63,7 +63,7 @@ Rules that apply to anyone executing a packet:
 1. **Scope.** Touch only the files the packet's `Files` list names. If the work seems to
    need more, stop and say so rather than improvising.
 2. **Done means done.** A packet is complete only when its `Done` commands pass. Phase
-   exit packets *verify and fix nothing* — they file defects as `WP-<phase>.<n>-fix<k>`
+   exit packets _verify and fix nothing_ — they file defects as `WP-<phase>.<n>-fix<k>`
    packets.
 3. **One commit per packet**, message `WP-<id>: <title>`, staging only the packet's files.
    The lockfile is refreshed by the maintainer, not inside a feature packet.

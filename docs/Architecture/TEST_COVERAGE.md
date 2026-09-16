@@ -70,8 +70,8 @@ the sequential `bun run coverage` variant above; `Tests` is the package's
 `Tests N passed` count from the same run. All 24 packages clear the ≥ 95%
 gate on all four metrics.
 
-| Package                 | % Stmts | % Branch | % Funcs | % Lines |     Tests |
-| ----------------------- | ------: | -------: | ------: | ------: | --------: |
+| Package                   | % Stmts | % Branch | % Funcs | % Lines |     Tests |
+| ------------------------- | ------: | -------: | ------: | ------: | --------: |
 | `@fourjs/core`            |   99.01 |    98.44 |     100 |   99.01 |        91 |
 | `@fourjs/math`            |   98.87 |    97.51 |     100 |   98.87 |       154 |
 | `@fourjs/scene`           |   99.67 |    99.41 |     100 |   99.67 |       191 |
@@ -95,8 +95,8 @@ gate on all four metrics.
 | `@fourjs/ui`              |     100 |      100 |     100 |     100 |        91 |
 | `@fourjs/serialization`   |     100 |      100 |     100 |     100 |        84 |
 | `@fourjs/diagnostics`     |     100 |      100 |     100 |     100 |       214 |
-| `four` (umbrella)       |     100 |      100 |     100 |     100 |        65 |
-| **Total**               |         |          |         |         | **3,081** |
+| `four` (umbrella)         |     100 |      100 |     100 |     100 |        65 |
+| **Total**                 |         |          |         |         | **3,081** |
 
 † Reserved placeholder packages — a single test pinning the `PACKAGE_NAME`
 export, so their 100% is trivial, not evidence. See

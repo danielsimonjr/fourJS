@@ -190,9 +190,7 @@ describe("Rapier2dAdapter defensive branches", () => {
         direction: new Vector2(0, -1),
       }),
     ).not.toHaveLength(0);
-    expect(
-      adapter.pointQuery({ point: new Vector2(0, 0.5) }),
-    ).toEqual([]);
+    expect(adapter.pointQuery({ point: new Vector2(0, 0.5) })).toEqual([]);
     expect(adapter.getColliderId(ground.collider)).toBe(1);
     step(adapter, 3);
     adapter.dispose();
@@ -430,9 +428,7 @@ describe("Rapier3dAdapter defensive branches", () => {
         direction: new Vector3(0, -1, 0),
       }),
     ).not.toHaveLength(0);
-    expect(
-      adapter.pointQuery({ point: new Vector3(0, 0.5, 0) }),
-    ).toEqual([]);
+    expect(adapter.pointQuery({ point: new Vector3(0, 0.5, 0) })).toEqual([]);
     expect(adapter.getColliderId(ground.collider)).toBe(1);
     step(adapter, 3);
     adapter.dispose();

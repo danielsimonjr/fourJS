@@ -362,7 +362,9 @@ describe("KeyboardInput", () => {
     ).toThrow(FourError);
 
     // Control: the correct shape still constructs.
-    expect(() => new KeyboardInput(surface, { focusTarget: () => null })).not.toThrow();
+    expect(
+      () => new KeyboardInput(surface, { focusTarget: () => null }),
+    ).not.toThrow();
   });
 
   it("subscribes to keydown and keyup", () => {

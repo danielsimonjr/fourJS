@@ -358,7 +358,7 @@ snapshot; everything it calls absent has since landed. Verified 2026-09-10:
   "`readPixels` staged", "`Rectangle2` does not exist".** All landed
   2026-08-29: `pick.ts` ships bounds, `alphaMask`, `triangles` (ray/triangle)
   and `hitTestMode` dispatch plus `PickProvider`; `HitTestMode =
-  "bounds" | "geometry" | "pixel" | "gpu"` on `Node` (`null` = engine
+"bounds" | "geometry" | "pixel" | "gpu"` on `Node` (`null` = engine
   chooses; `"custom"` deliberately absent) — all four values arrived
   together, not "two of them"; `Rectangle2` in `@fourjs/math`;
   `Renderer.readPixels?` with the §61 contract.
