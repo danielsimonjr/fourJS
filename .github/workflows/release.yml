@@ -38,6 +38,13 @@ jobs:
     name: Version and publish
     needs: ci
     runs-on: ubuntu-latest
+    # Measured 2026-09-16: five consecutive runs took 11m39s-12m49s, so ~2.3x p100.
+    # This is the bound that matters most, and the reason is not duration. The workflow
+    # declares `concurrency: group: release, cancel-in-progress: false` (above), so a hung
+    # release job HOLDS the group: every later release queues behind it rather than failing
+    # fast. Unbounded, one wedge stalls releases for up to the 6-hour job ceiling. The cost
+    # of a stuck release job is therefore not one lost run - it is every run after it.
+    timeout-minutes: 30
     permissions:
       contents: write # push the changeset-release branch and its tags
       pull-requests: write # open and refresh the "Version Packages" PR

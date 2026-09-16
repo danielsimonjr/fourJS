@@ -27,6 +27,13 @@ jobs:
   record:
     name: Re-record the §92 visual goldens
     runs-on: ubuntu-latest
+    # ONE sample only: run 34180385893 (2026-09-08) took 1m16s for all eleven steps, the
+    # re-record itself being 13s for two specs at `workers: 1`. n=1 is not an envelope, so
+    # this bound is ~8x rather than ci.yml's 2.7x - the multiple tracks confidence in the
+    # measurement. It guards the failure mode that actually occurred elsewhere in this repo:
+    # this job drives Playwright Chromium, the same machinery whose step wedged for 48m23s
+    # in run 35096863762.
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7

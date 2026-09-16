@@ -8,6 +8,34 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-16 — no job in any workflow had a timeout, so a wedged run could hold a runner for six hours
+
+#### Fixed
+
+- **`timeout-minutes` was absent from every job in all five workflows.** Verified by grep
+  returning zero across `.github/workflows/`, with `runs-on` as the control to prove the
+  empty result was a real negative rather than a broken query. Six jobs now carry a bound;
+  the seventh, `release.yml`'s `ci:`, is a `uses:` caller and cannot take one, so it inherits
+  `ci.yml`'s.
+  · **What it cost:** run `35096863762` wedged **48m23s** on the `Browser test` step against a
+  measured envelope of 6m39s–7m09s across four sibling runs in the same hour, and ignored a
+  cancel request for minutes before completing as cancelled. With no bound, nothing would have
+  stopped it before GitHub's 6-hour job ceiling.
+  · **`release:` is the bound that matters most, and not because of duration.** The workflow
+  declares `concurrency: group: release, cancel-in-progress: false`, so a hung release job
+  *holds the group*: every later release queues behind it rather than failing fast. The cost of
+  one wedge is therefore not one lost run — it is every run after it.
+  · **The multiples are deliberately not uniform.** `ci:` 30 min (~2.7× a five-run 10m30s–11m20s
+  p100) and `release:` 30 min (~2.3× of 11m39s–12m49s) are measured. `docs.yml` `build:` 15 and
+  `deploy:` 10 rest on whole-workflow samples of 1m08s–2m31s. `visual-goldens.yml` `record:` 10
+  has **n=1** (run `34180385893`, 1m16s, all eleven steps — a real full run, not a short-circuit),
+  and `dependabot-bun-lock.yml` `regenerate-lockfile:` 10 has **no real sample at all**, every run
+  to date having been `skipped` by its `if:` guard in 1–4 s. Where the measurement is weak the
+  bound is looser and sized to the work, because a multiple should track confidence in the
+  measurement rather than a house number.
+  · A timeout does not prevent a hang; it removes a hang's *invisibility*. The 48-minute stall
+  consumed a runner and told nobody.
+
 ### 2026-09-16 — `check-docs` counted visual goldens from the disk, so it failed on any host that had run the visual tier
 
 #### Fixed

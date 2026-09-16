@@ -29,6 +29,11 @@ jobs:
   build:
     name: Build the site
     runs-on: ubuntu-latest
+    # Measured 2026-09-16: five runs of this workflow end to end took 1m08s-2m31s, the build
+    # job being the bulk of it. The multiple here (~6x) is deliberately looser than ci.yml's
+    # 2.7x because the sample is a whole-workflow duration rather than a per-job one, and a
+    # bound should track how much the measurement is trusted, not a house number.
+    timeout-minutes: 15
     env:
       # Every example directory that has a main.ts. Named once, looped over
       # twice. Nested flagships (`flagship/<demo>`) are taken as written —
@@ -100,6 +105,9 @@ jobs:
     name: Deploy to Pages
     needs: build
     runs-on: ubuntu-latest
+    # A Pages deploy is a single upload-and-activate step; it has no test tier to be slow in.
+    # Bounded so a Pages API stall fails fast instead of holding a runner to the 6-hour ceiling.
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
