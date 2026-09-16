@@ -8,6 +8,29 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-16 — batching-default was not blocked on A-4; two comments said it was
+
+#### Fixed
+
+- **`TODO.md` and `gl-batch.ts` both named a closed ticket as the blocker on making
+  §65 batching the default.** Each said default-on "needs A-4's build-time
+  pipeline-selection seam". A-4 closed on 2026-08-07 (build-mode tier) and its
+  remainder on 2026-09-07, so both sent readers chasing a discharged ticket — and
+  the mechanism A-4 delivered is not that seam. A-4 shipped `__FOUR_DEV__`, a build
+  *mode* flag and the only build-time define in the repository; `packages/core/src/dev.ts`
+  states the contract — only warnings, assertions, measurement and diagnostic
+  bookkeeping may ride it, and *"if deleting the guarded block changed any number the
+  engine computes, the block does not belong behind this flag"*. Batching changes what
+  the engine computes (13 draws become 3), so the §33 rule **bars** it from that flag
+  rather than merely not having reached it; A-4's own remainder records step 3 as
+  WON'T-DO for the same reason. What this repository actually uses to keep an unused
+  pipeline out of a bundle is the **runtime** `register*Pipeline()` family
+  (`registerShadowPipeline`, `registerStandardPipeline`, `registerSkinningPipeline`,
+  `registerParticlePipeline`, …), and `createGlBatching` is already that shape —
+  batching is not missing a seam, it *is* one. Making batching the default is therefore
+  an owner decision about who pays the 0.75–1.9 kB compile-at-init pipeline law, not a
+  blocked change. No code behaviour changed; the default remains opt-in.
+
 ## [0.1.0] — 2026-09-13 — first public release
 
 The first publish to npm: all 24 packages at 0.1.0 under the `@danielsimonjr` scope

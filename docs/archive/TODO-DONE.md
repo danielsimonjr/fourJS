@@ -2370,3 +2370,19 @@ later). `MEMORY.md` remains the place for *why*; this file is the *what closed*.
 - [x] 2026-07-28 — Add `AGENTS.md` (detailed agent orientation)
 
 - [x] 2026-07-28 — Add `CLAUDE.md` (Claude Code guidance)
+
+## Now
+
+- [x] **Two comments sent readers to a closed ticket: "batching-default needs A-4's
+      build-time pipeline-selection seam".** DONE 2026-09-16 — `TODO.md`'s batching
+      follow-ups row and `packages/render-webgl/src/gl-batch.ts`'s header both named
+      A-4 as the blocker on making §65 batching the default. A-4 closed 2026-08-07
+      and its remainder 2026-09-07, and what it shipped (`__FOUR_DEV__`) is not a
+      pipeline-selection seam: `dev.ts`'s contract bars anything that changes a
+      number the engine computes from riding that flag, and batching turns 13 draws
+      into 3. Pipeline selection in this repository is the runtime
+      `register*Pipeline()` family, and `createGlBatching` is already that shape.
+      Both comments corrected; default-on recorded as an owner decision about who
+      pays the 0.75–1.9 kB pipeline law, not a blocked one. Stale prose repeating
+      the same claim, left in place as history: `docs/GAP ANALYSIS v1.md:196`,
+      `MEMORY.md:2830`, `MEMORY.md:3393`.

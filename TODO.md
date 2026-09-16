@@ -1717,16 +1717,16 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       `bufferSubData` and a transform bump re-uploads. ~~WebGPU
       `WgpuBatching.draw` still `writeBuffer`s every frame~~ **DONE
       2026-09-10** (`#canSkipUpload` per slot; `contentVersion === 0`
-      always uploads). Making batching the
+      always uploads). ~~Making batching the
       default still needs A-4's build-time pipeline-selection seam (the opt-in
-      seam already costs every bundle +0.17 kB).
-- [ ] **Two comments send readers to a closed ticket: "batching-default needs A-4's
-      build-time pipeline-selection seam".** A-4 closed 2026-08-07 (build-mode tier)
-      and its remainder closed 2026-09-07, but this row and
-      `packages/render-webgl/src/gl-batch.ts`'s header both still name it as the
-      blocker. Establish whether what A-4 shipped (`__FOUR_DEV__`) is that seam; if
-      it is not, correct both comments so the next reader is not sent chasing a
-      discharged blocker.
+      seam already costs every bundle +0.17 kB).~~ **CORRECTED 2026-09-16 — there is
+      no such blocker.** A-4 shipped `__FOUR_DEV__`, a build *mode* flag and the only
+      build-time define in the repository; `dev.ts`'s contract bars anything that
+      changes a number the engine computes from riding it, and batching turns 13 draws
+      into 3. (A-4's own remainder records step 3 WON'T-DO for that §33 reason.) This
+      repository's pipeline selection is the **runtime** `register*Pipeline()` family,
+      and `createGlBatching` is already that shape. Default-on is an owner decision
+      about who pays the 0.75–1.9 kB pipeline law, not a blocked one.
 - [x] **`buildRenderList` is now ~40% of a 100 000-sprite frame's preparation**
       DONE 2026-09-06 — homogeneous sort skip, sprite fast path, and
       `ALL_LAYERS` layer test. `benchmarks/results/render-batching.json`
