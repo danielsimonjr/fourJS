@@ -540,11 +540,33 @@ the count stays at five.
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Video textures (§77)                             | a frame-arrival signal; `requestVideoFrameCallback` is a host concern, and the seam must stay DOM-free                                                                       |
 | `ImageBitmap` / decoded-image sources (§76, §77) | `A-18`'s remaining half — the recorded generic `FetchLike<TSignal>` widening plus an injected abort factory; decoding without cancellation is the §96 row A-23 left open     |
-| Resize in place                                  | `R-30` (§77 change notification), per §2a                                                                                                                                    |
-| Partial / dirty-rectangle upload                 | `R-30`'s wrap and filter tier, and a sub-rectangle upload path in `TextureCache`                                                                                             |
+| ~~Resize in place~~ **UNBLOCKED** (see note below) | ~~`R-30` (§77 change notification), per §2a~~ — `Texture.markDirty(region?: Rectangle2)` IS §77 change notification and landed with R-30                                                                                                                                    |
+| ~~Partial / dirty-rectangle upload~~ **UNBLOCKED** (see note below) | ~~`R-30`'s wrap and filter tier, and a sub-rectangle upload path in `TextureCache`~~ — both landed: R-30 sampler-state tier, and `texSubImage2D` in `render-webgl/src/gl-texture.ts`                                                                                             |
 | GPU readback (`readPixels` from a render target) | `A-11`'s pixel-picking question, which the gap analysis already says _"wants an RFC, not a packet"_; it is a different determinism argument and must not ride in on this one |
-| Mipmaps and filter modes for raster surfaces     | `R-30`                                                                                                                                                                       |
+| ~~Mipmaps and filter modes for raster surfaces~~ **UNBLOCKED** (see note below) | ~~`R-30`~~ — `TextureSource.filter` / `wrap` / `mipmaps` / `minFilter` are public fields today                                                                                                                                                                       |
 | The §62 Canvas 2D backend                        | nothing in this RFC; it stays a stub by decision (§2c)                                                                                                                       |
+
+> **Table correction, 2026-09-16.** Three of the seven deferrals above named `R-30` as the thing
+> they wait on. **R-30 has since landed in both tiers** — sampler state 2026-08-13, mipmaps and
+> anisotropy 2026-08-21 — so those three entries were pointing at a discharged blocker. Verified
+> against source rather than against the tracker:
+>
+> - **Mipmaps and filter modes** — `TextureSource.filter`, `wrap`, `mipmaps` and `minFilter` are
+>   public fields in `packages/render/src/texture.ts`.
+> - **Partial / dirty-rectangle upload** — `packages/render-webgl/src/gl-texture.ts` uploads through
+>   `texSubImage2D` when storage and sampler metadata are unchanged, which is the sub-rectangle path
+>   this row waited for.
+> - **Resize in place** — `Texture.markDirty(region?: Rectangle2)` is §77 change notification: it
+>   bumps `Texture.version`, invalidating every backend upload keyed on it, and its own doc notes
+>   that "regional `markDirty` calls preserve allocations where supported".
+>
+> Unblocked is not the same as done: each still needs its own packet and its own tests. The point of
+> the correction is that the *stated reason for deferral no longer exists*, so the next reader
+> re-triages them on today's facts instead of re-deriving a blocker that closed a month ago.
+>
+> The other four rows are untouched and remain accurate as far as this correction checked — video
+> textures, `ImageBitmap`/A-18, GPU readback, and the §62 Canvas 2D stub were **not** verified here
+> and must not be read as cleared.
 
 **Size and tree-shaking expectations**, against measured precedents rather than hope:
 

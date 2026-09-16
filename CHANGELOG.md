@@ -30,6 +30,28 @@ specification; until then, entries are grouped by date under **Unreleased**.
   batching is not missing a seam, it *is* one. Making batching the default is therefore
   an owner decision about who pays the 0.75–1.9 kB compile-at-init pipeline law, not a
   blocked change. No code behaviour changed; the default remains opt-in.
+### Fixed — documentation
+
+- **RFC 0004's §6 deferral table pointed at a blocker that closed a month ago.** Three of its
+  seven deferrals — *Resize in place*, *Partial / dirty-rectangle upload*, and *Mipmaps and
+  filter modes for raster surfaces* — named `R-30` as the thing they wait on. R-30 landed in
+  both tiers (sampler state 2026-08-13, mipmaps and anisotropy 2026-08-21), so all three were
+  stale. Each is now struck through with the evidence that discharges it, and a dated note
+  under the table records how it was verified:
+  - `TextureSource.filter` / `wrap` / `mipmaps` / `minFilter` are public fields in
+    `packages/render/src/texture.ts`.
+  - `packages/render-webgl/src/gl-texture.ts` uploads via `texSubImage2D` when storage and
+    sampler metadata are unchanged — the sub-rectangle path the dirty-rect row waited for.
+  - `Texture.markDirty(region?: Rectangle2)` is §77 change notification; it bumps
+    `Texture.version` and invalidates every backend upload keyed on it.
+
+  **Unblocked is not done** — each still needs its own packet and tests. What changed is that
+  the *stated reason for deferral no longer exists*, so the next reader re-triages on today's
+  facts rather than re-deriving a closed blocker. Found while verifying every open `TODO.md`
+  row against source instead of accepting its own description; the TODO row for RFC 0004 was
+  already correct and needed no change — the RFC was the stale document, which is the reverse
+  of what the tracker implied. The remaining four deferrals (video textures, `ImageBitmap`/
+  A-18, GPU readback, the §62 Canvas 2D stub) were **not** verified and are untouched.
 
 ## [0.1.0] — 2026-09-13 — first public release
 
