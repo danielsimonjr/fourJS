@@ -16,7 +16,11 @@
  */
 
 import { planeGeometry, type BufferGeometry } from "@fourjs/geometry";
-import { SpriteMaterial, UnlitMaterial, type Material } from "@fourjs/materials";
+import {
+  SpriteMaterial,
+  UnlitMaterial,
+  type Material,
+} from "@fourjs/materials";
 import { Rectangle, Renderable, Sprite, Texture } from "@fourjs/render";
 import { Group, Scene, type Node } from "@fourjs/scene";
 import {

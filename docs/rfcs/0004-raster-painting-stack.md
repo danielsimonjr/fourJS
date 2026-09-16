@@ -521,8 +521,8 @@ already uses — _"RFC-derived amendments carry the RFC's status"_, so it is mar
 
 **Amendments-table row sketch:**
 
-| Revision | Date      | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| -------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Revision | Date      | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1.9      | 2026-08-… | New §77a "Raster Painting and Dynamic Textures": a structural, DOM-free raster source contract feeding §77's texture system, with the §33 rule that painted pixels are display content and never simulation input (mechanically enforced, in the pattern §40's display-only rule established), the §96 size limits, and the constant-size restriction pending §77 change notification (`R-30`). §73's canvas-view control is recorded as a skin-drawn widget requiring no drawing API in `@fourjs/ui`, correcting the staging note that said otherwise. §62's Canvas 2D backend is explicitly a separate concern and is unchanged. Frozen §1–120 numbering respected: the new section takes a letter suffix, added to `ALLOWED_LETTERED`. _(RFC 0004.)_ |
 
 ### 6. Staging
@@ -536,15 +536,15 @@ the count stays at five.
 
 **Deferred, each with the thing it waits on:**
 
-| Deferred                                         | Waits on                                                                                                                                                                     |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Video textures (§77)                             | a frame-arrival signal; `requestVideoFrameCallback` is a host concern, and the seam must stay DOM-free                                                                       |
-| `ImageBitmap` / decoded-image sources (§76, §77) | `A-18`'s remaining half — the recorded generic `FetchLike<TSignal>` widening plus an injected abort factory; decoding without cancellation is the §96 row A-23 left open     |
-| ~~Resize in place~~ **UNBLOCKED** (see note below) | ~~`R-30` (§77 change notification), per §2a~~ — `Texture.markDirty(region?: Rectangle2)` IS §77 change notification and landed with R-30                                                                                                                                    |
-| ~~Partial / dirty-rectangle upload~~ **UNBLOCKED** (see note below) | ~~`R-30`'s wrap and filter tier, and a sub-rectangle upload path in `TextureCache`~~ — both landed: R-30 sampler-state tier, and `texSubImage2D` in `render-webgl/src/gl-texture.ts`                                                                                             |
-| GPU readback (`readPixels` from a render target) | `A-11`'s pixel-picking question, which the gap analysis already says _"wants an RFC, not a packet"_; it is a different determinism argument and must not ride in on this one |
-| ~~Mipmaps and filter modes for raster surfaces~~ **UNBLOCKED** (see note below) | ~~`R-30`~~ — `TextureSource.filter` / `wrap` / `mipmaps` / `minFilter` are public fields today                                                                                                                                                                       |
-| The §62 Canvas 2D backend                        | nothing in this RFC; it stays a stub by decision (§2c)                                                                                                                       |
+| Deferred                                                                        | Waits on                                                                                                                                                                             |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Video textures (§77)                                                            | a frame-arrival signal; `requestVideoFrameCallback` is a host concern, and the seam must stay DOM-free                                                                               |
+| `ImageBitmap` / decoded-image sources (§76, §77)                                | `A-18`'s remaining half — the recorded generic `FetchLike<TSignal>` widening plus an injected abort factory; decoding without cancellation is the §96 row A-23 left open             |
+| ~~Resize in place~~ **UNBLOCKED** (see note below)                              | ~~`R-30` (§77 change notification), per §2a~~ — `Texture.markDirty(region?: Rectangle2)` IS §77 change notification and landed with R-30                                             |
+| ~~Partial / dirty-rectangle upload~~ **UNBLOCKED** (see note below)             | ~~`R-30`'s wrap and filter tier, and a sub-rectangle upload path in `TextureCache`~~ — both landed: R-30 sampler-state tier, and `texSubImage2D` in `render-webgl/src/gl-texture.ts` |
+| GPU readback (`readPixels` from a render target)                                | `A-11`'s pixel-picking question, which the gap analysis already says _"wants an RFC, not a packet"_; it is a different determinism argument and must not ride in on this one         |
+| ~~Mipmaps and filter modes for raster surfaces~~ **UNBLOCKED** (see note below) | ~~`R-30`~~ — `TextureSource.filter` / `wrap` / `mipmaps` / `minFilter` are public fields today                                                                                       |
+| The §62 Canvas 2D backend                                                       | nothing in this RFC; it stays a stub by decision (§2c)                                                                                                                               |
 
 > **Table correction, 2026-09-16.** Three of the seven deferrals above named `R-30` as the thing
 > they wait on. **R-30 has since landed in both tiers** — sampler state 2026-08-13, mipmaps and
@@ -561,7 +561,7 @@ the count stays at five.
 >   that "regional `markDirty` calls preserve allocations where supported".
 >
 > Unblocked is not the same as done: each still needs its own packet and its own tests. The point of
-> the correction is that the *stated reason for deferral no longer exists*, so the next reader
+> the correction is that the _stated reason for deferral no longer exists_, so the next reader
 > re-triages them on today's facts instead of re-deriving a blocker that closed a month ago.
 >
 > The other four rows are untouched and remain accurate as far as this correction checked — video
@@ -836,7 +836,7 @@ Decision text left as accepted. Verified against the tree 2026-09-10:
   never matched and passed only because the umbrella never names
   `CanvasTexture`. Fixed 2026-09-10 (`"fourjs"`).
 - **§4 "`width * height * 4` re-checked on every `update()`".** The byte
-  check runs in the constructor only; `update()` refuses any size *change*,
+  check runs in the constructor only; `update()` refuses any size _change_,
   so the check cannot be escaped (`raster.ts:361-362, 466-490`).
 - **§5 amendments-row sketch "1.9".** Landed as row **1.12**, 2026-08-29; the
   §73 note settled with acceptance (no longer "draft, owner decision pending").
@@ -869,7 +869,7 @@ Decision text left as accepted. Verified against the tree 2026-09-10:
   backend/capability tables).
 
 **Residue (open, `TODO.md` "RFC 0004 residue"):** video textures (prose in
-`texture.ts` only), decoded-image *raster* sources (A-19's static loader
+`texture.ts` only), decoded-image _raster_ sources (A-19's static loader
 exists in `@fourjs/assets`; no `RasterSource` producer), in-place resize
 (refused; change notification unshipped), dirty-rect upload (none),
 `CanvasTexture` sampler fields (none declared), GPU readback (RFC 0009),

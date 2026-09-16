@@ -108,34 +108,34 @@ and AGENTS.md rule 5) before dispatch.
 
 Direct workspace dependencies only (transitives implied). Wave = parallel dispatch group.
 
-| Wave | Package | Direct deps |
-|---|---|---|
-| 1 | `core` | — |
-| 1 | `math` | — |
-| 2 | `scene` | core, math |
-| 2 | `geometry` | core, math |
-| 2 | `materials` | core, math |
-| 2 | `assets` | core |
-| 3 | `motion` | core, math, scene |
-| 3 | `input` | core, math, scene |
-| 3 | `serialization` | core, math, scene |
-| 3 | `diagnostics` | core, math, scene |
-| 3 | `particles` | core, math, scene |
-| 3 | `text` | core, math, geometry |
-| 3 | `render` | core, math, scene, geometry, materials |
-| 4 | `animation` | core, math, scene, motion |
-| 4 | `physics` | core, math, scene, motion |
-| 4 | `render-webgpu` | core, math, render |
-| 4 | `render-webgl` | core, math, render |
-| 4 | `render-canvas` | core, math, render |
-| 4 | `render-svg` | core, math, render |
-| 4 | `ui` | core, math, scene, input, text |
-| 5 | `physics-rapier` | physics |
-| 5 | `physics-box2d` | physics |
-| 5 | `physics-soft` | physics |
-| 6 | `four` | all 23 above |
+| Wave | Package          | Direct deps                            |
+| ---- | ---------------- | -------------------------------------- |
+| 1    | `core`           | —                                      |
+| 1    | `math`           | —                                      |
+| 2    | `scene`          | core, math                             |
+| 2    | `geometry`       | core, math                             |
+| 2    | `materials`      | core, math                             |
+| 2    | `assets`         | core                                   |
+| 3    | `motion`         | core, math, scene                      |
+| 3    | `input`          | core, math, scene                      |
+| 3    | `serialization`  | core, math, scene                      |
+| 3    | `diagnostics`    | core, math, scene                      |
+| 3    | `particles`      | core, math, scene                      |
+| 3    | `text`           | core, math, geometry                   |
+| 3    | `render`         | core, math, scene, geometry, materials |
+| 4    | `animation`      | core, math, scene, motion              |
+| 4    | `physics`        | core, math, scene, motion              |
+| 4    | `render-webgpu`  | core, math, render                     |
+| 4    | `render-webgl`   | core, math, render                     |
+| 4    | `render-canvas`  | core, math, render                     |
+| 4    | `render-svg`     | core, math, render                     |
+| 4    | `ui`             | core, math, scene, input, text         |
+| 5    | `physics-rapier` | physics                                |
+| 5    | `physics-box2d`  | physics                                |
+| 5    | `physics-soft`   | physics                                |
+| 6    | `four`           | all 23 above                           |
 
-*Dated note (2026-08-01, orchestrator):* `physics-rapier` additionally declares
+_Dated note (2026-08-01, orchestrator):_ `physics-rapier` additionally declares
 `@fourjs/core` + `@fourjs/math` directly (WP-5.4-fix1) — the adapter imports both
 (`FourError`, `Vector3`), and "transitives implied" should not hide a genuine direct
 import. No new edge: both were already transitively present via `physics`.
@@ -148,8 +148,8 @@ import. No new edge: both were already transitively present via `physics`.
 `@size-limit/preset-small-lib@13.0.2`, `vite@8.1.5`, `typedoc@0.28.20`, `yaml@2.9.0`.
 Exact pins, no ranges. If an install or peer conflict arises, **the orchestrator** (never a
 worker) adjusts a pin and updates this table with a dated note.
-*(Added 2026-08-01 by the orchestrator: `@vitest/coverage-v8@3.2.7` — coverage measurement
-joins the phase-exit gates from Phase 1 on, per the session goal of ≥95% coverage. Added 2026-08-01: `@playwright/test@1.57.0` for the WP-3.8 browser gate — the environment provides Chromium at PLAYWRIGHT_BROWSERS_PATH.)*
+_(Added 2026-08-01 by the orchestrator: `@vitest/coverage-v8@3.2.7` — coverage measurement
+joins the phase-exit gates from Phase 1 on, per the session goal of ≥95% coverage. Added 2026-08-01: `@playwright/test@1.57.0` for the WP-3.8 browser gate — the environment provides Chromium at PLAYWRIGHT_BROWSERS_PATH.)_
 **Validated together 2026-07-29** by the Phase −1 smoke: install (no peer conflicts),
 `tsc -b` reference chain, cross-package Vitest, type-checked ESLint, TypeDoc packages
 mode, Vite 8 example build, and size-limit all passed as one workspace. pnpm 10 blocks
@@ -206,11 +206,11 @@ Each package carries **two tsconfigs** (validated by the Phase −1 smoke — a 
 cannot serve both declaration-emitting builds and type-checked linting of tests):
 
 - `tsconfig.json` (dev/lint/editor): `{ "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "composite": false, "declaration": false,
-  "declarationMap": false, "noEmit": true }, "include": ["src", "tests"] }`
+"compilerOptions": { "composite": false, "declaration": false,
+"declarationMap": false, "noEmit": true }, "include": ["src", "tests"] }`
 - `tsconfig.build.json` (emit): `{ "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "src", "outDir": "dist" }, "include": ["src"],
-  "references": [<one per §3.1 dep, path "../<dep>/tsconfig.build.json">] }`
+"compilerOptions": { "rootDir": "src", "outDir": "dist" }, "include": ["src"],
+"references": [<one per §3.1 dep, path "../<dep>/tsconfig.build.json">] }`
 
 The build script is **`tsc -b tsconfig.build.json`** (build mode; plain `tsc -p` ignores
 references and fails once real imports exist). Tests import `../src/index.js` (Vitest
@@ -226,7 +226,7 @@ export per §3.1 package (`"./scene": { "types": "./dist/scene.d.ts", "import":
   `addComponent/getComponent/removeComponent`.
 - **D2 Component identity:** components are classes carrying
   `static readonly typeName: string`; `ComponentType<T> = { readonly typeName: string;
-  new (...args: never[]): T }`; registry keyed by `typeName` (also the §79 serialization
+new (...args: never[]): T }`; registry keyed by `typeName` (also the §79 serialization
   name). `MotionComponent` is a class implementing the §11 fields.
 - **D3 Transform dirty channel:** math mutating methods invoke an internal optional
   `changed` hook; `Transform` installs hooks on its own `position`/`rotation`/`scale`/
@@ -275,9 +275,9 @@ Done: `pnpm install` exits 0 (orchestrator-run); lockfile present.
 **WP-0.2 [H] TypeScript base config** — Depends: WP-0.1. Files: `tsconfig.base.json`.
 Steps: paste §3.3 exactly.
 Done: `node -e "const c=require('./tsconfig.base.json').compilerOptions; process.exit(c.module==='NodeNext'&&c.moduleResolution==='NodeNext'&&c.strict===true&&c.composite===true?0:1)"`
-exits 0. *(Revised 2026-07-31: the original `tsc --showConfig` check hits TS18003 while the
+exits 0. _(Revised 2026-07-31: the original `tsc --showConfig` check hits TS18003 while the
 repo has no `.ts` files — a base config is only ever extended, never compiled directly.
-Found during execution; content requirement unchanged.)*
+Found during execution; content requirement unchanged.)_
 
 **WP-0.3 [H] Turborepo pipeline** — Depends: WP-0.1. Files: `turbo.json`.
 Steps: tasks `build` (dependsOn `["^build"]`, outputs `["dist/**"]`), `test` (dependsOn
@@ -288,8 +288,8 @@ Done: `pnpm turbo run build --dry-run` exits 0 (package count asserted later, WP
 Depends: WP-0.2, WP-0.3. Reads: §3.1 (this package's row), §3.4, the package `README.md`.
 Files (per package P): `packages/P/package.json`, `packages/P/tsconfig.json`,
 `packages/P/tsconfig.build.json`, `packages/P/src/index.ts`,
-`packages/P/tests/smoke.test.ts`. *(Files line corrected 2026-07-31: `tsconfig.build.json`
-was mandated by §3.4 but missing here; caught by the math-instance worker.)*
+`packages/P/tests/smoke.test.ts`. _(Files line corrected 2026-07-31: `tsconfig.build.json`
+was mandated by §3.4 but missing here; caught by the math-instance worker.)_
 Steps: instantiate §3.4 verbatim with P's name and §3.1 deps/references;
 `src/index.ts`: `export const PACKAGE_NAME = "@fourjs/P";`; smoke test imports
 `../src/index.js` and asserts the name. Dispatch by §3.1 wave (waves 1→5); within a wave,
@@ -299,13 +299,13 @@ Done (per package, after the wave's orchestrator install):
 
 **WP-0.5 [H] Umbrella package `four`** — Depends: all WP-0.4. Reads: §3.1, §3.4, §98.
 Files: `packages/fourjs/{package.json,tsconfig.json,tsconfig.build.json,src/index.ts,src/<p>.ts ×23,tests/smoke.test.ts}`.
-*(Files line corrected 2026-07-31: `tsconfig.build.json` was missing, same omission as
-WP-0.4's; noted by the Phase-0 exit verifier. The landed package is complete.)*
+_(Files line corrected 2026-07-31: `tsconfig.build.json` was missing, same omission as
+WP-0.4's; noted by the Phase-0 exit verifier. The landed package is complete.)_
 Steps: §3.4 template, name `four`, deps = all 23; one `src/<p>.ts` re-export module per
 package (`export * from "@fourjs/scene";`) plus matching subpath exports (§3.4); root
 `src/index.ts` uses **namespace re-exports** (`export * as core from "@fourjs/core";`,
 dashes camelCased) — flat `export *` of all packages would collide on shared symbol names
-*(refined 2026-07-31 at dispatch)*; smoke test imports `PACKAGE_NAME` **from every one of
+_(refined 2026-07-31 at dispatch)_; smoke test imports `PACKAGE_NAME` **from every one of
 the 23 packages** (the Phase-0 cross-package integration check).
 Done: `pnpm --filter four run build && pnpm --filter four run test` exits 0.
 
@@ -340,9 +340,9 @@ Done: `pnpm build && pnpm example:build && pnpm size` exits 0.
 
 **WP-0.10 [H] TypeDoc** — Depends: WP-0.6. Files: `typedoc.json`.
 Steps: entry-point strategy `packages`, entry points `packages/*`, out `docs/api`.
-Done: `pnpm run docs` exits 0 and `docs/api/index.html` exists. *(Revised 2026-07-31:
+Done: `pnpm run docs` exits 0 and `docs/api/index.html` exists. _(Revised 2026-07-31:
 `pnpm docs` without `run` is a pnpm builtin that exits 0 without invoking the script —
-vacuous check; caught by the WP-0.10 worker. `run docs` also requires a prior build.)*
+vacuous check; caught by the WP-0.10 worker. `run docs` also requires a prior build.)_
 
 **WP-0.11 [H] Root test-suite wiring** — Depends: WP-0.6.
 Files: `vitest.suites.config.ts`, `package.json` (devDeps add: every `@fourjs/*` as
@@ -625,9 +625,9 @@ triggered. MVP tier: unlit colored geometry, WebGL 2 only, `"negative-one-to-one
   wiring to the §61 events, `"negative-one-to-one"` depth. Unit-testable parts split from
   GL calls (command building pure; GL layer thin) so coverage stays honest without a GPU.
 - **WP-3.6 [S] Application renderer integration** (`four`) — `renderer: "webgl2" | false`
-  + `canvas` options; `initialize()` constructs the backend (async per §45);
-  `render` event drives `renderer.render(scene, views)` with interpolation-aware lists;
-  optional rAF driver (`start` stays headless-safe; manual stepping unchanged).
+  - `canvas` options; `initialize()` constructs the backend (async per §45);
+    `render` event drives `renderer.render(scene, views)` with interpolation-aware lists;
+    optional rAF driver (`start` stays headless-safe; manual stepping unchanged).
 - **WP-3.7 [H] Real example** — `examples/first-2d-scene` becomes moving shapes
   (MotionComponent + KinematicController) rendered via WebGL; the §86 size gate becomes
   meaningful from here.
@@ -647,7 +647,7 @@ example — and the exit ships the demo-ready build (public deployment is an own
 - **WP-3a.1 [S] Picking** (`@fourjs/input`) — §71 bounds+analytic tier: camera ray from NDC
   (unproject via inverse projection + camera world), plane/circle analytic hits (2D),
   transformed-AABB hits from geometry bounds (3D), nearest-first ordering, `pick(scene,
-  camera, ndcX, ndcY)` returning hits with node/distance/point.
+camera, ndcX, ndcY)` returning hits with node/distance/point.
 - **WP-3a.2 [S] Pointer input + propagation + dragging** (`@fourjs/input`) — §72 subset:
   structural DOM pointer source, normalized events (down/up/move/click/enter/leave) with
   NDC coords, capture→target→bubble through the scene graph (§6b input exception), pointer
@@ -685,7 +685,7 @@ Phase-level pinned decisions (so no packet re-litigates them):
   RGBA 4-tuple (componentwise lerp, no clamping — §60a extended range); there is no Color
   class (WP-3.3 decision).
 - **P4-3 Staging.** Morph-weight and skeletal-joint tracks (§17), state machines/blend
-  trees (§18), IK, and spring *simulation* beyond the §15 spring easing are **not** Phase 4
+  trees (§18), IK, and spring _simulation_ beyond the §15 spring easing are **not** Phase 4
   (§107 does not list them; they arrive with later phases). `AnimationClip.events` ships
   now, with §16 marker semantics.
 - **P4-4 Facade.** `@fourjs/animation` owns `animate()`/`tween()`/`Timeline`/clip types; the
@@ -717,12 +717,12 @@ Packets:
   require `"animation"` authority — refusal warns and skips the whole write (WP-2.3
   semantics). Assembles the package barrel (P4-5).
 - **WP-4.4 [S] Timeline** (`@fourjs/animation`) — §16: `.at(time, tween | timeline |
-  callback)`, nesting, labels, markers (fire exactly once per forward crossing; seek/scrub
+callback)`, nesting, labels, markers (fire exactly once per forward crossing; seek/scrub
   suppress by default with per-marker `replayOnSeek`), parallel tracks, sequencing, loop,
   reverse, scrub, playback speed, pause/resume; mid-timeline restore positions playback
   without re-firing crossed markers.
 - **WP-4.5 [S] Clips + tracks** (`@fourjs/animation`) — §17: `AnimationClip { name, duration,
-  tracks, events }`; scalar/vector/quaternion/color/boolean/discrete/custom-property
+tracks, events }`; scalar/vector/quaternion/color/boolean/discrete/custom-property
   tracks (morph + skeletal staged per P4-3); interpolation step/linear/cubic/Hermite +
   slerp; binary-search keyframe sampling, pure in clip-local time (§9).
 - **WP-4.6 [S] Mixer + AnimationSystem** (`@fourjs/animation`) — mixer resolves clip tracks
@@ -797,7 +797,7 @@ Packets:
   the component emitter), `Collider` (§24 fields, sensor flag, groups/mask),
   `PhysicsMaterial` class; §25 combine + density fallback logic; mass-from-density
   derivation (§23) for the P5-6 shapes.
-  *Dated note (2026-08-01, orchestrator):* mass-from-density derivation (§23) is
+  _Dated note (2026-08-01, orchestrator):_ mass-from-density derivation (§23) is
   **delegated to the solver** — Rapier derives mass from collider densities natively,
   and duplicating a volume model in `@fourjs/physics` risks disagreeing with it. The
   WP-5.2 worker correctly stopped rather than improvise; `inverseMass` reads `NaN`
@@ -810,7 +810,7 @@ Packets:
   @fourjs/diagnostics, 1e-6, ascending body id), §34 snapshot passthrough with
   adapter/version validity metadata; tests against a structural `FakeSolverAdapter`
   (scripted events + recorded calls — the fake-GL pattern).
-  *Dated note (2026-08-01, orchestrator):* the §33 checksum could not "reuse WP-1.13"
+  _Dated note (2026-08-01, orchestrator):_ the §33 checksum could not "reuse WP-1.13"
   as the §7 table suggested — the frozen §3.1 matrix gives `physics` no `diagnostics`
   edge. Resolution: FNV-1a is re-implemented privately in `world.ts`, pinned
   byte-for-byte against an independent reference implementation in its tests. Accepted
@@ -860,7 +860,7 @@ Phase-level pinned decisions:
   verify against 0.19.3; if unavailable, breakage is staged with a dated note, not
   faked).
 - **P6-3 API shape** per §28's sketch: typed joint classes (`HingeJoint({bodyA, bodyB,
-  anchor, axis, limits, motor})`-style) over the §37 `JointDescriptor`; joints register
+anchor, axis, limits, motor})`-style) over the §37 `JointDescriptor`; joints register
   through the world (`world.addJoint(joint)`), not as node components (a joint spans
   two bodies; §6a's one-per-node model does not fit it).
 - **P6-4 Demo**: a new `examples/mechanism` (§109 list: rotating shaft, hinge, slider,
@@ -903,7 +903,7 @@ documented continuity tolerance (no teleport step), plus the §19 pipeline order
 
 Phase-level pinned decisions:
 
-- **P7-1 Pose targets.** Animation drives *target poses*, not owned transforms, under
+- **P7-1 Pose targets.** Animation drives _target poses_, not owned transforms, under
   `"blended"`: a `PoseTarget` component lives in `@fourjs/scene` (position/rotation/
   scale? — position+rotation MVP), bindable by tweens/mixers like any object. Neither
   `animation` nor `physics` may import the other (§3.1) — scene is the shared home.
@@ -933,13 +933,13 @@ Packets:
 - **WP-7.3 [S] BlendSystem** — P7-4 pipeline, "blended" authority writes, continuity
   clamps documented; fake-adapter tests.
 - **WP-7.4 [S] Root motion MVP** — P7-5 in the mixer; unit + determinism-safe tests.
-  *Dated note (2026-08-02, exit verifier, P7-4 structural amendment):* no separate
+  _Dated note (2026-08-02, exit verifier, P7-4 structural amendment):_ no separate
   `BlendSystem` exists — the shipped design runs both blend halves inside
   `PhysicsWorld.step` (pre-solve feed, post-solve publish, within the system at 600)
   plus `createPoseTargetCaptureSystem` at 299, which the plan had not anticipated.
   The §19 ordering guarantee is fully satisfied; recorded here so the plan stays
   truthful about the shape.
-  *Dated note (2026-08-02, orchestrator, P7-4 amendment):* the kinematic target feed is
+  _Dated note (2026-08-02, orchestrator, P7-4 amendment):_ the kinematic target feed is
   **unweighted** (WP-7.3): weighting both the feed and the publish would apply
   `animationWeight` twice — an unrequested low-pass filter — and for
   `kinematic-position` bodies the solver pose equals the target regardless. Weights
@@ -1052,7 +1052,7 @@ Packets:
 - **WP-9.3 [S] Particle rendering** (`@fourjs/render` + `@fourjs/render-webgl` +
   `@fourjs/particles`) — P9-3 batched path; fake-GL tests + structural render-item
   tests.
-  *Dated note (2026-08-02, orchestrator, P9-3 governance):* `ParticleRenderable`
+  _Dated note (2026-08-02, orchestrator, P9-3 governance):_ `ParticleRenderable`
   cannot subclass `Renderable` — the frozen §3.1 matrix gives `particles` only
   core/math/scene, and `particles`/`render` share a wave. The shipped seam is a
   duck-typed structural contract (`ParticleDrawable` declared in `@fourjs/render`,
@@ -1075,6 +1075,7 @@ Packets:
 Dependencies: 9.1 → (9.2 ∥ 9.3); 9.4 ← 9.2+9.3; 9.5 last.
 
 ## 6i. Phase 10 — Replay, Snapshots, and Diagnostics (§33–34, §113; decomposed
+
 2026-08-02)
 
 Exit (§113): a physics defect can be captured, replayed, and inspected frame by
@@ -1170,34 +1171,34 @@ Decomposed by the orchestrator only when the predecessor phase closes, in this p
 format, under the §2 governance rule (owner RFC for new unpinned cross-package API
 surfaces). Scope and anchors are fixed; exits are spec-quoted except where noted.
 
-| Phase | Scope (spec) | Exit criterion | Notes / likely seams |
-|---|---|---|---|
-| 3 | Renderer interface, WebGL 2 backend, cameras, viewports (§61–62, §47–48, §106) | Moving 2D/3D primitives render smoothly despite fixed-step simulation | interface / context-loss (§61) / projections (D8) / render list / buffers / interpolation-aware draw; camera+viewport types live in `@fourjs/scene` (§98 rev 1.3); **revisit the size gate** — real example replaces placeholder. **GPU in CI:** browser tests run Playwright against the pre-installed Chromium with SwiftShader (software GL) for WebGL 2; visual baselines are per-backend with perceptual tolerance (§92) |
-| 3a | Input, picking, dragging, sprites, MVP-tier text (§106a; §71–72, §55, §56 MVP tier) | Pointer events, picking, dragging, sprites, and labels work in a mixed 2D/3D example | input routing / picking strategies / sprite batching / SDF Latin text; Playwright setup lands here; **exit ships a public demo** (demo-first, TODO 2026-07-29) |
-| 4 | Tween, easing, Timeline, clips/tracks, bindings (§15–17, §107) | Any numeric/vector/quaternion/color/transform property animatable | easing table / tween core / timeline+markers (§16 semantics incl. replay/restore) / tracks / binding resolution |
-| 5 | Physics API + Rapier adapter (§20–32, §37, §108) | Mixed 2D/3D demo: gravity, collisions, impulses, sensors via common API | descriptors / world API / §37 contract incl. `drainEvents` + capabilities / rapier2d+3d wasm (pins per MEMORY) / event normalization / sync into the WP-2.6 pose store; §33 checksum reuses WP-1.13 |
-| 6 | Joints (§28, §109) | Constraints remain stable under expected real-time loads | per-joint packets / motors+limits / break thresholds |
-| 7 | Physics-animation blending (§19, §42, §110) | Animated↔kinematic↔physical control without abrupt discontinuities | `blended` authority (unlocks WP-2.3's reserved value) / pose pipeline / ragdoll |
-| 8 | Advanced motion (§111) | **Plan-defined, owner to confirm** (§111 sets none): PID utility + steering demos pass analytic tests | steering / IK / PID |
-| 9 | Particles CPU+GPU (§36, §112) | ≥100k simple particles simulated and rendered at interactive rates on suitable hardware | emitter model / CPU sim / GPU compute path |
-| 10 | Replay, snapshots, diagnostics (§33–34, §113) | A physics defect can be captured, replayed, inspected frame by frame | snapshot API / §34 replay format (incl. step counts + dropped time) / §33 checksums via WP-1.13 / overlays |
-| 11 | Assets, serialization, UI, benchmark harness, docs (§113a; §73–80, §92–93) | Scene saves/reloads/benchmarks; §120 tooling list complete | asset manager / glTF / scene format + migration / UI MVP subset / `benchmarks/` harness against §86 / guides + website; release workflow (Changesets) lands at first publish per §94 0.1 |
+| Phase | Scope (spec)                                                                        | Exit criterion                                                                                        | Notes / likely seams                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ----- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3     | Renderer interface, WebGL 2 backend, cameras, viewports (§61–62, §47–48, §106)      | Moving 2D/3D primitives render smoothly despite fixed-step simulation                                 | interface / context-loss (§61) / projections (D8) / render list / buffers / interpolation-aware draw; camera+viewport types live in `@fourjs/scene` (§98 rev 1.3); **revisit the size gate** — real example replaces placeholder. **GPU in CI:** browser tests run Playwright against the pre-installed Chromium with SwiftShader (software GL) for WebGL 2; visual baselines are per-backend with perceptual tolerance (§92) |
+| 3a    | Input, picking, dragging, sprites, MVP-tier text (§106a; §71–72, §55, §56 MVP tier) | Pointer events, picking, dragging, sprites, and labels work in a mixed 2D/3D example                  | input routing / picking strategies / sprite batching / SDF Latin text; Playwright setup lands here; **exit ships a public demo** (demo-first, TODO 2026-07-29)                                                                                                                                                                                                                                                                |
+| 4     | Tween, easing, Timeline, clips/tracks, bindings (§15–17, §107)                      | Any numeric/vector/quaternion/color/transform property animatable                                     | easing table / tween core / timeline+markers (§16 semantics incl. replay/restore) / tracks / binding resolution                                                                                                                                                                                                                                                                                                               |
+| 5     | Physics API + Rapier adapter (§20–32, §37, §108)                                    | Mixed 2D/3D demo: gravity, collisions, impulses, sensors via common API                               | descriptors / world API / §37 contract incl. `drainEvents` + capabilities / rapier2d+3d wasm (pins per MEMORY) / event normalization / sync into the WP-2.6 pose store; §33 checksum reuses WP-1.13                                                                                                                                                                                                                           |
+| 6     | Joints (§28, §109)                                                                  | Constraints remain stable under expected real-time loads                                              | per-joint packets / motors+limits / break thresholds                                                                                                                                                                                                                                                                                                                                                                          |
+| 7     | Physics-animation blending (§19, §42, §110)                                         | Animated↔kinematic↔physical control without abrupt discontinuities                                    | `blended` authority (unlocks WP-2.3's reserved value) / pose pipeline / ragdoll                                                                                                                                                                                                                                                                                                                                               |
+| 8     | Advanced motion (§111)                                                              | **Plan-defined, owner to confirm** (§111 sets none): PID utility + steering demos pass analytic tests | steering / IK / PID                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 9     | Particles CPU+GPU (§36, §112)                                                       | ≥100k simple particles simulated and rendered at interactive rates on suitable hardware               | emitter model / CPU sim / GPU compute path                                                                                                                                                                                                                                                                                                                                                                                    |
+| 10    | Replay, snapshots, diagnostics (§33–34, §113)                                       | A physics defect can be captured, replayed, inspected frame by frame                                  | snapshot API / §34 replay format (incl. step counts + dropped time) / §33 checksums via WP-1.13 / overlays                                                                                                                                                                                                                                                                                                                    |
+| 11    | Assets, serialization, UI, benchmark harness, docs (§113a; §73–80, §92–93)          | Scene saves/reloads/benchmarks; §120 tooling list complete                                            | asset manager / glTF / scene format + migration / UI MVP subset / `benchmarks/` harness against §86 / guides + website; release workflow (Changesets) lands at first publish per §94 0.1                                                                                                                                                                                                                                      |
 
 ---
 
 ## 8. Verification stack
 
-| Level | Command | Gate |
-|---|---|---|
-| Types + emit | `pnpm build` (`tsc -b` via turbo) | every packet |
-| Unit | `pnpm turbo run test` | every packet |
-| Root suites | `pnpm test:suites` | phase exits |
-| Lint | `pnpm lint` | every packet |
-| Spec integrity | `pnpm check-spec` | any docs-touching packet |
-| Docs | `pnpm run docs` (after build; bare `pnpm docs` is a pnpm builtin no-op) | Phase 0 on (CI) |
-| Example | `pnpm example:build` | Phase 0 on (CI) |
-| Payload (§86) | `pnpm size` — built example ≤ 150 kB gzip | Phase 0 on (CI) |
-| Determinism | fresh-process double run vs committed golden hash (D6) | phase exits from 1 on |
-| Independent review | second agent, diff vs Reads + §1 | every [S] packet |
+| Level              | Command                                                                 | Gate                     |
+| ------------------ | ----------------------------------------------------------------------- | ------------------------ |
+| Types + emit       | `pnpm build` (`tsc -b` via turbo)                                       | every packet             |
+| Unit               | `pnpm turbo run test`                                                   | every packet             |
+| Root suites        | `pnpm test:suites`                                                      | phase exits              |
+| Lint               | `pnpm lint`                                                             | every packet             |
+| Spec integrity     | `pnpm check-spec`                                                       | any docs-touching packet |
+| Docs               | `pnpm run docs` (after build; bare `pnpm docs` is a pnpm builtin no-op) | Phase 0 on (CI)          |
+| Example            | `pnpm example:build`                                                    | Phase 0 on (CI)          |
+| Payload (§86)      | `pnpm size` — built example ≤ 150 kB gzip                               | Phase 0 on (CI)          |
+| Determinism        | fresh-process double run vs committed golden hash (D6)                  | phase exits from 1 on    |
+| Independent review | second agent, diff vs Reads + §1                                        | every [S] packet         |
 
 Workers never widen scope, never install, never commit. When in doubt: stop and report.

@@ -65,15 +65,15 @@ describe("AssetLoaderRegistry", () => {
       registry.register("json", probeLoader("other"));
       expect.unreachable("expected a FourError");
     } catch (error) {
-      expect(isFourError(error) && error.code).toBe("INVALID_APPLICATION_STATE");
+      expect(isFourError(error) && error.code).toBe(
+        "INVALID_APPLICATION_STATE",
+      );
       expect((error as Error).message).toMatch(/already registered/);
     }
   });
 
   it("refuses an empty name", () => {
     const registry = new AssetLoaderRegistry();
-    expect(() => registry.register("", probeLoader("x"))).toThrow(
-      /empty name/,
-    );
+    expect(() => registry.register("", probeLoader("x"))).toThrow(/empty name/);
   });
 });

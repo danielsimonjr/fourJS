@@ -670,7 +670,14 @@ function validateConvexHull(shape: ConvexHullShape): void {
     throw new FourError(
       "UNTRUSTED_INPUT_REJECTED",
       `convex-hull shape: point count ${String(points.length)} is over the ${String(MAXIMUM_SHAPE_POINTS)} limit (§96).`,
-      { context: { shape: "convex-hull", limitName: "MAXIMUM_SHAPE_POINTS", limit: MAXIMUM_SHAPE_POINTS, observed: points.length } },
+      {
+        context: {
+          shape: "convex-hull",
+          limitName: "MAXIMUM_SHAPE_POINTS",
+          limit: MAXIMUM_SHAPE_POINTS,
+          observed: points.length,
+        },
+      },
     );
   }
   for (let i = 0; i < points.length; i += 1) {
@@ -711,7 +718,14 @@ function validateTriangleMesh(shape: TriangleMeshShape): void {
     throw new FourError(
       "UNTRUSTED_INPUT_REJECTED",
       `triangle-mesh shape: vertex count ${String(vertices.length)} is over the ${String(MAXIMUM_SHAPE_POINTS)} limit (§96).`,
-      { context: { shape: "triangle-mesh", limitName: "MAXIMUM_SHAPE_POINTS", limit: MAXIMUM_SHAPE_POINTS, observed: vertices.length } },
+      {
+        context: {
+          shape: "triangle-mesh",
+          limitName: "MAXIMUM_SHAPE_POINTS",
+          limit: MAXIMUM_SHAPE_POINTS,
+          observed: vertices.length,
+        },
+      },
     );
   }
   for (let i = 0; i < vertices.length; i += 1) {

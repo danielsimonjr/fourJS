@@ -79,7 +79,9 @@ async function cssRectOf(canvas: Locator): Promise<CssRect> {
 }
 
 function worldToClientX(rect: CssRect, worldX: number): number {
-  return rect.x + ((worldX - VIEW_LEFT) / (VIEW_RIGHT - VIEW_LEFT)) * rect.width;
+  return (
+    rect.x + ((worldX - VIEW_LEFT) / (VIEW_RIGHT - VIEW_LEFT)) * rect.width
+  );
 }
 
 function worldToClientY(rect: CssRect, worldY: number): number {
@@ -89,7 +91,9 @@ function worldToClientY(rect: CssRect, worldY: number): number {
 }
 
 /** Loads the demo and waits for the readiness gate the page publishes. */
-async function openDemo(page: Page): Promise<{ canvas: Locator; rect: CssRect }> {
+async function openDemo(
+  page: Page,
+): Promise<{ canvas: Locator; rect: CssRect }> {
   await page.route("**/favicon.ico", (route) =>
     route.fulfill({ status: 200, contentType: "image/x-icon", body: "" }),
   );
@@ -123,9 +127,7 @@ async function settleFrames(page: Page, from: number): Promise<void> {
 }
 
 async function frameCount(page: Page): Promise<number> {
-  return Number(
-    await page.locator("#status").getAttribute("data-frames"),
-  );
+  return Number(await page.locator("#status").getAttribute("data-frames"));
 }
 
 test.describe("§92 visual: the UI demo canvas matches its goldens", () => {
@@ -146,7 +148,10 @@ test.describe("§92 visual: the UI demo canvas matches its goldens", () => {
       worldToClientX(rect, MINT_BUTTON_X),
       worldToClientY(rect, BUTTON_CENTER_Y),
     );
-    await expect(page.locator("#status")).toHaveAttribute("data-swatch", "mint");
+    await expect(page.locator("#status")).toHaveAttribute(
+      "data-swatch",
+      "mint",
+    );
     // Park the pointer again: the golden captures focus (a press outcome,
     // deterministic) but must not capture hover (a pointer-position artefact).
     await page.mouse.move(1, 1);

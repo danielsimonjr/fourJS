@@ -207,12 +207,10 @@ describe("§83 solver-handle resource accounting (A-5)", () => {
     vi.resetModules();
     const { PhysicsWorld: ProductionWorld } = await import("../src/world.js");
     const { RigidBody: ProductionBody } = await import("../src/rigid-body.js");
-    const { liveSolverBodyCount: productionBodies } = await import(
-      "../src/resource-memory.js"
-    );
-    const { FakeSolverAdapter: ProductionFake } = await import(
-      "./fake-adapter.js"
-    );
+    const { liveSolverBodyCount: productionBodies } =
+      await import("../src/resource-memory.js");
+    const { FakeSolverAdapter: ProductionFake } =
+      await import("./fake-adapter.js");
     const { Group: ProductionGroup } = await import("@fourjs/scene");
 
     const before = productionBodies();

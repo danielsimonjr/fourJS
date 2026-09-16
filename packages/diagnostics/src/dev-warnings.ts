@@ -63,7 +63,9 @@ export function warnPerFrameAllocations(
   );
 }
 
-export function beginFrameAllocationCheck(constructionCount: () => number): number {
+export function beginFrameAllocationCheck(
+  constructionCount: () => number,
+): number {
   return constructionCount();
 }
 

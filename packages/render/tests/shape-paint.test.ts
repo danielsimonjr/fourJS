@@ -71,7 +71,9 @@ function pattern(overrides: Partial<PatternPaint> = {}): PatternPaint {
   return { kind: "pattern", texture: fakeTexture(), ...overrides };
 }
 
-function conic(overrides: Partial<ConicGradientPaint> = {}): ConicGradientPaint {
+function conic(
+  overrides: Partial<ConicGradientPaint> = {},
+): ConicGradientPaint {
   return {
     kind: "conic-gradient",
     center: { x: 0, y: 0 },
@@ -446,9 +448,7 @@ describe("§58 lowering — the graph means what the paint says", () => {
   it("evaluates a conic gradient from +X, counter-clockwise", () => {
     const circle = new Circle({ radius: 2, fill: conic() });
     // t = 0 on +X, 0.25 on +Y, 0.5 on −X — red → blue.
-    expect(paintedColor(circle, { position: [1, 0, 0] })).toEqual([
-      1, 0, 0, 1,
-    ]);
+    expect(paintedColor(circle, { position: [1, 0, 0] })).toEqual([1, 0, 0, 1]);
     expect(paintedColor(circle, { position: [0, 1, 0] })).toEqual([
       0.75, 0, 0.25, 1,
     ]);
@@ -466,9 +466,7 @@ describe("§58 lowering — the graph means what the paint says", () => {
       fill: conic({ startAngle: Math.PI / 2 }),
     });
     // Offset 0 now sits on +Y.
-    expect(paintedColor(circle, { position: [0, 1, 0] })).toEqual([
-      1, 0, 0, 1,
-    ]);
+    expect(paintedColor(circle, { position: [0, 1, 0] })).toEqual([1, 0, 0, 1]);
     expect(paintedColor(circle, { position: [-1, 0, 0] })).toEqual([
       0.75, 0, 0.25, 1,
     ]);

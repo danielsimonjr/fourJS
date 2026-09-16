@@ -138,9 +138,17 @@ function findPreinstalledChromium(): string | undefined {
  */
 function webgpuLaunchArgs(): string[] {
   if (process.platform !== "win32") {
-    return ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-webgpu"];
+    return [
+      "--use-gl=angle",
+      "--use-angle=swiftshader",
+      "--enable-unsafe-webgpu",
+    ];
   }
-  return ["--use-gl=angle", "--enable-unsafe-webgpu", "--use-webgpu-adapter=swiftshader"];
+  return [
+    "--use-gl=angle",
+    "--enable-unsafe-webgpu",
+    "--use-webgpu-adapter=swiftshader",
+  ];
 }
 
 /** Preview port for `examples/first-2d-scene` — the suite's `baseURL`. */

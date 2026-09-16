@@ -74,7 +74,9 @@ describe("§79 × §67 — scissor round-trips on a Renderable", () => {
       scissor?: unknown;
     };
     expect(data.scissor).toBeUndefined();
-    expect((roundTrip(new Renderable(plane, flat)) as Renderable).scissor).toBeNull();
+    expect(
+      (roundTrip(new Renderable(plane, flat)) as Renderable).scissor,
+    ).toBeNull();
   });
 
   it("reads a pre-scissor document as null", () => {

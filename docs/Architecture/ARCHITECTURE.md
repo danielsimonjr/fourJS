@@ -41,44 +41,44 @@ Numbers below are extracted from the authoritative
 tooling (`bun run graph` regenerates everything under `docs/Architecture/`),
 last regenerated 2026-08-05.
 
-| Metric                          | Value                            |
-| ------------------------------- | -------------------------------- |
+| Metric                          | Value                              |
+| ------------------------------- | ---------------------------------- |
 | Packages                        | 24 (`@fourjs/*` + umbrella `four`) |
-| Source files                    | 161 TypeScript files             |
-| Lines of code                   | 56,760                           |
-| Total exports                   | 1,244                            |
-| Re-exports (barrel)             | 817                              |
-| Classes                         | 91                               |
-| Interfaces                      | 276                              |
-| Functions                       | 185                              |
-| Type guards                     | 12                               |
-| Type-only imports               | 172                              |
-| Runtime circular dependencies   | 0                                |
-| Type-only circular dependencies | 0                                |
+| Source files                    | 161 TypeScript files               |
+| Lines of code                   | 56,760                             |
+| Total exports                   | 1,244                              |
+| Re-exports (barrel)             | 817                                |
+| Classes                         | 91                                 |
+| Interfaces                      | 276                                |
+| Functions                       | 185                                |
+| Type guards                     | 12                                 |
+| Type-only imports               | 172                                |
+| Runtime circular dependencies   | 0                                  |
+| Type-only circular dependencies | 0                                  |
 
 ### Package Distribution
 
-| Package                                                                         | Files  | Key Exports                                                                                                                                                                                                      |
-| ------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `core`                                                                          | 8      | `EventEmitter`, `ComponentRegistry`, `FourError`, `Disposable`/`disposeAll`, `SeededRandom`, `JsonValue`/`cloneJsonValue`, `DEFAULT_GRAVITY_Y`                                                                   |
-| `math`                                                                          | 9      | `Vector2/3/4`, `Matrix3/4`, `Quaternion`, `ColorRGBA`, `DepthRange`                                                                                                                                              |
-| `scene`                                                                         | 12     | `Node`, `Group`, `Scene`, `Transform`, `PerspectiveCamera`/`OrthographicCamera`, `Viewport`, `DirectionalLight`, `TransformAuthority` + `warnAuthorityConflict`, `PoseBuffer`, `PoseTarget`                      |
-| `geometry`                                                                      | 3      | `BufferGeometry`, `boxGeometry`, `planeGeometry`, `circleGeometry2D`                                                                                                                                             |
-| `materials`                                                                     | 4      | `UnlitMaterial`, `LitMaterial`, `SpriteMaterial` (all carrying a `kind` discriminant)                                                                                                                            |
-| `assets`                                                                        | 3      | `AssetManager`, `ImageAsset`, `textLoader`/`jsonLoader`/`binaryLoader`/`createImageLoader`                                                                                                                       |
-| `motion`                                                                        | 14     | `Scheduler`, `SystemRegistry`, `TimeState`, `MotionComponent`/`MotionSystem`, `KinematicController`, `INTEGRATORS`, eight trajectory classes, `PIDController`, `SpringDamper`, `SteeringAgent`, `solveTwoBoneIK` |
-| `input`                                                                         | 5      | `PointerInput`, `ScenePointerEvent`, `pick`/`createPickRay`, `DragManager`                                                                                                                                       |
-| `serialization`                                                                 | 4      | `SceneDocument`, `validateSceneDocument`, `encodeSceneDocument`/`decodeSceneDocument`, `SceneMigrationRegistry`, `ComponentSerializerRegistry`                                                                   |
-| `diagnostics`                                                                   | 6      | `createChecksum`/`hashFloats`, `ReplayRecorder`, `ReplayPlayer`, `DebugDrawBuffer`, collect\* debug providers, `DEBUG_DRAW_STAGED`                                                                               |
-| `particles`                                                                     | 8      | `ParticleEmitter`, `ParticleSystem`, `ParticlePool`, `ParticleRenderable`, §27 field factories (`uniformGravityField`, `vortexField`, `turbulenceField`, …)                                                      |
-| `text`                                                                          | 4      | `BUILTIN_FONT`, `createBitmapFont`, `buildGlyphAtlas`, `layoutText`                                                                                                                                              |
-| `render`                                                                        | 8      | `Renderer` (interface), `NullRenderer`, `Renderable`, `Sprite`, `Texture`, `buildRenderList`/`buildInterpolatedRenderList`, `collectSceneLights`, `ParticleDrawable`                                             |
-| `animation`                                                                     | 10     | `Tween`/`animate`, `Timeline`, `AnimationClip`/`AnimationTrack`, `AnimationMixer`, `AnimationSystem`, 34-key easing registry, value adapters                                                                     |
-| `physics`                                                                       | 15     | `PhysicsWorld`, `RigidBody`, `Collider`, `PhysicsMaterial`, six joint classes, `PhysicsSystem`, `PhysicsSolverAdapter`, `SolverBodyAccess`, `SolverJointAccess`, `PhysicsCapabilities`                           |
-| `physics-rapier`                                                                | 7      | `Rapier2dAdapter`, `Rapier3dAdapter`, conversion helpers                                                                                                                                                         |
-| `render-webgl`                                                                  | 6      | `WebglRenderer`, `UnlitProgram`/`SpriteProgram`/`LitProgram`/`ParticleProgram`, `GeometryCache`, `TextureCache`, the structural `GL` seam                                                                        |
-| `ui`                                                                            | 5      | `UIWidget`, `Panel`, `Button`, `Label`, `WidgetSkin`, layout types                                                                                                                                               |
-| `four`                                                                          | 25     | `Application` + one re-export module per workspace package                                                                                                                                                       |
+| Package                                                        | Files  | Key Exports                                                                                                                                                                                                      |
+| -------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `core`                                                         | 8      | `EventEmitter`, `ComponentRegistry`, `FourError`, `Disposable`/`disposeAll`, `SeededRandom`, `JsonValue`/`cloneJsonValue`, `DEFAULT_GRAVITY_Y`                                                                   |
+| `math`                                                         | 9      | `Vector2/3/4`, `Matrix3/4`, `Quaternion`, `ColorRGBA`, `DepthRange`                                                                                                                                              |
+| `scene`                                                        | 12     | `Node`, `Group`, `Scene`, `Transform`, `PerspectiveCamera`/`OrthographicCamera`, `Viewport`, `DirectionalLight`, `TransformAuthority` + `warnAuthorityConflict`, `PoseBuffer`, `PoseTarget`                      |
+| `geometry`                                                     | 3      | `BufferGeometry`, `boxGeometry`, `planeGeometry`, `circleGeometry2D`                                                                                                                                             |
+| `materials`                                                    | 4      | `UnlitMaterial`, `LitMaterial`, `SpriteMaterial` (all carrying a `kind` discriminant)                                                                                                                            |
+| `assets`                                                       | 3      | `AssetManager`, `ImageAsset`, `textLoader`/`jsonLoader`/`binaryLoader`/`createImageLoader`                                                                                                                       |
+| `motion`                                                       | 14     | `Scheduler`, `SystemRegistry`, `TimeState`, `MotionComponent`/`MotionSystem`, `KinematicController`, `INTEGRATORS`, eight trajectory classes, `PIDController`, `SpringDamper`, `SteeringAgent`, `solveTwoBoneIK` |
+| `input`                                                        | 5      | `PointerInput`, `ScenePointerEvent`, `pick`/`createPickRay`, `DragManager`                                                                                                                                       |
+| `serialization`                                                | 4      | `SceneDocument`, `validateSceneDocument`, `encodeSceneDocument`/`decodeSceneDocument`, `SceneMigrationRegistry`, `ComponentSerializerRegistry`                                                                   |
+| `diagnostics`                                                  | 6      | `createChecksum`/`hashFloats`, `ReplayRecorder`, `ReplayPlayer`, `DebugDrawBuffer`, collect\* debug providers, `DEBUG_DRAW_STAGED`                                                                               |
+| `particles`                                                    | 8      | `ParticleEmitter`, `ParticleSystem`, `ParticlePool`, `ParticleRenderable`, §27 field factories (`uniformGravityField`, `vortexField`, `turbulenceField`, …)                                                      |
+| `text`                                                         | 4      | `BUILTIN_FONT`, `createBitmapFont`, `buildGlyphAtlas`, `layoutText`                                                                                                                                              |
+| `render`                                                       | 8      | `Renderer` (interface), `NullRenderer`, `Renderable`, `Sprite`, `Texture`, `buildRenderList`/`buildInterpolatedRenderList`, `collectSceneLights`, `ParticleDrawable`                                             |
+| `animation`                                                    | 10     | `Tween`/`animate`, `Timeline`, `AnimationClip`/`AnimationTrack`, `AnimationMixer`, `AnimationSystem`, 34-key easing registry, value adapters                                                                     |
+| `physics`                                                      | 15     | `PhysicsWorld`, `RigidBody`, `Collider`, `PhysicsMaterial`, six joint classes, `PhysicsSystem`, `PhysicsSolverAdapter`, `SolverBodyAccess`, `SolverJointAccess`, `PhysicsCapabilities`                           |
+| `physics-rapier`                                               | 7      | `Rapier2dAdapter`, `Rapier3dAdapter`, conversion helpers                                                                                                                                                         |
+| `render-webgl`                                                 | 6      | `WebglRenderer`, `UnlitProgram`/`SpriteProgram`/`LitProgram`/`ParticleProgram`, `GeometryCache`, `TextureCache`, the structural `GL` seam                                                                        |
+| `ui`                                                           | 5      | `UIWidget`, `Panel`, `Button`, `Label`, `WidgetSkin`, layout types                                                                                                                                               |
+| `four`                                                         | 25     | `Application` + one re-export module per workspace package                                                                                                                                                       |
 | `physics-box2d`, `physics-soft`, `render-canvas`, `render-svg` | 1 each | `PACKAGE_NAME` only — reserved stubs                                                                                                                                                                             |
 | `render-webgpu`                                                | 24     | `WebgpuRenderer`, `registerWebgpuRenderer`, pipeline/bind-group/WGSL testing seams (§62 backend 1; R-1 complete 2026-08-29)                                                                                      |
 
@@ -394,7 +394,7 @@ frame time ──► accumulator ──► while (accumulator ≥ fixedDeltaTime
   positions, slerp for rotations); `buildInterpolatedRenderList` blends
   previous→current by `interpolationAlpha`. A skinned item's palette is
   the product of those composed locals (`Skeleton.update(skinRoot,
-  worldOf)`), not a lerp of `jointMatrices`. Render interpolation **never
+worldOf)`), not a lerp of `jointMatrices`. Render interpolation **never
   feeds back** into simulation state.
 - One deliberately frozen wart: the accumulator's ULP drift can fire a
   boundary-sitting timeline marker one step late; this is pinned in a golden
@@ -614,9 +614,9 @@ in CI.
   dependency, so it resolves its own compiler and constrains nothing above it.
   A peer dependency cannot do this — `bun add --dev typedoc` at the root resolves
   the peer to the hoisted 7.0.2 and TypeDoc dies with `Cannot read properties of
-  undefined (reading 'PropertyDeclaration')`. Measured both ways.
+undefined (reading 'PropertyDeclaration')`. Measured both ways.
 - **Linting is Oxlint, and that is what freed the root.** typescript-eslint
-  refuses TS 7 by name; Oxlint's type-aware mode *requires* TS 7 (it is
+  refuses TS 7 by name; Oxlint's type-aware mode _requires_ TS 7 (it is
   `typescript-go` underneath). All 47 `recommendedTypeChecked` rules are
   reproduced in `.oxlintrc.json`, 16 of them mutation-verified.
 
@@ -629,6 +629,7 @@ in CI.
   - Two compilers read this source, and they **do** disagree. `typecheck:ts6`
     is a CI gate for exactly that: it caught TS 6 rejecting the `.ts` import
     extensions in three §93 examples that 5.9 and 7.0 both accept.
+
 - **Build**: `tsc -b` with project references mirroring the §3.1 matrix. Each
   package carries two tsconfigs — `tsconfig.json` (dev/lint, `noEmit`) and
   `tsconfig.build.json` (declaration-emitting, `references` per dependency).

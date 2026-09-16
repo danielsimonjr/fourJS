@@ -73,10 +73,7 @@ import { Node } from "@fourjs/scene";
 
 import type { ParticleEmitter } from "./emitter.js";
 import type { ParticleTexture } from "./types.js";
-import {
-  TRAIL_VERTEX_FLOATS,
-  buildTrailRibbonMesh,
-} from "./trail.js";
+import { TRAIL_VERTEX_FLOATS, buildTrailRibbonMesh } from "./trail.js";
 
 /**
  * Floats per particle in {@link ParticleRenderable.particleInstances}: centre

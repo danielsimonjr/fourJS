@@ -16,6 +16,11 @@
     "composite": false,
     "declaration": false,
     "declarationMap": false,
-    "noEmit": true},
-  "files": ["playwright.config.ts", "vitest.coverage.config.ts", "vitest.suites.config.ts"]
+    "noEmit": true
+  },
+  "files": [
+    "playwright.config.ts",
+    "vitest.coverage.config.ts",
+    "vitest.suites.config.ts"
+  ]
 }

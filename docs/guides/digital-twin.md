@@ -135,7 +135,7 @@ const restored = instantiateScene(
 `createDefaultComponentSerializers()` plus `serializeScene(app.scene, registry)`
 is the first save a reader of this guide used to write, and it **throws** on
 any ordinary drawable (`INVALID_APPLICATION_STATE`, naming `registerSceneNodeTypes()`).
-Unregistered *components* also throw (`unknownComponents: "throw"`, A-15 since
+Unregistered _components_ also throw (`unknownComponents: "throw"`, A-15 since
 2026-08-06 — this paragraph said "silently unsaved" until 2026-09-09). `"skip"`
 is opt-in. Versioned migrations (§80) run on load via the migration registry,
 with warnings surfaced.

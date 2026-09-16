@@ -458,10 +458,7 @@ export interface PatternPaint {
  * {@link Paint}.
  */
 export type ObjectPaint =
-  | LinearGradientPaint
-  | RadialGradientPaint
-  | ConicGradientPaint
-  | PatternPaint;
+  LinearGradientPaint | RadialGradientPaint | ConicGradientPaint | PatternPaint;
 
 /**
  * What a shape's fill or stroke is painted with (§58).

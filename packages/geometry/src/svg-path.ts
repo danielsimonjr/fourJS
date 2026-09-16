@@ -1170,7 +1170,10 @@ function writeArc(
   const largeArc = Math.abs(step) > Math.PI ? "1" : "0";
   const sweep = command.deltaAngle > 0 ? "1" : "0";
   const radii = `${formatNumber(command.radiusX, precision)} ${formatNumber(command.radiusY, precision)}`;
-  const rotation = formatNumber(command.rotation * RADIANS_TO_DEGREES, precision);
+  const rotation = formatNumber(
+    command.rotation * RADIANS_TO_DEGREES,
+    precision,
+  );
   let from = start;
   for (let piece = 1; piece <= pieces; piece += 1) {
     const to = arcPoint(command, command.startAngle + step * piece);

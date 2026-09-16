@@ -6,9 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler"
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "references": [
     {
       "path": "../core/tsconfig.build.json"

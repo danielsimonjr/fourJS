@@ -10,11 +10,8 @@
   },
   "note": "Five fresh instances in one process; runtime compilation caches may benefit later samples. Warm shape excludes font load.",
   "coldMilliseconds": [
-    9.249277000000006,
-    2.183796000000001,
-    1.7457650000000058,
-    1.6794940000000054,
-    1.781630000000007
+    9.249277000000006, 2.183796000000001, 1.7457650000000058,
+    1.6794940000000054, 1.781630000000007
   ],
   "coldSummary": {
     "samples": 5,

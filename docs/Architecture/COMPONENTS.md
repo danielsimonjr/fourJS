@@ -102,15 +102,15 @@ world.addBody(ball);
 
 Everything in the scene is a `Node` (single inheritance extending `EventEmitter<NodeEventMap>`, plan D1). The concrete node types, by owning package:
 
-| Node type                                                      | Package           | Role                                                                                                             |
-| -------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Node type                                                      | Package             | Role                                                                                                             |
+| -------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `Node` / `Group` / `Scene`                                     | `@fourjs/scene`     | Hierarchy base, plain container, root (§6, §46)                                                                  |
 | `Bone`                                                         | `@fourjs/scene`     | §54 joint — an ordinary node; `Skeleton` is shared palette state, not a node                                     |
 | `Camera` (abstract), `OrthographicCamera`, `PerspectiveCamera` | `@fourjs/scene`     | §47 cameras — a camera is a node (spec rev 1.3 placement)                                                        |
 | `DirectionalLight`                                             | `@fourjs/scene`     | §68 MVP lighting — shines along its node's −Z world axis; scene-wide ambient is `Scene.ambientLight`, not a node |
 | `Renderable`                                                   | `@fourjs/render`    | §49 geometry + material drawable                                                                                 |
 | `Sprite`                                                       | `@fourjs/render`    | §55 textured quad (implements `Disposable`)                                                                      |
-| `ParticleRenderable`                                           | `@fourjs/particles` | One node per particle system; satisfies `@fourjs/render`'s duck-typed `ParticleDrawable` contract                  |
+| `ParticleRenderable`                                           | `@fourjs/particles` | One node per particle system; satisfies `@fourjs/render`'s duck-typed `ParticleDrawable` contract                |
 | `UIWidget` (abstract), `Panel`, `Button`, `Label`              | `@fourjs/ui`        | §73 widgets — scene nodes with a box model and interaction state; visuals are app-supplied (`WidgetSkin`)        |
 
 ---

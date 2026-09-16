@@ -1346,7 +1346,11 @@ describe("§66 default sort skip (2026-09-11 audit)", () => {
     const c = surface("c", glass);
     ordered.add(a, b, c);
     resolveWorldTransforms(ordered);
-    expect(names(buildRenderList(ordered, []), ordered)).toEqual(["a", "b", "c"]);
+    expect(names(buildRenderList(ordered, []), ordered)).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
 
     // Transparent generated first: the comparator moves it last.
     const descending = new Scene();

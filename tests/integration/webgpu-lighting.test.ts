@@ -32,7 +32,11 @@
  */
 
 import { boxGeometry, planeGeometry } from "@fourjs/geometry";
-import { LitMaterial, StandardMaterial, UnlitMaterial } from "@fourjs/materials";
+import {
+  LitMaterial,
+  StandardMaterial,
+  UnlitMaterial,
+} from "@fourjs/materials";
 import {
   MAX_PUNCTUAL_LIGHTS,
   Mesh,
@@ -327,8 +331,9 @@ describe("WP-R1.5 — each shaded variant is one module, compiled once", () => {
     ).toHaveLength(1);
     // Every shaded geometry uploaded its normal stream, in GL's order.
     expect(
-      bufferLabels(rig.gpu).filter((label) => label.startsWith("fourJS:normals:"))
-        .length,
+      bufferLabels(rig.gpu).filter((label) =>
+        label.startsWith("fourJS:normals:"),
+      ).length,
     ).toBe(4);
   });
 });

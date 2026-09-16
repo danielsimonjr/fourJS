@@ -256,7 +256,7 @@ against the tree 2026-09-10:
   motion".** `serialization` always had two (`COMPONENT_SERIALIZERS`,
   `SCENE_MIGRATIONS`), as this RFC's own list says.
 - **Boundary test.** `tests/integration/plugin-boundary.test.ts` now splits
-  host machinery (banned outside core/umbrella) from token *declaration*
+  host machinery (banned outside core/umbrella) from token _declaration_
   (`defineCapability`, allowed in owning packages, dated).
 - Verified consistent: token name strings (`fourJS:…`), the restricted range
   grammar, `defineCapability`'s non-revocable default, `ApplicationOptions.plugins`

@@ -7,7 +7,11 @@
  */
 
 import { planeGeometry } from "@fourjs/geometry";
-import { NodeMaterial, UnlitMaterial, type ShaderGraph } from "@fourjs/materials";
+import {
+  NodeMaterial,
+  UnlitMaterial,
+  type ShaderGraph,
+} from "@fourjs/materials";
 import { Scene, resolveWorldTransforms } from "@fourjs/scene";
 import { describe, expect, it } from "vitest";
 

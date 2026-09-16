@@ -155,10 +155,7 @@ function worldToNdc(x: number, y: number): { ndcX: number; ndcY: number } {
 }
 
 /** The service's NDC → pixel map (`gl-picking.ts`, +Y up, edges clamped). */
-function ndcToPixel(
-  ndcX: number,
-  ndcY: number,
-): { x: number; y: number } {
+function ndcToPixel(ndcX: number, ndcY: number): { x: number; y: number } {
   return {
     x: Math.min(
       SURFACE_WIDTH - 1,
@@ -217,9 +214,9 @@ describe("unskinned control scene (pipeline-cost law, both seams)", () => {
 
     expect(idWithSkinning).toEqual(idWithoutSkinning);
     expect(colorWithSkinning).toEqual(colorWithoutSkinning);
-    expect(
-      idWithoutSkinning.some((line) => line.includes("skinMatrix")),
-    ).toBe(false);
+    expect(idWithoutSkinning.some((line) => line.includes("skinMatrix"))).toBe(
+      false,
+    );
     expect(
       idWithoutSkinning.some((line) => line.includes("jointMatrices")),
     ).toBe(false);
@@ -335,17 +332,7 @@ describe("the skinned id pass, consumer seat (§54 + §71)", () => {
 
     const hitPixel = ndcToPixel(deformedOnly.ndcX, deformedOnly.ndcY);
     const missPixel = ndcToPixel(bindPoseOnly.ndcX, bindPoseOnly.ndcY);
-    expect(seam.reads[0].slice(0, 4)).toEqual([
-      hitPixel.x,
-      hitPixel.y,
-      1,
-      1,
-    ]);
-    expect(seam.reads[1].slice(0, 4)).toEqual([
-      missPixel.x,
-      missPixel.y,
-      1,
-      1,
-    ]);
+    expect(seam.reads[0].slice(0, 4)).toEqual([hitPixel.x, hitPixel.y, 1, 1]);
+    expect(seam.reads[1].slice(0, 4)).toEqual([missPixel.x, missPixel.y, 1, 1]);
   });
 });

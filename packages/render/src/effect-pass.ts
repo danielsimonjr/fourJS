@@ -467,7 +467,9 @@ export function supportsScreenEffects<TRenderer extends object>(
 }
 
 /** §85 check for {@link EffectRenderPass.rect}. Throws on a bad value. */
-function validateDestinationRect(rect: EffectDestinationRect | undefined): void {
+function validateDestinationRect(
+  rect: EffectDestinationRect | undefined,
+): void {
   if (rect === undefined) {
     return;
   }

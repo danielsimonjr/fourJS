@@ -302,7 +302,11 @@ const proposedCharactersInsideBudget = Math.max(
   1,
   Math.floor(
     FIXED_STEP_BUDGET_MS /
-      Math.max(controllerRow.meanMsPerStep + oneRig.boneResolvePlusPalette.meanMsPerPass, 1e-6),
+      Math.max(
+        controllerRow.meanMsPerStep +
+          oneRig.boneResolvePlusPalette.meanMsPerPass,
+        1e-6,
+      ),
   ),
 );
 

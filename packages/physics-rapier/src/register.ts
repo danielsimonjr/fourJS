@@ -73,8 +73,7 @@ export function isRapierSupported(options?: PhysicsWorldOptions): boolean {
   // probe (the workspace pins `lib: ["ES2022"]`; DOM-free is enforced, not
   // assumed — 2026-09-11).
   return (
-    typeof (globalThis as { WebAssembly?: unknown }).WebAssembly !==
-    "undefined"
+    typeof (globalThis as { WebAssembly?: unknown }).WebAssembly !== "undefined"
   );
 }
 

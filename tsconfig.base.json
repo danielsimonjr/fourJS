@@ -11,16 +11,8 @@
     "skipLibCheck": true,
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": [
-      "ES2022"
-    ],
-    "typeRoots": [
-      "./node_modules/@types",
-      "./types"
-    ],
-    "types": [
-      "node",
-      "wasm"
-    ]
+    "lib": ["ES2022"],
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "types": ["node", "wasm"]
   }
 }

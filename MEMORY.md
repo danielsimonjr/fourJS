@@ -156,11 +156,11 @@ readable; never delete the pointer itself.
 
 - **2026-09-09 — `wgpu-picking.ts` on the `GATED` list.** Wave 5's WebGPU
   picking id pipelines wrap compile-failure notices in `if (DEV)` (mesh
-  + particle). `gl-picking.ts` was already listed; the WebGPU twin was
-  not, so `tests/integration/dev-build-mode.test.ts` failed on #87.
-  Argument matches the WebGL entry: failure latched in both builds,
-  picking is a §34 input, nothing an id pass draws re-enters simulation
-  (§42/§43).
+  - particle). `gl-picking.ts` was already listed; the WebGPU twin was
+    not, so `tests/integration/dev-build-mode.test.ts` failed on #87.
+    Argument matches the WebGL entry: failure latched in both builds,
+    picking is a §34 input, nothing an id pass draws re-enters simulation
+    (§42/§43).
 
 - **2026-09-09 — RFC 0005 WebGL `SkinnedIdProgram`.** The id pass draws
   skinned-unlit / skinned-lit items through a deformed silhouette
@@ -335,7 +335,6 @@ readable; never delete the pointer itself.
   global branches 92.1% (adapter defensive paths). Bump still waits.
   **Superseded the same day — see the 5.0.0 landing entry above.**
 
-
 - **2026-09-09 — Browser-gate follow-up on the open-TODO PR.** Pause-during-
   grab was not enough: `waitForVirtualFrameCount` pumped the patched rAF and
   aliased even frames only. Host rAF (`__fourHostRaf`) is the pump. Character
@@ -405,7 +404,7 @@ readable; never delete the pointer itself.
 - **2026-09-06 — A-5 materials / solver-handle counts.** Process-wide
   `liveMaterialCount` and `liveSolver{Body,Collider,Joint,Handle}Count` are
   always-on numbers (no `DEV` in those packages). `auditResourceLeaks` still
-  gates the *message*. No new `FrameStats` fields.
+  gates the _message_. No new `FrameStats` fields.
 
 - **2026-09-06 — RFCs 0007–0009 proposed (owner pending).** Path-planning
   adapters (`0007`: waypoint polyline + `followWaypoints`, grid/navmesh later);
@@ -431,7 +430,7 @@ readable; never delete the pointer itself.
 
 - **2026-09-10 — Accepted RFCs 0001–0006 audited; corrections appended.**
   Standing facts worth not re-deriving: the RFCs are decision records —
-  drift is recorded in a dated *Post-acceptance corrections* section, never
+  drift is recorded in a dated _Post-acceptance corrections_ section, never
   by rewriting the accepted text. `PLUGIN_API_VERSION` is `0.1.0`; all
   eleven §81 tokens exist; `Bone` and `CanvasViewWidget` carry no `typeName`
   (node type is the §79 identity); `maximumSkinningJoints` is optional and
@@ -478,7 +477,7 @@ readable; never delete the pointer itself.
   and unsplit because `check-docs` and its own convention say so). The
   workspace now pins `lib: ["ES2022"]` — a package naming a DOM type fails to
   build; browser specs and examples pin DOM themselves. `setEventInterest`
-  gates event *translation* only: fingerprints identical with/without it. The
+  gates event _translation_ only: fingerprints identical with/without it. The
   2026-08-08 `physics-step` record was stale after the Rapier 0.20 bump — a
   benchmark record's checksums must be re-recorded with every solver bump,
   not only the goldens. WebGPU has one loss code, `DEVICE_LOST`.
@@ -552,7 +551,6 @@ readable; never delete the pointer itself.
   behaviours stay agnostic — they accept `Iterable<SteeringNeighbor>` from brute
   force or this index.
 
-
 - **2026-09-06 — §42 warn stays off the DEV flag.** A-4 step 4
   routed `warnAuthorityConflict` through `devWarnOnce`, which
   `dev-build-mode.test.ts` refuses in `@fourjs/scene` (simulation
@@ -574,7 +572,6 @@ readable; never delete the pointer itself.
   `__fourVirtualFrames` moving — CI hung 120 s on `b55a8c1`. Poll through
   `page.evaluate`, pump one real rAF per poll, and wait for `start + 1` (parity-
   against-stale-`since` also failed when two increments landed per pump).
-
 
 - **2026-09-06 — unlit `color` is read after bind + features (F13).**
   `unlitColorBlends` must not run before the texture unit and
@@ -650,19 +647,19 @@ readable; never delete the pointer itself.
 
 - **2026-09-06 — open-TODO pass, first landing.** Four items closed without an
   owner product decision: Windows Chromium binary layouts + lazy barrel imports
-  + slower-runner timeouts; a Dependabot-only workflow that regenerates
-  `bun.lock` (does not weaken `--frozen-lockfile` on CI); A-26's generated
-  renderer-backend table, read before `initialize` so device-derived WebGPU
-  fields stay at the construction-time floor (captioned, not claimed as "cannot");
-  Rapier `inheritVelocityFrom` documented as nearly a no-op. **Isolation
-  leak:** unrestored `vi.spyOn(console, "warn")` in two physics files —
-  Vitest 4 keeps the spy history, Vitest 3 did not. Not leftover worlds.
-  `#62` and `eslint >=10` are unblocked on that axis; the typedoc/TS 7
-  joint pin remains. Remaining packets still in flight: diagnosed flakes,
-  scissor, §59 textures, field batching, docs gates. Owner-gated items
-  (first publish, rapier 0.20, typedoc/TS 7, A-25 secrets, RFC residues)
-  stay owner-gated. Superceded for remaining-packet policy by the
-  2026-09-06 second-landing entry.
+  - slower-runner timeouts; a Dependabot-only workflow that regenerates
+    `bun.lock` (does not weaken `--frozen-lockfile` on CI); A-26's generated
+    renderer-backend table, read before `initialize` so device-derived WebGPU
+    fields stay at the construction-time floor (captioned, not claimed as "cannot");
+    Rapier `inheritVelocityFrom` documented as nearly a no-op. **Isolation
+    leak:** unrestored `vi.spyOn(console, "warn")` in two physics files —
+    Vitest 4 keeps the spy history, Vitest 3 did not. Not leftover worlds.
+    `#62` and `eslint >=10` are unblocked on that axis; the typedoc/TS 7
+    joint pin remains. Remaining packets still in flight: diagnosed flakes,
+    scissor, §59 textures, field batching, docs gates. Owner-gated items
+    (first publish, rapier 0.20, typedoc/TS 7, A-25 secrets, RFC residues)
+    stay owner-gated. Superceded for remaining-packet policy by the
+    2026-09-06 second-landing entry.
 
 - **2026-09-06 — three headline claims verified FROM OUTSIDE the library, against the published
   packages.** Not the repo's own suite: the staged `@danielsimonjr/fourjs-*` tree laid out in a
@@ -677,9 +674,9 @@ readable; never delete the pointer itself.
     continuing changed the checksum, so the equality is not trivial.
   - **§7a's Y-up-in-2D convention is real.** A 2D body falls in −Y, matches the closed form to
     ~10 mm over 30 steps, and stays on the z = 0 plane. 2D gravity takes a `Vector2`.
-  Also: all 25 umbrella subpath exports resolve, and a strict-mode TypeScript consumer typechecks
-  clean with `skipLibCheck: false` — so the shipped `.d.ts` files are internally consistent, not
-  merely present.
+    Also: all 25 umbrella subpath exports resolve, and a strict-mode TypeScript consumer typechecks
+    clean with `skipLibCheck: false` — so the shipped `.d.ts` files are internally consistent, not
+    merely present.
 
 - **2026-09-05 — repository configuration was three-quarters broken, and none of it showed in
   the tree.** `Docs` had failed on every run because **Pages was never enabled**, while the
@@ -690,7 +687,7 @@ readable; never delete the pointer itself.
   was no `.github/dependabot.yml` at all**, while vulnerability alerts were on: problems were
   detected and nothing remediated them.
   Lesson worth keeping: **a repo can be green in CI and still be broken everywhere CI does not
-  look.** Three of these were repository *settings*, invisible to any check that reads the
+  look.** Three of these were repository _settings_, invisible to any check that reads the
   working tree, and each had been failing quietly for weeks. When a workflow fails on a step it
   does not own (`Configure Pages`, `Create version pull request`), suspect a setting before
   suspecting the code.

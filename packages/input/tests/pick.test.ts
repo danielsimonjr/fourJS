@@ -1,4 +1,8 @@
-import { Vector3, constructionCount, resetConstructionCount } from "@fourjs/math";
+import {
+  Vector3,
+  constructionCount,
+  resetConstructionCount,
+} from "@fourjs/math";
 import {
   Camera,
   Group,

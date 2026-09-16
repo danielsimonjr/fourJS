@@ -171,7 +171,10 @@ import type {
   ColliderTriggerEvent,
   RigidBodyCollisionEvent,
 } from "./collider.js";
-import type { PhysicsWorldOptions, RigidBodyDescriptor } from "./descriptors.js";
+import type {
+  PhysicsWorldOptions,
+  RigidBodyDescriptor,
+} from "./descriptors.js";
 import {
   resolveAngularVelocity,
   resolveGravity,
@@ -1772,7 +1775,11 @@ export class PhysicsWorld {
       this.#mapAngular,
     );
     widenToVector3(v, registration.body.linearVelocity);
-    this.#toSolverVec(registration, registration.body.linearVelocity, this.#mapLinear);
+    this.#toSolverVec(
+      registration,
+      registration.body.linearVelocity,
+      this.#mapLinear,
+    );
     this.#adapter.setBodyVelocities(
       registration.handle,
       this.#mapLinear,
@@ -1801,7 +1808,11 @@ export class PhysicsWorld {
       this.#mapLinear,
       this.#mapAngular,
     );
-    resolveAngularVelocity(this.#dimension, v, registration.body.angularVelocity);
+    resolveAngularVelocity(
+      this.#dimension,
+      v,
+      registration.body.angularVelocity,
+    );
     this.#toSolverAngular(
       registration,
       registration.body.angularVelocity,
@@ -2829,7 +2840,11 @@ export class PhysicsWorld {
       this.#mapAngular,
     );
     this.#fromSolverLinear(registration, this.#mapLinear, body.linearVelocity);
-    this.#fromSolverAngular(registration, this.#mapAngular, body.angularVelocity);
+    this.#fromSolverAngular(
+      registration,
+      this.#mapAngular,
+      body.angularVelocity,
+    );
   }
 
   #toSolverPose(
@@ -3442,7 +3457,7 @@ export class PhysicsWorld {
    * this world has registered, so the pair that trips it need not arrive
    * together.
    */
-/**
+  /**
    * Warns for a dynamic body that reaches its first step with nothing to derive an
    * inertia tensor from (§23, §25).
    *

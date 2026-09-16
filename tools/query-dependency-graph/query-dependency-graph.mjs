@@ -21,21 +21,21 @@
  * Every package's `.` (browser-facing) entry must stay free of node: builtins,
  * EXCEPT the designated Node runtimes below.
  */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { posix } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { dirname, join, resolve } from 'node:path';
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { posix } from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname, join, resolve } from "node:path";
 
 // Node runtimes by design — their `.` entry may use node: builtins (e.g. the
 // workbook CLI/serve runtime uses node:fs). Every OTHER package's `.` entry must
 // stay browser-safe; new packages are enforced by default.
-const NODE_RUNTIME_PACKAGES = new Set(['workbook']);
+const NODE_RUNTIME_PACKAGES = new Set(["workbook"]);
 
 /** Browser-safe packages = every `.` (main) entry package minus the Node runtimes. */
 export function browserSafePackages(graph) {
   return graph.entryPoints
-    .filter((e) => e.type === 'main')
-    .map((e) => e.file.replace(/\/src\/index\.ts$/, ''))
+    .filter((e) => e.type === "main")
+    .map((e) => e.file.replace(/\/src\/index\.ts$/, ""))
     .filter((pkg) => !NODE_RUNTIME_PACKAGES.has(pkg));
 }
 
@@ -44,13 +44,13 @@ export function browserSafePackages(graph) {
 /** Resolve a relative import specifier from `importer` to a repo-relative file
  *  in `allFiles`, or null if it's external/unresolvable. */
 export function resolveSpec(importer, spec, allFiles) {
-  if (!spec.startsWith('.')) return null; // bare/external specifier
+  if (!spec.startsWith(".")) return null; // bare/external specifier
   const p = posix.normalize(posix.join(posix.dirname(importer), spec));
   const candidates = [];
-  if (p.endsWith('.js')) {
+  if (p.endsWith(".js")) {
     const b = p.slice(0, -3);
     candidates.push(`${b}.ts`, `${b}.tsx`, `${b}/index.ts`);
-  } else if (p.endsWith('.ts')) {
+  } else if (p.endsWith(".ts")) {
     candidates.push(p);
   } else {
     candidates.push(`${p}.ts`, `${p}.tsx`, `${p}/index.ts`);
@@ -92,7 +92,8 @@ export function invert(forward) {
  *  imports) uses a node: builtin. Returns { taint: Map, direct: Map }. */
 export function computeTaint(forward, fileEntries) {
   const direct = new Map();
-  for (const [f, e] of fileEntries) direct.set(f, (e.nodeDependencies || []).length > 0);
+  for (const [f, e] of fileEntries)
+    direct.set(f, (e.nodeDependencies || []).length > 0);
   const taint = new Map();
   const visiting = new Set();
   function dfs(f) {
@@ -142,12 +143,17 @@ export function findLeaks(pkg, forward, direct) {
 // ── data loading + CLI ──────────────────────────────────────────────────────
 
 function loadData(root) {
-  const graph = JSON.parse(readFileSync(join(root, 'docs/Architecture/dependency-graph.json'), 'utf8'));
-  const surfPath = join(root, 'docs/Architecture/package-export-surfaces.json');
-  const surfaces = existsSync(surfPath) ? JSON.parse(readFileSync(surfPath, 'utf8')).surfaces : {};
+  const graph = JSON.parse(
+    readFileSync(join(root, "docs/Architecture/dependency-graph.json"), "utf8"),
+  );
+  const surfPath = join(root, "docs/Architecture/package-export-surfaces.json");
+  const surfaces = existsSync(surfPath)
+    ? JSON.parse(readFileSync(surfPath, "utf8")).surfaces
+    : {};
   const fileEntries = [];
   for (const mod of Object.values(graph.modules)) {
-    for (const [file, entry] of Object.entries(mod)) fileEntries.push([file, entry]);
+    for (const [file, entry] of Object.entries(mod))
+      fileEntries.push([file, entry]);
   }
   const allFiles = new Set(fileEntries.map(([f]) => f));
   const forward = buildForward(fileEntries, allFiles);
@@ -159,9 +165,11 @@ function symbolUsers(symbol, fileEntries) {
   const out = [];
   for (const [file, entry] of fileEntries) {
     for (const d of entry.internalDependencies || [])
-      if ((d.imports || []).includes(symbol)) out.push({ file, from: 'internal' });
+      if ((d.imports || []).includes(symbol))
+        out.push({ file, from: "internal" });
     for (const d of entry.workspaceDependencies || [])
-      if ((d.imports || []).includes(symbol)) out.push({ file, from: d.package });
+      if ((d.imports || []).includes(symbol))
+        out.push({ file, from: d.package });
   }
   return out;
 }
@@ -179,10 +187,10 @@ function symbolUsers(symbol, fileEntries) {
  * Mutates `argv`, removing the flag so it is never read as a command.
  */
 export function resolveRoot(argv, scriptDir) {
-  const i = argv.findIndex((a) => a.startsWith('--root='));
-  if (i === -1) return resolve(scriptDir, '..', '..');
+  const i = argv.findIndex((a) => a.startsWith("--root="));
+  if (i === -1) return resolve(scriptDir, "..", "..");
   const [flag] = argv.splice(i, 1);
-  return resolve(flag.slice('--root='.length));
+  return resolve(flag.slice("--root=".length));
 }
 
 function main() {
@@ -191,80 +199,120 @@ function main() {
   const [cmd, ...args] = argv;
   const { graph, surfaces, fileEntries, forward } = loadData(root);
 
-  if (!cmd || cmd === '--emit') {
+  if (!cmd || cmd === "--emit") {
     const reverse = invert(forward);
     const { direct } = computeTaint(forward, fileEntries);
-    const tainted = [...direct.entries()].filter(([, v]) => v).map(([f]) => f).sort();
+    const tainted = [...direct.entries()]
+      .filter(([, v]) => v)
+      .map(([f]) => f)
+      .sort();
     const bsp = browserSafePackages(graph);
     const leaks = {};
     for (const pkg of bsp) leaks[pkg] = findLeaks(pkg, forward, direct);
     writeFileSync(
-      join(root, 'docs/Architecture/dependency-reverse.json'),
-      JSON.stringify({ generated: graph.metadata.lastUpdated, dependents: reverse }, null, 2)
+      join(root, "docs/Architecture/dependency-reverse.json"),
+      JSON.stringify(
+        { generated: graph.metadata.lastUpdated, dependents: reverse },
+        null,
+        2,
+      ),
     );
     writeFileSync(
-      join(root, 'docs/Architecture/node-safety.json'),
+      join(root, "docs/Architecture/node-safety.json"),
       JSON.stringify(
-        { generated: graph.metadata.lastUpdated, browserSafePackages: bsp, nodeTaintedFiles: tainted, leaks },
+        {
+          generated: graph.metadata.lastUpdated,
+          browserSafePackages: bsp,
+          nodeTaintedFiles: tainted,
+          leaks,
+        },
         null,
-        2
-      )
+        2,
+      ),
     );
     const nLeaks = Object.values(leaks).reduce((a, l) => a + l.length, 0);
-    console.log(`query-dependency-graph: wrote dependency-reverse.json (${Object.keys(reverse).length} files) + node-safety.json (${tainted.length} node-tainted, ${nLeaks} leak(s)).`);
+    console.log(
+      `query-dependency-graph: wrote dependency-reverse.json (${Object.keys(reverse).length} files) + node-safety.json (${tainted.length} node-tainted, ${nLeaks} leak(s)).`,
+    );
     return;
   }
 
-  if (cmd === 'dependents') {
+  if (cmd === "dependents") {
     const file = args[0];
     const rev = invert(forward)[file] || [];
-    console.log(rev.length ? rev.join('\n') : `(no intra-package importers of ${file})`);
+    console.log(
+      rev.length ? rev.join("\n") : `(no intra-package importers of ${file})`,
+    );
     return;
   }
-  if (cmd === 'symbol-users') {
+  if (cmd === "symbol-users") {
     const users = symbolUsers(args[0], fileEntries);
-    console.log(users.length ? users.map((u) => `${u.file}  [${u.from}]`).join('\n') : `(no importers of symbol ${args[0]})`);
+    console.log(
+      users.length
+        ? users.map((u) => `${u.file}  [${u.from}]`).join("\n")
+        : `(no importers of symbol ${args[0]})`,
+    );
     return;
   }
-  if (cmd === 'is-public') {
+  if (cmd === "is-public") {
     const [pkg, sym] = args;
     const list = surfaces[pkg];
     if (!list) return console.log(`(unknown package '${pkg}')`);
-    console.log(list.includes(sym) ? `PUBLIC — ${sym} is exported from ${pkg}` : `INTERNAL — ${sym} is not in ${pkg}'s public export surface`);
+    console.log(
+      list.includes(sym)
+        ? `PUBLIC — ${sym} is exported from ${pkg}`
+        : `INTERNAL — ${sym} is not in ${pkg}'s public export surface`,
+    );
     return;
   }
-  if (cmd === 'node-safety') {
+  if (cmd === "node-safety") {
     const { direct } = computeTaint(forward, fileEntries);
     const pkgs = args[0] ? [args[0]] : browserSafePackages(graph);
     for (const pkg of pkgs) {
       const leaks = findLeaks(pkg, forward, direct);
-      console.log(`${pkg}: ${leaks.length ? `⚠ ${leaks.length} node: file(s) reachable from .:\n  ${leaks.join('\n  ')}` : '✓ clean (. entry reaches no node: code)'}`);
+      console.log(
+        `${pkg}: ${leaks.length ? `⚠ ${leaks.length} node: file(s) reachable from .:\n  ${leaks.join("\n  ")}` : "✓ clean (. entry reaches no node: code)"}`,
+      );
     }
     return;
   }
-  if (cmd === 'cycles') {
+  if (cmd === "cycles") {
     const cyc = graph.dependencyGraph.circularDependencies || [];
-    console.log(cyc.length ? JSON.stringify(cyc, null, 2) : 'none (0 circular dependencies)');
+    console.log(
+      cyc.length
+        ? JSON.stringify(cyc, null, 2)
+        : "none (0 circular dependencies)",
+    );
     return;
   }
-  if (cmd === '--check-browser-safety') {
+  if (cmd === "--check-browser-safety") {
     const { direct } = computeTaint(forward, fileEntries);
     let bad = 0;
     for (const pkg of browserSafePackages(graph)) {
       const leaks = findLeaks(pkg, forward, direct);
       if (leaks.length) {
         bad += leaks.length;
-        console.log(`✖ ${pkg}: browser-safe . entry reaches node: code: ${leaks.join(', ')}`);
+        console.log(
+          `✖ ${pkg}: browser-safe . entry reaches node: code: ${leaks.join(", ")}`,
+        );
       }
     }
-    if (!bad) console.log(`✓ all ${browserSafePackages(graph).length} browser-safe packages: . entries are node-free`);
+    if (!bad)
+      console.log(
+        `✓ all ${browserSafePackages(graph).length} browser-safe packages: . entries are node-free`,
+      );
     process.exit(bad ? 1 : 0);
   }
 
-  console.log(`unknown command '${cmd}'. See --help header in graph-query.mjs.`);
+  console.log(
+    `unknown command '${cmd}'. See --help header in graph-query.mjs.`,
+  );
   process.exit(2);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))
+) {
   main();
 }

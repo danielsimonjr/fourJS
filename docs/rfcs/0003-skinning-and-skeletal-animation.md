@@ -271,11 +271,11 @@ revision 1.10). Verified against the tree 2026-09-10:
 - **§8 "Defers … the glTF loader".** Shipped 2026-08-29 (A-19,
   `packages/fourjs/src/gltf.ts` builds `Bone`/`Skeleton` from skins).
 - **Prototype "None run".** Done 2026-09-09: `benchmarks/skinning-resolve.mjs`
-  + `results/skinning-resolve.json` (60 bones ×1/×10 vs Group topology,
-  `Skeleton.update`, 180-channel clip through mixer and controller;
-  alternative A does not return). Items 1 and 4 were measured at landing
-  (byte-identical A/B; +0.75–0.80 kB gzip for the seam, pipelines 0 B unless
-  registered).
+  - `results/skinning-resolve.json` (60 bones ×1/×10 vs Group topology,
+    `Skeleton.update`, 180-channel clip through mixer and controller;
+    alternative A does not return). Items 1 and 4 were measured at landing
+    (byte-identical A/B; +0.75–0.80 kB gzip for the seam, pipelines 0 B unless
+    registered).
 - **Compatibility "the packet must state whether `Skeleton` is a document-
   level resource".** Decided: inline on the mesh as bone ids + inverse bind
   matrices (spec §54, revision 1.10).

@@ -259,12 +259,12 @@ Rows in `docs/COMPATIBILITY.md` this RFC moves:
 
 Public API effects, in §90 terms:
 
-| Change                                                                      | §90 class                                                                                                                                                                                                                                                                                                           |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Change                                                                        | §90 class                                                                                                                                                                                                                                                                                                           |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | New exports from `@fourjs/materials` (`ShaderGraph`, `NodeMaterial`, builder) | **minor** — additive                                                                                                                                                                                                                                                                                                |
-| `ScreenEffect` gains `GraphEffect`                                          | **minor for applications** (the union is a parameter position: every existing value still type-checks) — but **breaking for any exhaustive `switch` over `ScreenEffectKind` in third-party code**, including a third-party backend. Called out because the type is exported precisely so callers can switch over it |
-| `RenderItemKind` gains `"node"`                                             | same shape: additive for producers, breaking for an exhaustive consumer. `RenderItemKind` is exported and `isUnlitItem`-style guards exist, so most consumers are unaffected                                                                                                                                        |
-| `RendererCapabilities`                                                      | unchanged in this packet                                                                                                                                                                                                                                                                                            |
+| `ScreenEffect` gains `GraphEffect`                                            | **minor for applications** (the union is a parameter position: every existing value still type-checks) — but **breaking for any exhaustive `switch` over `ScreenEffectKind` in third-party code**, including a third-party backend. Called out because the type is exported precisely so callers can switch over it |
+| `RenderItemKind` gains `"node"`                                               | same shape: additive for producers, breaking for an exhaustive consumer. `RenderItemKind` is exported and `isUnlitItem`-style guards exist, so most consumers are unaffected                                                                                                                                        |
+| `RendererCapabilities`                                                        | unchanged in this packet                                                                                                                                                                                                                                                                                            |
 
 **Determinism (§33).** Shading is outside the determinism envelope by §42/§43 — _"render interpolation never feeds back into physics state"_ — and no API in this RFC returns a shaded value to the CPU, so GPU float behaviour is not a §33 hazard. Three genuine §33 obligations remain, and they are on the _compiler_, not the shader: (1) node visitation is array order, never `Map`/`Set` enumeration, so the emitted source is a pure function of the graph; (2) the structural hash used as the program-cache key is computed over that same ordered walk, so cache hits do not depend on construction history; (3) `time()` is §9 **render** time and is typed and documented as such, so a graph cannot become a hidden simulation input. The §92 determinism suites need no new golden; the §92 **pixel-golden** tier needs one new baseline per shipped example graph, and the byte-identical-GL-sequence test from R-19/F13 must be extended with a no-node-material case.
 
@@ -298,7 +298,7 @@ decision.
   list should read §58 as well.
 - **§5 `ScreenEffect = CopyEffect | ColorGradeEffect | GraphEffect`.** The
   shipped union is `CopyEffect | ColorGradeEffect | OutputTransformEffect |
-  GraphEffect` — `OutputTransformEffect` (R-15, 2026-08-08) predates this RFC's
+GraphEffect` — `OutputTransformEffect` (R-15, 2026-08-08) predates this RFC's
   landing (`packages/render/src/effect-pass.ts:313-314`).
 - **§5 `GraphEffect` shape.** Shipped with a fourth field,
   `textures?: Record<string, RenderTargetTexture>` (`effect-pass.ts:284-310`),
@@ -317,7 +317,7 @@ decision.
   fast path; no hash function exists (`gl-node-program.ts:23-26`).
 - **Alternative E "deferred to a follow-up RFC" / §81 point "absent".** Half
   landed 2026-09-06: `ShaderOperatorRegistry` (named factories producing
-  *closed* nodes, `packages/materials/src/shader-operators.ts`) and the
+  _closed_ nodes, `packages/materials/src/shader-operators.ts`) and the
   `SHADER_OPERATORS` token (`materials/src/capabilities.ts`). The
   data-declared-operator half (widening the node-kind union) remains deferred.
 - **§4 "exceeded ui-demo's 30 kB by 99 B" / "seventeen example bundles".**

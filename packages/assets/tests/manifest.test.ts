@@ -185,7 +185,9 @@ describe("parseAssetManifest origin policy (§96, 2026-09-11)", () => {
     expect(() =>
       parseAssetManifest({ a: { url: "//cdn.example/a.png" } }),
     ).toThrow(/names another origin/);
-    expect(parseAssetManifest({ a: { url: "/a.png" }, b: { url: "b/c.png" } })).toEqual(
+    expect(
+      parseAssetManifest({ a: { url: "/a.png" }, b: { url: "b/c.png" } }),
+    ).toEqual(
       expect.objectContaining({ a: { url: "/a.png" }, b: { url: "b/c.png" } }),
     );
   });

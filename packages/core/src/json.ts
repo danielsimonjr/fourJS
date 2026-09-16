@@ -80,7 +80,13 @@ function cloneJson(
     throw new FourError(
       "UNTRUSTED_INPUT_REJECTED",
       `${path} is nested deeper than ${String(MAXIMUM_CLONE_DEPTH)} levels (§96).`,
-      { context: { limitName: "maximumDepth", limit: MAXIMUM_CLONE_DEPTH, path } },
+      {
+        context: {
+          limitName: "maximumDepth",
+          limit: MAXIMUM_CLONE_DEPTH,
+          path,
+        },
+      },
     );
   }
   switch (typeof value) {

@@ -316,7 +316,10 @@ function resolvePaint(name: string, paint: Paint): ResolvedObjectPaint {
     case "conic-gradient":
       // Stored on the shape; the serializer packet that names conic widens
       // {@link ResolvedObjectPaint}. Until then the cast is this module's.
-      return resolveConicGradient(name, paint) as unknown as ResolvedObjectPaint;
+      return resolveConicGradient(
+        name,
+        paint,
+      ) as unknown as ResolvedObjectPaint;
     case "pattern":
       return resolvePattern(name, paint);
     default: {

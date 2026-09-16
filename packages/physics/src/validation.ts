@@ -690,10 +690,12 @@ export function validatePhysicsWorldOptions(
     const ny = plane.normal.y;
     const nz = "z" in plane.normal ? plane.normal.z : 0;
     if (nx === 0 && ny === 0 && nz === 0) {
-      fail(
-        "localPlane.normal must be a non-zero vector (§21, §85).",
-        { field: "localPlane.normal", x: nx, y: ny, z: nz },
-      );
+      fail("localPlane.normal must be a non-zero vector (§21, §85).", {
+        field: "localPlane.normal",
+        x: nx,
+        y: ny,
+        z: nz,
+      });
     }
     if (plane.xAxis !== undefined) {
       requireFinite("localPlane.xAxis.x", plane.xAxis.x);

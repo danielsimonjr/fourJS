@@ -19,9 +19,9 @@ describe("rejectStalePhysicsHandle (§83)", () => {
     expect(() =>
       rejectStalePhysicsHandle("body", "7", "stale body (§37)."),
     ).toThrowError(/stale body/);
-    expect(() =>
-      rejectStalePhysicsHandle("body", "7", "again."),
-    ).toThrowError(/again/);
+    expect(() => rejectStalePhysicsHandle("body", "7", "again.")).toThrowError(
+      /again/,
+    );
     expect(warn).toHaveBeenCalledTimes(1);
     try {
       rejectStalePhysicsHandle("collider", "3", "stale collider.");

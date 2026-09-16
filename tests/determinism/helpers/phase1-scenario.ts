@@ -318,13 +318,19 @@ export async function runPhase1Scenario(): Promise<Phase1ScenarioResult> {
     );
 
     axes.push(
-      new Vector3(structure() * 2 - 1, structure() * 2 - 1, structure() * 2 - 1),
+      new Vector3(
+        structure() * 2 - 1,
+        structure() * 2 - 1,
+        structure() * 2 - 1,
+      ),
     );
     rates.push(0.5 + structure() * 2.5);
     walkScales.push(0.002 + structure() * 0.008);
     // Per-node stream, keyed by index so streams stay independent of the order
     // in which nodes happen to be visited.
-    walkStreams.push(createLcg(SCENARIO_SEED ^ Math.imul(i + 1, GOLDEN_RATIO_32)));
+    walkStreams.push(
+      createLcg(SCENARIO_SEED ^ Math.imul(i + 1, GOLDEN_RATIO_32)),
+    );
 
     nodes.push(node);
     const depth = depthOf(node);

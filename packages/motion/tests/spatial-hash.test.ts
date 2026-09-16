@@ -176,9 +176,19 @@ describe("SpatialHash determinism (§33, plan P8-3)", () => {
       const agents: SteeringNeighbor[] = [];
       for (let i = 0; i < 20; i += 1) {
         const angle = (i / 20) * Math.PI * 2;
-        const agent = makeNeighbor([Math.cos(angle) * 10, Math.sin(angle) * 10, 0]);
+        const agent = makeNeighbor([
+          Math.cos(angle) * 10,
+          Math.sin(angle) * 10,
+          0,
+        ]);
         agents.push(agent);
-        hash.insert(i, agent.position.x, agent.position.y, agent.position.z, agent);
+        hash.insert(
+          i,
+          agent.position.x,
+          agent.position.y,
+          agent.position.z,
+          agent,
+        );
       }
 
       const lists: number[][] = [];

@@ -26,9 +26,16 @@
  * nothing). `.d.ts` ambient declarations are excluded from the dormant count.
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
-import yaml from 'js-yaml';
-import { basename, dirname, join, relative } from 'path';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "fs";
+import yaml from "js-yaml";
+import { basename, dirname, join, relative } from "path";
 
 // Types
 interface Dependency {
@@ -101,7 +108,8 @@ interface Statistics {
 interface UnusedExport {
   file: string;
   name: string;
-  type: 'function' | 'class' | 'interface' | 'type' | 'constant' | 'enum' | 'other';
+  type:
+    "function" | "class" | "interface" | "type" | "constant" | "enum" | "other";
   // How many times the symbol is referenced WITHIN its own file beyond its export
   // definition. > 0 means it's a type contract / helper backing live exports in the
   // same module (not deletable in isolation); 0 means unreferenced anywhere — the
@@ -164,15 +172,15 @@ function parseCliOptions(): CLIOptions {
   };
 
   for (const arg of args) {
-    if (arg.startsWith('--root=')) {
+    if (arg.startsWith("--root=")) {
       options.root = arg.slice(7);
-    } else if (arg === '--include-tests' || arg === '-t') {
+    } else if (arg === "--include-tests" || arg === "-t") {
       options.includeTests = true;
-    } else if (arg === '--all' || arg === '-a') {
+    } else if (arg === "--all" || arg === "-a") {
       options.all = true;
-    } else if (arg === '--check-census') {
+    } else if (arg === "--check-census") {
       options.checkCensus = true;
-    } else if (arg === '--help' || arg === '-h') {
+    } else if (arg === "--help" || arg === "-h") {
       console.log(`
 Dependency Graph Generator
 
@@ -200,7 +208,7 @@ Examples:
   create-dependency-graph --root=C:/projects/my-app -t
 `);
       process.exit(0);
-    } else if (!arg.startsWith('-') && existsSync(arg)) {
+    } else if (!arg.startsWith("-") && existsSync(arg)) {
       // First non-flag argument is the project root
       options.root = arg;
     }
@@ -214,15 +222,17 @@ function getProjectRoot(): string {
 }
 
 const ROOT_DIR = getProjectRoot();
-const SRC_DIR = join(ROOT_DIR, 'src');
-const OUTPUT_DIR = join(ROOT_DIR, 'docs', 'Architecture');
+const SRC_DIR = join(ROOT_DIR, "src");
+const OUTPUT_DIR = join(ROOT_DIR, "docs", "Architecture");
 
 // Read package.json for version and name
-let packageJson: PackageJson = { name: 'unknown', version: '0.0.0' };
+let packageJson: PackageJson = { name: "unknown", version: "0.0.0" };
 try {
-  packageJson = JSON.parse(readFileSync(join(ROOT_DIR, 'package.json'), 'utf-8')) as PackageJson;
+  packageJson = JSON.parse(
+    readFileSync(join(ROOT_DIR, "package.json"), "utf-8"),
+  ) as PackageJson;
 } catch {
-  console.warn('Warning: Could not read package.json, using defaults');
+  console.warn("Warning: Could not read package.json, using defaults");
 }
 
 // Module-level workspace map (set in main() for monorepo mode)
@@ -247,11 +257,11 @@ let workspaceMap: Map<string, WorkspacePackage> = new Map();
  * from the module graph (1088 → 1086). This restores them by reading the config.
  */
 function tsupConfigEntries(rootDir: string, pkgDir: string): string[] {
-  const cfgPath = join(rootDir, pkgDir, 'tsup.config.ts');
+  const cfgPath = join(rootDir, pkgDir, "tsup.config.ts");
   if (!existsSync(cfgPath)) return [];
   let code: string;
   try {
-    code = readFileSync(cfgPath, 'utf-8');
+    code = readFileSync(cfgPath, "utf-8");
   } catch {
     return [];
   }
@@ -263,7 +273,7 @@ function tsupConfigEntries(rootDir: string, pkgDir: string): string[] {
   if (!arr) return [];
   const out: string[] = [];
   for (const m of arr[1].matchAll(/['"`]([^'"`]+\.ts)['"`]/g)) {
-    out.push(join(pkgDir, m[1]).replace(/\\/g, '/'));
+    out.push(join(pkgDir, m[1]).replace(/\\/g, "/"));
   }
   return out;
 }
@@ -280,29 +290,34 @@ function exportsSubpathEntries(
     exports?: Record<string, unknown>;
     bin?: Record<string, string> | string;
     scripts?: Record<string, string>;
-  }
+  },
 ): string[] {
   const entries: string[] = [];
   const addIfExists = (srcPath: string): void => {
-    const norm = srcPath.replace(/\\/g, '/');
+    const norm = srcPath.replace(/\\/g, "/");
     if (existsSync(join(rootDir, srcPath)) && !entries.includes(norm)) {
       entries.push(norm);
     }
   };
-  if (pkg.exports && typeof pkg.exports === 'object') {
+  if (pkg.exports && typeof pkg.exports === "object") {
     for (const key of Object.keys(pkg.exports)) {
-      if (key === '.' || !key.startsWith('./')) continue;
+      if (key === "." || !key.startsWith("./")) continue;
       const name = key.slice(2); // "./internal" → "internal"
-      addIfExists(join(pkgDir, 'src', `${name}.ts`));
+      addIfExists(join(pkgDir, "src", `${name}.ts`));
     }
   }
   // `bin` entries (e.g. workbook's mtsw CLI → "./dist/cli.js" → src/cli.ts) are build
   // roots too: nothing imports them, so without seeding them the whole CLI subtree is
   // excluded from the graph and everything it consumes gets false-flagged as unused.
-  const binValues = typeof pkg.bin === 'string' ? [pkg.bin] : pkg.bin ? Object.values(pkg.bin) : [];
+  const binValues =
+    typeof pkg.bin === "string"
+      ? [pkg.bin]
+      : pkg.bin
+        ? Object.values(pkg.bin)
+        : [];
   for (const bin of binValues) {
     const m = /(?:\.\/)?dist\/(.+)\.[cm]?js$/.exec(bin);
-    if (m) addIfExists(join(pkgDir, 'src', `${m[1]}.ts`));
+    if (m) addIfExists(join(pkgDir, "src", `${m[1]}.ts`));
   }
   // Bundler entry points declared in the `build`/`dev` scripts — e.g.
   // `tsup src/index.ts src/worker.ts` or `... src/cli.ts`. Each additional
@@ -326,11 +341,13 @@ function exportsSubpathEntries(
   // Config-driven tsup: a `build`/`dev` script that invokes `tsup` with NO
   // explicit `src/*.ts` entry arg reads its entries from `tsup.config.ts`
   // instead — the script-string parse above finds none, so also read the config.
-  const buildDevScripts = [pkg.scripts?.build, pkg.scripts?.dev].filter((s): s is string =>
-    Boolean(s)
+  const buildDevScripts = [pkg.scripts?.build, pkg.scripts?.dev].filter(
+    (s): s is string => Boolean(s),
   );
   const hasConfigDrivenTsup = buildDevScripts.some(
-    (s) => /(?:^|\s|&|\|)tsup(?:\s|$|&|\|)/.test(s) && !/(?:^|\s)src\/[\w./-]+\.ts\b/.test(s)
+    (s) =>
+      /(?:^|\s|&|\|)tsup(?:\s|$|&|\|)/.test(s) &&
+      !/(?:^|\s)src\/[\w./-]+\.ts\b/.test(s),
   );
   if (hasConfigDrivenTsup) {
     for (const entry of tsupConfigEntries(rootDir, pkgDir)) addIfExists(entry);
@@ -359,19 +376,22 @@ function configReferencedEntries(rootDir: string): string[] {
     return [];
   }
   const isConfig = (n: string): boolean =>
-    /\.config(\.[\w-]+)?\.(m?[jt]s)$/.test(n) || /^(vite|vitest|rollup|webpack|tsup)\./.test(n);
+    /\.config(\.[\w-]+)?\.(m?[jt]s)$/.test(n) ||
+    /^(vite|vitest|rollup|webpack|tsup)\./.test(n);
   for (const name of names) {
     if (!isConfig(name)) continue;
     let code: string;
     try {
-      code = readFileSync(join(rootDir, name), 'utf-8');
+      code = readFileSync(join(rootDir, name), "utf-8");
     } catch {
       continue;
     }
     // `new URL('<path ending in src/….ts>', …)` only. Normalize a leading `./`
     // away to match parsedFiles' repo-relative paths.
-    for (const m of code.matchAll(/new\s+URL\(\s*['"`]([^'"`]*?src\/[\w./-]+\.ts)['"`]/g)) {
-      out.add(m[1].replace(/^\.\//, ''));
+    for (const m of code.matchAll(
+      /new\s+URL\(\s*['"`]([^'"`]*?src\/[\w./-]+\.ts)['"`]/g,
+    )) {
+      out.add(m[1].replace(/^\.\//, ""));
     }
   }
   return [...out];
@@ -388,26 +408,26 @@ function seedTsconfigEntries(
   rootDir: string,
   pkgDir: string,
   cfgRel: string,
-  add: (srcPath: string) => void
+  add: (srcPath: string) => void,
 ): void {
   const cfgPath = join(rootDir, pkgDir, cfgRel);
   if (!existsSync(cfgPath)) return;
   let cfg: { files?: string[]; include?: string[] };
   try {
-    cfg = JSON.parse(readFileSync(cfgPath, 'utf-8'));
+    cfg = JSON.parse(readFileSync(cfgPath, "utf-8"));
   } catch {
     return;
   }
   const cfgDir = dirname(join(pkgDir, cfgRel));
   const seedPath = (p: string): void => {
-    if (p.includes('*')) {
-      const base = join(rootDir, cfgDir, p.replace(/\/?\*.*$/, ''));
+    if (p.includes("*")) {
+      const base = join(rootDir, cfgDir, p.replace(/\/?\*.*$/, ""));
       if (existsSync(base)) {
         for (const f of getAllSourceTsFiles(base)) {
-          add(relative(rootDir, f).replace(/\\/g, '/'));
+          add(relative(rootDir, f).replace(/\\/g, "/"));
         }
       }
-    } else if (p.endsWith('.ts')) {
+    } else if (p.endsWith(".ts")) {
       add(join(cfgDir, p));
     }
   };
@@ -429,19 +449,24 @@ function seedTsconfigEntries(
  */
 function readWorkspacePatterns(rootDir: string): string[] {
   try {
-    const rootPkg = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
+    const rootPkg = JSON.parse(
+      readFileSync(join(rootDir, "package.json"), "utf-8"),
+    );
     const ws = rootPkg.workspaces;
-    const patterns: string[] | undefined = Array.isArray(ws) ? ws : ws?.packages;
-    if (patterns?.length) return patterns.filter((p) => !p.startsWith('!'));
+    const patterns: string[] | undefined = Array.isArray(ws)
+      ? ws
+      : ws?.packages;
+    if (patterns?.length) return patterns.filter((p) => !p.startsWith("!"));
   } catch {
     /* no package.json, or it is not valid JSON — fall through to pnpm */
   }
 
   try {
-    const cfg = yaml.load(readFileSync(join(rootDir, 'pnpm-workspace.yaml'), 'utf-8')) as
-      | { packages?: string[] }
-      | undefined;
-    if (Array.isArray(cfg?.packages)) return cfg.packages.filter((p) => !p.startsWith('!'));
+    const cfg = yaml.load(
+      readFileSync(join(rootDir, "pnpm-workspace.yaml"), "utf-8"),
+    ) as { packages?: string[] } | undefined;
+    if (Array.isArray(cfg?.packages))
+      return cfg.packages.filter((p) => !p.startsWith("!"));
   } catch {
     /* no pnpm-workspace.yaml — single-package repo */
   }
@@ -457,7 +482,7 @@ function detectWorkspaces(rootDir: string): Map<string, WorkspacePackage> {
     if (wsPatterns.length === 0) return workspaces;
 
     for (const pattern of wsPatterns) {
-      if (pattern.endsWith('/*')) {
+      if (pattern.endsWith("/*")) {
         // Glob pattern like "packages/*"
         const parentDir = pattern.slice(0, -2);
         const fullParent = join(rootDir, parentDir);
@@ -466,16 +491,16 @@ function detectWorkspaces(rootDir: string): Map<string, WorkspacePackage> {
         const entries = readdirSync(fullParent);
         for (const entry of entries) {
           const pkgDir = join(parentDir, entry);
-          const pkgJsonPath = join(rootDir, pkgDir, 'package.json');
+          const pkgJsonPath = join(rootDir, pkgDir, "package.json");
           if (existsSync(pkgJsonPath)) {
             try {
-              const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+              const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
               if (pkg.name) {
-                const srcDir = join(pkgDir, 'src');
+                const srcDir = join(pkgDir, "src");
                 workspaces.set(pkg.name, {
                   name: pkg.name,
-                  directory: pkgDir.replace(/\\/g, '/'),
-                  srcDir: srcDir.replace(/\\/g, '/'),
+                  directory: pkgDir.replace(/\\/g, "/"),
+                  srcDir: srcDir.replace(/\\/g, "/"),
                   extraEntries: exportsSubpathEntries(rootDir, pkgDir, pkg),
                 });
               }
@@ -486,16 +511,16 @@ function detectWorkspaces(rootDir: string): Map<string, WorkspacePackage> {
         }
       } else {
         // Direct path like "core", "matrix"
-        const pkgJsonPath = join(rootDir, pattern, 'package.json');
+        const pkgJsonPath = join(rootDir, pattern, "package.json");
         if (existsSync(pkgJsonPath)) {
           try {
-            const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+            const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
             if (pkg.name) {
-              const srcDir = join(pattern, 'src');
+              const srcDir = join(pattern, "src");
               workspaces.set(pkg.name, {
                 name: pkg.name,
-                directory: pattern.replace(/\\/g, '/'),
-                srcDir: srcDir.replace(/\\/g, '/'),
+                directory: pattern.replace(/\\/g, "/"),
+                srcDir: srcDir.replace(/\\/g, "/"),
                 extraEntries: exportsSubpathEntries(rootDir, pattern, pkg),
               });
             }
@@ -524,7 +549,7 @@ function getAllTsFiles(dir: string, files: string[] = []): string[] {
 
   for (const entry of entries) {
     // Skip node_modules directories
-    if (entry === 'node_modules') {
+    if (entry === "node_modules") {
       continue;
     }
 
@@ -534,9 +559,9 @@ function getAllTsFiles(dir: string, files: string[] = []): string[] {
     if (stat.isDirectory()) {
       getAllTsFiles(fullPath, files);
     } else if (
-      entry.endsWith('.ts') &&
-      !entry.endsWith('.test.ts') &&
-      !entry.endsWith('.spec.ts')
+      entry.endsWith(".ts") &&
+      !entry.endsWith(".test.ts") &&
+      !entry.endsWith(".spec.ts")
     ) {
       files.push(fullPath);
     }
@@ -552,15 +577,15 @@ function getAllTsFiles(dir: string, files: string[] = []): string[] {
 function getAllSourceTsFiles(dir: string, files: string[] = []): string[] {
   if (!existsSync(dir)) return files;
   for (const entry of readdirSync(dir)) {
-    if (entry === 'node_modules') continue;
+    if (entry === "node_modules") continue;
     const fullPath = join(dir, entry);
     if (statSync(fullPath).isDirectory()) {
       getAllSourceTsFiles(fullPath, files);
     } else if (
-      entry.endsWith('.ts') &&
-      !entry.endsWith('.test.ts') &&
-      !entry.endsWith('.spec.ts') &&
-      !entry.endsWith('.d.ts')
+      entry.endsWith(".ts") &&
+      !entry.endsWith(".test.ts") &&
+      !entry.endsWith(".spec.ts") &&
+      !entry.endsWith(".d.ts")
     ) {
       files.push(fullPath);
     }
@@ -577,7 +602,7 @@ function getAllTestFiles(dir: string, files: string[] = []): string[] {
 
   for (const entry of entries) {
     // Skip node_modules directories
-    if (entry === 'node_modules') {
+    if (entry === "node_modules") {
       continue;
     }
 
@@ -586,7 +611,7 @@ function getAllTestFiles(dir: string, files: string[] = []): string[] {
 
     if (stat.isDirectory()) {
       getAllTestFiles(fullPath, files);
-    } else if (entry.endsWith('.test.ts') || entry.endsWith('.spec.ts')) {
+    } else if (entry.endsWith(".test.ts") || entry.endsWith(".spec.ts")) {
       files.push(fullPath);
     }
   }
@@ -651,12 +676,18 @@ interface CategoryBreakdown {
  * categories).
  */
 function loadCoveragePolicy(rootDir: string): CoveragePolicy | null {
-  const policyPath = join(rootDir, 'docs', 'Architecture', 'coverage-policy.json');
+  const policyPath = join(
+    rootDir,
+    "docs",
+    "Architecture",
+    "coverage-policy.json",
+  );
   if (!existsSync(policyPath)) return null;
   try {
-    const raw = readFileSync(policyPath, 'utf8');
+    const raw = readFileSync(policyPath, "utf8");
     const parsed = JSON.parse(raw) as CoveragePolicy;
-    if (!parsed.categories || typeof parsed.categories !== 'object') return null;
+    if (!parsed.categories || typeof parsed.categories !== "object")
+      return null;
     return parsed;
   } catch {
     return null;
@@ -670,7 +701,10 @@ function loadCoveragePolicy(rootDir: string): CoveragePolicy | null {
  * get reclassified because some directory it happens to live under is
  * also covered by a prefix.
  */
-function classifyAgainstPolicy(filePath: string, policy: CoveragePolicy | null): string | null {
+function classifyAgainstPolicy(
+  filePath: string,
+  policy: CoveragePolicy | null,
+): string | null {
   if (!policy) return null;
   for (const [categoryId, cat] of Object.entries(policy.categories)) {
     if (cat.exactPaths?.includes(filePath)) return categoryId;
@@ -696,7 +730,7 @@ function buildCategoryBreakdown(
   sourceFiles: string[],
   testedFiles: string[],
   untestedFiles: string[],
-  policy: CoveragePolicy | null
+  policy: CoveragePolicy | null,
 ): CategoryBreakdown {
   const byCategory: Record<string, number> = {};
   if (policy) {
@@ -731,7 +765,8 @@ function buildCategoryBreakdown(
   }
   const activeFiles = sourceFiles.length - excludedTotal;
   const testedActive = testedFiles.length - testedExcluded;
-  const effectivePercent = activeFiles > 0 ? ((testedActive / activeFiles) * 100).toFixed(1) : '0';
+  const effectivePercent =
+    activeFiles > 0 ? ((testedActive / activeFiles) * 100).toFixed(1) : "0";
 
   return {
     byCategory,
@@ -803,7 +838,10 @@ function buildReExportMap(sourceFiles: ParsedFile[]): ReExportMap {
  * Get all source files that are ultimately imported through a barrel file chain.
  * Given an import to a barrel file, returns all source files it re-exports.
  */
-function traceReExports(importedPath: string, reExportMap: ReExportMap): Set<string> {
+function traceReExports(
+  importedPath: string,
+  reExportMap: ReExportMap,
+): Set<string> {
   const result = new Set<string>();
   result.add(importedPath); // Always include the directly imported file
 
@@ -824,7 +862,7 @@ function traceReExports(importedPath: string, reExportMap: ReExportMap): Set<str
  */
 function analyzeTestCoverage(
   sourceFiles: ParsedFile[],
-  testFiles: ParsedFile[]
+  testFiles: ParsedFile[],
 ): TestCoverageAnalysis {
   const sourceFilePaths = new Set(sourceFiles.map((f) => f.path));
   const coverageMap = new Map<string, string[]>();
@@ -839,7 +877,11 @@ function analyzeTestCoverage(
   }
 
   // Helper to add test coverage for a source file
-  const addCoverage = (sourcePath: string, testPath: string, importedSources: string[]) => {
+  const addCoverage = (
+    sourcePath: string,
+    testPath: string,
+    importedSources: string[],
+  ) => {
     if (!importedSources.includes(sourcePath)) {
       importedSources.push(sourcePath);
     }
@@ -873,8 +915,8 @@ function analyzeTestCoverage(
       }
 
       // Also check without .ts extension variations
-      const withoutTs = resolvedPath.replace(/\.ts$/, '');
-      const withTs = withoutTs + '.ts';
+      const withoutTs = resolvedPath.replace(/\.ts$/, "");
+      const withTs = withoutTs + ".ts";
       if (sourceFilePaths.has(withTs)) {
         addCoverage(withTs, testFile.path, importedSources);
 
@@ -905,7 +947,12 @@ function analyzeTestCoverage(
 
   const policy = loadCoveragePolicy(ROOT_DIR);
   const sourcePaths = sourceFiles.map((f) => f.path);
-  const policyBreakdown = buildCategoryBreakdown(sourcePaths, testedFiles, untestedFiles, policy);
+  const policyBreakdown = buildCategoryBreakdown(
+    sourcePaths,
+    testedFiles,
+    untestedFiles,
+    policy,
+  );
 
   return {
     sourceFiles: sourcePaths,
@@ -923,13 +970,13 @@ function analyzeTestCoverage(
  * Parse a TypeScript file for imports and exports
  */
 function parseFile(filePath: string): ParsedFile {
-  const content = readFileSync(filePath, 'utf-8');
-  const relativePath = relative(ROOT_DIR, filePath).replace(/\\/g, '/');
+  const content = readFileSync(filePath, "utf-8");
+  const relativePath = relative(ROOT_DIR, filePath).replace(/\\/g, "/");
 
   // Determine which workspace package this file belongs to
   let detectedPackageName: string | null = null;
   for (const [name, ws] of workspaceMap) {
-    if (relativePath.startsWith(ws.directory + '/')) {
+    if (relativePath.startsWith(ws.directory + "/")) {
       detectedPackageName = name;
       break;
     }
@@ -937,12 +984,12 @@ function parseFile(filePath: string): ParsedFile {
 
   // Strip comments for import/export parsing (prevents picking up imports in JSDoc examples)
   const code = content
-    .replace(/\/\*[\s\S]*?\*\//g, '') // Remove block comments (/** ... */ and /* ... */)
-    .replace(/\/\/.*$/gm, ''); // Remove single-line comments
+    .replace(/\/\*[\s\S]*?\*\//g, "") // Remove block comments (/** ... */ and /* ... */)
+    .replace(/\/\/.*$/gm, ""); // Remove single-line comments
 
   const result: ParsedFile = {
     path: relativePath,
-    name: basename(filePath, '.ts'),
+    name: basename(filePath, ".ts"),
     externalDependencies: [],
     nodeDependencies: [],
     internalDependencies: [],
@@ -969,60 +1016,60 @@ function parseFile(filePath: string): ParsedFile {
   let match: RegExpExecArray | null;
 
   const nodeBuiltins = [
-    'fs',
-    'path',
-    'url',
-    'crypto',
-    'util',
-    'stream',
-    'events',
-    'buffer',
-    'os',
-    'child_process',
-    'http',
-    'https',
-    'net',
-    'dns',
-    'tls',
-    'zlib',
-    'readline',
-    'assert',
-    'cluster',
-    'dgram',
-    'domain',
-    'inspector',
-    'module',
-    'perf_hooks',
-    'process',
-    'punycode',
-    'querystring',
-    'repl',
-    'string_decoder',
-    'timers',
-    'tty',
-    'v8',
-    'vm',
-    'worker_threads',
+    "fs",
+    "path",
+    "url",
+    "crypto",
+    "util",
+    "stream",
+    "events",
+    "buffer",
+    "os",
+    "child_process",
+    "http",
+    "https",
+    "net",
+    "dns",
+    "tls",
+    "zlib",
+    "readline",
+    "assert",
+    "cluster",
+    "dgram",
+    "domain",
+    "inspector",
+    "module",
+    "perf_hooks",
+    "process",
+    "punycode",
+    "querystring",
+    "repl",
+    "string_decoder",
+    "timers",
+    "tty",
+    "v8",
+    "vm",
+    "worker_threads",
   ];
 
   while ((match = importRegex.exec(code)) !== null) {
     const isTypeOnlyImport = !!match[1]; // "import type" prefix
-    const namedImports = match[2] || match[5] || '';
-    const defaultImport = match[3] || match[6] || '';
-    const namespaceImport = match[4] || '';
+    const namedImports = match[2] || match[5] || "";
+    const defaultImport = match[3] || match[6] || "";
+    const namespaceImport = match[4] || "";
     const source = match[7];
 
     const imports: string[] = [];
     let hasRuntimeImport = !isTypeOnlyImport;
 
     if (namedImports) {
-      const importItems = namedImports.split(',').map((s) => s.trim());
+      const importItems = namedImports.split(",").map((s) => s.trim());
       for (const item of importItems) {
         // Check for inline type imports: import { type Foo, Bar }
-        const isInlineType = item.startsWith('type ');
+        const isInlineType = item.startsWith("type ");
         const name = item
-          .replace(/^type\s+/, '')
-          .split(' as ')[0]
+          .replace(/^type\s+/, "")
+          .split(" as ")[0]
           .trim();
         if (name) {
           imports.push(name);
@@ -1041,7 +1088,7 @@ function parseFile(filePath: string): ParsedFile {
     // Check if source is a workspace package import (root or `exports` subpath)
     const wsResolved = resolveWorkspaceSource(source);
 
-    if (source.startsWith('.')) {
+    if (source.startsWith(".")) {
       result.internalDependencies.push({
         file: source,
         imports: imports,
@@ -1054,9 +1101,12 @@ function parseFile(filePath: string): ParsedFile {
         imports: imports,
         ...(wsResolved.subpath ? { subpath: wsResolved.subpath } : {}),
       });
-    } else if (source.startsWith('node:') || nodeBuiltins.includes(source.split('/')[0])) {
+    } else if (
+      source.startsWith("node:") ||
+      nodeBuiltins.includes(source.split("/")[0])
+    ) {
       result.nodeDependencies.push({
-        module: source.replace('node:', ''),
+        module: source.replace("node:", ""),
         imports: imports,
       });
     } else {
@@ -1077,7 +1127,11 @@ function parseFile(filePath: string): ParsedFile {
   while ((match = sideEffectImportRegex.exec(code)) !== null) {
     const source = match[1];
     if (!result.internalDependencies.some((d) => d.file === source)) {
-      result.internalDependencies.push({ file: source, imports: [], typeOnly: false });
+      result.internalDependencies.push({
+        file: source,
+        imports: [],
+        typeOnly: false,
+      });
     }
   }
 
@@ -1091,7 +1145,11 @@ function parseFile(filePath: string): ParsedFile {
   while ((match = inlineImportRegex.exec(code)) !== null) {
     const source = match[1];
     if (!result.internalDependencies.some((d) => d.file === source)) {
-      result.internalDependencies.push({ file: source, imports: [], typeOnly: true });
+      result.internalDependencies.push({
+        file: source,
+        imports: [],
+        typeOnly: true,
+      });
     }
   }
 
@@ -1102,9 +1160,9 @@ function parseFile(filePath: string): ParsedFile {
   const namedExportRegex = /export\s*{\s*([^}]+)\s*}/g;
   while ((match = namedExportRegex.exec(code)) !== null) {
     const exports = match[1]
-      .split(',')
+      .split(",")
       .map((s) => {
-        const parts = s.split(' as ');
+        const parts = s.split(" as ");
         return cleanExportName(parts[parts.length - 1]);
       })
       .filter(Boolean);
@@ -1154,10 +1212,11 @@ function parseFile(filePath: string): ParsedFile {
   }
 
   // export default
-  const defaultExportRegex = /export\s+default\s+(?:class|function|const|let|var)?\s*(\w+)?/;
+  const defaultExportRegex =
+    /export\s+default\s+(?:class|function|const|let|var)?\s*(\w+)?/;
   const defaultMatch = code.match(defaultExportRegex);
   if (defaultMatch) {
-    result.exports.default = defaultMatch[1] || 'default';
+    result.exports.default = defaultMatch[1] || "default";
   }
 
   // Re-exports: export * from
@@ -1169,13 +1228,13 @@ function parseFile(filePath: string): ParsedFile {
       result.workspaceDependencies.push({
         package: reWs.ws.name,
         directory: reWs.ws.directory,
-        imports: ['*'],
+        imports: ["*"],
         ...(reWs.subpath ? { subpath: reWs.subpath } : {}),
       });
     } else {
       result.internalDependencies.push({
         file: reSource,
-        imports: ['*'],
+        imports: ["*"],
         reExport: true,
       });
     }
@@ -1183,11 +1242,12 @@ function parseFile(filePath: string): ParsedFile {
   }
 
   // Re-exports: export { foo } from
-  const reExportNamedRegex = /export\s*{\s*([^}]+)\s*}\s*from\s+['"]([^'"]+)['"]/g;
+  const reExportNamedRegex =
+    /export\s*{\s*([^}]+)\s*}\s*from\s+['"]([^'"]+)['"]/g;
   while ((match = reExportNamedRegex.exec(code)) !== null) {
     const exports = match[1]
-      .split(',')
-      .map((s) => cleanExportName(s.split(' as ')[0]))
+      .split(",")
+      .map((s) => cleanExportName(s.split(" as ")[0]))
       .filter(Boolean);
     const reSource = match[2];
     const reWs = resolveWorkspaceSource(reSource);
@@ -1213,11 +1273,12 @@ function parseFile(filePath: string): ParsedFile {
   // named regex above only matches `export {` (not `export type {`), so without
   // this every re-exported type/interface looked unused — the bulk of the
   // unused-analysis false positives.
-  const reExportTypeNamedRegex = /export\s+type\s*{\s*([^}]+)\s*}\s*from\s+['"]([^'"]+)['"]/g;
+  const reExportTypeNamedRegex =
+    /export\s+type\s*{\s*([^}]+)\s*}\s*from\s+['"]([^'"]+)['"]/g;
   while ((match = reExportTypeNamedRegex.exec(code)) !== null) {
     const exports = match[1]
-      .split(',')
-      .map((s) => cleanExportName(s.split(' as ')[0]))
+      .split(",")
+      .map((s) => cleanExportName(s.split(" as ")[0]))
       .filter(Boolean);
     const reSource = match[2];
     const reWs = resolveWorkspaceSource(reSource);
@@ -1249,13 +1310,13 @@ function parseFile(filePath: string): ParsedFile {
       result.workspaceDependencies.push({
         package: reWs.ws.name,
         directory: reWs.ws.directory,
-        imports: ['*'],
+        imports: ["*"],
         ...(reWs.subpath ? { subpath: reWs.subpath } : {}),
       });
     } else {
       result.internalDependencies.push({
         file: reSource,
-        imports: ['*'],
+        imports: ["*"],
         reExport: true,
         typeOnly: true,
       });
@@ -1279,13 +1340,14 @@ function parseFile(filePath: string): ParsedFile {
  * Generate a meaningful fallback description from file metadata
  */
 function generateFallbackDescription(file: ParsedFile): string {
-  const fileName = basename(file.path, '.ts');
+  const fileName = basename(file.path, ".ts");
 
   // For index files, describe what they re-export
-  if (fileName === 'index') {
+  if (fileName === "index") {
     if (file.exports.reExported.length > 0) {
-      const pkgName = file.packageName || dirname(file.path).split('/').pop() || '';
-      return `Package entry point for ${pkgName || 'module'} (re-exports ${file.exports.reExported.length} symbols)`;
+      const pkgName =
+        file.packageName || dirname(file.path).split("/").pop() || "";
+      return `Package entry point for ${pkgName || "module"} (re-exports ${file.exports.reExported.length} symbols)`;
     }
     if (file.exports.named.length > 0) {
       return `Entry point exporting ${file.exports.named.length} symbols`;
@@ -1310,16 +1372,16 @@ function extractDescription(content: string): string | null {
   const jsdocMatch = content.match(/\/\*\*\s*\n([^*]*(?:\*(?!\/)[^*]*)*)\*\//);
   if (jsdocMatch) {
     const lines = jsdocMatch[1]
-      .split('\n')
-      .map((line) => line.replace(/^\s*\*\s?/, '').trim())
+      .split("\n")
+      .map((line) => line.replace(/^\s*\*\s?/, "").trim())
       .map((line) => {
         // Extract description from @scope/package - description lines
-        if (line.startsWith('@') && line.includes(' - ')) {
-          return line.split(' - ').slice(1).join(' - ').trim();
+        if (line.startsWith("@") && line.includes(" - ")) {
+          return line.split(" - ").slice(1).join(" - ").trim();
         }
         return line;
       })
-      .filter((line) => !line.startsWith('@') && line.length > 0)
+      .filter((line) => !line.startsWith("@") && line.length > 0)
       .filter((line) => !/^[=\-*~#_]{3,}$/.test(line));
     if (lines.length > 0) {
       return lines[0].slice(0, 120);
@@ -1342,13 +1404,13 @@ function extractDescription(content: string): string | null {
  */
 function cleanExportName(name: string): string {
   // Remove single-line comments
-  let cleaned = name.replace(/\/\/.*$/gm, '');
+  let cleaned = name.replace(/\/\/.*$/gm, "");
   // Remove multi-line comments
-  cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, '');
+  cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, "");
   // Collapse whitespace to single space, then trim
-  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  cleaned = cleaned.replace(/\s+/g, " ").trim();
   // Strip leading type keyword for non-type exports
-  if (cleaned.startsWith('type ') && !cleaned.includes('{')) {
+  if (cleaned.startsWith("type ") && !cleaned.includes("{")) {
     cleaned = cleaned.slice(5).trim();
   }
   return cleaned;
@@ -1357,27 +1419,30 @@ function cleanExportName(name: string): string {
 /**
  * Dynamically discover and categorize files into modules based on directory structure
  */
-function categorizeFiles(files: ParsedFile[], isMonorepo: boolean = false): ModuleMap {
+function categorizeFiles(
+  files: ParsedFile[],
+  isMonorepo: boolean = false,
+): ModuleMap {
   const modules: ModuleMap = {};
 
   if (isMonorepo) {
     // Monorepo mode: first level = workspace package directory, second = submodule
     for (const file of files) {
       // Determine package key from path
-      let pkgKey = 'unknown';
+      let pkgKey = "unknown";
       for (const [, ws] of workspaceMap) {
-        if (file.path.startsWith(ws.directory + '/')) {
+        if (file.path.startsWith(ws.directory + "/")) {
           pkgKey = ws.directory;
           break;
         }
       }
 
       // Determine submodule within the package
-      const pkgParts = pkgKey.split('/');
-      const parts = file.path.split('/');
+      const pkgParts = pkgKey.split("/");
+      const parts = file.path.split("/");
       const afterPkg = parts.slice(pkgParts.length); // e.g., ['src', 'types', 'Complex.ts']
 
-      if (afterPkg.length >= 2 && afterPkg[0] === 'src') {
+      if (afterPkg.length >= 2 && afterPkg[0] === "src") {
         if (afterPkg.length === 2) {
           // File directly in src/ (e.g., core/src/index.ts)
           if (!modules[pkgKey]) modules[pkgKey] = {};
@@ -1399,16 +1464,16 @@ function categorizeFiles(files: ParsedFile[], isMonorepo: boolean = false): Modu
       const relativePath = file.path;
 
       // Handle entry point (src/index.ts)
-      if (relativePath === 'src/index.ts') {
+      if (relativePath === "src/index.ts") {
         if (!modules.entry) modules.entry = {};
         modules.entry[relativePath] = file;
         continue;
       }
 
       // Extract the module name from path (first directory after src/)
-      const parts = relativePath.split('/');
-      if (parts.length >= 2 && parts[0] === 'src') {
-        const moduleName = parts[1].replace('.ts', '');
+      const parts = relativePath.split("/");
+      if (parts.length >= 2 && parts[0] === "src") {
+        const moduleName = parts[1].replace(".ts", "");
 
         // If it's a file directly in src/, categorize by filename
         if (parts.length === 2) {
@@ -1452,7 +1517,10 @@ function buildDependencyMatrix(files: ParsedFile[]): DependencyMatrix {
       if (other.path === file.path) continue;
       for (const dep of other.internalDependencies) {
         const resolvedPath = resolvePath(other.path, dep.file);
-        if (resolvedPath === file.path || resolvedPath === file.path.replace('.ts', '')) {
+        if (
+          resolvedPath === file.path ||
+          resolvedPath === file.path.replace(".ts", "")
+        ) {
           exportsTo.add(other.path);
         }
       }
@@ -1475,15 +1543,15 @@ function resolvePath(fromPath: string, relativePath: string): string {
   let resolved = join(dir, relativePath);
 
   // Remove .js extension if present
-  resolved = resolved.replace(/\.js$/, '');
+  resolved = resolved.replace(/\.js$/, "");
 
   // Add .ts extension if not present
-  if (!resolved.endsWith('.ts')) {
-    resolved = resolved + '.ts';
+  if (!resolved.endsWith(".ts")) {
+    resolved = resolved + ".ts";
   }
 
   // Normalize path separators
-  resolved = resolved.replace(/\\/g, '/');
+  resolved = resolved.replace(/\\/g, "/");
 
   return resolved;
 }
@@ -1492,7 +1560,10 @@ function resolvePath(fromPath: string, relativePath: string): string {
  * Find all files reachable from entry points via internal dependencies (BFS).
  * Used in monorepo mode to distinguish active from dormant code.
  */
-function findReachableFiles(entryPoints: string[], allFiles: ParsedFile[]): Set<string> {
+function findReachableFiles(
+  entryPoints: string[],
+  allFiles: ParsedFile[],
+): Set<string> {
   const fileMap = new Map<string, ParsedFile>();
   for (const f of allFiles) fileMap.set(f.path, f);
 
@@ -1521,8 +1592,11 @@ function findReachableFiles(entryPoints: string[], allFiles: ParsedFile[]): Set<
     // false-flagged as unused/dormant.
     for (const ws of file.workspaceDependencies) {
       // Subpath imports (`pkg/internal`) reach the subpath entry file, not index.
-      const sub = ws.subpath ? workspaceEntryPath(ws.package, ws.subpath) : undefined;
-      const target = sub && fileMap.has(sub) ? sub : workspaceEntryPath(ws.package);
+      const sub = ws.subpath
+        ? workspaceEntryPath(ws.package, ws.subpath)
+        : undefined;
+      const target =
+        sub && fileMap.has(sub) ? sub : workspaceEntryPath(ws.package);
       if (target && fileMap.has(target) && !reachable.has(target)) {
         queue.push(target);
       }
@@ -1537,10 +1611,13 @@ function findReachableFiles(entryPoints: string[], allFiles: ParsedFile[]): Set<
  * (`<srcDir>/index.ts`). Returns undefined if the package isn't a
  * known workspace member.
  */
-function workspaceEntryPath(packageName: string, subpath?: string): string | undefined {
+function workspaceEntryPath(
+  packageName: string,
+  subpath?: string,
+): string | undefined {
   const ws = workspaceMap.get(packageName);
   if (!ws) return undefined;
-  return `${ws.srcDir}/${subpath ?? 'index'}.ts`;
+  return `${ws.srcDir}/${subpath ?? "index"}.ts`;
 }
 
 /**
@@ -1552,13 +1629,13 @@ function workspaceEntryPath(packageName: string, subpath?: string): string | und
  * unused-analysis false positives.
  */
 function resolveWorkspaceSource(
-  source: string
+  source: string,
 ): { ws: WorkspacePackage; subpath?: string } | undefined {
   const exact = workspaceMap.get(source);
   if (exact) return { ws: exact };
-  if (source.startsWith('.')) return undefined;
+  if (source.startsWith(".")) return undefined;
   for (const [name, ws] of workspaceMap) {
-    if (source.startsWith(name + '/')) {
+    if (source.startsWith(name + "/")) {
       return { ws, subpath: source.slice(name.length + 1) };
     }
   }
@@ -1574,7 +1651,9 @@ interface CircularDependencyResult {
 /**
  * Detect circular dependencies, distinguishing runtime from type-only cycles
  */
-function detectCircularDependencies(files: ParsedFile[]): CircularDependencyResult {
+function detectCircularDependencies(
+  files: ParsedFile[],
+): CircularDependencyResult {
   const filePaths = new Set(files.map((f) => f.path));
 
   // Build both runtime-only and all-dependencies graphs
@@ -1610,8 +1689,8 @@ function detectCircularDependencies(files: ParsedFile[]): CircularDependencyResu
         if (cycleStart !== -1) {
           const cycle = path.slice(cycleStart);
           cycle.push(node);
-          const cycleKey = [...cycle].sort().join('->');
-          if (!cycles.some((c) => [...c].sort().join('->') === cycleKey)) {
+          const cycleKey = [...cycle].sort().join("->");
+          if (!cycles.some((c) => [...c].sort().join("->") === cycleKey)) {
             cycles.push(cycle);
           }
         }
@@ -1646,8 +1725,12 @@ function detectCircularDependencies(files: ParsedFile[]): CircularDependencyResu
   const runtimeCycles = findCycles(runtimeGraph);
 
   // Type-only cycles = cycles in all but not in runtime
-  const runtimeCycleKeys = new Set(runtimeCycles.map((c) => [...c].sort().join('->')));
-  const typeOnlyCycles = allCycles.filter((c) => !runtimeCycleKeys.has([...c].sort().join('->')));
+  const runtimeCycleKeys = new Set(
+    runtimeCycles.map((c) => [...c].sort().join("->")),
+  );
+  const typeOnlyCycles = allCycles.filter(
+    (c) => !runtimeCycleKeys.has([...c].sort().join("->")),
+  );
 
   return {
     all: allCycles,
@@ -1689,10 +1772,11 @@ function computePublicSurface(files: ParsedFile[]): PublicSurface {
       if (!dep.reExport) continue;
       const target = byPath.get(resolvePath(file.path, dep.file));
       if (!target) continue;
-      if (dep.imports.includes('*')) {
+      if (dep.imports.includes("*")) {
         markPublic(target, seen); // export * → every export of the source is public
       } else {
-        for (const name of dep.imports) publicNamed.add(`${target.path}::${name}`);
+        for (const name of dep.imports)
+          publicNamed.add(`${target.path}::${name}`);
       }
     }
   };
@@ -1708,11 +1792,12 @@ function computePublicSurface(files: ParsedFile[]): PublicSurface {
   // Config-referenced roots (bundler alias / entry targets, e.g. the browser
   // shim aliased in by vitest.config.browser.ts) are entry points too — nothing
   // imports them by design, so they must not be flagged as "unused files".
-  for (const entry of configReferencedEntries(ROOT_DIR)) extraEntryPaths.add(entry);
+  for (const entry of configReferencedEntries(ROOT_DIR))
+    extraEntryPaths.add(entry);
   for (const file of files) {
     if (
-      file.path === 'src/index.ts' ||
-      file.path.endsWith('/src/index.ts') ||
+      file.path === "src/index.ts" ||
+      file.path.endsWith("/src/index.ts") ||
       extraEntryPaths.has(file.path)
     ) {
       markPublic(file, new Set());
@@ -1725,7 +1810,10 @@ function computePublicSurface(files: ParsedFile[]): PublicSurface {
 /**
  * Detect unused files and exports
  */
-function detectUnused(files: ParsedFile[], testFiles: ParsedFile[] = []): UnusedAnalysis {
+function detectUnused(
+  files: ParsedFile[],
+  testFiles: ParsedFile[] = [],
+): UnusedAnalysis {
   const filePaths = new Set(files.map((f) => f.path));
 
   // Build a set of all imported files
@@ -1748,12 +1836,12 @@ function detectUnused(files: ParsedFile[], testFiles: ParsedFile[] = []): Unused
         }
         const symbols = importedSymbols.get(resolved)!;
         for (const imp of dep.imports) {
-          if (imp === '*' || imp.startsWith('* as ')) {
+          if (imp === "*" || imp.startsWith("* as ")) {
             // Wildcard OR namespace import (`import * as X`) — every export of the
             // source is reachable (X.foo), so mark all as used. Stripping the alias
             // and recording it as a named symbol false-flagged every namespace-
             // imported module's exports as unused (e.g. dense/arithmetic.ts).
-            symbols.add('*');
+            symbols.add("*");
           } else {
             symbols.add(imp);
           }
@@ -1767,15 +1855,18 @@ function detectUnused(files: ParsedFile[], testFiles: ParsedFile[] = []): Unused
     // dead code to the unused-export detector.
     for (const ws of file.workspaceDependencies) {
       // Subpath imports (`pkg/internal`) mark usage on the subpath entry file.
-      const sub = ws.subpath ? workspaceEntryPath(ws.package, ws.subpath) : undefined;
-      const target = sub && filePaths.has(sub) ? sub : workspaceEntryPath(ws.package);
+      const sub = ws.subpath
+        ? workspaceEntryPath(ws.package, ws.subpath)
+        : undefined;
+      const target =
+        sub && filePaths.has(sub) ? sub : workspaceEntryPath(ws.package);
       if (!target || !filePaths.has(target)) continue;
       importedFiles.add(target);
       if (!importedSymbols.has(target)) importedSymbols.set(target, new Set());
       const symbols = importedSymbols.get(target)!;
       for (const imp of ws.imports) {
-        if (imp === '*' || imp.startsWith('* as ')) {
-          symbols.add('*'); // namespace import — all exports reachable via the alias
+        if (imp === "*" || imp.startsWith("* as ")) {
+          symbols.add("*"); // namespace import — all exports reachable via the alias
         } else {
           symbols.add(imp);
         }
@@ -1789,13 +1880,14 @@ function detectUnused(files: ParsedFile[], testFiles: ParsedFile[] = []): Unused
   // internal files. Flagging it as "unused" is a false positive (the bulk of the
   // list). Collect it and exclude it below. (Also reused by the duplicate-symbol
   // detector's per-file public flag — see `computePublicSurface`.)
-  const { publicWildcardFiles, publicNamed, extraEntryPaths } = computePublicSurface(files);
+  const { publicWildcardFiles, publicNamed, extraEntryPaths } =
+    computePublicSurface(files);
 
   // Find unused files (excluding entry point and index files which are re-export hubs)
   const unusedFiles: string[] = [];
   for (const file of files) {
-    if (file.path === 'src/index.ts') continue; // Entry point is always "used"
-    if (file.name === 'index' && file.exports.reExported.length > 0) continue; // Re-export hubs
+    if (file.path === "src/index.ts") continue; // Entry point is always "used"
+    if (file.name === "index" && file.exports.reExported.length > 0) continue; // Re-export hubs
     // `exports` subpath / `bin` entry files are roots — nothing imports them by
     // design (e.g. workerpool's worker.ts, loaded at runtime via `new URL(...)`).
     if (extraEntryPaths.has(file.path)) continue;
@@ -1811,7 +1903,7 @@ function detectUnused(files: ParsedFile[], testFiles: ParsedFile[] = []): Unused
     if (publicWildcardFiles.has(file.path)) continue;
 
     const usedSymbols = importedSymbols.get(file.path);
-    const isWildcardImported = usedSymbols?.has('*');
+    const isWildcardImported = usedSymbols?.has("*");
 
     // Skip if file is not imported at all (already reported as unused file)
     // or if it's wildcard imported (all exports considered used)
@@ -1828,44 +1920,51 @@ function detectUnused(files: ParsedFile[], testFiles: ParsedFile[] = []): Unused
     const inFileRefs = (name: string): number => {
       if (fileContent === undefined) {
         try {
-          fileContent = readFileSync(join(ROOT_DIR, file.path), 'utf-8');
+          fileContent = readFileSync(join(ROOT_DIR, file.path), "utf-8");
         } catch {
-          fileContent = '';
+          fileContent = "";
         }
       }
-      const all = (fileContent.match(new RegExp(`\\b${name}\\b`, 'g')) || []).length;
+      const all = (fileContent.match(new RegExp(`\\b${name}\\b`, "g")) || [])
+        .length;
       const defs = (
         fileContent.match(
           new RegExp(
             `export\\s+(?:async\\s+)?(?:function|const|let|var|class|interface|type|enum)\\s+${name}\\b`,
-            'g'
-          )
+            "g",
+          ),
         ) || []
       ).length;
       return Math.max(0, all - defs);
     };
-    const push = (name: string, type: UnusedExport['type']): void => {
-      unusedExports.push({ file: file.path, name, type, inFileRefs: inFileRefs(name) });
+    const push = (name: string, type: UnusedExport["type"]): void => {
+      unusedExports.push({
+        file: file.path,
+        name,
+        type,
+        inFileRefs: inFileRefs(name),
+      });
     };
 
     // Check each export
     for (const fn of file.exports.functions) {
-      if (!isPublic(fn)) push(fn, 'function');
+      if (!isPublic(fn)) push(fn, "function");
     }
     for (const cls of file.exports.classes) {
-      if (!isPublic(cls)) push(cls, 'class');
+      if (!isPublic(cls)) push(cls, "class");
     }
     for (const iface of file.exports.interfaces) {
-      if (!isPublic(iface)) push(iface, 'interface');
+      if (!isPublic(iface)) push(iface, "interface");
     }
     for (const type of file.exports.types) {
-      if (!isPublic(type) && !file.exports.interfaces.includes(type)) push(type, 'type');
+      if (!isPublic(type) && !file.exports.interfaces.includes(type))
+        push(type, "type");
     }
     for (const en of file.exports.enums) {
-      if (!isPublic(en)) push(en, 'enum');
+      if (!isPublic(en)) push(en, "enum");
     }
     for (const constant of file.exports.constants) {
-      if (!isPublic(constant)) push(constant, 'constant');
+      if (!isPublic(constant)) push(constant, "constant");
     }
   }
 
@@ -1879,7 +1978,7 @@ function generateStatistics(
   files: ParsedFile[],
   modules: ModuleMap,
   circularDeps: CircularDependencyResult,
-  unusedAnalysis: UnusedAnalysis
+  unusedAnalysis: UnusedAnalysis,
 ): Statistics {
   let totalExports = 0;
   let totalClasses = 0;
@@ -1902,15 +2001,19 @@ function generateStatistics(
     totalReExports += file.exports.reExported.length;
 
     // Count type-only imports
-    totalTypeOnlyImports += file.internalDependencies.filter((d) => d.typeOnly).length;
+    totalTypeOnlyImports += file.internalDependencies.filter(
+      (d) => d.typeOnly,
+    ).length;
 
     // Count type guards (functions starting with 'is')
-    totalTypeGuards += file.exports.functions.filter((f) => f.startsWith('is')).length;
+    totalTypeGuards += file.exports.functions.filter((f) =>
+      f.startsWith("is"),
+    ).length;
 
     // Count lines
     try {
-      const content = readFileSync(join(ROOT_DIR, file.path), 'utf-8');
-      totalLines += content.split('\n').length;
+      const content = readFileSync(join(ROOT_DIR, file.path), "utf-8");
+      totalLines += content.split("\n").length;
     } catch {
       // Ignore
     }
@@ -1943,9 +2046,9 @@ function generateJSON(
   files: ParsedFile[],
   modules: ModuleMap,
   stats: Statistics,
-  circularDeps: CircularDependencyResult
+  circularDeps: CircularDependencyResult,
 ): object {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   // Convert modules to JSON-friendly format
   const modulesJson: Record<string, Record<string, object>> = {};
@@ -1968,12 +2071,25 @@ function generateJSON(
         // autograd→tensor, …) were invisible to consumers of dependency-graph.json.
         workspaceDependencies: file.workspaceDependencies,
         exports: file.exports.named,
-        reExported: file.exports.reExported.length > 0 ? file.exports.reExported : undefined,
-        classes: file.exports.classes.length > 0 ? file.exports.classes : undefined,
-        interfaces: file.exports.interfaces.length > 0 ? file.exports.interfaces : undefined,
-        functions: file.exports.functions.length > 0 ? file.exports.functions : undefined,
+        reExported:
+          file.exports.reExported.length > 0
+            ? file.exports.reExported
+            : undefined,
+        classes:
+          file.exports.classes.length > 0 ? file.exports.classes : undefined,
+        interfaces:
+          file.exports.interfaces.length > 0
+            ? file.exports.interfaces
+            : undefined,
+        functions:
+          file.exports.functions.length > 0
+            ? file.exports.functions
+            : undefined,
         enums: file.exports.enums.length > 0 ? file.exports.enums : undefined,
-        constants: file.exports.constants.length > 0 ? file.exports.constants : undefined,
+        constants:
+          file.exports.constants.length > 0
+            ? file.exports.constants
+            : undefined,
       };
 
       // Clean up undefined values
@@ -2005,11 +2121,11 @@ function generateJSON(
       totalExports: stats.totalExports,
     },
     entryPoints: files
-      .filter((f) => f.path.endsWith('src/index.ts'))
+      .filter((f) => f.path.endsWith("src/index.ts"))
       .map((f) => ({
         file: f.path,
-        type: 'main',
-        description: f.description || 'Entry Point',
+        type: "main",
+        description: f.description || "Entry Point",
       })),
     modules: modulesJson,
     dependencyGraph: {
@@ -2029,10 +2145,13 @@ function generateJSON(
 /**
  * Generate a dynamic Mermaid diagram from actual dependencies
  */
-function generateMermaidDiagram(modules: ModuleMap, files: ParsedFile[]): string {
+function generateMermaidDiagram(
+  modules: ModuleMap,
+  files: ParsedFile[],
+): string {
   const lines: string[] = [];
-  lines.push('```mermaid');
-  lines.push('graph TD');
+  lines.push("```mermaid");
+  lines.push("graph TD");
 
   // Create subgraphs for each module
   const moduleNames = Object.keys(modules);
@@ -2046,7 +2165,7 @@ function generateMermaidDiagram(modules: ModuleMap, files: ParsedFile[]): string
     const moduleFiles = Object.keys(modules[moduleName]);
     for (const filePath of moduleFiles.slice(0, 10)) {
       // Limit to 10 files per module
-      const name = basename(filePath, '.ts');
+      const name = basename(filePath, ".ts");
       const nodeId = `N${nodeCounter++}`;
       nodeIds.set(filePath, nodeId);
       lines.push(`        ${nodeId}[${name}]`);
@@ -2057,8 +2176,8 @@ function generateMermaidDiagram(modules: ModuleMap, files: ParsedFile[]): string
       lines.push(`        ${nodeId}[...${moduleFiles.length - 10} more]`);
     }
 
-    lines.push('    end');
-    lines.push('');
+    lines.push("    end");
+    lines.push("");
   }
 
   // Add edges for dependencies (limited for readability)
@@ -2087,8 +2206,8 @@ function generateMermaidDiagram(modules: ModuleMap, files: ParsedFile[]): string
     }
   }
 
-  lines.push('```');
-  return lines.join('\n');
+  lines.push("```");
+  return lines.join("\n");
 }
 
 /**
@@ -2099,122 +2218,136 @@ function generateMarkdown(
   modules: ModuleMap,
   stats: Statistics,
   circularDeps: CircularDependencyResult,
-  matrix: DependencyMatrix
+  matrix: DependencyMatrix,
 ): string {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
   const lines: string[] = [];
-  const projectName = packageJson.name || 'Project';
+  const projectName = packageJson.name || "Project";
 
   lines.push(`# ${projectName} - Dependency Graph`);
-  lines.push('');
-  lines.push(`**Version**: ${packageJson.version} | **Last Updated**: ${today}`);
-  lines.push('');
+  lines.push("");
   lines.push(
-    'This document provides a comprehensive dependency graph of all files, components, imports, functions, and variables in the codebase.'
+    `**Version**: ${packageJson.version} | **Last Updated**: ${today}`,
   );
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  lines.push("");
+  lines.push(
+    "This document provides a comprehensive dependency graph of all files, components, imports, functions, and variables in the codebase.",
+  );
+  lines.push("");
+  lines.push("---");
+  lines.push("");
 
   // Table of Contents
-  lines.push('## Table of Contents');
-  lines.push('');
-  lines.push('1. [Overview](#overview)');
-  lines.push('2. [Package Dependencies](#package-dependencies)');
+  lines.push("## Table of Contents");
+  lines.push("");
+  lines.push("1. [Overview](#overview)");
+  lines.push("2. [Package Dependencies](#package-dependencies)");
   let tocIndex = 3;
   for (const category of Object.keys(modules)) {
-    const title = category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ');
+    const title =
+      category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, " ");
     const slug = category
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
     lines.push(`${tocIndex}. [${title} Dependencies](#${slug}-dependencies)`);
     tocIndex++;
   }
   lines.push(`${tocIndex}. [Dependency Matrix](#dependency-matrix)`);
-  lines.push(`${tocIndex + 1}. [Circular Dependency Analysis](#circular-dependency-analysis)`);
-  lines.push(`${tocIndex + 2}. [Visual Dependency Graph](#visual-dependency-graph)`);
+  lines.push(
+    `${tocIndex + 1}. [Circular Dependency Analysis](#circular-dependency-analysis)`,
+  );
+  lines.push(
+    `${tocIndex + 2}. [Visual Dependency Graph](#visual-dependency-graph)`,
+  );
   lines.push(`${tocIndex + 3}. [Summary Statistics](#summary-statistics)`);
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  lines.push("");
+  lines.push("---");
+  lines.push("");
 
   // Overview
   lines.push('<a id="overview"></a>');
-  lines.push('## Overview');
-  lines.push('');
-  lines.push('The codebase is organized into the following modules:');
-  lines.push('');
+  lines.push("## Overview");
+  lines.push("");
+  lines.push("The codebase is organized into the following modules:");
+  lines.push("");
   for (const [moduleName, moduleFiles] of Object.entries(modules)) {
     const fileCount = Object.keys(moduleFiles).length;
-    lines.push(`- **${moduleName}**: ${fileCount} file${fileCount !== 1 ? 's' : ''}`);
+    lines.push(
+      `- **${moduleName}**: ${fileCount} file${fileCount !== 1 ? "s" : ""}`,
+    );
   }
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  lines.push("");
+  lines.push("---");
+  lines.push("");
 
   // Generate sections for each module category
   for (const [category, categoryFiles] of Object.entries(modules)) {
-    const title = category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ');
+    const title =
+      category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, " ");
     const sectionSlug = category
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
     lines.push(`<a id="${sectionSlug}-dependencies"></a>`);
-    lines.push('');
+    lines.push("");
     lines.push(`## ${title} Dependencies`);
-    lines.push('');
+    lines.push("");
 
     for (const [path, file] of Object.entries(categoryFiles)) {
-      lines.push(`### \`${path}\` - ${file.description || generateFallbackDescription(file)}`);
-      lines.push('');
+      lines.push(
+        `### \`${path}\` - ${file.description || generateFallbackDescription(file)}`,
+      );
+      lines.push("");
 
       // External dependencies
       if (file.externalDependencies.length > 0) {
-        lines.push('**External Dependencies:**');
-        lines.push('| Package | Import |');
-        lines.push('|---------|--------|');
+        lines.push("**External Dependencies:**");
+        lines.push("| Package | Import |");
+        lines.push("|---------|--------|");
         for (const dep of file.externalDependencies) {
-          lines.push(`| \`${dep.package}\` | \`${dep.imports.join(', ')}\` |`);
+          lines.push(`| \`${dep.package}\` | \`${dep.imports.join(", ")}\` |`);
         }
-        lines.push('');
+        lines.push("");
       }
 
       // Workspace (cross-package) dependencies — imports from other monorepo packages
       // (e.g. tensor → matrix, autograd → tensor). Rendered so the per-file sections
       // reflect cross-package edges, not just the package-level table.
       if (file.workspaceDependencies.length > 0) {
-        lines.push('**Workspace Dependencies:**');
-        lines.push('| Package | Import |');
-        lines.push('|---------|--------|');
+        lines.push("**Workspace Dependencies:**");
+        lines.push("| Package | Import |");
+        lines.push("|---------|--------|");
         for (const dep of file.workspaceDependencies) {
-          lines.push(`| \`${dep.package}\` | \`${dep.imports.join(', ')}\` |`);
+          lines.push(`| \`${dep.package}\` | \`${dep.imports.join(", ")}\` |`);
         }
-        lines.push('');
+        lines.push("");
       }
 
       // Node dependencies
       if (file.nodeDependencies.length > 0) {
-        lines.push('**Node.js Built-in Dependencies:**');
-        lines.push('| Module | Import |');
-        lines.push('|--------|--------|');
+        lines.push("**Node.js Built-in Dependencies:**");
+        lines.push("| Module | Import |");
+        lines.push("|--------|--------|");
         for (const dep of file.nodeDependencies) {
-          lines.push(`| \`${dep.module}\` | \`${dep.imports.join(', ')}\` |`);
+          lines.push(`| \`${dep.module}\` | \`${dep.imports.join(", ")}\` |`);
         }
-        lines.push('');
+        lines.push("");
       }
 
       // Internal dependencies
       if (file.internalDependencies.length > 0) {
-        lines.push('**Internal Dependencies:**');
-        lines.push('| File | Imports | Type |');
-        lines.push('|------|---------|------|');
+        lines.push("**Internal Dependencies:**");
+        lines.push("| File | Imports | Type |");
+        lines.push("|------|---------|------|");
         for (const dep of file.internalDependencies) {
-          let usage = dep.reExport ? 'Re-export' : 'Import';
-          if (dep.typeOnly) usage += ' (type-only)';
-          lines.push(`| \`${dep.file}\` | \`${dep.imports.join(', ')}\` | ${usage} |`);
+          let usage = dep.reExport ? "Re-export" : "Import";
+          if (dep.typeOnly) usage += " (type-only)";
+          lines.push(
+            `| \`${dep.file}\` | \`${dep.imports.join(", ")}\` | ${usage} |`,
+          );
         }
-        lines.push('');
+        lines.push("");
       }
 
       // Exports
@@ -2225,129 +2358,143 @@ function generateMarkdown(
         file.exports.interfaces.length > 0 ||
         file.exports.types.length > 0
       ) {
-        lines.push('**Exports:**');
+        lines.push("**Exports:**");
         if (file.exports.classes.length > 0) {
-          lines.push(`- Classes: \`${file.exports.classes.join('`, `')}\``);
+          lines.push(`- Classes: \`${file.exports.classes.join("`, `")}\``);
         }
         if (file.exports.interfaces.length > 0) {
-          lines.push(`- Interfaces: \`${file.exports.interfaces.join('`, `')}\``);
+          lines.push(
+            `- Interfaces: \`${file.exports.interfaces.join("`, `")}\``,
+          );
         }
-        const typeAliases = file.exports.types.filter((t) => !file.exports.interfaces.includes(t));
+        const typeAliases = file.exports.types.filter(
+          (t) => !file.exports.interfaces.includes(t),
+        );
         if (typeAliases.length > 0) {
-          lines.push(`- Types: \`${typeAliases.join('`, `')}\``);
+          lines.push(`- Types: \`${typeAliases.join("`, `")}\``);
         }
         if (file.exports.enums.length > 0) {
-          lines.push(`- Enums: \`${file.exports.enums.join('`, `')}\``);
+          lines.push(`- Enums: \`${file.exports.enums.join("`, `")}\``);
         }
         if (file.exports.functions.length > 0) {
-          lines.push(`- Functions: \`${file.exports.functions.join('`, `')}\``);
+          lines.push(`- Functions: \`${file.exports.functions.join("`, `")}\``);
         }
         if (file.exports.constants.length > 0) {
-          lines.push(`- Constants: \`${file.exports.constants.join('`, `')}\``);
+          lines.push(`- Constants: \`${file.exports.constants.join("`, `")}\``);
         }
         if (file.exports.reExported.length > 0) {
-          lines.push(`- Re-exports: \`${file.exports.reExported.join('`, `')}\``);
+          lines.push(
+            `- Re-exports: \`${file.exports.reExported.join("`, `")}\``,
+          );
         }
         if (file.exports.default) {
           lines.push(`- Default: \`${file.exports.default}\``);
         }
-        lines.push('');
+        lines.push("");
       }
 
-      lines.push('---');
-      lines.push('');
+      lines.push("---");
+      lines.push("");
     }
   }
 
   // Dependency Matrix
   lines.push('<a id="dependency-matrix"></a>');
-  lines.push('## Dependency Matrix');
-  lines.push('');
-  lines.push('### File Import/Export Matrix');
-  lines.push('');
-  lines.push('| File | Imports From | Exports To |');
-  lines.push('|------|--------------|------------|');
+  lines.push("## Dependency Matrix");
+  lines.push("");
+  lines.push("### File Import/Export Matrix");
+  lines.push("");
+  lines.push("| File | Imports From | Exports To |");
+  lines.push("|------|--------------|------------|");
 
   const matrixEntries = Object.entries(matrix)
     .sort(
       (a, b) =>
         b[1].importsFrom.length +
         b[1].exportsTo.length -
-        (a[1].importsFrom.length + a[1].exportsTo.length)
+        (a[1].importsFrom.length + a[1].exportsTo.length),
     )
     .slice(0, 40); // Top 40 by connectivity
   for (const [filePath, deps] of matrixEntries) {
     // Use relative path (e.g., "core/src/typed/mathts-typed") instead of just basename
-    const shortPath = filePath.replace(/\.ts$/, '');
+    const shortPath = filePath.replace(/\.ts$/, "");
     const importsCount = deps.importsFrom.length;
     const exportsCount = deps.exportsTo.length;
     lines.push(
-      `| \`${shortPath}\` | ${importsCount} file${importsCount !== 1 ? 's' : ''} | ${exportsCount} file${exportsCount !== 1 ? 's' : ''} |`
+      `| \`${shortPath}\` | ${importsCount} file${importsCount !== 1 ? "s" : ""} | ${exportsCount} file${exportsCount !== 1 ? "s" : ""} |`,
     );
   }
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  lines.push("");
+  lines.push("---");
+  lines.push("");
 
   // Circular Dependencies
   lines.push('<a id="circular-dependency-analysis"></a>');
-  lines.push('## Circular Dependency Analysis');
-  lines.push('');
+  lines.push("## Circular Dependency Analysis");
+  lines.push("");
   if (circularDeps.all.length === 0) {
-    lines.push('**No circular dependencies detected.**');
+    lines.push("**No circular dependencies detected.**");
   } else {
-    lines.push(`**${circularDeps.all.length} circular dependencies detected:**`);
-    lines.push('');
-    lines.push(`- **Runtime cycles**: ${circularDeps.runtime.length} (require attention)`);
-    lines.push(`- **Type-only cycles**: ${circularDeps.typeOnly.length} (safe, no runtime impact)`);
-    lines.push('');
+    lines.push(
+      `**${circularDeps.all.length} circular dependencies detected:**`,
+    );
+    lines.push("");
+    lines.push(
+      `- **Runtime cycles**: ${circularDeps.runtime.length} (require attention)`,
+    );
+    lines.push(
+      `- **Type-only cycles**: ${circularDeps.typeOnly.length} (safe, no runtime impact)`,
+    );
+    lines.push("");
 
     if (circularDeps.runtime.length > 0) {
-      lines.push('### Runtime Circular Dependencies');
-      lines.push('');
-      lines.push('These cycles involve runtime imports and may cause issues:');
-      lines.push('');
+      lines.push("### Runtime Circular Dependencies");
+      lines.push("");
+      lines.push("These cycles involve runtime imports and may cause issues:");
+      lines.push("");
       for (const cycle of circularDeps.runtime.slice(0, 10)) {
-        lines.push(`- ${cycle.join(' -> ')}`);
+        lines.push(`- ${cycle.join(" -> ")}`);
       }
       if (circularDeps.runtime.length > 10) {
         lines.push(`- ... and ${circularDeps.runtime.length - 10} more`);
       }
-      lines.push('');
+      lines.push("");
     }
 
     if (circularDeps.typeOnly.length > 0) {
-      lines.push('### Type-Only Circular Dependencies');
-      lines.push('');
-      lines.push('These cycles only involve type imports and are safe (erased at runtime):');
-      lines.push('');
+      lines.push("### Type-Only Circular Dependencies");
+      lines.push("");
+      lines.push(
+        "These cycles only involve type imports and are safe (erased at runtime):",
+      );
+      lines.push("");
       for (const cycle of circularDeps.typeOnly.slice(0, 10)) {
-        lines.push(`- ${cycle.join(' -> ')}`);
+        lines.push(`- ${cycle.join(" -> ")}`);
       }
       if (circularDeps.typeOnly.length > 10) {
         lines.push(`- ... and ${circularDeps.typeOnly.length - 10} more`);
       }
-      lines.push('');
+      lines.push("");
     }
   }
-  lines.push('---');
-  lines.push('');
+  lines.push("---");
+  lines.push("");
 
   // Visual Dependency Graph
   lines.push('<a id="visual-dependency-graph"></a>');
-  lines.push('## Visual Dependency Graph');
-  lines.push('');
+  lines.push("## Visual Dependency Graph");
+  lines.push("");
   lines.push(generateMermaidDiagram(modules, files));
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  lines.push("");
+  lines.push("---");
+  lines.push("");
 
   // Summary Statistics
   lines.push('<a id="summary-statistics"></a>');
-  lines.push('## Summary Statistics');
-  lines.push('');
-  lines.push('| Category | Count |');
-  lines.push('|----------|-------|');
+  lines.push("## Summary Statistics");
+  lines.push("");
+  lines.push("| Category | Count |");
+  lines.push("|----------|-------|");
   lines.push(`| Total TypeScript Files | ${stats.totalTypeScriptFiles} |`);
   lines.push(`| Total Modules | ${stats.totalModules} |`);
   lines.push(`| Total Lines of Code | ${stats.totalLinesOfCode} |`);
@@ -2361,14 +2508,14 @@ function generateMarkdown(
   lines.push(`| Type-only Imports | ${stats.totalTypeOnlyImports} |`);
   lines.push(`| Runtime Circular Deps | ${stats.runtimeCircularDeps} |`);
   lines.push(`| Type-only Circular Deps | ${stats.typeOnlyCircularDeps} |`);
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  lines.push("");
+  lines.push("---");
+  lines.push("");
   lines.push(`*Last Updated*: ${today}`);
   lines.push(`*Version*: ${packageJson.version}`);
-  lines.push('');
+  lines.push("");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
@@ -2379,7 +2526,7 @@ function generateCompactSummary(
   files: ParsedFile[],
   modules: ModuleMap,
   stats: Statistics,
-  circularDeps: CircularDependencyResult
+  circularDeps: CircularDependencyResult,
 ): string {
   // Abbreviate module names and create compact structure
   const summary = {
@@ -2387,7 +2534,7 @@ function generateCompactSummary(
       // metadata
       n: packageJson.name,
       v: packageJson.version,
-      d: new Date().toISOString().split('T')[0],
+      d: new Date().toISOString().split("T")[0],
       f: stats.totalTypeScriptFiles,
       e: stats.totalExports,
       re: stats.totalReExports,
@@ -2410,9 +2557,14 @@ function generateCompactSummary(
       // Only include first 5 runtime cycles (if any) for context
       rtp: circularDeps.runtime
         .slice(0, 5)
-        .map((c) => c.map((p) => p.split('/').pop()?.replace('.ts', '')).join('→')),
+        .map((c) =>
+          c.map((p) => p.split("/").pop()?.replace(".ts", "")).join("→"),
+        ),
     },
-    mod: {} as Record<string, { f: number; exp: string[]; cls?: string[]; int?: string[] }>,
+    mod: {} as Record<
+      string,
+      { f: number; exp: string[]; cls?: string[]; int?: string[] }
+    >,
     // Hot paths: files with most dependencies
     hp: [] as { p: string; i: number; o: number }[],
   };
@@ -2426,26 +2578,29 @@ function generateCompactSummary(
       .filter(Boolean)
       .slice(0, 20);
     const classes = fileList.flatMap((f) => f.exports.classes);
-    const interfaces = fileList.flatMap((f) => f.exports.interfaces).slice(0, 10);
+    const interfaces = fileList
+      .flatMap((f) => f.exports.interfaces)
+      .slice(0, 10);
 
     summary.mod[modName] = {
       f: Object.keys(modFiles).length,
       exp: [...new Set(exports)],
     };
     if (classes.length > 0) summary.mod[modName].cls = [...new Set(classes)];
-    if (interfaces.length > 0) summary.mod[modName].int = [...new Set(interfaces)];
+    if (interfaces.length > 0)
+      summary.mod[modName].int = [...new Set(interfaces)];
   }
 
   // Find hot paths (files with highest connectivity)
   const connectivity = files
     .map((f) => ({
-      p: f.path.split('/').slice(-2).join('/'),
+      p: f.path.split("/").slice(-2).join("/"),
       i: f.internalDependencies.length,
       o: files.filter((other) =>
         other.internalDependencies.some((d) => {
           const resolved = resolvePath(other.path, d.file);
           return resolved === f.path;
-        })
+        }),
       ).length,
     }))
     .sort((a, b) => b.i + b.o - (a.i + a.o));
@@ -2461,23 +2616,24 @@ function generateCompactSummary(
  */
 function generateTestCoverageMarkdown(coverage: TestCoverageAnalysis): string {
   const lines: string[] = [];
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
-  lines.push('# Test Coverage Analysis');
-  lines.push('');
+  lines.push("# Test Coverage Analysis");
+  lines.push("");
   lines.push(`**Generated**: ${today}`);
-  lines.push('');
+  lines.push("");
 
   // Summary statistics
   const totalSource = coverage.sourceFiles.length;
   const totalTested = coverage.testedFiles.length;
   const totalUntested = coverage.untestedFiles.length;
-  const coveragePercent = totalSource > 0 ? ((totalTested / totalSource) * 100).toFixed(1) : '0';
+  const coveragePercent =
+    totalSource > 0 ? ((totalTested / totalSource) * 100).toFixed(1) : "0";
 
-  lines.push('## Summary');
-  lines.push('');
-  lines.push('| Metric | Count |');
-  lines.push('|--------|-------|');
+  lines.push("## Summary");
+  lines.push("");
+  lines.push("| Metric | Count |");
+  lines.push("|--------|-------|");
   lines.push(`| Total Source Files | ${totalSource} |`);
   lines.push(`| Total Test Files | ${coverage.testFiles.length} |`);
   lines.push(`| Source Files with Tests | ${totalTested} |`);
@@ -2489,97 +2645,101 @@ function generateTestCoverageMarkdown(coverage: TestCoverageAnalysis): string {
   const b = coverage.policyBreakdown;
   if (coverage.policy) {
     lines.push(
-      `| Coverage (effective, active code only) | **${b.effectivePercent}%** (${b.testedActive} / ${b.activeFiles}) |`
+      `| Coverage (effective, active code only) | **${b.effectivePercent}%** (${b.testedActive} / ${b.activeFiles}) |`,
     );
-    lines.push('');
+    lines.push("");
     lines.push(
-      '> The raw figure counts every source file the CDG tool finds, including code that is intentionally not direct-imported by a vitest `*.test.ts` (synced mathjs categories, AssemblyScript sources, type-only barrels, …). The **effective** figure excludes those per `docs/Architecture/coverage-policy.json` so the number reflects the genuinely-active hand-written code only. See [`COVERAGE_POLICY.md`](./COVERAGE_POLICY.md) for the policy.'
+      "> The raw figure counts every source file the CDG tool finds, including code that is intentionally not direct-imported by a vitest `*.test.ts` (synced mathjs categories, AssemblyScript sources, type-only barrels, …). The **effective** figure excludes those per `docs/Architecture/coverage-policy.json` so the number reflects the genuinely-active hand-written code only. See [`COVERAGE_POLICY.md`](./COVERAGE_POLICY.md) for the policy.",
     );
-    lines.push('');
+    lines.push("");
 
     // Category breakdown table
-    lines.push('### Untested-file breakdown by category');
-    lines.push('');
-    lines.push('| Category | Count | Why it is intentionally untested |');
-    lines.push('|---|---:|---|');
+    lines.push("### Untested-file breakdown by category");
+    lines.push("");
+    lines.push("| Category | Count | Why it is intentionally untested |");
+    lines.push("|---|---:|---|");
     for (const [id, cat] of Object.entries(coverage.policy.categories)) {
       const count = b.byCategory[id] ?? 0;
       if (count === 0) continue;
-      lines.push(`| **${cat.label}** | ${count} | ${cat.rationale.split('.')[0]}. |`);
+      lines.push(
+        `| **${cat.label}** | ${count} | ${cat.rationale.split(".")[0]}. |`,
+      );
     }
     const activeUntested = b.byCategory.active_untested ?? 0;
     lines.push(
-      `| **Active (real gap — needs a test)** | ${activeUntested} | These are the files that should grow a direct-import test. |`
+      `| **Active (real gap — needs a test)** | ${activeUntested} | These are the files that should grow a direct-import test. |`,
     );
-    lines.push('');
+    lines.push("");
   }
-  lines.push('---');
-  lines.push('');
+  lines.push("---");
+  lines.push("");
 
   // Untested files (the main deliverable)
-  lines.push('## Source Files Without Test Coverage');
-  lines.push('');
+  lines.push("## Source Files Without Test Coverage");
+  lines.push("");
   if (coverage.untestedFiles.length === 0) {
-    lines.push('**All source files have test coverage!** 🎉');
+    lines.push("**All source files have test coverage!** 🎉");
   } else {
     lines.push(
-      `The following ${coverage.untestedFiles.length} source files are not directly imported by any test file:`
+      `The following ${coverage.untestedFiles.length} source files are not directly imported by any test file:`,
     );
-    lines.push('');
+    lines.push("");
 
     // Group by module
     const byModule = new Map<string, string[]>();
     for (const file of coverage.untestedFiles) {
-      const parts = file.split('/');
-      const module = parts.length >= 3 ? parts[1] : 'root';
+      const parts = file.split("/");
+      const module = parts.length >= 3 ? parts[1] : "root";
       if (!byModule.has(module)) byModule.set(module, []);
       byModule.get(module)!.push(file);
     }
 
     for (const [module, files] of byModule) {
       lines.push(`### ${module}/`);
-      lines.push('');
+      lines.push("");
       for (const file of files.sort()) {
-        const fileName = basename(file, '.ts');
-        lines.push(`- \`${file}\` → Expected test: \`tests/unit/${module}/${fileName}.test.ts\``);
+        const fileName = basename(file, ".ts");
+        lines.push(
+          `- \`${file}\` → Expected test: \`tests/unit/${module}/${fileName}.test.ts\``,
+        );
       }
-      lines.push('');
+      lines.push("");
     }
   }
-  lines.push('---');
-  lines.push('');
+  lines.push("---");
+  lines.push("");
 
   // Files with tests
-  lines.push('## Source Files With Test Coverage');
-  lines.push('');
-  lines.push('| Source File | Test Files |');
-  lines.push('|-------------|------------|');
+  lines.push("## Source Files With Test Coverage");
+  lines.push("");
+  lines.push("| Source File | Test Files |");
+  lines.push("|-------------|------------|");
 
   const sortedTested = [...coverage.testedFiles].sort();
   for (const sourcePath of sortedTested) {
     const tests = coverage.coverageMap.get(sourcePath) || [];
-    const shortSource = sourcePath.split('/').slice(-2).join('/');
-    const shortTests = tests.map((t) => `\`${basename(t)}\``).join(', ');
+    const shortSource = sourcePath.split("/").slice(-2).join("/");
+    const shortTests = tests.map((t) => `\`${basename(t)}\``).join(", ");
     lines.push(`| \`${shortSource}\` | ${shortTests} |`);
   }
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  lines.push("");
+  lines.push("---");
+  lines.push("");
 
   // Test file details
-  lines.push('## Test File Details');
-  lines.push('');
-  lines.push('| Test File | Imports from Source |');
-  lines.push('|-----------|---------------------|');
+  lines.push("## Test File Details");
+  lines.push("");
+  lines.push("| Test File | Imports from Source |");
+  lines.push("|-----------|---------------------|");
 
   for (const [testPath, sources] of coverage.testToSourceMap) {
-    const shortTest = testPath.split('/').slice(-2).join('/');
+    const shortTest = testPath.split("/").slice(-2).join("/");
     const sourceCount = sources.length;
     lines.push(`| \`${shortTest}\` | ${sourceCount} files |`);
   }
-  lines.push('');
+  lines.push("");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
@@ -2606,8 +2766,11 @@ function generateTestCoverageJson(coverage: TestCoverageAnalysis): object {
       untestedCount: coverage.untestedFiles.length,
       coveragePercent:
         coverage.sourceFiles.length > 0
-          ? ((coverage.testedFiles.length / coverage.sourceFiles.length) * 100).toFixed(1)
-          : '0',
+          ? (
+              (coverage.testedFiles.length / coverage.sourceFiles.length) *
+              100
+            ).toFixed(1)
+          : "0",
       // Companion 'effective' coverage — the same direct-import metric but
       // computed over the active (non-policy-excluded) file set only. When
       // no coverage-policy.json is present, this collapses to the raw figure.
@@ -2627,7 +2790,9 @@ function generateTestCoverageJson(coverage: TestCoverageAnalysis): object {
     testToSourceMap: testToSourceObj,
     // Per-file classification of every untested file. category=null means
     // the file is a genuine gap (not matched by any policy category).
-    classifiedUntested: b.classifiedUntested.slice().sort((a, c) => a.file.localeCompare(c.file)),
+    classifiedUntested: b.classifiedUntested
+      .slice()
+      .sort((a, c) => a.file.localeCompare(c.file)),
   };
 }
 
@@ -2638,13 +2803,13 @@ function generatePackageDependencySection(
   parsedFiles: ParsedFile[],
   workspaces: Map<string, WorkspacePackage>,
   reachableFiles?: Set<string>,
-  dormantFiles?: Set<string>
+  dormantFiles?: Set<string>,
 ): string {
   const lines: string[] = [];
 
   lines.push('<a id="package-dependencies"></a>');
-  lines.push('## Package Dependencies');
-  lines.push('');
+  lines.push("## Package Dependencies");
+  lines.push("");
 
   // Build package-level dependency map from workspace deps
   const pkgDeps = new Map<string, Set<string>>();
@@ -2663,31 +2828,36 @@ function generatePackageDependencySection(
   }
 
   // Package dependency table
-  lines.push('| Package | Depends On | Files (Active) | Files (Dormant) |');
-  lines.push('|---------|------------|----------------|-----------------|');
+  lines.push("| Package | Depends On | Files (Active) | Files (Dormant) |");
+  lines.push("|---------|------------|----------------|-----------------|");
 
   for (const [name, ws] of workspaces) {
     const deps = pkgDeps.get(name);
-    const depStr = deps && deps.size > 0 ? [...deps].map((d) => `\`${d}\``).join(', ') : '(none)';
+    const depStr =
+      deps && deps.size > 0
+        ? [...deps].map((d) => `\`${d}\``).join(", ")
+        : "(none)";
 
     const pkgFiles = parsedFiles.filter((f) => f.packageName === name);
     const activeCount = reachableFiles
       ? pkgFiles.filter((f) => reachableFiles.has(f.path)).length
       : pkgFiles.length;
-    const dormantCount = dormantFiles ? pkgFiles.filter((f) => dormantFiles.has(f.path)).length : 0;
+    const dormantCount = dormantFiles
+      ? pkgFiles.filter((f) => dormantFiles.has(f.path)).length
+      : 0;
 
     lines.push(
-      `| \`${name}\` (\`${ws.directory}/\`) | ${depStr} | ${activeCount} | ${dormantCount} |`
+      `| \`${name}\` (\`${ws.directory}/\`) | ${depStr} | ${activeCount} | ${dormantCount} |`,
     );
   }
 
-  lines.push('');
+  lines.push("");
 
   // Mermaid package-level diagram
-  lines.push('### Package Dependency Diagram');
-  lines.push('');
-  lines.push('```mermaid');
-  lines.push('graph LR');
+  lines.push("### Package Dependency Diagram");
+  lines.push("");
+  lines.push("```mermaid");
+  lines.push("graph LR");
 
   // Create short IDs for packages
   const pkgIds = new Map<string, string>();
@@ -2711,12 +2881,12 @@ function generatePackageDependencySection(
     }
   }
 
-  lines.push('```');
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  lines.push("```");
+  lines.push("");
+  lines.push("---");
+  lines.push("");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
@@ -2728,14 +2898,14 @@ function generatePackageDependencySection(
  * "which functions are WASM-accelerated" map a generated artifact instead of a
  * hand-maintained doc (see docs/Architecture/WASM_ACCELERATION.md).
  */
-type Routing = 'wasm' | 'parallel' | 'wasm+parallel' | 'js-only';
+type Routing = "wasm" | "parallel" | "wasm+parallel" | "js-only";
 /** Whether a wasm-routed function actually executes wasm on the *bundled* binary
  * (the AssemblyScript `mathts-as.wasm` the functions package loads by default),
  * or its dispatch bridge falls back to JS (it has no AS-managed execution path —
  * e.g. the poly-fit / Airy / argsort+rank kernels deliberately kept on JS pending
  * AS kernel-stabilization fixes). `unknown` when the bundled wasm or the
  * dispatch's bridge couldn't be resolved (e.g. dist not built). */
-type EffectiveBackend = 'wasm' | 'js-fallback' | 'unknown';
+type EffectiveBackend = "wasm" | "js-fallback" | "unknown";
 interface WasmPairingEntry {
   name: string;
   file: string;
@@ -2762,7 +2932,7 @@ interface WasmPairing {
   /** Of acceleratedCount, how many actually run wasm vs fall back to JS on the
    * bundled binary (runtime probe of functions/dist/wasm/mathts-as.wasm — the AS
    * binary the functions package loads; AssemblyScript is the sole WASM backend). */
-  bundledBackend: 'assemblyscript' | 'unknown';
+  bundledBackend: "assemblyscript" | "unknown";
   wasmEffectiveCount: number;
   jsFallbackCount: number;
   /** Detection is per-mathTyped-block direct references; routing reached only
@@ -2803,8 +2973,9 @@ function readWasmExports(path: string): Set<string> | null {
     new (bytes: Uint8Array): object;
     exports(m: object): Array<{ name: string }>;
   }
-  const WAModule = (globalThis as unknown as { WebAssembly?: { Module: WasmModuleCtor } })
-    .WebAssembly?.Module;
+  const WAModule = (
+    globalThis as unknown as { WebAssembly?: { Module: WasmModuleCtor } }
+  ).WebAssembly?.Module;
   if (!WAModule || !existsSync(path)) return null;
   try {
     const mod = new WAModule(readFileSync(path));
@@ -2815,43 +2986,49 @@ function readWasmExports(path: string): Set<string> | null {
 }
 
 function analyzeWasmRuntime(rootDir: string): {
-  bundledBackend: 'assemblyscript' | 'unknown';
+  bundledBackend: "assemblyscript" | "unknown";
   dispatchWasm: Map<string, boolean | null>;
 } {
   const dispatchWasm = new Map<string, boolean | null>();
 
   // AssemblyScript is the sole WASM backend; the functions package loads
   // mathts-as.wasm. The probe confirms the managed runtime (`__new`) is present.
-  const wasmPath = join(rootDir, 'functions', 'dist', 'wasm', 'mathts-as.wasm');
+  const wasmPath = join(rootDir, "functions", "dist", "wasm", "mathts-as.wasm");
   const exports = readWasmExports(wasmPath);
-  const bundledHasNew: boolean | null = exports === null ? null : exports.has('__new');
-  const bundledBackend: 'assemblyscript' | 'unknown' =
-    bundledHasNew === true ? 'assemblyscript' : 'unknown';
+  const bundledHasNew: boolean | null =
+    exports === null ? null : exports.has("__new");
+  const bundledBackend: "assemblyscript" | "unknown" =
+    bundledHasNew === true ? "assemblyscript" : "unknown";
 
-  const wasmDir = join(rootDir, 'functions', 'src', 'wasm');
+  const wasmDir = join(rootDir, "functions", "src", "wasm");
   if (!existsSync(wasmDir)) return { bundledBackend, dispatchWasm };
   // A `*Dispatch` actually executes wasm iff its own body invokes one of the AS
   // execution helpers (directly or via another in-file `*Dispatch` it delegates
   // to). The bridges are AS→JS only post Phase 5, so this single marker set
   // captures the genuine wasm path; dispatches with no marker (poly fits, Airy,
   // argsort/rank) are honest js-fallback.
-  const asExecRe = /\b(?:withAsF64|withAsI32|runUnaryPtr|runChainPtr|makeUnaryArrayDispatch)\b/;
+  const asExecRe =
+    /\b(?:withAsF64|withAsI32|runUnaryPtr|runChainPtr|makeUnaryArrayDispatch)\b/;
   const defRe = /\b(?:function|const)\s+(\w+Dispatch)\b/g;
   const walk = (dir: string): void => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
       const p = join(dir, e.name);
       if (e.isDirectory()) walk(p);
-      else if (e.name.endsWith('.ts')) {
-        const src = readFileSync(p, 'utf-8');
+      else if (e.name.endsWith(".ts")) {
+        const src = readFileSync(p, "utf-8");
         // Slice the file into per-`*Dispatch` segments (def start → next def start).
         const segs: { name: string; body: string }[] = [];
         let dm: RegExpExecArray | null;
         defRe.lastIndex = 0;
         const marks: { name: string; idx: number }[] = [];
-        while ((dm = defRe.exec(src)) !== null) marks.push({ name: dm[1], idx: dm.index });
+        while ((dm = defRe.exec(src)) !== null)
+          marks.push({ name: dm[1], idx: dm.index });
         for (let i = 0; i < marks.length; i++) {
           const end = i + 1 < marks.length ? marks[i + 1].idx : src.length;
-          segs.push({ name: marks[i].name, body: src.slice(marks[i].idx, end) });
+          segs.push({
+            name: marks[i].name,
+            body: src.slice(marks[i].idx, end),
+          });
         }
         // Initial: does the segment invoke an AS execution helper directly?
         const usesAs = new Map<string, boolean>();
@@ -2862,7 +3039,11 @@ function analyzeWasmRuntime(rootDir: string): {
           for (const s of segs) {
             if (usesAs.get(s.name)) continue;
             for (const other of segs) {
-              if (other.name !== s.name && usesAs.get(other.name) && s.body.includes(other.name)) {
+              if (
+                other.name !== s.name &&
+                usesAs.get(other.name) &&
+                s.body.includes(other.name)
+              ) {
                 usesAs.set(s.name, true);
                 break;
               }
@@ -2872,7 +3053,10 @@ function analyzeWasmRuntime(rootDir: string): {
         for (const s of segs) {
           // Unknown when we couldn't read the bundled binary; otherwise the AS
           // binary has __new, so wasm runs iff the dispatch has an AS exec path.
-          const runsWasm = bundledHasNew === null ? null : bundledHasNew && usesAs.get(s.name)!;
+          const runsWasm =
+            bundledHasNew === null
+              ? null
+              : bundledHasNew && usesAs.get(s.name)!;
           dispatchWasm.set(s.name, runsWasm);
         }
       }
@@ -2885,22 +3069,22 @@ function analyzeWasmRuntime(rootDir: string): {
 /** Export-name-prefix category for a WASM binary function export (the AS naming
  *  convention: `array_*`, `matrix_*`, `complex_*`/`complex_array_*`, `fft`/`rfft`). */
 function categorizeWasmExport(name: string): string {
-  if (/^array_/.test(name)) return 'Array';
-  if (/^matrix_/.test(name)) return 'Matrix';
+  if (/^array_/.test(name)) return "Array";
+  if (/^matrix_/.test(name)) return "Matrix";
   if (/^complex/.test(name))
-    return /(_array|Array)/.test(name) ? 'Complex array' : 'Complex scalar';
-  if (/^(fft|ifft|rfft|irfft)$/.test(name)) return 'FFT';
-  return 'Scalar & special (f64)';
+    return /(_array|Array)/.test(name) ? "Complex array" : "Complex scalar";
+  if (/^(fft|ifft|rfft|irfft)$/.test(name)) return "FFT";
+  return "Scalar & special (f64)";
 }
 
 function countAssemblySourceFiles(rootDir: string): number {
-  const dir = join(rootDir, 'assembly', 'src');
+  const dir = join(rootDir, "assembly", "src");
   if (!existsSync(dir)) return 0;
   let n = 0;
   const walk = (d: string): void => {
     for (const e of readdirSync(d, { withFileTypes: true })) {
       if (e.isDirectory()) walk(join(d, e.name));
-      else if (e.name.endsWith('.ts')) n++;
+      else if (e.name.endsWith(".ts")) n++;
     }
   };
   walk(dir);
@@ -2919,13 +3103,14 @@ function probeWasmBinary(rootDir: string): WasmBinaryProbe | null {
     new (bytes: Uint8Array): object;
     exports(m: object): Array<{ name: string; kind: string }>;
   }
-  const WAModule = (globalThis as unknown as { WebAssembly?: { Module: WasmModuleCtor } })
-    .WebAssembly?.Module;
+  const WAModule = (
+    globalThis as unknown as { WebAssembly?: { Module: WasmModuleCtor } }
+  ).WebAssembly?.Module;
   if (!WAModule) return null;
   const candidates = [
-    join(rootDir, 'assembly', 'build', 'mathts.wasm'),
-    join(rootDir, 'functions', 'dist', 'wasm', 'mathts-as.wasm'),
-    join(rootDir, 'matrix', 'dist', 'wasm', 'mathts-as.wasm'),
+    join(rootDir, "assembly", "build", "mathts.wasm"),
+    join(rootDir, "functions", "dist", "wasm", "mathts-as.wasm"),
+    join(rootDir, "matrix", "dist", "wasm", "mathts-as.wasm"),
   ];
   const path = candidates.find((p) => existsSync(p));
   if (!path) return null;
@@ -2935,54 +3120,66 @@ function probeWasmBinary(rootDir: string): WasmBinaryProbe | null {
   } catch {
     return null;
   }
-  const fns = ex.filter((e) => e.kind === 'function');
+  const fns = ex.filter((e) => e.kind === "function");
   const cats = new Map<string, number>();
   for (const f of fns)
-    cats.set(categorizeWasmExport(f.name), (cats.get(categorizeWasmExport(f.name)) ?? 0) + 1);
+    cats.set(
+      categorizeWasmExport(f.name),
+      (cats.get(categorizeWasmExport(f.name)) ?? 0) + 1,
+    );
   const ORDER = [
-    'Scalar & special (f64)',
-    'Array',
-    'Matrix',
-    'Complex scalar',
-    'Complex array',
-    'FFT',
+    "Scalar & special (f64)",
+    "Array",
+    "Matrix",
+    "Complex scalar",
+    "Complex array",
+    "FFT",
   ];
   const byCategory = [
     ...ORDER.filter((c) => cats.has(c)),
     ...[...cats.keys()].filter((c) => !ORDER.includes(c)).sort(),
   ].map((category) => ({ category, count: cats.get(category) as number }));
   return {
-    path: relative(rootDir, path).replace(/\\/g, '/'),
+    path: relative(rootDir, path).replace(/\\/g, "/"),
     total: ex.length,
     functions: fns.length,
-    globals: ex.filter((e) => e.kind === 'global').length,
-    memory: ex.filter((e) => e.kind === 'memory').length,
+    globals: ex.filter((e) => e.kind === "global").length,
+    memory: ex.filter((e) => e.kind === "memory").length,
     sourceFiles: countAssemblySourceFiles(rootDir),
     byCategory,
   };
 }
 
 function analyzeWasmPairing(rootDir: string): WasmPairing | null {
-  const candidates = [join(rootDir, 'functions', 'src', 'typed'), join(rootDir, 'src', 'typed')];
+  const candidates = [
+    join(rootDir, "functions", "src", "typed"),
+    join(rootDir, "src", "typed"),
+  ];
   const typedDir = candidates.find((d) => existsSync(d));
   if (!typedDir) return null;
 
   const { bundledBackend, dispatchWasm } = analyzeWasmRuntime(rootDir);
-  const effectiveOf = (isWasm: boolean, dispatch: string[]): EffectiveBackend => {
-    if (!isWasm) return 'unknown';
+  const effectiveOf = (
+    isWasm: boolean,
+    dispatch: string[],
+  ): EffectiveBackend => {
+    if (!isWasm) return "unknown";
     const vals = dispatch.map((d) => dispatchWasm.get(d));
-    if (vals.some((v) => v === undefined || v === null)) return 'unknown';
-    return vals.every((v) => v === true) ? 'wasm' : 'js-fallback';
+    if (vals.some((v) => v === undefined || v === null)) return "unknown";
+    return vals.every((v) => v === true) ? "wasm" : "js-fallback";
   };
 
   const accelerated: WasmPairingEntry[] = [];
   const parallelOnly: WasmPairingEntry[] = [];
   const jsOnly: string[] = [];
-  const byFile: Record<string, { wasm: number; parallel: number; jsOnly: number }> = {};
+  const byFile: Record<
+    string,
+    { wasm: number; parallel: number; jsOnly: number }
+  > = {};
 
   for (const fname of readdirSync(typedDir)) {
-    if (!fname.endsWith('.ts')) continue;
-    const src = readFileSync(join(typedDir, fname), 'utf-8');
+    if (!fname.endsWith(".ts")) continue;
+    const src = readFileSync(join(typedDir, fname), "utf-8");
     const re = /export const (\w+) = mathTyped\(\s*'\w+'\s*,\s*\{/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(src)) !== null) {
@@ -2993,8 +3190,8 @@ function analyzeWasmPairing(rootDir: string): WasmPairing | null {
       let end = start;
       for (let i = start; i < src.length; i++) {
         const c = src[i];
-        if (c === '{') depth++;
-        else if (c === '}') {
+        if (c === "{") depth++;
+        else if (c === "}") {
           depth--;
           if (depth === 0) {
             end = i;
@@ -3003,16 +3200,18 @@ function analyzeWasmPairing(rootDir: string): WasmPairing | null {
         }
       }
       const block = src.slice(start, end + 1);
-      const dispatch = Array.from(new Set(block.match(/\b\w+Dispatch\b/g) ?? [])).sort();
+      const dispatch = Array.from(
+        new Set(block.match(/\b\w+Dispatch\b/g) ?? []),
+      ).sort();
       const isWasm = dispatch.length > 0;
       const isParallel = /\b(computePool|shouldParallelize)\b/.test(block);
       const routing: Routing = isWasm
         ? isParallel
-          ? 'wasm+parallel'
-          : 'wasm'
+          ? "wasm+parallel"
+          : "wasm"
         : isParallel
-          ? 'parallel'
-          : 'js-only';
+          ? "parallel"
+          : "js-only";
       if (!byFile[fname]) byFile[fname] = { wasm: 0, parallel: 0, jsOnly: 0 };
       const entry: WasmPairingEntry = {
         name,
@@ -3038,14 +3237,17 @@ function analyzeWasmPairing(rootDir: string): WasmPairing | null {
   parallelOnly.sort((a, b) => a.name.localeCompare(b.name));
   jsOnly.sort();
   return {
-    generated: new Date().toISOString().split('T')[0],
+    generated: new Date().toISOString().split("T")[0],
     total: accelerated.length + parallelOnly.length + jsOnly.length,
     acceleratedCount: accelerated.length,
     parallelOnlyCount: parallelOnly.length,
     jsOnlyCount: jsOnly.length,
     bundledBackend,
-    wasmEffectiveCount: accelerated.filter((e) => e.effectiveBackend === 'wasm').length,
-    jsFallbackCount: accelerated.filter((e) => e.effectiveBackend === 'js-fallback').length,
+    wasmEffectiveCount: accelerated.filter((e) => e.effectiveBackend === "wasm")
+      .length,
+    jsFallbackCount: accelerated.filter(
+      (e) => e.effectiveBackend === "js-fallback",
+    ).length,
     accelerated,
     parallelOnly,
     jsOnly,
@@ -3055,7 +3257,7 @@ function analyzeWasmPairing(rootDir: string): WasmPairing | null {
 }
 
 function generateWasmPairingMarkdown(p: WasmPairing): string {
-  let md = '# WASM Accelerator ↔ Function Pairing\n\n';
+  let md = "# WASM Accelerator ↔ Function Pairing\n\n";
   md += `**Generated**: ${p.generated} (by tools/create-dependency-graph)\n\n`;
   md += `Per public \`mathTyped\` function in \`functions/src/typed/\`, its acceleration `;
   md += `routing: **wasm** (a \`*Dispatch\` bridge), **parallel** (worker pool via `;
@@ -3075,15 +3277,15 @@ function generateWasmPairingMarkdown(p: WasmPairing): string {
   md += `kernels are deliberately kept on JS pending AS kernel-stabilization fixes).\n\n`;
   md += `## WASM-accelerated functions\n\n| Function | Routing | Effective | Bridge dispatch | Module |\n| --- | --- | --- | --- | --- |\n`;
   for (const e of p.accelerated) {
-    md += `| \`${e.name}\` | ${e.routing} | ${e.effectiveBackend} | \`${e.dispatch.join('`, `')}\` | ${e.file.replace(/\.ts$/, '')} |\n`;
+    md += `| \`${e.name}\` | ${e.routing} | ${e.effectiveBackend} | \`${e.dispatch.join("`, `")}\` | ${e.file.replace(/\.ts$/, "")} |\n`;
   }
   md += `\n## Parallel-only functions (worker pool, not WASM)\n\n| Function | Module |\n| --- | --- |\n`;
   for (const e of p.parallelOnly) {
-    md += `| \`${e.name}\` | ${e.file.replace(/\.ts$/, '')} |\n`;
+    md += `| \`${e.name}\` | ${e.file.replace(/\.ts$/, "")} |\n`;
   }
   md += `\n## Per-module counts\n\n| Module | WASM | Parallel | JS-only |\n| --- | --: | --: | --: |\n`;
   for (const f of Object.keys(p.byFile).sort()) {
-    md += `| ${f.replace(/\.ts$/, '')} | ${p.byFile[f].wasm} | ${p.byFile[f].parallel} | ${p.byFile[f].jsOnly} |\n`;
+    md += `| ${f.replace(/\.ts$/, "")} | ${p.byFile[f].wasm} | ${p.byFile[f].parallel} | ${p.byFile[f].jsOnly} |\n`;
   }
   md += `\n> Notes: the \`matrix\` package backend runs the AssemblyScript binary separately from the `;
   md += `typed-API dispatch counted here. After the 2026-07 WASM audit that backend is scoped to `;
@@ -3133,7 +3335,7 @@ function generateWasmPairingMarkdown(p: WasmPairing): string {
 interface WebGPUPairingEntry {
   name: string;
   file: string;
-  routing: 'gpu' | 'none';
+  routing: "gpu" | "none";
   markers: string[];
 }
 interface WebGPUPairing {
@@ -3164,8 +3366,8 @@ function matchBraceBlock(src: string, startBrace: number): string {
   let depth = 0;
   for (let i = startBrace; i < src.length; i++) {
     const c = src[i];
-    if (c === '{') depth++;
-    else if (c === '}') {
+    if (c === "{") depth++;
+    else if (c === "}") {
       depth--;
       if (depth === 0) return src.slice(startBrace, i + 1);
     }
@@ -3174,7 +3376,10 @@ function matchBraceBlock(src: string, startBrace: number): string {
 }
 
 function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
-  const candidates = [join(rootDir, 'functions', 'src', 'typed'), join(rootDir, 'src', 'typed')];
+  const candidates = [
+    join(rootDir, "functions", "src", "typed"),
+    join(rootDir, "src", "typed"),
+  ];
   const typedDir = candidates.find((d) => existsSync(d));
   if (!typedDir) return null;
 
@@ -3184,11 +3389,12 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
   // WebGPU-routing markers: a `*GpuDispatch` bridge (the GPU analog of the
   // `*Dispatch` WASM bridge), or a direct GPU pool / backend / device reference.
   const gpuDispatchRe = /\b\w+GpuDispatch\b/g;
-  const gpuRefRe = /\b(?:gpuPool|getGlobalGPUBackend|GPUBackend|gpuMatrixBackend|getGpuDevice)\b/;
+  const gpuRefRe =
+    /\b(?:gpuPool|getGlobalGPUBackend|GPUBackend|gpuMatrixBackend|getGpuDevice)\b/;
 
   for (const fname of readdirSync(typedDir)) {
-    if (!fname.endsWith('.ts')) continue;
-    const src = readFileSync(join(typedDir, fname), 'utf-8');
+    if (!fname.endsWith(".ts")) continue;
+    const src = readFileSync(join(typedDir, fname), "utf-8");
     const re = /export const (\w+) = mathTyped\(\s*'\w+'\s*,\s*\{/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(src)) !== null) {
@@ -3199,8 +3405,8 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
       let end = start;
       for (let i = start; i < src.length; i++) {
         const c = src[i];
-        if (c === '{') depth++;
-        else if (c === '}') {
+        if (c === "{") depth++;
+        else if (c === "}") {
           depth--;
           if (depth === 0) {
             end = i;
@@ -3215,7 +3421,12 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
       const uniq = Array.from(new Set(markers)).sort();
       if (!byFile[fname]) byFile[fname] = { gpu: 0, none: 0 };
       if (uniq.length > 0) {
-        gpuAccelerated.push({ name, file: fname, routing: 'gpu', markers: uniq });
+        gpuAccelerated.push({
+          name,
+          file: fname,
+          routing: "gpu",
+          markers: uniq,
+        });
         byFile[fname].gpu++;
       } else {
         none.push(name);
@@ -3233,8 +3444,8 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
   // every GPU path the library actually ships. Scan plain exported functions too.
   const standaloneAccelerated: WebGPUPairingEntry[] = [];
   const standaloneDirs = [
-    join(rootDir, 'functions', 'src', 'typed'),
-    join(rootDir, 'functions', 'src', 'gpu'),
+    join(rootDir, "functions", "src", "typed"),
+    join(rootDir, "functions", "src", "gpu"),
   ].filter((d) => existsSync(d));
 
   // Match BOTH exported and private functions: a public function often reaches the
@@ -3243,17 +3454,25 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
   // exported body would miss it and under-report — which is exactly what happened.
   const anyFnRe = /(export\s+)?(?:async\s+)?function\s+(\w+)/g;
   for (const dir of standaloneDirs) {
-    const rel = relative(join(rootDir, 'functions', 'src'), dir).replace(/\\/g, '/');
+    const rel = relative(join(rootDir, "functions", "src"), dir).replace(
+      /\\/g,
+      "/",
+    );
     for (const fname of readdirSync(dir)) {
-      if (!fname.endsWith('.ts')) continue;
-      const src = readFileSync(join(dir, fname), 'utf-8');
+      if (!fname.endsWith(".ts")) continue;
+      const src = readFileSync(join(dir, fname), "utf-8");
 
       // Pass 1 — every function in the file, its body, and its own direct markers.
-      const fns: Array<{ name: string; exported: boolean; body: string; markers: string[] }> = [];
+      const fns: Array<{
+        name: string;
+        exported: boolean;
+        body: string;
+        markers: string[];
+      }> = [];
       let m: RegExpExecArray | null;
       anyFnRe.lastIndex = 0;
       while ((m = anyFnRe.exec(src)) !== null) {
-        const brace = src.indexOf('{', m.index + m[0].length);
+        const brace = src.indexOf("{", m.index + m[0].length);
         if (brace === -1) continue;
         const body = matchBraceBlock(src, brace);
         const markers = Array.from(new Set(body.match(gpuDispatchRe) ?? []));
@@ -3281,8 +3500,10 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
       // exported ones — a private middleman must be able to carry markers upward), then
       // emit the exported ones.
       const markersOf = new Map(fns.map((f) => [f.name, new Set(f.markers)]));
-      const callsRe = new Map(fns.map((f) => [f.name, new RegExp(`\\b${f.name}\\s*\\(`)]));
-      for (let changed = true; changed; ) {
+      const callsRe = new Map(
+        fns.map((f) => [f.name, new RegExp(`\\b${f.name}\\s*\\(`)]),
+      );
+      for (let changed = true; changed;) {
         changed = false;
         for (const caller of fns) {
           const into = markersOf.get(caller.name)!;
@@ -3308,7 +3529,7 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
           standaloneAccelerated.push({
             name: f.name,
             file: `${rel}/${fname}`,
-            routing: 'gpu',
+            routing: "gpu",
             markers: uniq,
           });
         }
@@ -3328,7 +3549,7 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
       : `${standaloneCount} standalone function(s) route to WebGPU; ${typedCount} of ${typedCount + none.length} typed-dispatch functions do — see the note in webgpu-pairing.md for why that number is deliberately small.`;
 
   return {
-    generated: new Date().toISOString().split('T')[0],
+    generated: new Date().toISOString().split("T")[0],
     status,
     total: typedCount + none.length,
     gpuAcceleratedCount: typedCount,
@@ -3342,7 +3563,7 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
 }
 
 function generateWebGPUPairingMarkdown(p: WebGPUPairing): string {
-  let md = '# WebGPU Accelerator ↔ Function Pairing\n\n';
+  let md = "# WebGPU Accelerator ↔ Function Pairing\n\n";
   md += `**Generated**: ${p.generated} (by tools/create-dependency-graph)\n\n`;
   md += `The GPU analog of \`wasm-pairing.md\`. Which functions route to a **WebGPU** path — `;
   md += `detected via a \`*GpuDispatch\` bridge (mirroring the \`*Dispatch\` WASM convention) `;
@@ -3355,7 +3576,7 @@ function generateWebGPUPairingMarkdown(p: WebGPUPairing): string {
     md += `Standalone exports — this is where the GPU acceleration actually lives.\n\n`;
     md += `| Function | Markers | Module |\n| --- | --- | --- |\n`;
     for (const e of p.standaloneAccelerated) {
-      md += `| \`${e.name}\` | \`${e.markers.join('`, `')}\` | ${e.file.replace(/\.ts$/, '')} |\n`;
+      md += `| \`${e.name}\` | \`${e.markers.join("`, `")}\` | ${e.file.replace(/\.ts$/, "")} |\n`;
     }
     md += `\n`;
   } else {
@@ -3379,13 +3600,13 @@ function generateWebGPUPairingMarkdown(p: WebGPUPairing): string {
   if (p.gpuAccelerated.length > 0) {
     md += `### Typed functions routing to WebGPU\n\n| Function | Markers | Module |\n| --- | --- | --- |\n`;
     for (const e of p.gpuAccelerated) {
-      md += `| \`${e.name}\` | \`${e.markers.join('`, `')}\` | ${e.file.replace(/\.ts$/, '')} |\n`;
+      md += `| \`${e.name}\` | \`${e.markers.join("`, `")}\` | ${e.file.replace(/\.ts$/, "")} |\n`;
     }
     md += `\n`;
   }
   md += `## Per-module counts (typed layer)\n\n| Module | WebGPU | None |\n| --- | --: | --: |\n`;
   for (const f of Object.keys(p.byFile).sort()) {
-    md += `| ${f.replace(/\.ts$/, '')} | ${p.byFile[f].gpu} | ${p.byFile[f].none} |\n`;
+    md += `| ${f.replace(/\.ts$/, "")} | ${p.byFile[f].gpu} | ${p.byFile[f].none} |\n`;
   }
   return md;
 }
@@ -3405,7 +3626,7 @@ function generateWebGPUPairingMarkdown(p: WebGPUPairing): string {
  * thresholds parsed straight from `parallel/src/ComputePool.ts`, so the
  * "which functions are effectively parallelized" map is a generated artifact.
  */
-type ParallelEffectiveness = 'effective' | 'disabled';
+type ParallelEffectiveness = "effective" | "disabled";
 interface ParallelPairingEntry {
   name: string;
   file: string;
@@ -3455,25 +3676,25 @@ interface ParallelPairing {
  */
 function readParallelThresholds(rootDir: string): ParallelThresholds | null {
   const candidates = [
-    join(rootDir, 'parallel', 'src', 'ComputePool.ts'),
-    join(rootDir, 'src', 'ComputePool.ts'),
+    join(rootDir, "parallel", "src", "ComputePool.ts"),
+    join(rootDir, "src", "ComputePool.ts"),
   ];
   const path = candidates.find((p) => existsSync(p));
   if (!path) return null;
-  const src = readFileSync(path, 'utf-8');
+  const src = readFileSync(path, "utf-8");
 
   // Brace-match the DEFAULT_THRESHOLD_BY_OP object literal.
-  const anchor = src.indexOf('DEFAULT_THRESHOLD_BY_OP');
+  const anchor = src.indexOf("DEFAULT_THRESHOLD_BY_OP");
   if (anchor < 0) return null;
-  const eq = src.indexOf('=', anchor);
-  const braceStart = src.indexOf('{', eq);
+  const eq = src.indexOf("=", anchor);
+  const braceStart = src.indexOf("{", eq);
   if (eq < 0 || braceStart < 0) return null;
   let depth = 0;
   let end = braceStart;
   for (let i = braceStart; i < src.length; i++) {
     const c = src[i];
-    if (c === '{') depth++;
-    else if (c === '}') {
+    if (c === "{") depth++;
+    else if (c === "}") {
       depth--;
       if (depth === 0) {
         end = i;
@@ -3484,19 +3705,19 @@ function readParallelThresholds(rootDir: string): ParallelThresholds | null {
   // Strip line comments so commented example numbers don't get parsed as values.
   const body = src
     .slice(braceStart, end + 1)
-    .split('\n')
+    .split("\n")
     .map((line) => {
-      const idx = line.indexOf('//');
+      const idx = line.indexOf("//");
       return idx >= 0 ? line.slice(0, idx) : line;
     })
-    .join('\n');
+    .join("\n");
 
   const byOp = new Map<string, string>();
   const re = /(\w+)\s*:\s*(?:'(never|always)'|([\d_]+))/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(body)) !== null) {
     const op = m[1];
-    const value = m[2] ?? m[3].replace(/_/g, '');
+    const value = m[2] ?? m[3].replace(/_/g, "");
     byOp.set(op, value);
   }
 
@@ -3506,7 +3727,10 @@ function readParallelThresholds(rootDir: string): ParallelThresholds | null {
 }
 
 function analyzeParallelPairing(rootDir: string): ParallelPairing | null {
-  const candidates = [join(rootDir, 'functions', 'src', 'typed'), join(rootDir, 'src', 'typed')];
+  const candidates = [
+    join(rootDir, "functions", "src", "typed"),
+    join(rootDir, "src", "typed"),
+  ];
   const typedDir = candidates.find((d) => existsSync(d));
   if (!typedDir) return null;
 
@@ -3518,36 +3742,39 @@ function analyzeParallelPairing(rootDir: string): ParallelPairing | null {
   // the global `thresholdElements` at runtime (so they are active). The generic
   // `applyKernel` pseudo-op is gated by the same global threshold.
   const resolve = (op: string): string => {
-    if (op === 'applyKernel') return `${globalThreshold} (global kernel)`;
+    if (op === "applyKernel") return `${globalThreshold} (global kernel)`;
     const v = byOpMap.get(op);
     return v ?? `${globalThreshold} (global)`;
   };
-  const isActive = (op: string): boolean => resolve(op) !== 'never';
+  const isActive = (op: string): boolean => resolve(op) !== "never";
 
   // computePool methods that are infrastructure, not dispatchable ops. `applyKernel`
   // is handled separately (it is the generic-kernel parallel path).
   const INFRA = new Set([
-    'shouldParallelize',
-    'terminate',
-    'getStats',
-    'isReady',
-    'configure',
-    'warmup',
-    'dispose',
-    'getConfig',
-    'setConfig',
-    'execute',
-    'on',
+    "shouldParallelize",
+    "terminate",
+    "getStats",
+    "isReady",
+    "configure",
+    "warmup",
+    "dispose",
+    "getConfig",
+    "setConfig",
+    "execute",
+    "on",
   ]);
 
   const parallelized: ParallelPairingEntry[] = [];
   const nonParallel: string[] = [];
-  const byFile: Record<string, { effective: number; disabled: number; none: number }> = {};
+  const byFile: Record<
+    string,
+    { effective: number; disabled: number; none: number }
+  > = {};
   const opUsers = new Map<string, Set<string>>();
 
   for (const fname of readdirSync(typedDir)) {
-    if (!fname.endsWith('.ts')) continue;
-    const src = readFileSync(join(typedDir, fname), 'utf-8');
+    if (!fname.endsWith(".ts")) continue;
+    const src = readFileSync(join(typedDir, fname), "utf-8");
     const re = /export const (\w+) = mathTyped\(\s*'\w+'\s*,\s*\{/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(src)) !== null) {
@@ -3558,8 +3785,8 @@ function analyzeParallelPairing(rootDir: string): ParallelPairing | null {
       let end = start;
       for (let i = start; i < src.length; i++) {
         const c = src[i];
-        if (c === '{') depth++;
-        else if (c === '}') {
+        if (c === "{") depth++;
+        else if (c === "}") {
           depth--;
           if (depth === 0) {
             end = i;
@@ -3574,7 +3801,7 @@ function analyzeParallelPairing(rootDir: string): ParallelPairing | null {
       let generic = false;
       for (const cm of block.matchAll(/computePool\.(\w+)\s*\(/g)) {
         const method = cm[1];
-        if (method === 'applyKernel') generic = true;
+        if (method === "applyKernel") generic = true;
         else if (!INFRA.has(method)) ops.add(method);
       }
       // Generic worker-pool paths that don't map to a single named op: the
@@ -3583,9 +3810,10 @@ function analyzeParallelPairing(rootDir: string): ParallelPairing | null {
       if (/\bmapArray\s*\(/.test(block)) generic = true;
       if (/\bcomputePool\.shouldParallelize\s*\(/.test(block)) generic = true;
       if (/\bparallel[A-Z]\w+\s*\(/.test(block)) generic = true;
-      if (generic) ops.add('applyKernel');
+      if (generic) ops.add("applyKernel");
 
-      if (!byFile[fname]) byFile[fname] = { effective: 0, disabled: 0, none: 0 };
+      if (!byFile[fname])
+        byFile[fname] = { effective: 0, disabled: 0, none: 0 };
       if (ops.size === 0) {
         nonParallel.push(name);
         byFile[fname].none++;
@@ -3602,7 +3830,7 @@ function analyzeParallelPairing(rootDir: string): ParallelPairing | null {
         file: fname,
         ops: opList,
         thresholds: opList.map((op) => resolve(op)),
-        effectiveness: effective ? 'effective' : 'disabled',
+        effectiveness: effective ? "effective" : "disabled",
       });
       if (effective) byFile[fname].effective++;
       else byFile[fname].disabled++;
@@ -3622,10 +3850,14 @@ function analyzeParallelPairing(rootDir: string): ParallelPairing | null {
     functions: [...(opUsers.get(op) ?? [])].sort(),
   }));
 
-  const effectiveCount = parallelized.filter((e) => e.effectiveness === 'effective').length;
-  const disabledCount = parallelized.filter((e) => e.effectiveness === 'disabled').length;
+  const effectiveCount = parallelized.filter(
+    (e) => e.effectiveness === "effective",
+  ).length;
+  const disabledCount = parallelized.filter(
+    (e) => e.effectiveness === "disabled",
+  ).length;
   return {
-    generated: new Date().toISOString().split('T')[0],
+    generated: new Date().toISOString().split("T")[0],
     total: parallelized.length + nonParallel.length,
     parallelizedCount: parallelized.length,
     effectiveCount,
@@ -3641,7 +3873,7 @@ function analyzeParallelPairing(rootDir: string): ParallelPairing | null {
 }
 
 function generateParallelPairingMarkdown(p: ParallelPairing): string {
-  let md = '# Parallel (Worker-Pool) ↔ Function Pairing\n\n';
+  let md = "# Parallel (Worker-Pool) ↔ Function Pairing\n\n";
   md += `**Generated**: ${p.generated} (by tools/create-dependency-graph)\n\n`;
   md += `Per public \`mathTyped\` function in \`functions/src/typed/\`, its worker-pool `;
   md += `routing: a **named op** (\`computePool.<op>()\`, which consults a tunable threshold) `;
@@ -3667,8 +3899,10 @@ function generateParallelPairingMarkdown(p: ParallelPairing): string {
 
   md += `## Effectively parallelized functions\n\n`;
   md += `| Function | Ops | Thresholds (elements) | Module |\n| --- | --- | --- | --- |\n`;
-  for (const e of p.parallelized.filter((x) => x.effectiveness === 'effective')) {
-    md += `| \`${e.name}\` | \`${e.ops.join('`, `')}\` | ${e.thresholds.join(', ')} | ${e.file.replace(/\.ts$/, '')} |\n`;
+  for (const e of p.parallelized.filter(
+    (x) => x.effectiveness === "effective",
+  )) {
+    md += `| \`${e.name}\` | \`${e.ops.join("`, `")}\` | ${e.thresholds.join(", ")} | ${e.file.replace(/\.ts$/, "")} |\n`;
   }
 
   md += `\n## Disabled parallel paths (wired but always inline JS)\n\n`;
@@ -3676,13 +3910,15 @@ function generateParallelPairingMarkdown(p: ParallelPairing): string {
   md += `at all benchmarked sizes, so they always run inline JS today. Kept wired so a future `;
   md += `threshold retune (\`tools/benchmark/parallel/run.ts\`) can switch them on without code churn.\n\n`;
   md += `| Function | Ops (all \`'never'\`) | Module |\n| --- | --- | --- |\n`;
-  for (const e of p.parallelized.filter((x) => x.effectiveness === 'disabled')) {
-    md += `| \`${e.name}\` | \`${e.ops.join('`, `')}\` | ${e.file.replace(/\.ts$/, '')} |\n`;
+  for (const e of p.parallelized.filter(
+    (x) => x.effectiveness === "disabled",
+  )) {
+    md += `| \`${e.name}\` | \`${e.ops.join("`, `")}\` | ${e.file.replace(/\.ts$/, "")} |\n`;
   }
 
   md += `\n## Per-module counts\n\n| Module | Effective | Disabled | Non-parallel |\n| --- | --: | --: | --: |\n`;
   for (const f of Object.keys(p.byFile).sort()) {
-    md += `| ${f.replace(/\.ts$/, '')} | ${p.byFile[f].effective} | ${p.byFile[f].disabled} | ${p.byFile[f].none} |\n`;
+    md += `| ${f.replace(/\.ts$/, "")} | ${p.byFile[f].effective} | ${p.byFile[f].disabled} | ${p.byFile[f].none} |\n`;
   }
 
   // Canonical threshold table — the parallel analog of the WASM binary export
@@ -3694,14 +3930,14 @@ function generateParallelPairingMarkdown(p: ParallelPairing): string {
   md += `internal helpers). \`applyKernel\` is the synthetic generic-kernel path.\n\n`;
   md += `| Op | Threshold (elements) | Active? | # functions |\n| --- | --- | :-: | --: |\n`;
   for (const r of p.byOp) {
-    md += `| \`${r.op}\` | ${r.threshold} | ${r.active ? '✓' : '—'} | ${r.functions.length} |\n`;
+    md += `| \`${r.op}\` | ${r.threshold} | ${r.active ? "✓" : "—"} | ${r.functions.length} |\n`;
   }
 
   md += `\n## Non-parallel functions (no worker-pool path)\n\n`;
   md += `Pure-JS or WASM-only typed functions — see \`wasm-pairing.md\` for their WASM routing.\n\n`;
   md += p.nonParallel.length
-    ? p.nonParallel.map((n) => `\`${n}\``).join(', ') + '\n'
-    : '_(none)_\n';
+    ? p.nonParallel.map((n) => `\`${n}\``).join(", ") + "\n"
+    : "_(none)_\n";
 
   md += `\n> Notes: element-wise arithmetic/transcendental ops (\`add\`/\`sin\`/\`exp\`/…) and the `;
   md += `signal/reduction ops are \`'never'\` — the 2026-05 parallel benchmark found worker `;
@@ -3742,9 +3978,10 @@ function generateParallelPairingMarkdown(p: ParallelPairing): string {
  * legitimate typed-dispatch/factory variant; a human triages using the
  * recorded defining files + public flags (see `DUPLICATE_SYMBOLS_NOTE`).
  */
-type RuntimeSymbolCategory = 'function' | 'constant' | 'class';
-type TypeSymbolCategory = 'interface' | 'type' | 'enum';
-type DupExportKey = 'functions' | 'constants' | 'classes' | 'interfaces' | 'types' | 'enums';
+type RuntimeSymbolCategory = "function" | "constant" | "class";
+type TypeSymbolCategory = "interface" | "type" | "enum";
+type DupExportKey =
+  "functions" | "constants" | "classes" | "interfaces" | "types" | "enums";
 
 /**
  * Per-definer classification (see the big comment above `buildDuplicateEntries`
@@ -3757,13 +3994,15 @@ type DupExportKey = 'functions' | 'constants' | 'classes' | 'interfaces' | 'type
  *   `import` in the same file — a forward, not an independent body.
  * - `PLAIN` — none of the above; a genuine own-defined body.
  */
-type DupDefinerTag = 'ALLOWLISTED' | 'DISPATCH_VARIANT' | 'ALIAS_DELEGATION' | 'PLAIN';
+type DupDefinerTag =
+  "ALLOWLISTED" | "DISPATCH_VARIANT" | "ALIAS_DELEGATION" | "PLAIN";
 
 /**
  * Entry-level (per-name) classification, derived from its definers'
  * `DupDefinerTag`s — see `buildDuplicateEntries`.
  */
-type DupEntryTag = 'TRUE_DUPLICATE' | 'DISPATCH_VARIANT' | 'ALIAS_DELEGATION' | 'ALLOWLISTED';
+type DupEntryTag =
+  "TRUE_DUPLICATE" | "DISPATCH_VARIANT" | "ALIAS_DELEGATION" | "ALLOWLISTED";
 
 interface DuplicateDefiner {
   file: string;
@@ -3807,29 +4046,35 @@ interface DuplicateSymbolsReport {
   types: DuplicateSymbolEntry[];
 }
 
-const RUNTIME_DUP_CATEGORIES: Array<{ cat: RuntimeSymbolCategory; key: DupExportKey }> = [
-  { cat: 'function', key: 'functions' },
-  { cat: 'constant', key: 'constants' },
-  { cat: 'class', key: 'classes' },
+const RUNTIME_DUP_CATEGORIES: Array<{
+  cat: RuntimeSymbolCategory;
+  key: DupExportKey;
+}> = [
+  { cat: "function", key: "functions" },
+  { cat: "constant", key: "constants" },
+  { cat: "class", key: "classes" },
 ];
 
-const TYPE_DUP_CATEGORIES: Array<{ cat: TypeSymbolCategory; key: DupExportKey }> = [
-  { cat: 'interface', key: 'interfaces' },
-  { cat: 'type', key: 'types' },
-  { cat: 'enum', key: 'enums' },
+const TYPE_DUP_CATEGORIES: Array<{
+  cat: TypeSymbolCategory;
+  key: DupExportKey;
+}> = [
+  { cat: "interface", key: "interfaces" },
+  { cat: "type", key: "types" },
+  { cat: "enum", key: "enums" },
 ];
 
 const DUPLICATE_SYMBOLS_NOTE =
-  'This report groups names by OWN definition, not by call graph, then classifies each ' +
-  'flagged name (see DupEntryTag): TRUE_DUPLICATE (the actionable merge targets), ' +
-  'DISPATCH_VARIANT (>=2 mathTyped(...) registrations of the same public name — distinct ' +
-  'dispatch surfaces, Bucket C delegation candidates, not copy-paste bodies), ' +
-  'ALIAS_DELEGATION (a const-alias forward to an imported symbol, not an independent body — ' +
-  'excluded once fewer than 2 real bodies remain), and ALLOWLISTED (matches ' +
-  'duplicate-allowlist.json: hot-path is* guards, AssemblyScript mirrors, per-package ' +
-  'VERSION strings). NOT detected: same-file typed-dispatch overload polymorphism for ' +
-  'different argument shapes within one registration — a human still triages TRUE_DUPLICATE ' +
-  'entries using the defining files + public flags before merging anything.';
+  "This report groups names by OWN definition, not by call graph, then classifies each " +
+  "flagged name (see DupEntryTag): TRUE_DUPLICATE (the actionable merge targets), " +
+  "DISPATCH_VARIANT (>=2 mathTyped(...) registrations of the same public name — distinct " +
+  "dispatch surfaces, Bucket C delegation candidates, not copy-paste bodies), " +
+  "ALIAS_DELEGATION (a const-alias forward to an imported symbol, not an independent body — " +
+  "excluded once fewer than 2 real bodies remain), and ALLOWLISTED (matches " +
+  "duplicate-allowlist.json: hot-path is* guards, AssemblyScript mirrors, per-package " +
+  "VERSION strings). NOT detected: same-file typed-dispatch overload polymorphism for " +
+  "different argument shapes within one registration — a human still triages TRUE_DUPLICATE " +
+  "entries using the defining files + public flags before merging anything.";
 
 interface DuplicateAllowlistEntry {
   /** Symbol-name patterns. A trailing `*` is a prefix match; the literal `*` matches any name. */
@@ -3852,9 +4097,14 @@ let duplicateAllowlistCache: DuplicateAllowlistEntry[] | undefined;
  */
 function loadDuplicateAllowlist(): DuplicateAllowlistEntry[] {
   if (duplicateAllowlistCache) return duplicateAllowlistCache;
-  const path = join(ROOT_DIR, 'tools', 'create-dependency-graph', 'duplicate-allowlist.json');
+  const path = join(
+    ROOT_DIR,
+    "tools",
+    "create-dependency-graph",
+    "duplicate-allowlist.json",
+  );
   try {
-    const parsed = JSON.parse(readFileSync(path, 'utf-8')) as {
+    const parsed = JSON.parse(readFileSync(path, "utf-8")) as {
       entries?: DuplicateAllowlistEntry[];
     };
     duplicateAllowlistCache = parsed.entries ?? [];
@@ -3868,21 +4118,21 @@ function loadDuplicateAllowlist(): DuplicateAllowlistEntry[] {
  *  is a directory-prefix match, a trailing `*` is a plain prefix match,
  *  otherwise exact string equality. */
 function globMatchSingle(pattern: string, value: string): boolean {
-  if (pattern === '*') return true;
-  if (pattern.endsWith('/**')) return value.startsWith(pattern.slice(0, -2)); // keep the trailing '/'
-  if (pattern.endsWith('*')) return value.startsWith(pattern.slice(0, -1));
+  if (pattern === "*") return true;
+  if (pattern.endsWith("/**")) return value.startsWith(pattern.slice(0, -2)); // keep the trailing '/'
+  if (pattern.endsWith("*")) return value.startsWith(pattern.slice(0, -1));
   return value === pattern;
 }
 
 function findAllowlistMatch(
   allowlist: DuplicateAllowlistEntry[],
   name: string,
-  filePath: string
+  filePath: string,
 ): DuplicateAllowlistEntry | undefined {
   return allowlist.find(
     (e) =>
       e.names.some((n) => globMatchSingle(n, name)) &&
-      e.filesGlob.some((f) => globMatchSingle(f, filePath))
+      e.filesGlob.some((f) => globMatchSingle(f, filePath)),
   );
 }
 
@@ -3894,22 +4144,22 @@ const rawFileContentCache = new Map<string, string>();
 function getRawFileContent(relPath: string): string {
   const cached = rawFileContentCache.get(relPath);
   if (cached !== undefined) return cached;
-  let content = '';
+  let content = "";
   try {
-    content = readFileSync(join(ROOT_DIR, relPath), 'utf-8');
+    content = readFileSync(join(ROOT_DIR, relPath), "utf-8");
   } catch {
-    content = '';
+    content = "";
   }
   rawFileContentCache.set(relPath, content);
   return content;
 }
 
 function stripCommentsForClassification(content: string): string {
-  return content.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  return content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 }
 
 function escapeRegExpLiteral(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /** `export const NAME = mathTyped('NAME', {...` (optional generic args) — a
@@ -3917,7 +4167,7 @@ function escapeRegExpLiteral(s: string): string {
  *  not a copy-paste duplicate body. */
 function isDispatchVariantBody(code: string, name: string): boolean {
   const re = new RegExp(
-    `export\\s+const\\s+${escapeRegExpLiteral(name)}\\s*(?::[^=]+)?=\\s*mathTyped\\s*(?:<[^>]*>)?\\s*\\(`
+    `export\\s+const\\s+${escapeRegExpLiteral(name)}\\s*(?::[^=]+)?=\\s*mathTyped\\s*(?:<[^>]*>)?\\s*\\(`,
   );
   return re.test(code);
 }
@@ -3934,12 +4184,12 @@ function collectImportedLocalNames(code: string): Set<string> {
     /import\s+(?:type\s+)?(?:(?:\{([^}]+)\}|(\w+)|\*\s+as\s+(\w+))(?:\s*,\s*(?:\{([^}]+)\}|(\w+)))?)\s+from\s+['"][^'"]+['"]/g;
   let m: RegExpExecArray | null;
   while ((m = importRegex.exec(code)) !== null) {
-    const named = m[1] || m[4] || '';
-    const def = m[2] || m[5] || '';
-    const ns = m[3] || '';
+    const named = m[1] || m[4] || "";
+    const def = m[2] || m[5] || "";
+    const ns = m[3] || "";
     if (named) {
-      for (const item of named.split(',')) {
-        const trimmed = item.trim().replace(/^type\s+/, '');
+      for (const item of named.split(",")) {
+        const trimmed = item.trim().replace(/^type\s+/, "");
         if (!trimmed) continue;
         const parts = trimmed.split(/\s+as\s+/);
         const local = parts[parts.length - 1].trim();
@@ -3959,10 +4209,10 @@ function collectImportedLocalNames(code: string): Set<string> {
 function isAliasDelegationBody(
   code: string,
   name: string,
-  importedLocalNames: Set<string>
+  importedLocalNames: Set<string>,
 ): boolean {
   const re = new RegExp(
-    `export\\s+const\\s+${escapeRegExpLiteral(name)}\\s*(?::[^=]+)?=\\s*([A-Za-z_$][\\w$]*)\\s*;`
+    `export\\s+const\\s+${escapeRegExpLiteral(name)}\\s*(?::[^=]+)?=\\s*([A-Za-z_$][\\w$]*)\\s*;`,
   );
   const m = code.match(re);
   return !!m && importedLocalNames.has(m[1]);
@@ -3979,22 +4229,22 @@ function classifyDefiner(
   file: ParsedFile,
   name: string,
   category: string,
-  allowlist: DuplicateAllowlistEntry[]
+  allowlist: DuplicateAllowlistEntry[],
 ): { tag: DupDefinerTag; reason?: string } {
   const allowMatch = findAllowlistMatch(allowlist, name, file.path);
-  if (allowMatch) return { tag: 'ALLOWLISTED', reason: allowMatch.reason };
+  if (allowMatch) return { tag: "ALLOWLISTED", reason: allowMatch.reason };
 
-  if (category === 'constant') {
+  if (category === "constant") {
     const raw = getRawFileContent(file.path);
     if (raw) {
       const code = stripCommentsForClassification(raw);
-      if (isDispatchVariantBody(code, name)) return { tag: 'DISPATCH_VARIANT' };
+      if (isDispatchVariantBody(code, name)) return { tag: "DISPATCH_VARIANT" };
       if (isAliasDelegationBody(code, name, collectImportedLocalNames(code))) {
-        return { tag: 'ALIAS_DELEGATION' };
+        return { tag: "ALIAS_DELEGATION" };
       }
     }
   }
-  return { tag: 'PLAIN' };
+  return { tag: "PLAIN" };
 }
 
 /**
@@ -4004,9 +4254,12 @@ function classifyDefiner(
  */
 function collectOwnDefiners(
   files: ParsedFile[],
-  categories: Array<{ cat: string; key: DupExportKey }>
+  categories: Array<{ cat: string; key: DupExportKey }>,
 ): Map<string, Array<{ file: ParsedFile; category: string }>> {
-  const byName = new Map<string, Array<{ file: ParsedFile; category: string }>>();
+  const byName = new Map<
+    string,
+    Array<{ file: ParsedFile; category: string }>
+  >();
   for (const file of files) {
     const reExported = new Set(file.exports.reExported);
     for (const { cat, key } of categories) {
@@ -4015,7 +4268,7 @@ function collectOwnDefiners(
         // `exports.types` also contains every interface name (the parser
         // pushes interfaces into both `interfaces` and `types`) — skip so an
         // interface isn't double-counted as its own "type" duplicate too.
-        if (key === 'types' && file.exports.interfaces.includes(name)) continue;
+        if (key === "types" && file.exports.interfaces.includes(name)) continue;
         if (!byName.has(name)) byName.set(name, []);
         byName.get(name)!.push({ file, category: cat });
       }
@@ -4052,16 +4305,22 @@ function finalizeDuplicateEntry(
   name: string,
   categories: Set<string>,
   definers: DuplicateDefiner[],
-  tag: DupEntryTag
+  tag: DupEntryTag,
 ): DuplicateSymbolEntry {
   const publicDefiners = definers.filter((d) => d.public);
   const canonicalHint =
     publicDefiners.length === 1
       ? publicDefiners[0].file
       : publicDefiners.length > 1
-        ? 'AMBIGUOUS'
-        : 'internal-only';
-  return { name, category: [...categories].sort().join('+'), definers, canonicalHint, tag };
+        ? "AMBIGUOUS"
+        : "internal-only";
+  return {
+    name,
+    category: [...categories].sort().join("+"),
+    definers,
+    canonicalHint,
+    tag,
+  };
 }
 
 /**
@@ -4102,7 +4361,7 @@ function finalizeDuplicateEntry(
 function buildDuplicateEntries(
   byName: Map<string, Array<{ file: ParsedFile; category: string }>>,
   publicSurface: PublicSurface,
-  allowlist: DuplicateAllowlistEntry[]
+  allowlist: DuplicateAllowlistEntry[],
 ): DuplicateSymbolEntry[] {
   const isFilePublic = (file: ParsedFile, name: string): boolean =>
     publicSurface.publicWildcardFiles.has(file.path) ||
@@ -4123,7 +4382,7 @@ function buildDuplicateEntries(
       const { tag, reason } = classifyDefiner(file, name, category, allowlist);
       definers.push({
         file: file.path,
-        package: file.packageName ?? 'unknown',
+        package: file.packageName ?? "unknown",
         public: isFilePublic(file, name),
         tag,
         ...(reason ? { reason } : {}),
@@ -4131,19 +4390,23 @@ function buildDuplicateEntries(
     }
     definers.sort((a, b) => a.file.localeCompare(b.file));
 
-    const nonAlias = definers.filter((d) => d.tag !== 'ALIAS_DELEGATION');
+    const nonAlias = definers.filter((d) => d.tag !== "ALIAS_DELEGATION");
     if (nonAlias.length < 2) {
-      entries.push(finalizeDuplicateEntry(name, categories, definers, 'ALIAS_DELEGATION'));
+      entries.push(
+        finalizeDuplicateEntry(name, categories, definers, "ALIAS_DELEGATION"),
+      );
       continue;
     }
 
-    const nonAllowlisted = nonAlias.filter((d) => d.tag !== 'ALLOWLISTED');
+    const nonAllowlisted = nonAlias.filter((d) => d.tag !== "ALLOWLISTED");
     let entryTag: DupEntryTag;
     if (nonAllowlisted.length < 2) {
-      entryTag = 'ALLOWLISTED';
+      entryTag = "ALLOWLISTED";
     } else {
-      const dispatchCount = nonAllowlisted.filter((d) => d.tag === 'DISPATCH_VARIANT').length;
-      entryTag = dispatchCount >= 2 ? 'DISPATCH_VARIANT' : 'TRUE_DUPLICATE';
+      const dispatchCount = nonAllowlisted.filter(
+        (d) => d.tag === "DISPATCH_VARIANT",
+      ).length;
+      entryTag = dispatchCount >= 2 ? "DISPATCH_VARIANT" : "TRUE_DUPLICATE";
     }
     entries.push(finalizeDuplicateEntry(name, categories, definers, entryTag));
   }
@@ -4151,12 +4414,14 @@ function buildDuplicateEntries(
     (a, b) =>
       DUP_ENTRY_TAG_SORT_ORDER[a.tag] - DUP_ENTRY_TAG_SORT_ORDER[b.tag] ||
       b.definers.length - a.definers.length ||
-      a.name.localeCompare(b.name)
+      a.name.localeCompare(b.name),
   );
   return entries;
 }
 
-function tallyByTag(entries: DuplicateSymbolEntry[]): Record<DupEntryTag, number> {
+function tallyByTag(
+  entries: DuplicateSymbolEntry[],
+): Record<DupEntryTag, number> {
   const tally: Record<DupEntryTag, number> = {
     TRUE_DUPLICATE: 0,
     DISPATCH_VARIANT: 0,
@@ -4169,25 +4434,27 @@ function tallyByTag(entries: DuplicateSymbolEntry[]): Record<DupEntryTag, number
 
 function detectDuplicateSymbols(
   files: ParsedFile[],
-  publicSurface: PublicSurface
+  publicSurface: PublicSurface,
 ): { runtime: DuplicateSymbolEntry[]; types: DuplicateSymbolEntry[] } {
   const allowlist = loadDuplicateAllowlist();
   return {
     runtime: buildDuplicateEntries(
       collectOwnDefiners(files, RUNTIME_DUP_CATEGORIES),
       publicSurface,
-      allowlist
+      allowlist,
     ),
     types: buildDuplicateEntries(
       collectOwnDefiners(files, TYPE_DUP_CATEGORIES),
       publicSurface,
-      allowlist
+      allowlist,
     ),
   };
 }
 
-function generateDuplicateSymbolsMarkdown(report: DuplicateSymbolsReport): string {
-  let md = '# Duplicate Symbols\n\n';
+function generateDuplicateSymbolsMarkdown(
+  report: DuplicateSymbolsReport,
+): string {
+  let md = "# Duplicate Symbols\n\n";
   md += `**Generated**: ${report.generated} (by tools/create-dependency-graph)\n\n`;
   md += `Names that are OWN-DEFINED (not merely re-exported) by >= 2 distinct files across `;
   md += `the monorepo, then CLASSIFIED (see \`DupEntryTag\`) so the actionable subset is clear: `;
@@ -4199,7 +4466,10 @@ function generateDuplicateSymbolsMarkdown(report: DuplicateSymbolsReport): strin
   md += `per-package \`VERSION\` strings).\n\n`;
   md += `> **Note:** ${report.note}\n\n`;
 
-  const summaryTable = (byTag: Record<DupEntryTag, number>, total: number): string =>
+  const summaryTable = (
+    byTag: Record<DupEntryTag, number>,
+    total: number,
+  ): string =>
     `| Category | Count |\n| --- | --: |\n` +
     `| **TRUE_DUPLICATE** (actionable) | ${byTag.TRUE_DUPLICATE} |\n` +
     `| DISPATCH_VARIANT | ${byTag.DISPATCH_VARIANT} |\n` +
@@ -4213,56 +4483,69 @@ function generateDuplicateSymbolsMarkdown(report: DuplicateSymbolsReport): strin
   md += summaryTable(report.summary.typeByTag, report.types.length);
 
   const renderTable = (entries: DuplicateSymbolEntry[]): string => {
-    if (entries.length === 0) return '_None._\n\n';
-    let out = '| Name | Category | Defining files (package, public?, sub-tag) | Canonical hint |\n';
-    out += '| --- | --- | --- | --- |\n';
+    if (entries.length === 0) return "_None._\n\n";
+    let out =
+      "| Name | Category | Defining files (package, public?, sub-tag) | Canonical hint |\n";
+    out += "| --- | --- | --- | --- |\n";
     for (const e of entries) {
       const files = e.definers
         .map((d) => {
-          const reasonSuffix = d.reason ? `: ${d.reason}` : '';
-          return `\`${d.file}\` (${d.package}, ${d.public ? 'public' : 'internal'}, ${d.tag}${reasonSuffix})`;
+          const reasonSuffix = d.reason ? `: ${d.reason}` : "";
+          return `\`${d.file}\` (${d.package}, ${d.public ? "public" : "internal"}, ${d.tag}${reasonSuffix})`;
         })
-        .join('<br>');
-      const hint = e.canonicalHint === 'AMBIGUOUS' ? '**AMBIGUOUS**' : `\`${e.canonicalHint}\``;
+        .join("<br>");
+      const hint =
+        e.canonicalHint === "AMBIGUOUS"
+          ? "**AMBIGUOUS**"
+          : `\`${e.canonicalHint}\``;
       out += `| \`${e.name}\` | ${e.category} | ${files} | ${hint} |\n`;
     }
-    out += '\n';
+    out += "\n";
     return out;
   };
 
   const renderTaggedSection = (
     title: string,
     entries: DuplicateSymbolEntry[],
-    tag: DupEntryTag
-  ): string => `### ${title}\n\n${renderTable(entries.filter((e) => e.tag === tag))}`;
+    tag: DupEntryTag,
+  ): string =>
+    `### ${title}\n\n${renderTable(entries.filter((e) => e.tag === tag))}`;
 
   md += `## Runtime duplicates\n\n`;
   md += renderTaggedSection(
-    'TRUE_DUPLICATE — actionable merge targets',
+    "TRUE_DUPLICATE — actionable merge targets",
     report.runtime,
-    'TRUE_DUPLICATE'
+    "TRUE_DUPLICATE",
   );
   md += renderTaggedSection(
-    'DISPATCH_VARIANT — distinct public typed-dispatch surfaces (Bucket C candidates)',
+    "DISPATCH_VARIANT — distinct public typed-dispatch surfaces (Bucket C candidates)",
     report.runtime,
-    'DISPATCH_VARIANT'
+    "DISPATCH_VARIANT",
   );
   md += renderTaggedSection(
-    'ALIAS_DELEGATION — const-alias forwards (not independent bodies)',
+    "ALIAS_DELEGATION — const-alias forwards (not independent bodies)",
     report.runtime,
-    'ALIAS_DELEGATION'
+    "ALIAS_DELEGATION",
   );
   md += renderTaggedSection(
-    'ALLOWLISTED — accepted layering (see duplicate-allowlist.json)',
+    "ALLOWLISTED — accepted layering (see duplicate-allowlist.json)",
     report.runtime,
-    'ALLOWLISTED'
+    "ALLOWLISTED",
   );
 
   md += `## Type duplicates (lower priority)\n\n`;
-  md += renderTaggedSection('TRUE_DUPLICATE', report.types, 'TRUE_DUPLICATE');
-  md += renderTaggedSection('DISPATCH_VARIANT', report.types, 'DISPATCH_VARIANT');
-  md += renderTaggedSection('ALIAS_DELEGATION', report.types, 'ALIAS_DELEGATION');
-  md += renderTaggedSection('ALLOWLISTED', report.types, 'ALLOWLISTED');
+  md += renderTaggedSection("TRUE_DUPLICATE", report.types, "TRUE_DUPLICATE");
+  md += renderTaggedSection(
+    "DISPATCH_VARIANT",
+    report.types,
+    "DISPATCH_VARIANT",
+  );
+  md += renderTaggedSection(
+    "ALIAS_DELEGATION",
+    report.types,
+    "ALIAS_DELEGATION",
+  );
+  md += renderTaggedSection("ALLOWLISTED", report.types, "ALLOWLISTED");
 
   return md;
 }
@@ -4291,16 +4574,16 @@ function generateDuplicateSymbolsMarkdown(report: DuplicateSymbolsReport): strin
 // equals the git-tracked `.ts` files, so there is provably no silent blind spot.
 
 type FileDisposition =
-  | 'reachable'
-  | 'build-entry'
-  | 'test-only'
-  | 'orphan'
-  | 'test'
-  | 'tool'
-  | 'config'
-  | 'example';
+  | "reachable"
+  | "build-entry"
+  | "test-only"
+  | "orphan"
+  | "test"
+  | "tool"
+  | "config"
+  | "example";
 
-type FileArea = 'src' | 'tests' | 'tools' | 'config' | 'examples' | 'docs';
+type FileArea = "src" | "tests" | "tools" | "config" | "examples" | "docs";
 
 interface FileInventoryRow {
   file: string;
@@ -4328,11 +4611,16 @@ function walkRepoTsFiles(rootDir: string): string[] {
   const out: string[] = [];
   const walk = (dir: string): void => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue;
+      if (
+        e.name === "node_modules" ||
+        e.name === "dist" ||
+        e.name.startsWith(".")
+      )
+        continue;
       const p = join(dir, e.name);
       if (e.isDirectory()) walk(p);
-      else if (e.name.endsWith('.ts') && !e.name.endsWith('.d.ts')) {
-        out.push(relative(rootDir, p).replace(/\\/g, '/'));
+      else if (e.name.endsWith(".ts") && !e.name.endsWith(".d.ts")) {
+        out.push(relative(rootDir, p).replace(/\\/g, "/"));
       }
     }
   };
@@ -4346,24 +4634,33 @@ function walkRepoTsFiles(rootDir: string): string[] {
  *  `walkRepoTsFiles` (it never sees a brand-new top-level dir), so the maximal gate
  *  can catch a scoping gap between them. Same exclusions (node_modules/dist/dot-dirs).
  */
-function collectCensusFiles(rootDir: string, workspaces: Map<string, WorkspacePackage>): string[] {
+function collectCensusFiles(
+  rootDir: string,
+  workspaces: Map<string, WorkspacePackage>,
+): string[] {
   const set = new Set<string>();
   const walk = (dir: string): void => {
     if (!existsSync(dir)) return;
     for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue;
+      if (
+        e.name === "node_modules" ||
+        e.name === "dist" ||
+        e.name.startsWith(".")
+      )
+        continue;
       const p = join(dir, e.name);
       if (e.isDirectory()) walk(p);
-      else if (e.name.endsWith('.ts') && !e.name.endsWith('.d.ts')) {
-        set.add(relative(rootDir, p).replace(/\\/g, '/'));
+      else if (e.name.endsWith(".ts") && !e.name.endsWith(".d.ts")) {
+        set.add(relative(rootDir, p).replace(/\\/g, "/"));
       }
     }
   };
   for (const [, ws] of workspaces) walk(join(rootDir, ws.directory));
-  for (const d of ['tests', 'tools', 'examples', 'docs']) walk(join(rootDir, d));
+  for (const d of ["tests", "tools", "examples", "docs"])
+    walk(join(rootDir, d));
   // Root-level `.ts` files (vitest.config.ts, vitest.config.browser.ts, …).
   for (const e of readdirSync(rootDir, { withFileTypes: true })) {
-    if (e.isFile() && e.name.endsWith('.ts') && !e.name.endsWith('.d.ts')) {
+    if (e.isFile() && e.name.endsWith(".ts") && !e.name.endsWith(".d.ts")) {
       set.add(e.name);
     }
   }
@@ -4374,27 +4671,31 @@ function collectCensusFiles(rootDir: string, workspaces: Map<string, WorkspacePa
  *  independent of the module graph. Order matters: `tools/` and `*.config.ts` win
  *  before the `tests/` and `src` checks. */
 function classifyArea(rel: string): FileArea {
-  if (/(^|\/)tools\//.test(rel)) return 'tools';
+  if (/(^|\/)tools\//.test(rel)) return "tools";
   // `*.config.ts` and its variants (`vitest.config.browser.ts`, `*.config.bench.ts`).
-  if (/\.config(\.[\w-]+)?\.[cm]?ts$/.test(rel)) return 'config';
-  if (/\.(test|spec)\.ts$/.test(rel) || /(^|\/)tests\//.test(rel)) return 'tests';
-  if (/^examples\//.test(rel)) return 'examples';
-  if (/^docs\//.test(rel)) return 'docs';
-  return 'src';
+  if (/\.config(\.[\w-]+)?\.[cm]?ts$/.test(rel)) return "config";
+  if (/\.(test|spec)\.ts$/.test(rel) || /(^|\/)tests\//.test(rel))
+    return "tests";
+  if (/^examples\//.test(rel)) return "examples";
+  if (/^docs\//.test(rel)) return "docs";
+  return "src";
 }
 
 /** The workspace package a file belongs to (nearest directory prefix), or
  *  `(root)` for repo-root files (root tests/tools/examples/docs/config). */
-function packageOf(rel: string, workspaces: Map<string, WorkspacePackage>): string {
+function packageOf(
+  rel: string,
+  workspaces: Map<string, WorkspacePackage>,
+): string {
   for (const [name, ws] of workspaces) {
-    if (rel.startsWith(ws.directory + '/')) return name;
+    if (rel.startsWith(ws.directory + "/")) return name;
   }
-  return '(root)';
+  return "(root)";
 }
 
 function countLoc(rootDir: string, relPath: string): number {
   try {
-    return readFileSync(join(rootDir, relPath), 'utf-8').split('\n').length;
+    return readFileSync(join(rootDir, relPath), "utf-8").split("\n").length;
   } catch {
     return 0;
   }
@@ -4414,28 +4715,28 @@ function buildFileInventory(
   workspaces: Map<string, WorkspacePackage>,
   roots: Set<string>,
   reachable: Set<string>,
-  testReachable: Set<string>
+  testReachable: Set<string>,
 ): FileInventory {
   const rows: FileInventoryRow[] = [];
   for (const rel of collectCensusFiles(rootDir, workspaces)) {
     const area = classifyArea(rel);
     let disposition: FileDisposition;
-    if (area === 'src') {
+    if (area === "src") {
       disposition = roots.has(rel)
-        ? 'build-entry'
+        ? "build-entry"
         : reachable.has(rel)
-          ? 'reachable'
+          ? "reachable"
           : testReachable.has(rel)
-            ? 'test-only'
-            : 'orphan';
-    } else if (area === 'tests') {
-      disposition = 'test';
-    } else if (area === 'tools') {
-      disposition = 'tool';
-    } else if (area === 'config') {
-      disposition = 'config';
+            ? "test-only"
+            : "orphan";
+    } else if (area === "tests") {
+      disposition = "test";
+    } else if (area === "tools") {
+      disposition = "tool";
+    } else if (area === "config") {
+      disposition = "config";
     } else {
-      disposition = 'example'; // examples | docs
+      disposition = "example"; // examples | docs
     }
     rows.push({
       file: rel,
@@ -4449,8 +4750,8 @@ function buildFileInventory(
 
   const byDisposition: Record<string, number> = {
     reachable: 0,
-    'build-entry': 0,
-    'test-only': 0,
+    "build-entry": 0,
+    "test-only": 0,
     orphan: 0,
     test: 0,
     tool: 0,
@@ -4466,7 +4767,7 @@ function buildFileInventory(
   }
 
   return {
-    generated: new Date().toISOString().split('T')[0],
+    generated: new Date().toISOString().split("T")[0],
     totalFiles: rows.length,
     byDisposition,
     byArea,
@@ -4476,80 +4777,98 @@ function buildFileInventory(
 }
 
 const FILE_DISPOSITION_LEGEND: Array<[FileDisposition, string]> = [
-  ['reachable', 'A `src/` file in the module graph, reachable from a root.'],
+  ["reachable", "A `src/` file in the module graph, reachable from a root."],
   [
-    'build-entry',
-    'A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …).',
+    "build-entry",
+    "A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …).",
   ],
-  ['test-only', 'A `src/` file not reachable from src roots but imported by a test.'],
   [
-    'orphan',
-    'A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate).',
+    "test-only",
+    "A `src/` file not reachable from src roots but imported by a test.",
   ],
-  ['test', 'A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).'],
-  ['tool', 'A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks).'],
-  ['config', 'A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).'],
-  ['example', 'An `examples/` or `docs/` reference/illustration source.'],
+  [
+    "orphan",
+    "A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate).",
+  ],
+  [
+    "test",
+    "A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).",
+  ],
+  [
+    "tool",
+    "A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks).",
+  ],
+  [
+    "config",
+    "A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).",
+  ],
+  ["example", "An `examples/` or `docs/` reference/illustration source."],
 ];
 
 function generateFileInventoryMarkdown(inv: FileInventory): string {
   const lines: string[] = [];
-  lines.push('# Complete File Inventory');
-  lines.push('');
-  lines.push(`**Generated**: ${inv.generated} (by tools/create-dependency-graph)`);
-  lines.push('');
+  lines.push("# Complete File Inventory");
+  lines.push("");
   lines.push(
-    'Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-root ' +
-      'cross-package `tests/`, `tools/`, build/test `*.config.ts`, `examples/`, and `docs/` ' +
-      'reference sources — tagged with a disposition. A completeness census: no `.ts` may be ' +
-      'silently missing. The self-check gate (`verifyFileCensus`) does a MAXIMAL, ' +
-      'location-agnostic repo walk (broader than this census’s enumerated discovery) and ' +
-      'HARD-FAILS `npm run docs:deps` if any `.ts` on disk is unaccounted, or if any `orphan` exists.'
+    `**Generated**: ${inv.generated} (by tools/create-dependency-graph)`,
   );
-  lines.push('');
+  lines.push("");
   lines.push(
-    '**Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient ' +
-      'declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The ' +
-      'walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every ' +
-      'tracked `.ts` appears below with an explicit disposition.'
+    "Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-root " +
+      "cross-package `tests/`, `tools/`, build/test `*.config.ts`, `examples/`, and `docs/` " +
+      "reference sources — tagged with a disposition. A completeness census: no `.ts` may be " +
+      "silently missing. The self-check gate (`verifyFileCensus`) does a MAXIMAL, " +
+      "location-agnostic repo walk (broader than this census’s enumerated discovery) and " +
+      "HARD-FAILS `npm run docs:deps` if any `.ts` on disk is unaccounted, or if any `orphan` exists.",
   );
-  lines.push('');
+  lines.push("");
+  lines.push(
+    "**Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient " +
+      "declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The " +
+      "walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every " +
+      "tracked `.ts` appears below with an explicit disposition.",
+  );
+  lines.push("");
   lines.push(`**Total files**: ${inv.totalFiles}`);
-  lines.push('');
-  lines.push('## Disposition counts');
-  lines.push('');
-  lines.push('| Disposition | Count | Meaning |');
-  lines.push('| --- | --: | --- |');
+  lines.push("");
+  lines.push("## Disposition counts");
+  lines.push("");
+  lines.push("| Disposition | Count | Meaning |");
+  lines.push("| --- | --: | --- |");
   for (const [disp, meaning] of FILE_DISPOSITION_LEGEND) {
-    lines.push(`| \`${disp}\` | ${inv.byDisposition[disp] ?? 0} | ${meaning} |`);
+    lines.push(
+      `| \`${disp}\` | ${inv.byDisposition[disp] ?? 0} | ${meaning} |`,
+    );
   }
   lines.push(`| **Total** | **${inv.totalFiles}** | |`);
-  lines.push('');
-  lines.push('## Per-area counts');
-  lines.push('');
-  lines.push('| Area | Files |');
-  lines.push('| --- | --: |');
+  lines.push("");
+  lines.push("## Per-area counts");
+  lines.push("");
+  lines.push("| Area | Files |");
+  lines.push("| --- | --: |");
   for (const area of Object.keys(inv.byArea).sort()) {
     lines.push(`| \`${area}\` | ${inv.byArea[area]} |`);
   }
-  lines.push('');
-  lines.push('## Per-package counts');
-  lines.push('');
-  lines.push('| Package | Files |');
-  lines.push('| --- | --: |');
+  lines.push("");
+  lines.push("## Per-package counts");
+  lines.push("");
+  lines.push("| Package | Files |");
+  lines.push("| --- | --: |");
   for (const pkg of Object.keys(inv.byPackage).sort()) {
     lines.push(`| \`${pkg}\` | ${inv.byPackage[pkg]} |`);
   }
-  lines.push('');
-  lines.push('## All files');
-  lines.push('');
-  lines.push('| file | package | area | disposition |');
-  lines.push('| --- | --- | --- | --- |');
+  lines.push("");
+  lines.push("## All files");
+  lines.push("");
+  lines.push("| file | package | area | disposition |");
+  lines.push("| --- | --- | --- | --- |");
   for (const r of inv.files) {
-    lines.push(`| \`${r.file}\` | ${r.package} | ${r.area} | ${r.disposition} |`);
+    lines.push(
+      `| \`${r.file}\` | ${r.package} | ${r.area} | ${r.disposition} |`,
+    );
   }
-  lines.push('');
-  return lines.join('\n');
+  lines.push("");
+  return lines.join("\n");
 }
 
 /**
@@ -4575,31 +4894,35 @@ function verifyFileCensus(rootDir: string, inventory: FileInventory): void {
   const missingFromCensus = [...onDisk].filter((f) => !census.has(f)).sort();
   const missingFromDisk = [...census].filter((f) => !onDisk.has(f)).sort();
   const orphans = inventory.files
-    .filter((f) => f.disposition === 'orphan')
+    .filter((f) => f.disposition === "orphan")
     .map((f) => f.file)
     .sort();
 
-  if (missingFromCensus.length > 0 || missingFromDisk.length > 0 || orphans.length > 0) {
-    let msg = 'FILE CENSUS SELF-CHECK FAILED.\n';
+  if (
+    missingFromCensus.length > 0 ||
+    missingFromDisk.length > 0 ||
+    orphans.length > 0
+  ) {
+    let msg = "FILE CENSUS SELF-CHECK FAILED.\n";
     if (missingFromCensus.length > 0) {
       msg += `  ${missingFromCensus.length} file(s) on disk but ABSENT from the census (scoping/discovery gap — teach the census to enumerate this location):\n`;
-      msg += missingFromCensus.map((f) => `    + ${f}`).join('\n') + '\n';
+      msg += missingFromCensus.map((f) => `    + ${f}`).join("\n") + "\n";
     }
     if (missingFromDisk.length > 0) {
       msg += `  ${missingFromDisk.length} file(s) in the census but MISSING on disk (stale entry — regenerate with \`npm run docs:deps\`):\n`;
-      msg += missingFromDisk.map((f) => `    - ${f}`).join('\n') + '\n';
+      msg += missingFromDisk.map((f) => `    - ${f}`).join("\n") + "\n";
     }
     if (orphans.length > 0) {
       msg += `  ${orphans.length} ORPHAN file(s) — a src file reachable from no root and no test. Each is a\n`;
       msg += `  build/worker/subpath root the tool did not detect (wire it / seed it — see\n`;
       msg += `  tools/create-dependency-graph tsup.config / exports / bin root handling), or dead\n`;
       msg += `  code to delete:\n`;
-      msg += orphans.map((f) => `    ! ${f}`).join('\n') + '\n';
+      msg += orphans.map((f) => `    ! ${f}`).join("\n") + "\n";
     }
     throw new Error(msg);
   }
   console.log(
-    `File census self-check passed: ${inventory.totalFiles} files == maximal repo walk (independent), 0 orphans.`
+    `File census self-check passed: ${inventory.totalFiles} files == maximal repo walk (independent), 0 orphans.`,
   );
 }
 
@@ -4611,13 +4934,13 @@ function verifyFileCensus(rootDir: string, inventory: FileInventory): void {
  * catches a `.ts` added anywhere in the repo after the last `docs:deps`.
  */
 function runCensusCheckNoRegen(rootDir: string): void {
-  const invPath = join(rootDir, 'docs', 'Architecture', 'file-inventory.json');
+  const invPath = join(rootDir, "docs", "Architecture", "file-inventory.json");
   if (!existsSync(invPath)) {
     throw new Error(
-      `file-census check: ${invPath} not found — run \`npm run docs:deps\` first to generate it.`
+      `file-census check: ${invPath} not found — run \`npm run docs:deps\` first to generate it.`,
     );
   }
-  const inventory = JSON.parse(readFileSync(invPath, 'utf-8')) as FileInventory;
+  const inventory = JSON.parse(readFileSync(invPath, "utf-8")) as FileInventory;
   verifyFileCensus(rootDir, inventory);
 }
 
@@ -4632,13 +4955,15 @@ async function main(): Promise<void> {
   // a `.ts` added anywhere in the repo since the last `docs:deps`. Throws → exit 1.
   if (cliOptions.checkCensus) {
     runCensusCheckNoRegen(ROOT_DIR);
-    console.log('file-census check passed (no-regen): committed inventory matches the repo.');
+    console.log(
+      "file-census check passed (no-regen): committed inventory matches the repo.",
+    );
     return;
   }
 
-  console.log('Scanning codebase for dependencies...');
+  console.log("Scanning codebase for dependencies...");
   if (cliOptions.includeTests) {
-    console.log('Test file analysis enabled');
+    console.log("Test file analysis enabled");
   }
 
   // Detect workspace packages
@@ -4651,7 +4976,7 @@ async function main(): Promise<void> {
       console.log(`  - ${name} (${ws.directory}/)`);
     }
     if (cliOptions.all) {
-      console.log('Including dormant/unreachable files (--all)');
+      console.log("Including dormant/unreachable files (--all)");
     }
   }
 
@@ -4678,13 +5003,13 @@ async function main(): Promise<void> {
   console.log(`Found ${tsFiles.length} TypeScript files total`);
 
   if (tsFiles.length === 0) {
-    console.error('No TypeScript files found');
+    console.error("No TypeScript files found");
     process.exit(1);
   }
 
   // Parse all files
   const parsedFiles = tsFiles.map(parseFile);
-  console.log('Parsed all files');
+  console.log("Parsed all files");
 
   // Reachability analysis (monorepo only)
   let reachableSet: Set<string> | undefined;
@@ -4700,7 +5025,10 @@ async function main(): Promise<void> {
     // roots that nothing imports but that are just as alive as the index.
     const entryPoints: string[] = [];
     for (const [, ws] of workspaceMap) {
-      const candidates = [`${ws.srcDir}/index.ts`.replace(/\\/g, '/'), ...ws.extraEntries];
+      const candidates = [
+        `${ws.srcDir}/index.ts`.replace(/\\/g, "/"),
+        ...ws.extraEntries,
+      ];
       for (const entryPath of candidates) {
         const found = parsedFiles.find((f) => f.path === entryPath);
         // Dedupe: a config-driven `tsup.config.ts` entry list re-lists index.ts
@@ -4719,7 +5047,10 @@ async function main(): Promise<void> {
     // browser shim through `new URL('./…/src/shim.ts', import.meta.url)`). Seed
     // any `src/*.ts` path mentioned by a root-level config file.
     for (const cfgEntry of configReferencedEntries(ROOT_DIR)) {
-      if (parsedFiles.some((f) => f.path === cfgEntry) && !entryPoints.includes(cfgEntry)) {
+      if (
+        parsedFiles.some((f) => f.path === cfgEntry) &&
+        !entryPoints.includes(cfgEntry)
+      ) {
         entryPoints.push(cfgEntry);
       }
     }
@@ -4727,18 +5058,22 @@ async function main(): Promise<void> {
     console.log(`Entry points: ${entryPoints.length}`);
     censusRoots = new Set(entryPoints);
     reachableSet = findReachableFiles(entryPoints, parsedFiles);
-    dormantSet = new Set(parsedFiles.filter((f) => !reachableSet!.has(f.path)).map((f) => f.path));
+    dormantSet = new Set(
+      parsedFiles.filter((f) => !reachableSet!.has(f.path)).map((f) => f.path),
+    );
     console.log(`Reachable files: ${reachableSet.size}`);
     console.log(`Dormant files: ${dormantSet.size}`);
 
     if (!cliOptions.all) {
       activeParsedFiles = parsedFiles.filter((f) => reachableSet!.has(f.path));
       console.log(
-        `Analyzing ${activeParsedFiles.length} reachable files (use --all to include dormant)`
+        `Analyzing ${activeParsedFiles.length} reachable files (use --all to include dormant)`,
       );
     } else {
       activeParsedFiles = parsedFiles;
-      console.log(`Analyzing all ${activeParsedFiles.length} files (including dormant)`);
+      console.log(
+        `Analyzing all ${activeParsedFiles.length} files (including dormant)`,
+      );
     }
   }
 
@@ -4749,7 +5084,7 @@ async function main(): Promise<void> {
   // Detect circular dependencies
   const circularDeps = detectCircularDependencies(activeParsedFiles);
   console.log(
-    `Found ${circularDeps.all.length} circular dependencies (${circularDeps.runtime.length} runtime, ${circularDeps.typeOnly.length} type-only)`
+    `Found ${circularDeps.all.length} circular dependencies (${circularDeps.runtime.length} runtime, ${circularDeps.typeOnly.length} type-only)`,
   );
 
   // Parse test files up-front UNCONDITIONALLY so the unused-analysis always sees
@@ -4760,16 +5095,19 @@ async function main(): Promise<void> {
   const testFilePaths: string[] = [];
   if (isMonorepo) {
     for (const [, ws] of workspaceMap) {
-      const testDir = join(ROOT_DIR, ws.directory, 'tests');
+      const testDir = join(ROOT_DIR, ws.directory, "tests");
       const srcDir = join(ROOT_DIR, ws.srcDir);
       testFilePaths.push(...getAllTestFiles(testDir));
       testFilePaths.push(...getAllTestFiles(srcDir));
     }
-    const rootTestDir = join(ROOT_DIR, 'tests');
+    const rootTestDir = join(ROOT_DIR, "tests");
     testFilePaths.push(...getAllTestFiles(rootTestDir));
   } else {
-    const testDir = join(ROOT_DIR, 'tests');
-    testFilePaths.push(...getAllTestFiles(testDir), ...getAllTestFiles(SRC_DIR));
+    const testDir = join(ROOT_DIR, "tests");
+    testFilePaths.push(
+      ...getAllTestFiles(testDir),
+      ...getAllTestFiles(SRC_DIR),
+    );
   }
   const parsedTestFiles: ParsedFile[] = testFilePaths.map(parseFile);
 
@@ -4777,16 +5115,27 @@ async function main(): Promise<void> {
   const unusedAnalysis = detectUnused(activeParsedFiles, parsedTestFiles);
 
   // Generate statistics
-  const stats = generateStatistics(activeParsedFiles, modules, circularDeps, unusedAnalysis);
-  console.log('Generated statistics');
+  const stats = generateStatistics(
+    activeParsedFiles,
+    modules,
+    circularDeps,
+    unusedAnalysis,
+  );
+  console.log("Generated statistics");
 
   // Build dependency matrix
   const matrix = buildDependencyMatrix(activeParsedFiles);
-  console.log('Built dependency matrix');
+  console.log("Built dependency matrix");
 
   // Generate outputs
   const json = generateJSON(activeParsedFiles, modules, stats, circularDeps);
-  let markdown = generateMarkdown(activeParsedFiles, modules, stats, circularDeps, matrix);
+  let markdown = generateMarkdown(
+    activeParsedFiles,
+    modules,
+    stats,
+    circularDeps,
+    matrix,
+  );
 
   // Insert package-level section for monorepo mode
   if (isMonorepo) {
@@ -4794,24 +5143,34 @@ async function main(): Promise<void> {
       parsedFiles,
       workspaceMap,
       reachableSet,
-      dormantSet
+      dormantSet,
     );
     // Insert after the Overview section
-    const overviewMarker = '## Overview';
+    const overviewMarker = "## Overview";
     const overviewIdx = markdown.indexOf(overviewMarker);
     if (overviewIdx !== -1) {
       // Find the '---' separator after Overview
-      const sepIdx = markdown.indexOf('\n---\n', overviewIdx + overviewMarker.length);
+      const sepIdx = markdown.indexOf(
+        "\n---\n",
+        overviewIdx + overviewMarker.length,
+      );
       if (sepIdx !== -1) {
         const insertPoint = sepIdx + 5; // after '\n---\n'
-        markdown = markdown.slice(0, insertPoint) + '\n' + pkgSection + markdown.slice(insertPoint);
+        markdown =
+          markdown.slice(0, insertPoint) +
+          "\n" +
+          pkgSection +
+          markdown.slice(insertPoint);
       }
     }
   }
 
   // Write outputs
-  writeFileSync(join(OUTPUT_DIR, 'dependency-graph.json'), JSON.stringify(json, null, 2));
-  console.log('Written: docs/Architecture/dependency-graph.json');
+  writeFileSync(
+    join(OUTPUT_DIR, "dependency-graph.json"),
+    JSON.stringify(json, null, 2),
+  );
+  console.log("Written: docs/Architecture/dependency-graph.json");
 
   // Write YAML output (more compact, ~40% smaller than JSON)
   const yamlOutput = yaml.dump(json, {
@@ -4822,18 +5181,26 @@ async function main(): Promise<void> {
     quotingType: '"',
     forceQuotes: false,
   });
-  writeFileSync(join(OUTPUT_DIR, 'dependency-graph.yaml'), yamlOutput);
-  console.log('Written: docs/Architecture/dependency-graph.yaml');
+  writeFileSync(join(OUTPUT_DIR, "dependency-graph.yaml"), yamlOutput);
+  console.log("Written: docs/Architecture/dependency-graph.yaml");
 
-  writeFileSync(join(OUTPUT_DIR, 'DEPENDENCY_GRAPH.md'), markdown);
-  console.log('Written: docs/Architecture/DEPENDENCY_GRAPH.md');
+  writeFileSync(join(OUTPUT_DIR, "DEPENDENCY_GRAPH.md"), markdown);
+  console.log("Written: docs/Architecture/DEPENDENCY_GRAPH.md");
 
   // Write compact summary for LLM consumption (CTON-style, ~10KB)
-  const compactSummary = generateCompactSummary(activeParsedFiles, modules, stats, circularDeps);
-  writeFileSync(join(OUTPUT_DIR, 'dependency-summary.compact.json'), compactSummary);
-  const compactSize = Buffer.byteLength(compactSummary, 'utf8');
+  const compactSummary = generateCompactSummary(
+    activeParsedFiles,
+    modules,
+    stats,
+    circularDeps,
+  );
+  writeFileSync(
+    join(OUTPUT_DIR, "dependency-summary.compact.json"),
+    compactSummary,
+  );
+  const compactSize = Buffer.byteLength(compactSummary, "utf8");
   console.log(
-    `Written: docs/Architecture/dependency-summary.compact.json (${(compactSize / 1024).toFixed(1)}KB)`
+    `Written: docs/Architecture/dependency-summary.compact.json (${(compactSize / 1024).toFixed(1)}KB)`,
   );
 
   // Per-package public export surface — the union of names reachable from each
@@ -4845,9 +5212,9 @@ async function main(): Promise<void> {
   // Internal helper exports that are reachable only by relative imports inside a
   // package must not appear here.
   const pkgOf = (moduleKey: string): string =>
-    moduleKey.startsWith('packages/')
-      ? moduleKey.split('/').slice(0, 2).join('/')
-      : moduleKey.split('/')[0];
+    moduleKey.startsWith("packages/")
+      ? moduleKey.split("/").slice(0, 2).join("/")
+      : moduleKey.split("/")[0];
   const surfaceSets: Record<string, Set<string>> = {};
   for (const [mkey, filesObj] of Object.entries(modules)) {
     const pkg = pkgOf(mkey);
@@ -4869,10 +5236,14 @@ async function main(): Promise<void> {
   for (const pkg of Object.keys(surfaceSets).sort())
     surfaces[pkg] = [...surfaceSets[pkg]].sort((a, b) => a.localeCompare(b));
   writeFileSync(
-    join(OUTPUT_DIR, 'package-export-surfaces.json'),
-    JSON.stringify({ generated: new Date().toISOString().split('T')[0], surfaces }, null, 2)
+    join(OUTPUT_DIR, "package-export-surfaces.json"),
+    JSON.stringify(
+      { generated: new Date().toISOString().split("T")[0], surfaces },
+      null,
+      2,
+    ),
   );
-  console.log('Written: docs/Architecture/package-export-surfaces.json');
+  console.log("Written: docs/Architecture/package-export-surfaces.json");
 
   // Duplicate-symbol detection — the measurement that scopes the "multiple
   // implementations of one name across packages" dedup campaign (three `fft`s;
@@ -4882,11 +5253,14 @@ async function main(): Promise<void> {
   // the flat package-export-surfaces.json above, which can't disambiguate two
   // same-package same-name definitions). See detectDuplicateSymbols doc comment
   // above for the full model.
-  const dup = detectDuplicateSymbols(activeParsedFiles, computePublicSurface(activeParsedFiles));
+  const dup = detectDuplicateSymbols(
+    activeParsedFiles,
+    computePublicSurface(activeParsedFiles),
+  );
   const runtimeByTag = tallyByTag(dup.runtime);
   const typeByTag = tallyByTag(dup.types);
   const duplicateReport: DuplicateSymbolsReport = {
-    generated: new Date().toISOString().split('T')[0],
+    generated: new Date().toISOString().split("T")[0],
     note: DUPLICATE_SYMBOLS_NOTE,
     summary: {
       runtimeDuplicates: runtimeByTag.TRUE_DUPLICATE,
@@ -4898,25 +5272,25 @@ async function main(): Promise<void> {
     types: dup.types,
   };
   writeFileSync(
-    join(OUTPUT_DIR, 'duplicate-symbols.json'),
-    JSON.stringify(duplicateReport, null, 2)
+    join(OUTPUT_DIR, "duplicate-symbols.json"),
+    JSON.stringify(duplicateReport, null, 2),
   );
   writeFileSync(
-    join(OUTPUT_DIR, 'duplicate-symbols.md'),
-    generateDuplicateSymbolsMarkdown(duplicateReport)
+    join(OUTPUT_DIR, "duplicate-symbols.md"),
+    generateDuplicateSymbolsMarkdown(duplicateReport),
   );
   console.log(
     `Written: docs/Architecture/duplicate-symbols.md ` +
       `(${duplicateReport.summary.runtimeDuplicates} runtime TRUE_DUPLICATE / ` +
       `${dup.runtime.length} runtime flagged, ` +
       `${duplicateReport.summary.typeDuplicates} type TRUE_DUPLICATE / ` +
-      `${dup.types.length} type flagged)`
+      `${dup.types.length} type flagged)`,
   );
 
   // Test coverage analysis (when --include-tests is specified)
   let testCoverage: TestCoverageAnalysis | null = null;
   if (cliOptions.includeTests) {
-    console.log('\nAnalyzing test coverage...');
+    console.log("\nAnalyzing test coverage...");
     // Test files were parsed up-front so the unused-analysis could
     // also see them; reuse those parses here.
     console.log(`Found ${testFilePaths.length} test files`);
@@ -4929,37 +5303,45 @@ async function main(): Promise<void> {
     const testCoverageJson = generateTestCoverageJson(testCoverage);
 
     // Write test coverage outputs
-    writeFileSync(join(OUTPUT_DIR, 'TEST_COVERAGE.md'), testCoverageMarkdown);
-    console.log('Written: docs/Architecture/TEST_COVERAGE.md');
+    writeFileSync(join(OUTPUT_DIR, "TEST_COVERAGE.md"), testCoverageMarkdown);
+    console.log("Written: docs/Architecture/TEST_COVERAGE.md");
 
     writeFileSync(
-      join(OUTPUT_DIR, 'test-coverage.json'),
-      JSON.stringify(testCoverageJson, null, 2)
+      join(OUTPUT_DIR, "test-coverage.json"),
+      JSON.stringify(testCoverageJson, null, 2),
     );
-    console.log('Written: docs/Architecture/test-coverage.json');
+    console.log("Written: docs/Architecture/test-coverage.json");
   }
 
-  console.log('\nDependency graph generation complete!');
+  console.log("\nDependency graph generation complete!");
   if (isMonorepo) {
     console.log(`  - ${workspaceMap.size} workspace packages scanned`);
     if (reachableSet) {
       console.log(
-        `  - ${reachableSet.size} reachable files, ${dormantSet?.size || 0} dormant files`
+        `  - ${reachableSet.size} reachable files, ${dormantSet?.size || 0} dormant files`,
       );
     }
   }
   console.log(`  - ${stats.totalTypeScriptFiles} files analyzed`);
-  console.log(`  - ${stats.totalExports} exports found (${stats.totalReExports} re-exports)`);
+  console.log(
+    `  - ${stats.totalExports} exports found (${stats.totalReExports} re-exports)`,
+  );
   console.log(`  - ${stats.totalTypeOnlyImports} type-only imports detected`);
   console.log(`  - ${circularDeps.all.length} circular dependencies:`);
-  console.log(`      ${circularDeps.runtime.length} runtime (require attention)`);
+  console.log(
+    `      ${circularDeps.runtime.length} runtime (require attention)`,
+  );
   console.log(`      ${circularDeps.typeOnly.length} type-only (safe)`);
-  console.log(`  - ${unusedAnalysis.unusedFiles.length} potentially unused files`);
-  console.log(`  - ${unusedAnalysis.unusedExports.length} potentially unused exports`);
+  console.log(
+    `  - ${unusedAnalysis.unusedFiles.length} potentially unused files`,
+  );
+  console.log(
+    `  - ${unusedAnalysis.unusedExports.length} potentially unused exports`,
+  );
 
   // Print unused files if any
   if (unusedAnalysis.unusedFiles.length > 0) {
-    console.log('\nPotentially unused files:');
+    console.log("\nPotentially unused files:");
     for (const file of unusedAnalysis.unusedFiles.slice(0, 20)) {
       console.log(`  - ${file}`);
     }
@@ -4970,7 +5352,7 @@ async function main(): Promise<void> {
 
   // Print unused exports if any (grouped by file)
   if (unusedAnalysis.unusedExports.length > 0) {
-    console.log('\nPotentially unused exports:');
+    console.log("\nPotentially unused exports:");
     const byFile = new Map<string, UnusedExport[]>();
     for (const exp of unusedAnalysis.unusedExports) {
       if (!byFile.has(exp.file)) byFile.set(exp.file, []);
@@ -4979,7 +5361,9 @@ async function main(): Promise<void> {
     let shown = 0;
     for (const [file, exports] of byFile) {
       if (shown >= 10) {
-        console.log(`  ... and ${byFile.size - 10} more files with unused exports`);
+        console.log(
+          `  ... and ${byFile.size - 10} more files with unused exports`,
+        );
         break;
       }
       console.log(`  ${file}:`);
@@ -4994,11 +5378,15 @@ async function main(): Promise<void> {
   }
 
   // Write full unused analysis to a separate file
-  const unusedReportPath = join(OUTPUT_DIR, 'unused-analysis.md');
-  let unusedReport = '# Unused Files and Exports Analysis\n\n';
-  unusedReport += `**Generated**: ${new Date().toISOString().split('T')[0]}\n\n`;
-  const deadExports = unusedAnalysis.unusedExports.filter((e) => e.inFileRefs === 0);
-  const contractExports = unusedAnalysis.unusedExports.filter((e) => e.inFileRefs > 0);
+  const unusedReportPath = join(OUTPUT_DIR, "unused-analysis.md");
+  let unusedReport = "# Unused Files and Exports Analysis\n\n";
+  unusedReport += `**Generated**: ${new Date().toISOString().split("T")[0]}\n\n`;
+  const deadExports = unusedAnalysis.unusedExports.filter(
+    (e) => e.inFileRefs === 0,
+  );
+  const contractExports = unusedAnalysis.unusedExports.filter(
+    (e) => e.inFileRefs > 0,
+  );
   // Dormant files: on disk under a package `src/`, runtime code (not `.d.ts`
   // ambient declarations), NOT reachable from any seeded root (index, `exports`
   // subpaths, `bin`, or build-script entries). The file-granularity analog of
@@ -5009,11 +5397,13 @@ async function main(): Promise<void> {
   const testReachable = dormantSet
     ? findReachableFiles(
         parsedTestFiles.map((f) => f.path),
-        [...parsedFiles, ...parsedTestFiles]
+        [...parsedFiles, ...parsedTestFiles],
       )
     : new Set<string>();
   const dormantAll = dormantSet
-    ? [...dormantSet].filter((f) => /(^|\/)src\//.test(f) && !f.endsWith('.d.ts')).sort()
+    ? [...dormantSet]
+        .filter((f) => /(^|\/)src\//.test(f) && !f.endsWith(".d.ts"))
+        .sort()
     : [];
   const orphaned = dormantAll.filter((f) => !testReachable.has(f));
   const testOnly = dormantAll.filter((f) => testReachable.has(f));
@@ -5021,9 +5411,9 @@ async function main(): Promise<void> {
   const groupByPkg = (files: string[]): Map<string, string[]> => {
     const m = new Map<string, string[]>();
     for (const f of files) {
-      let pkg = '(root)';
+      let pkg = "(root)";
       for (const [, ws] of workspaceMap) {
-        if (f.startsWith(ws.directory + '/')) {
+        if (f.startsWith(ws.directory + "/")) {
           pkg = ws.directory;
           break;
         }
@@ -5045,11 +5435,11 @@ async function main(): Promise<void> {
 
   const renderDormant = (files: string[]): string => {
     if (files.length === 0) return `_None._\n\n`;
-    let out = '';
+    let out = "";
     for (const [pkg, fs] of [...groupByPkg(files)].sort()) {
       out += `### \`${pkg}\` (${fs.length})\n\n`;
       for (const f of fs) out += `- \`${f}\`\n`;
-      out += '\n';
+      out += "\n";
     }
     return out;
   };
@@ -5073,8 +5463,11 @@ async function main(): Promise<void> {
     unusedReport += `- \`${file}\`\n`;
   }
 
-  const renderByFile = (exports: UnusedExport[], note?: (e: UnusedExport) => string): string => {
-    let out = '';
+  const renderByFile = (
+    exports: UnusedExport[],
+    note?: (e: UnusedExport) => string,
+  ): string => {
+    let out = "";
     const byFile = new Map<string, UnusedExport[]>();
     for (const exp of exports) {
       if (!byFile.has(exp.file)) byFile.set(exp.file, []);
@@ -5083,9 +5476,9 @@ async function main(): Promise<void> {
     for (const [file, exps] of byFile) {
       out += `### \`${file}\`\n\n`;
       for (const exp of exps) {
-        out += `- \`${exp.name}\` (${exp.type})${note ? note(exp) : ''}\n`;
+        out += `- \`${exp.name}\` (${exp.type})${note ? note(exp) : ""}\n`;
       }
-      out += '\n';
+      out += "\n";
     }
     return out;
   };
@@ -5102,7 +5495,7 @@ async function main(): Promise<void> {
   unusedReport += `interfaces typing live guards and per-package API completeness, not rot.\n\n`;
   unusedReport += renderByFile(
     contractExports,
-    (e) => ` — ${e.inFileRefs} in-file ref${e.inFileRefs === 1 ? '' : 's'}`
+    (e) => ` — ${e.inFileRefs} in-file ref${e.inFileRefs === 1 ? "" : "s"}`,
   );
 
   writeFileSync(unusedReportPath, unusedReport);
@@ -5119,16 +5512,22 @@ async function main(): Promise<void> {
       workspaceMap,
       censusRoots,
       reachableSet,
-      testReachable
+      testReachable,
     );
-    writeFileSync(join(OUTPUT_DIR, 'file-inventory.json'), JSON.stringify(inventory, null, 2));
-    writeFileSync(join(OUTPUT_DIR, 'FILE_INVENTORY.md'), generateFileInventoryMarkdown(inventory));
+    writeFileSync(
+      join(OUTPUT_DIR, "file-inventory.json"),
+      JSON.stringify(inventory, null, 2),
+    );
+    writeFileSync(
+      join(OUTPUT_DIR, "FILE_INVENTORY.md"),
+      generateFileInventoryMarkdown(inventory),
+    );
     console.log(
       `Written: docs/Architecture/FILE_INVENTORY.md (${inventory.totalFiles} files: ` +
         Object.entries(inventory.byDisposition)
           .map(([k, v]) => `${v} ${k}`)
-          .join(', ') +
-        ')'
+          .join(", ") +
+        ")",
     );
     // Fail loudly if the census and the maximal repo walk disagree (throws → non-zero exit).
     verifyFileCensus(ROOT_DIR, inventory);
@@ -5138,11 +5537,17 @@ async function main(): Promise<void> {
   // formerly hand-maintained docs/Architecture/WASM_ACCELERATION.md map).
   const wasmPairing = analyzeWasmPairing(ROOT_DIR);
   if (wasmPairing) {
-    writeFileSync(join(OUTPUT_DIR, 'wasm-pairing.json'), JSON.stringify(wasmPairing, null, 2));
-    writeFileSync(join(OUTPUT_DIR, 'wasm-pairing.md'), generateWasmPairingMarkdown(wasmPairing));
+    writeFileSync(
+      join(OUTPUT_DIR, "wasm-pairing.json"),
+      JSON.stringify(wasmPairing, null, 2),
+    );
+    writeFileSync(
+      join(OUTPUT_DIR, "wasm-pairing.md"),
+      generateWasmPairingMarkdown(wasmPairing),
+    );
     console.log(
-      `Written: ${join(OUTPUT_DIR, 'wasm-pairing.md')} ` +
-        `(${wasmPairing.acceleratedCount}/${wasmPairing.total} WASM-accelerated)`
+      `Written: ${join(OUTPUT_DIR, "wasm-pairing.md")} ` +
+        `(${wasmPairing.acceleratedCount}/${wasmPairing.total} WASM-accelerated)`,
     );
   }
 
@@ -5152,17 +5557,17 @@ async function main(): Promise<void> {
   const parallelPairing = analyzeParallelPairing(ROOT_DIR);
   if (parallelPairing) {
     writeFileSync(
-      join(OUTPUT_DIR, 'parallel-pairing.json'),
-      JSON.stringify(parallelPairing, null, 2)
+      join(OUTPUT_DIR, "parallel-pairing.json"),
+      JSON.stringify(parallelPairing, null, 2),
     );
     writeFileSync(
-      join(OUTPUT_DIR, 'parallel-pairing.md'),
-      generateParallelPairingMarkdown(parallelPairing)
+      join(OUTPUT_DIR, "parallel-pairing.md"),
+      generateParallelPairingMarkdown(parallelPairing),
     );
     console.log(
-      `Written: ${join(OUTPUT_DIR, 'parallel-pairing.md')} ` +
+      `Written: ${join(OUTPUT_DIR, "parallel-pairing.md")} ` +
         `(${parallelPairing.effectiveCount}/${parallelPairing.parallelizedCount} effectively parallelized, ` +
-        `${parallelPairing.disabledCount} disabled)`
+        `${parallelPairing.disabledCount} disabled)`,
     );
   }
 
@@ -5171,14 +5576,17 @@ async function main(): Promise<void> {
   // *GpuDispatch bridge / GPU pool/backend (see ROADMAP "WebGPU acceleration tier").
   const webgpuPairing = analyzeWebGPUPairing(ROOT_DIR);
   if (webgpuPairing) {
-    writeFileSync(join(OUTPUT_DIR, 'webgpu-pairing.json'), JSON.stringify(webgpuPairing, null, 2));
     writeFileSync(
-      join(OUTPUT_DIR, 'webgpu-pairing.md'),
-      generateWebGPUPairingMarkdown(webgpuPairing)
+      join(OUTPUT_DIR, "webgpu-pairing.json"),
+      JSON.stringify(webgpuPairing, null, 2),
+    );
+    writeFileSync(
+      join(OUTPUT_DIR, "webgpu-pairing.md"),
+      generateWebGPUPairingMarkdown(webgpuPairing),
     );
     console.log(
-      `Written: ${join(OUTPUT_DIR, 'webgpu-pairing.md')} ` +
-        `(${webgpuPairing.standaloneAcceleratedCount} standalone + ${webgpuPairing.gpuAcceleratedCount}/${webgpuPairing.total} typed WebGPU-accelerated)`
+      `Written: ${join(OUTPUT_DIR, "webgpu-pairing.md")} ` +
+        `(${webgpuPairing.standaloneAcceleratedCount} standalone + ${webgpuPairing.gpuAcceleratedCount}/${webgpuPairing.total} typed WebGPU-accelerated)`,
     );
   }
 
@@ -5186,24 +5594,30 @@ async function main(): Promise<void> {
   if (testCoverage) {
     const coveragePercent =
       testCoverage.sourceFiles.length > 0
-        ? ((testCoverage.testedFiles.length / testCoverage.sourceFiles.length) * 100).toFixed(1)
-        : '0';
+        ? (
+            (testCoverage.testedFiles.length /
+              testCoverage.sourceFiles.length) *
+            100
+          ).toFixed(1)
+        : "0";
 
-    console.log('\n=== Test Coverage Analysis ===');
+    console.log("\n=== Test Coverage Analysis ===");
     console.log(`  - ${testCoverage.testFiles.length} test files analyzed`);
     console.log(
-      `  - ${testCoverage.testedFiles.length}/${testCoverage.sourceFiles.length} source files have tests (${coveragePercent}%)`
+      `  - ${testCoverage.testedFiles.length}/${testCoverage.sourceFiles.length} source files have tests (${coveragePercent}%)`,
     );
-    console.log(`  - ${testCoverage.untestedFiles.length} source files without tests`);
+    console.log(
+      `  - ${testCoverage.untestedFiles.length} source files without tests`,
+    );
 
     if (testCoverage.untestedFiles.length > 0) {
-      console.log('\nSource files without test coverage:');
+      console.log("\nSource files without test coverage:");
       for (const file of testCoverage.untestedFiles.slice(0, 15)) {
         console.log(`  - ${file}`);
       }
       if (testCoverage.untestedFiles.length > 15) {
         console.log(
-          `  ... and ${testCoverage.untestedFiles.length - 15} more (see TEST_COVERAGE.md for full list)`
+          `  ... and ${testCoverage.untestedFiles.length - 15} more (see TEST_COVERAGE.md for full list)`,
         );
       }
     }

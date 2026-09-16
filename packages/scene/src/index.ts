@@ -29,7 +29,10 @@ export {
 export type { TrackballRigOptions } from "./trackball.js";
 export { DEFAULT_TRACKBALL_RADIUS, TrackballRig } from "./trackball.js";
 export { Group } from "./group.js";
-export type { NodeSpaceOptions, NodeSpaceSerializerShape } from "./node-space.js";
+export type {
+  NodeSpaceOptions,
+  NodeSpaceSerializerShape,
+} from "./node-space.js";
 export { NODE_SPACE_SERIALIZER, NodeSpace } from "./node-space.js";
 export type { LayerMask, LayeredNode } from "./layers.js";
 export {

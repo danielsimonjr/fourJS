@@ -2,7 +2,7 @@
 
 **Status:** plan only. Written 2026-09-10 against `claude/rfc-review-planning-s2clzd`.
 Scope is the `TODO.md` row "RFC 0001 residue" as re-read in the RFC's
-*Post-acceptance corrections* (2026-09-10). **Not everything in that row is scheduled
+_Post-acceptance corrections_ (2026-09-10). **Not everything in that row is scheduled
 here**: the row's items are post-1.0 by the RFC's own §6 and by the tracker's tiering.
 This plan takes the four that are packet-sized and leave the closed operator union
 closed; it names the rest as gated. **Crew:** ≤ 4 haiku-class agents, disjoint files.
@@ -10,40 +10,40 @@ closed; it names the rest as gated. **Crew:** ≤ 4 haiku-class agents, disjoint
 
 ## 1. Scope decision
 
-| Residue item | This plan | Why |
-| --- | --- | --- |
-| Node-material / graph-effect pixel golden (owed by the RFC's prototype §, never landed) | **WP-NM.1** | Pure test debt; no design |
-| Source maps (per-node provenance on `SHADER_COMPILATION_FAILED`) | **WP-NM.2** | Additive diagnostics; both emitters already own the ordered walk |
-| Lighting-aware graphs (a `lights` node family bound to R-17's `SceneLights`) | **WP-NM.3** | Prerequisite exists (`packages/render/src/lights.ts`); closed union grows by data-only nodes, which is the tier the RFC allows |
-| Uniform blocks (std140) with the measurement the RFC asked for | **WP-NM.4** | Measurement first; the WebGPU node pipeline already packs a `NodeUniforms` block, so this is "make WebGL match, and measure" |
-| Reusable functions / named subgraphs, conditional variants, storage-buffer nodes, data-declared operators (alternative E) | **gated** — each widens the serializable graph's shape (§79) or the operator union; needs an RFC or an amendment row, not a packet | RFC §1, §6; RFC 0002 §81 note |
+| Residue item                                                                                                              | This plan                                                                                                                          | Why                                                                                                                            |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Node-material / graph-effect pixel golden (owed by the RFC's prototype §, never landed)                                   | **WP-NM.1**                                                                                                                        | Pure test debt; no design                                                                                                      |
+| Source maps (per-node provenance on `SHADER_COMPILATION_FAILED`)                                                          | **WP-NM.2**                                                                                                                        | Additive diagnostics; both emitters already own the ordered walk                                                               |
+| Lighting-aware graphs (a `lights` node family bound to R-17's `SceneLights`)                                              | **WP-NM.3**                                                                                                                        | Prerequisite exists (`packages/render/src/lights.ts`); closed union grows by data-only nodes, which is the tier the RFC allows |
+| Uniform blocks (std140) with the measurement the RFC asked for                                                            | **WP-NM.4**                                                                                                                        | Measurement first; the WebGPU node pipeline already packs a `NodeUniforms` block, so this is "make WebGL match, and measure"   |
+| Reusable functions / named subgraphs, conditional variants, storage-buffer nodes, data-declared operators (alternative E) | **gated** — each widens the serializable graph's shape (§79) or the operator union; needs an RFC or an amendment row, not a packet | RFC §1, §6; RFC 0002 §81 note                                                                                                  |
 
 ## 2. Anti-hallucination sheet
 
-| Fact | Pinned at |
-| --- | --- |
-| The graph is a closed union of node kinds: `constant, uniform, attribute, texture, time, compose, swizzle, unary, binary, mix` (read the full union before adding one) | `packages/materials/src/shader-graph.ts:110-160` |
-| `ShaderUnaryOp` includes `"angle"` (2026-09-06); `"uv"` is nameable in the screen domain, other attributes are not | `shader-graph.ts:66-94` |
-| GLSL emitter `emitShaderGraphGlsl(graph)` → `EmittedNodeShader`; program `GlNodeProgram`; cache `GlNodeProgramCache` keyed on emitted source; `registerNodeMaterialPipeline()` | `packages/render-webgl/src/gl-node-program.ts:320, 431, 657, 759` |
-| WGSL emitter `emitShaderGraphWgsl(graph)` → `EmittedWgslNodeShader`; store `WgpuNodePipelineStore`; `registerWebgpuNodeMaterialPipeline()`; node uniforms already packed into an all-`vec4` `NodeUniforms` uniform block | `packages/render-webgpu/src/wgpu-node-program.ts:36-45, 508, 754, 1624` |
-| Compile failure is `FourError` `SHADER_COMPILATION_FAILED` with source + driver log in `context` | `gl-node-program.ts` (grep `SHADER_COMPILATION_FAILED`), `packages/core/src/errors.ts:23` |
-| `ScreenEffect = CopyEffect \| ColorGradeEffect \| OutputTransformEffect \| GraphEffect`; `GraphEffect { kind, graph, uniforms, textures? }` | `packages/render/src/effect-pass.ts:284-314` |
-| R-17 light contract: `SceneLights`, `DirectionalLightSource`, `PointLightSource`, `SpotLightSource`, `AmbientLightSource`, `MAX_PUNCTUAL_LIGHTS = 8`, first-N-in-traversal-order rule | `packages/render/src/lights.ts:20-40, 74-260` |
-| Node materials are **unlit at this tier** by decision (RFC 0001, spec rev 1.11: sequenced R-14 → R-17 → R-13) | `packages/materials/src/node-material.ts:13-20`, `render-list.ts:585` |
-| Pixel goldens live in `tests/visual/<name>.spec.ts` + `<name>.spec.ts-snapshots/` under the Playwright `visual` project; read `tests/visual/text.spec.ts`'s header ("Why a golden is sound here") before adding one | `tests/visual/`, `playwright.config.ts:336` |
-| `ShaderOperatorRegistry` + `SHADER_OPERATORS` token exist; factories produce **closed** nodes; the registry method is `register` (no `registerShaderOperator` symbol exists) | `packages/materials/src/shader-operators.ts`, `capabilities.ts:29` |
-| Materials package deps: `core, math` only — no render import ever | `packages/materials/package.json` |
-| Size gate: example budgets in `.size-limit.json`; the recorded law is "+0.75 kB gzip per compiled-at-init pipeline" — anything new must stay lazy and registered | `tools/size-budgets.mjs`, RFC 0001 §4 |
-| Spec: §60's shipped/deferred split is normative text (rev 1.11); moving an item from deferred to shipped needs an amendments-table row | `docs/SPECIFICATION.md` §60 and row 1.11 |
+| Fact                                                                                                                                                                                                                     | Pinned at                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| The graph is a closed union of node kinds: `constant, uniform, attribute, texture, time, compose, swizzle, unary, binary, mix` (read the full union before adding one)                                                   | `packages/materials/src/shader-graph.ts:110-160`                                          |
+| `ShaderUnaryOp` includes `"angle"` (2026-09-06); `"uv"` is nameable in the screen domain, other attributes are not                                                                                                       | `shader-graph.ts:66-94`                                                                   |
+| GLSL emitter `emitShaderGraphGlsl(graph)` → `EmittedNodeShader`; program `GlNodeProgram`; cache `GlNodeProgramCache` keyed on emitted source; `registerNodeMaterialPipeline()`                                           | `packages/render-webgl/src/gl-node-program.ts:320, 431, 657, 759`                         |
+| WGSL emitter `emitShaderGraphWgsl(graph)` → `EmittedWgslNodeShader`; store `WgpuNodePipelineStore`; `registerWebgpuNodeMaterialPipeline()`; node uniforms already packed into an all-`vec4` `NodeUniforms` uniform block | `packages/render-webgpu/src/wgpu-node-program.ts:36-45, 508, 754, 1624`                   |
+| Compile failure is `FourError` `SHADER_COMPILATION_FAILED` with source + driver log in `context`                                                                                                                         | `gl-node-program.ts` (grep `SHADER_COMPILATION_FAILED`), `packages/core/src/errors.ts:23` |
+| `ScreenEffect = CopyEffect \| ColorGradeEffect \| OutputTransformEffect \| GraphEffect`; `GraphEffect { kind, graph, uniforms, textures? }`                                                                              | `packages/render/src/effect-pass.ts:284-314`                                              |
+| R-17 light contract: `SceneLights`, `DirectionalLightSource`, `PointLightSource`, `SpotLightSource`, `AmbientLightSource`, `MAX_PUNCTUAL_LIGHTS = 8`, first-N-in-traversal-order rule                                    | `packages/render/src/lights.ts:20-40, 74-260`                                             |
+| Node materials are **unlit at this tier** by decision (RFC 0001, spec rev 1.11: sequenced R-14 → R-17 → R-13)                                                                                                            | `packages/materials/src/node-material.ts:13-20`, `render-list.ts:585`                     |
+| Pixel goldens live in `tests/visual/<name>.spec.ts` + `<name>.spec.ts-snapshots/` under the Playwright `visual` project; read `tests/visual/text.spec.ts`'s header ("Why a golden is sound here") before adding one      | `tests/visual/`, `playwright.config.ts:336`                                               |
+| `ShaderOperatorRegistry` + `SHADER_OPERATORS` token exist; factories produce **closed** nodes; the registry method is `register` (no `registerShaderOperator` symbol exists)                                             | `packages/materials/src/shader-operators.ts`, `capabilities.ts:29`                        |
+| Materials package deps: `core, math` only — no render import ever                                                                                                                                                        | `packages/materials/package.json`                                                         |
+| Size gate: example budgets in `.size-limit.json`; the recorded law is "+0.75 kB gzip per compiled-at-init pipeline" — anything new must stay lazy and registered                                                         | `tools/size-budgets.mjs`, RFC 0001 §4                                                     |
+| Spec: §60's shipped/deferred split is normative text (rev 1.11); moving an item from deferred to shipped needs an amendments-table row                                                                                   | `docs/SPECIFICATION.md` §60 and row 1.11                                                  |
 
 ## 3. Roster and waves
 
-| Agent | Owns | Wave |
-| --- | --- | --- |
-| **A1 — golden** | `tests/visual/node-material.spec.ts` (+ snapshots), `tests/browser/fixtures/node-material-page.ts` (read-only reuse; if it lacks a deterministic scene, add `tests/visual/fixtures/node-material-golden-page.ts`) | 1 |
-| **A2 — source maps** | `packages/materials/src/shader-graph.ts` (edit: optional `label?: string` on every node — read §79 first: additive optional field, document-unchanged when absent), `packages/render-webgl/src/gl-node-program.ts` (edit: provenance table in the emitter, richer `SHADER_COMPILATION_FAILED.context`), `packages/render-webgpu/src/wgpu-node-program.ts` (same), tests in both backends' `tests/` | 1 |
-| **A3 — lighting nodes** | `packages/materials/src/shader-graph.ts` (**append-only** new node kinds — coordinate with A2 through the lead: A2 edits existing node shapes, A3 adds kinds; the lead merges), `packages/materials/src/node-material-builder.ts`, `packages/render/src/render-list.ts` (lit node kind), both emitters' *lighting sections* (new functions, called from a single hook each emitter exposes), tests | 2 (after A2's node-shape edit lands) |
-| **A4 — uniform blocks + measurement** | `packages/render-webgl/src/gl-node-program.ts` (a `NodeUniforms` UBO path mirroring WebGPU's packing — **after** A2), `benchmarks/node-uniforms.mjs` + results, `tools/size-budgets.mjs` row | 2 |
+| Agent                                 | Owns                                                                                                                                                                                                                                                                                                                                                                                               | Wave                                 |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| **A1 — golden**                       | `tests/visual/node-material.spec.ts` (+ snapshots), `tests/browser/fixtures/node-material-page.ts` (read-only reuse; if it lacks a deterministic scene, add `tests/visual/fixtures/node-material-golden-page.ts`)                                                                                                                                                                                  | 1                                    |
+| **A2 — source maps**                  | `packages/materials/src/shader-graph.ts` (edit: optional `label?: string` on every node — read §79 first: additive optional field, document-unchanged when absent), `packages/render-webgl/src/gl-node-program.ts` (edit: provenance table in the emitter, richer `SHADER_COMPILATION_FAILED.context`), `packages/render-webgpu/src/wgpu-node-program.ts` (same), tests in both backends' `tests/` | 1                                    |
+| **A3 — lighting nodes**               | `packages/materials/src/shader-graph.ts` (**append-only** new node kinds — coordinate with A2 through the lead: A2 edits existing node shapes, A3 adds kinds; the lead merges), `packages/materials/src/node-material-builder.ts`, `packages/render/src/render-list.ts` (lit node kind), both emitters' _lighting sections_ (new functions, called from a single hook each emitter exposes), tests | 2 (after A2's node-shape edit lands) |
+| **A4 — uniform blocks + measurement** | `packages/render-webgl/src/gl-node-program.ts` (a `NodeUniforms` UBO path mirroring WebGPU's packing — **after** A2), `benchmarks/node-uniforms.mjs` + results, `tools/size-budgets.mjs` row                                                                                                                                                                                                       | 2                                    |
 
 ## 4. Packets
 
@@ -116,7 +116,7 @@ gains the lighting nodes and the provenance context; RFC 0001's residue paragrap
 ## 6. Traps
 
 - Never emit user source; every new node is data. No `custom` node kind.
-- `@fourjs/materials` cannot import `@fourjs/render` — light *uniform names* are
+- `@fourjs/materials` cannot import `@fourjs/render` — light _uniform names_ are
   strings both sides agree on, declared in materials as constants and consumed by render.
 - `angle` already exists; do not add a second `atan2`.
 - The cache key is the emitted source; provenance must not enter the key.

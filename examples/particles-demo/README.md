@@ -8,12 +8,12 @@ a burst when you click.
 suitable hardware"_. This page is deliberately **not** that number. Plan §6h splits the
 criterion into the parts that can each be shown honestly, and this page is the visible one:
 
-| half of §112                                          | where it is shown                                                       |
-| ----------------------------------------------------- | ----------------------------------------------------------------------- |
-| 100 000 particles simulated on the CPU                | `benchmarks/particles-100k.mjs` — recorded ms/step, never CI-gated      |
+| half of §112                                          | where it is shown                                                           |
+| ----------------------------------------------------- | --------------------------------------------------------------------------- |
+| 100 000 particles simulated on the CPU                | `benchmarks/particles-100k.mjs` — recorded ms/step, never CI-gated          |
 | rendered as one batched draw per system               | `@fourjs/render`'s `particles.ts` + `@fourjs/render-webgl`'s instanced path |
-| at interactive rates, on screen, responding to a user | **this page**, at ~1 800 particles — the size SwiftShader can sustain   |
-| deterministically (plan P9-4)                         | `tests/determinism/phase9-particles.test.ts`                            |
+| at interactive rates, on screen, responding to a user | **this page**, at ~1 800 particles — the size SwiftShader can sustain       |
+| deterministically (plan P9-4)                         | `tests/determinism/phase9-particles.test.ts`                                |
 
 A browser gate with no GPU cannot answer "100 000 particles at 60 fps"; it can answer "the
 batched path reaches a real framebuffer, keeps moving, obeys its collision plane, and reacts
@@ -159,22 +159,22 @@ them. The gate's classifiers are `red ≥ 90 && red − blue ≥ 45` (fountain) 
 `#status` carries the live simulation as data attributes, so a test can read the engine's own
 numbers instead of inferring everything from pixels:
 
-| attribute       | value                                           |
-| --------------- | ----------------------------------------------- |
-| `data-state`     | `loading` → `running`, or `error`               |
-| `data-fountain`  | live particles in the fountain pool             |
-| `data-burst`     | live particles in the burst pool                |
-| `data-bursts`    | clicks handled since load                       |
-| `data-frames`    | host frames rendered                            |
-| `data-dropped`   | spawns refused by either pool — should stay `0` |
-| `data-simulate`  | **seconds** (§7a) — wall-clock cost of `ParticleSystem.fixedUpdate` for this host frame's fixed-step burst (R-33). `0` if the frame ran no fixed step. |
-| `data-present`   | **seconds** (§7a) — wall-clock cost of `renderer.render` (list build + instance upload + draw) for this host frame (R-33). A separate attribute from `data-simulate`; never folded into one number. |
+| attribute       | value                                                                                                                                                                                               |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data-state`    | `loading` → `running`, or `error`                                                                                                                                                                   |
+| `data-fountain` | live particles in the fountain pool                                                                                                                                                                 |
+| `data-burst`    | live particles in the burst pool                                                                                                                                                                    |
+| `data-bursts`   | clicks handled since load                                                                                                                                                                           |
+| `data-frames`   | host frames rendered                                                                                                                                                                                |
+| `data-dropped`  | spawns refused by either pool — should stay `0`                                                                                                                                                     |
+| `data-simulate` | **seconds** (§7a) — wall-clock cost of `ParticleSystem.fixedUpdate` for this host frame's fixed-step burst (R-33). `0` if the frame ran no fixed step.                                              |
+| `data-present`  | **seconds** (§7a) — wall-clock cost of `renderer.render` (list build + instance upload + draw) for this host frame (R-33). A separate attribute from `data-simulate`; never folded into one number. |
 
 The visible sentence shows those two durations in **milliseconds**; the attributes stay in
 seconds, matching `examples/first-2d-scene`'s `data-alpha` / `data-dropped` / `data-substeps`.
 Neither attribute is a 16.6 ms / 60 fps claim — this host is SwiftShader.
 
-They are written after `app.step` returns — once per host frame, after every fixed step *and*
+They are written after `app.step` returns — once per host frame, after every fixed step _and_
 the draw of that frame have run — because these are costs and counts a _frame_ observes, not
 quantities a fixed step produces.
 

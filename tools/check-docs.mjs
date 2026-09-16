@@ -464,7 +464,8 @@ for (const rel of prosePaths()) {
 //     (`world.step(1 / 60)`) and rightly never call `app.start()`: four false
 //     positives out of five hits. Only `new Application(...)`'s own variable counts.
 const LIFECYCLE_FENCE = /```(?:ts|typescript)\r?\n([\s\S]*?)```/g;
-const APPLICATION_BINDING = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new Application\(/;
+const APPLICATION_BINDING =
+  /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new Application\(/;
 for (const rel of prosePaths()) {
   const text = read(rel);
   if (text === null) continue;
@@ -562,7 +563,9 @@ if (testsReadme === null) {
    * check can read it without judging the surrounding prose.
    */
   function tableRow(dir) {
-    const row = testsReadme.split("\n").find((l) => l.includes(`[\`${dir}/\`]`));
+    const row = testsReadme
+      .split("\n")
+      .find((l) => l.includes(`[\`${dir}/\`]`));
     if (row === undefined) {
       errors.push(`${testsReadmeRel}: no summary-table row for ${dir}/`);
       return null;

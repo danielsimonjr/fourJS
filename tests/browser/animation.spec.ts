@@ -751,10 +751,13 @@ async function classifierGrabsAtSimMilestones(
   let nextSim = 0;
   while (nextSim <= SWEEP_MINIMUM_SECONDS) {
     await expect
-      .poll(async () => readPublishedSample(page).then((sample) => sample.sim), {
-        message: `simulation never reached ${String(nextSim)} s for a classifier grab`,
-        timeout: CLUSTER_WATCH_DEADLINE_MS,
-      })
+      .poll(
+        async () => readPublishedSample(page).then((sample) => sample.sim),
+        {
+          message: `simulation never reached ${String(nextSim)} s for a classifier grab`,
+          timeout: CLUSTER_WATCH_DEADLINE_MS,
+        },
+      )
       .toBeGreaterThanOrEqual(nextSim);
     const sample = await readPublishedSample(page);
     const image = await grab(canvas);

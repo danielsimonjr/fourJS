@@ -13,7 +13,7 @@ Process:
 3. Mark the header **proposed** when it is ready for the owner. The owner accepts, rejects,
    or requests changes; the decision and date are recorded in the RFC header and echoed in
    `MEMORY.md`. An accepted RFC's decision text is never rewritten: later drift is recorded
-   in a dated *Post-acceptance corrections* section at its foot.
+   in a dated _Post-acceptance corrections_ section at its foot.
 4. Accepted RFCs that amend the specification also get a row in the spec's amendments
    table; the spec's §-numbering rules apply (1–120 frozen, letter suffixes for new
    sections).

@@ -42,7 +42,9 @@ import type { RendererRegistry } from "./renderer-registry.js";
  * the §96 boundary test's textual ban is blunt on purpose).
  */
 export const RENDERER_REGISTRY =
-  /* @__PURE__ */ defineCapability<RendererRegistry>("fourJS:renderer-registry");
+  /* @__PURE__ */ defineCapability<RendererRegistry>(
+    "fourJS:renderer-registry",
+  );
 
 /**
  * §81's *"render passes"* — **differently shaped from the other five §81
@@ -66,8 +68,9 @@ export const RENDERER_REGISTRY =
  * render-graph option, and inventing one would be the API invention RFC 0002
  * Q1 was careful to avoid.
  */
-export const RENDER_GRAPH =
-  /* @__PURE__ */ defineCapability<RenderGraph>("fourJS:render-graph");
+export const RENDER_GRAPH = /* @__PURE__ */ defineCapability<RenderGraph>(
+  "fourJS:render-graph",
+);
 
 /**
  * §81's *"compute workloads"*: a named {@link ComputeWorkloadRegistry} of

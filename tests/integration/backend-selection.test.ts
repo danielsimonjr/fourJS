@@ -40,15 +40,9 @@ import {
   Rapier3dAdapter,
   registerRapierSolver,
 } from "@fourjs/physics-rapier";
-import {
-  RendererRegistry,
-  resolveRenderer,
-} from "@fourjs/render";
+import { RendererRegistry, resolveRenderer } from "@fourjs/render";
 import { WebglRenderer, registerWebglRenderer } from "@fourjs/render-webgl";
-import {
-  WebgpuRenderer,
-  registerWebgpuRenderer,
-} from "@fourjs/render-webgpu";
+import { WebgpuRenderer, registerWebgpuRenderer } from "@fourjs/render-webgpu";
 import {
   Group,
   PerspectiveCamera,
@@ -59,10 +53,7 @@ import { Collider, RigidBody } from "@fourjs/physics";
 import { Application } from "fourJS/application";
 import { afterEach, describe, expect, it } from "vitest";
 
-import {
-  createRecordingGpu,
-  withHostGpu,
-} from "./helpers/recording-gpu.js";
+import { createRecordingGpu, withHostGpu } from "./helpers/recording-gpu.js";
 import { RecordingCanvas, createRecordingGl } from "./helpers/recording-gl.js";
 
 /** A canvas backed by a fresh recording GL context, plus its tape. */

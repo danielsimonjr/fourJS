@@ -13,12 +13,7 @@
   "lastStepChecksum": 679531015,
   "finalChecksum": 679531015,
   "formatVersion": 2,
-  "worldConfigurationKeys": [
-    "determinism",
-    "dimension",
-    "gravity",
-    "sleeping"
-  ],
+  "worldConfigurationKeys": ["determinism", "dimension", "gravity", "sleeping"],
   "adapterName": "rapier2d",
   "adapterVersion": "0.20.0",
   "inputCount": 4,

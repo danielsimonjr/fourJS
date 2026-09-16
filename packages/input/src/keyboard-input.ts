@@ -202,7 +202,7 @@ export class KeyboardInput {
           "For a widget tree, pass `keyboardFocusTarget(root)` from the ui package. " +
           "For raw game input (WASD and the like) this class is the wrong tool: " +
           "use `KeyboardState` from this package — `new KeyboardState(window)` then " +
-          "`keys.isDown(\"KeyW\")`.",
+          '`keys.isDown("KeyW")`.',
         { context: { received: typeof options } },
       );
     }

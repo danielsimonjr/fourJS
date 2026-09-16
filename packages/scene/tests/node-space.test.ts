@@ -38,7 +38,10 @@ describe("NodeSpace (§8, PH-12)", () => {
 
   it("copies the authored plane normal", () => {
     const authored = new Vector3(0, 1, 0);
-    const space = new NodeSpace({ space: "local-plane", planeNormal: authored });
+    const space = new NodeSpace({
+      space: "local-plane",
+      planeNormal: authored,
+    });
     authored.set(9, 9, 9);
     expect(space.planeNormal.y).toBe(1);
     expect(space.planeNormal.x).toBe(0);

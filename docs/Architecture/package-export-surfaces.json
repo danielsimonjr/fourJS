@@ -1181,9 +1181,7 @@
       "worldToPlane",
       "worldToPlaneVec"
     ],
-    "packages/physics-box2d": [
-      "PACKAGE_NAME"
-    ],
+    "packages/physics-box2d": ["PACKAGE_NAME"],
     "packages/physics-rapier": [
       "createRapierAdapter",
       "createRapierColliderDesc",
@@ -1230,9 +1228,7 @@
       "toRapierVector2",
       "toRapierVector3"
     ],
-    "packages/physics-soft": [
-      "PACKAGE_NAME"
-    ],
+    "packages/physics-soft": ["PACKAGE_NAME"],
     "packages/render": [
       "AddPassOptions",
       "AmbientLightSource",
@@ -1510,12 +1506,8 @@
       "ViewRenderListOptions",
       "warnDisposedInUse"
     ],
-    "packages/render-canvas": [
-      "PACKAGE_NAME"
-    ],
-    "packages/render-svg": [
-      "PACKAGE_NAME"
-    ],
+    "packages/render-canvas": ["PACKAGE_NAME"],
+    "packages/render-svg": ["PACKAGE_NAME"],
     "packages/render-webgl": [
       "BatchGlContext",
       "CacheableGeometry",

@@ -21,7 +21,7 @@ this block said "scaffold only" until 2026-08-05 — it predated Phase 0).
   (`physics-box2d`, `physics-soft`, `render-canvas`, `render-svg`). `render-webgpu`
   left the stub list 2026-08-21…29 (the R-1 plan).
 - Root `package.json` + Bun workspace + CI workflow exist; `tests/{integration,
-  determinism}/` hold cross-package suites, `tests/browser/` the Playwright gates,
+determinism}/` hold cross-package suites, `tests/browser/` the Playwright gates,
   `tests/visual/` pixel goldens, `benchmarks/` committed performance records, and ten
   `examples/` sites build and are browser-tested.
 - Common commands: `bun run build` / `test` / `test:suites` / `test:browser` / `lint` /
@@ -32,19 +32,19 @@ License: MIT (`LICENSE`).
 
 ## 2. Documentation inventory
 
-| File | Role |
-|---|---|
-| `docs/SPECIFICATION.md` | **The working reference** — current revision is whatever tops the amendments table in the file (hardcoded revision numbers elsewhere go stale). Parts I–XIII, sections 1–120 plus lettered insertions (6a, 6b, 7a, 7b, 60a, 106a, 113a) and Appendices A–B; no duplicates. § numbering 1–120 is frozen — new sections use letter suffixes. |
-| `docs/SPEC-REVIEW.md` | Technical review R-1…R-35 that drove revision 1.1; header records the disposition (all applied). |
-| `docs/POSITIONING.md` | Outward-facing why-exist case, audience order, migration story, demo-first principle, stated risks. |
-| `docs/plans/IMPLEMENTATION_PLAN.md` | Work-packet plan (subagent-driven; stress-tested). |
-| `docs/rfcs/` | RFC/ADR home (§95 + plan governance gate): process README and template. |
-| `docs/archive/four-js-specification.pdf` | Original source (65 pages), archived unchanged. **Still contains the numbering defects** — translate its references via the errata map. |
-| `docs/ERRATA.md` | Correction log: the PDF's defects, how each was resolved, and the PDF→Markdown numbering map. |
-| `README.md` | Project summary; points at the spec and errata. |
-| `TODO.md` | Task tracker (root). Check it at session start; update it as work completes. |
-| `CHANGELOG.md` | Chronological log of notable repository changes (root). Add entries for substantive changes. |
-| `MEMORY.md` | Cross-session memory (root): decisions, standing facts, open questions, gotchas. Append, don't rewrite; supersede old decisions with dated entries. |
+| File                                     | Role                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `docs/SPECIFICATION.md`                  | **The working reference** — current revision is whatever tops the amendments table in the file (hardcoded revision numbers elsewhere go stale). Parts I–XIII, sections 1–120 plus lettered insertions (6a, 6b, 7a, 7b, 60a, 106a, 113a) and Appendices A–B; no duplicates. § numbering 1–120 is frozen — new sections use letter suffixes. |
+| `docs/SPEC-REVIEW.md`                    | Technical review R-1…R-35 that drove revision 1.1; header records the disposition (all applied).                                                                                                                                                                                                                                           |
+| `docs/POSITIONING.md`                    | Outward-facing why-exist case, audience order, migration story, demo-first principle, stated risks.                                                                                                                                                                                                                                        |
+| `docs/plans/IMPLEMENTATION_PLAN.md`      | Work-packet plan (subagent-driven; stress-tested).                                                                                                                                                                                                                                                                                         |
+| `docs/rfcs/`                             | RFC/ADR home (§95 + plan governance gate): process README and template.                                                                                                                                                                                                                                                                    |
+| `docs/archive/four-js-specification.pdf` | Original source (65 pages), archived unchanged. **Still contains the numbering defects** — translate its references via the errata map.                                                                                                                                                                                                    |
+| `docs/ERRATA.md`                         | Correction log: the PDF's defects, how each was resolved, and the PDF→Markdown numbering map.                                                                                                                                                                                                                                              |
+| `README.md`                              | Project summary; points at the spec and errata.                                                                                                                                                                                                                                                                                            |
+| `TODO.md`                                | Task tracker (root). Check it at session start; update it as work completes.                                                                                                                                                                                                                                                               |
+| `CHANGELOG.md`                           | Chronological log of notable repository changes (root). Add entries for substantive changes.                                                                                                                                                                                                                                               |
+| `MEMORY.md`                              | Cross-session memory (root): decisions, standing facts, open questions, gotchas. Append, don't rewrite; supersede old decisions with dated entries.                                                                                                                                                                                        |
 
 ## 3. Specification numbering — corrected; use the errata map for PDF references
 
@@ -52,7 +52,7 @@ The PDF had three internal defects. All were **resolved in `SPECIFICATION.md`** 
 author's decision (2026-07-28); `docs/ERRATA.md` is now a correction log:
 
 - **E-1 (resolved):** the PDF used `Part VII` for two different parts. The second occurrence
-  (*Package Architecture*) is now `Part VIII`, and later parts shifted by one — the PDF's
+  (_Package Architecture_) is now `Part VIII`, and later parts shifted by one — the PDF's
   Parts VIII–XII are the Markdown's Parts IX–XIII.
 - **E-2 (resolved):** the PDF assigned section numbers 45–67 twice. The second range was
   renumbered **+53** to §98–120: Package Architecture §98–102, Implementation Plan (Phases
@@ -67,7 +67,7 @@ author's decision (2026-07-28); `docs/ERRATA.md` is now a correction log:
 
 Non-defects already checked and dismissed (do not "rediscover" them): §118 exists (its title
 begins with a typographic quote: `"One Scene, Everything Moves"`); repeated low numbers
-(1., 2., 3., …) inside sections are numbered *lists*, not sections.
+(1., 2., 3., …) inside sections are numbered _lists_, not sections.
 
 Do not edit the PDF, and do not reintroduce the old dual numbering when quoting it —
 translate PDF references through the ERRATA map instead.
@@ -98,11 +98,12 @@ Four coequal **architectural pillars** (§3):
 4. **Physics** — forces, mass, collisions, constraints, impulses, joints, fields, integration.
 
 Motion vs. physics distinction (recurs throughout the spec):
-- *Animation* specifies how something **should** move.
-- *Physics* calculates how something **must** move under physical rules.
-- *Kinematics* moves objects directly without solving forces.
-- *Dynamics* derives motion from forces, mass, and constraints.
-All four are supported, with controlled blending between them.
+
+- _Animation_ specifies how something **should** move.
+- _Physics_ calculates how something **must** move under physical rules.
+- _Kinematics_ moves objects directly without solving forces.
+- _Dynamics_ derives motion from forces, mass, and constraints.
+  All four are supported, with controlled blending between them.
 
 Headline goals (§4): unified 2D/3D scene graph; animation/motion as first-class systems; one
 physics API for 2D and 3D; deterministic fixed-step simulation; logical physics state separate
@@ -114,12 +115,13 @@ Non-goals for the initial release (§5): industrial FEM, certified safety-critic
 CFD, CAD geometric kernel, full game editor, exact all-scale real-world simulation.
 
 The defining object model (Part XIII): `Object → Transform / Appearance / Motion / Animation /
-Physics / Interaction`. Promise: *"Create once. Position anywhere. Animate naturally. Simulate
-physically. Render everywhere."*
+Physics / Interaction`. Promise: _"Create once. Position anywhere. Animate naturally. Simulate
+physically. Render everywhere."_
 
 ## 5. Architecture reference by spec part
 
 ### Part I — Core Scene Architecture (§6–8, incl. 6a/6b/7a/7b)
+
 - **Unified `Node`** (§6): `id`, `name`, `parent`/`children`, `transform`, `visible`,
   `enabled`, `opacity`, `tags`, `metadata`, `add/remove/traverse`. The base Node stays
   lightweight; behavior attaches via **typed components** or subclasses. Nodes optionally
@@ -144,6 +146,7 @@ physically. Render everywhere."*
   explicitly mapped to a plane.
 
 ### Part II — Time and Motion (§9–13)
+
 - **`TimeState`** (§9): `realTime`, `renderTime`, `simulationTime`, `deltaTime`,
   `unscaledDeltaTime`, `fixedDeltaTime`, `timeScale`, `paused`, `interpolationAlpha`,
   `frame`, `simulationStep`, `droppedTime`. Time domains: real, render, simulation, scaled,
@@ -162,6 +165,7 @@ physically. Render everywhere."*
   parabolic, circular, elliptical, Bézier, Catmull-Rom, ballistic, damped spring, custom.
 
 ### Part III — Animation (§14–19)
+
 - Tween API: `Four.animate(obj).to({...}, seconds).ease("cubic-out").play()` — durations are
   **seconds**, not milliseconds (§7a, §15); 12 easing families including spring/bounce/
   elastic.
@@ -180,6 +184,7 @@ physically. Render everywhere."*
   interpolated render pose → optional blend. (There is no separate `MotionAuthority` enum.)
 
 ### Part IV — Physics (§20–37)
+
 - Stable, renderer-independent API; users never write solver-specific code for common tasks
   (§20). `new Four.PhysicsWorld({ dimension, gravity, solver: "auto" })`.
 - Dimensions `"2d" | "3d"` with parallel naming/semantics (§21).
@@ -219,8 +224,9 @@ physically. Render everywhere."*
   custom solvers are candidates).
 
 ### Part V — Numerical Integration and Simulation (§38–41)
+
 - Built-in lightweight integrators: `explicit-euler | semi-implicit-euler | velocity-verlet |
-  rk2 | rk4`. Defaults: semi-implicit Euler (rigid real-time), velocity Verlet (conservative
+rk2 | rk4`. Defaults: semi-implicit Euler (rigid real-time), velocity Verlet (conservative
   particles), RK4 (small accurate engineering demos). Solver adapters use their own methods.
 - `SimulationSystem` (§39) with explicit, configurable priority ordering: input → commands →
   animation targets → kinematics → forces → physics solve → constraints → collision events →
@@ -231,8 +237,9 @@ physically. Render everywhere."*
   about suspicious values (mass ratios, extreme scales, etc.).
 
 ### Part VI — Rendering and Motion Synchronization (§42–44)
+
 - **`TransformAuthority`** (§42): `manual | animation | kinematic | physics | blended |
-  constraint | network`. Exactly one system owns a node's transform; `"blended"` selects the
+constraint | network`. Exactly one system owns a node's transform; `"blended"` selects the
   §19 pipeline as that single owner; conflicts produce development warnings, never silent
   overwrites.
 - Physics-to-render sync (§43): fixed-rate physics, any-rate rendering; positions lerp between
@@ -241,9 +248,10 @@ physically. Render everywhere."*
 - Camera motion (§44) uses the same timeline/constraint/motion systems as ordinary nodes.
 
 ### Part VII — Graphics, Rendering, Application, Platform (§45–97)
+
 - **Application model** (§45): `Four.Application` owns scene, renderer, time, scheduler,
   input, assets, diagnostics, cameras, viewports; lifecycle `initialize/start/stop/pause/
-  resume/step/resize/dispose`. Advanced users may construct systems independently — the
+resume/step/resize/dispose`. Advanced users may construct systems independently — the
   wrapper is a convenience, not a requirement.
 - Scene queries (§46): `findById/Name/Tag/Component`, selector syntax
   (`scene.query("Mesh.dynamic[visible=true]")`); symbolic **layers** compile to masks but keep
@@ -290,7 +298,7 @@ physically. Render everywhere."*
   section views.
 - Lighting (§68), shadows (§69), post-processing (§70).
 - **Unified 2D/3D picking** (§71): `hitTestMode = "bounds" | "geometry" | "pixel" | "gpu" |
-  "custom"`; engine picks the cheapest valid method.
+"custom"`; engine picks the cheapest valid method.
 - Input (§72): DOM-mirroring capture → target → bubble phases; pointer capture across mixed
   2D/3D.
 - Retained-mode UI (§73–75): `@fourjs/ui` controls are scene nodes; layout modes absolute/
@@ -330,31 +338,34 @@ physically. Render everywhere."*
   panel applying impulses) worth reading as the canonical "feel" of the API.
 
 ### Part VIII — Package Architecture (§98–102)
+
 See §7 below (package map).
 
 ### Part IX — Implementation Plan (§103–113 = Phases 0–10)
-| Phase | Scope | Exit criterion |
-|---|---|---|
-| 0 | Root files: `package.json`, `bun.lock`, `bunfig.toml`, `tsconfig.base.json`, `.oxlintrc.json`, `.github/workflows/ci.yml`, CONTRIBUTING, CODE_OF_CONDUCT, ROADMAP — plus the implementation plan, which lives at `docs/plans/IMPLEMENTATION_PLAN.md` (owner decision; §103 names the file without a path) | Monorepo installs; packages compile; tests run; docs build; example starts |
-| 1 | Vector2/3/4, Matrix3/4, Quaternion, Transform, Node, Group, Scene, component model (§6a), EventEmitter (§6b), Clock, TimeState, fixed-step scheduler, dirty transform propagation | Scene graph deterministically steps **without a renderer** |
-| 2 | MotionComponent, kinematic controller, paths, trajectories, spring motion, transform authority, interpolation buffers | Motion is deterministic, renderer-independent, unit tested |
-| 3 | Renderer interface, **WebGL 2 backend**, cameras, render list, buffers, shaders, textures, viewports, interpolation-aware rendering | Moving 2D/3D primitives render smoothly under fixed-step simulation |
-| 4 | Tween, easing, Timeline, AnimationClip/Track, property binding, deterministic evaluation | Any numeric/vector/quaternion/color/transform property is animatable |
-| 5 | PhysicsWorld, RigidBody, Collider, materials, forces, collision events, raycasts, sync, debug draw — **first adapter: Rapier** (modern WASM, covers 2D+3D) | Mixed 2D/3D demo with gravity, collisions, impulses, sensors via the common API |
-| 6 | Joints (fixed/distance/spring/hinge/slider/spherical), motors, limits, break thresholds | Constraints stable under real-time loads |
-| 7 | Transform authority (§42), kinematic↔dynamic transitions, ragdoll, blended poses, root motion | Animated↔kinematic↔physical control without discontinuities |
-| 8 | Steering, flocking, IK, trajectory prediction, spring-damper, **PID controller utility** | — (plan-defined exit pending owner confirmation) |
-| 9 | Particle emitters, CPU + GPU compute simulation, force fields, trails | 100k simple particles at interactive rates |
-| 10 | Snapshots, input recording, replay, checksums, frame stepping, solver stats | A physics defect can be captured, replayed, inspected frame by frame |
-| 3a (§106a, rev 1.5) | Input routing, picking, dragging, sprites, MVP-tier text | Pointer events, picking, dragging, sprites, labels in a mixed 2D/3D example |
-| 11 (§113a, rev 1.5) | Assets/glTF, serialization+migration, UI MVP subset, benchmark harness, docs | Scene saves/reloads/benchmarks; §120 tooling complete |
+
+| Phase               | Scope                                                                                                                                                                                                                                                                                                     | Exit criterion                                                                  |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 0                   | Root files: `package.json`, `bun.lock`, `bunfig.toml`, `tsconfig.base.json`, `.oxlintrc.json`, `.github/workflows/ci.yml`, CONTRIBUTING, CODE_OF_CONDUCT, ROADMAP — plus the implementation plan, which lives at `docs/plans/IMPLEMENTATION_PLAN.md` (owner decision; §103 names the file without a path) | Monorepo installs; packages compile; tests run; docs build; example starts      |
+| 1                   | Vector2/3/4, Matrix3/4, Quaternion, Transform, Node, Group, Scene, component model (§6a), EventEmitter (§6b), Clock, TimeState, fixed-step scheduler, dirty transform propagation                                                                                                                         | Scene graph deterministically steps **without a renderer**                      |
+| 2                   | MotionComponent, kinematic controller, paths, trajectories, spring motion, transform authority, interpolation buffers                                                                                                                                                                                     | Motion is deterministic, renderer-independent, unit tested                      |
+| 3                   | Renderer interface, **WebGL 2 backend**, cameras, render list, buffers, shaders, textures, viewports, interpolation-aware rendering                                                                                                                                                                       | Moving 2D/3D primitives render smoothly under fixed-step simulation             |
+| 4                   | Tween, easing, Timeline, AnimationClip/Track, property binding, deterministic evaluation                                                                                                                                                                                                                  | Any numeric/vector/quaternion/color/transform property is animatable            |
+| 5                   | PhysicsWorld, RigidBody, Collider, materials, forces, collision events, raycasts, sync, debug draw — **first adapter: Rapier** (modern WASM, covers 2D+3D)                                                                                                                                                | Mixed 2D/3D demo with gravity, collisions, impulses, sensors via the common API |
+| 6                   | Joints (fixed/distance/spring/hinge/slider/spherical), motors, limits, break thresholds                                                                                                                                                                                                                   | Constraints stable under real-time loads                                        |
+| 7                   | Transform authority (§42), kinematic↔dynamic transitions, ragdoll, blended poses, root motion                                                                                                                                                                                                             | Animated↔kinematic↔physical control without discontinuities                     |
+| 8                   | Steering, flocking, IK, trajectory prediction, spring-damper, **PID controller utility**                                                                                                                                                                                                                  | — (plan-defined exit pending owner confirmation)                                |
+| 9                   | Particle emitters, CPU + GPU compute simulation, force fields, trails                                                                                                                                                                                                                                     | 100k simple particles at interactive rates                                      |
+| 10                  | Snapshots, input recording, replay, checksums, frame stepping, solver stats                                                                                                                                                                                                                               | A physics defect can be captured, replayed, inspected frame by frame            |
+| 3a (§106a, rev 1.5) | Input routing, picking, dragging, sprites, MVP-tier text                                                                                                                                                                                                                                                  | Pointer events, picking, dragging, sprites, labels in a mixed 2D/3D example     |
+| 11 (§113a, rev 1.5) | Assets/glTF, serialization+migration, UI MVP subset, benchmark harness, docs                                                                                                                                                                                                                              | Scene saves/reloads/benchmarks; §120 tooling complete                           |
 
 ### Parts X–XIII
+
 - Part X (§114–117): canonical public API examples — animated circle, dynamic
   ball, motorized hinge, physics/animation blend with impact-triggered ragdoll.
-- Part XI (§118–119): flagship demos — *"One Scene, Everything Moves"* (success
+- Part XI (§118–119): flagship demos — _"One Scene, Everything Moves"_ (success
   criterion: "one motion-capable engine, not a graphics library with physics bolted on") and
-  the *Electric Motor Digital Twin* engineering demo (PID speed control, fault injection,
+  the _Electric Motor Digital Twin_ engineering demo (PID speed control, fault injection,
   torque overlays, replay).
 - Part XII (§120): **Revised MVP** — Node/Group/Scene/Transform/cameras/layers;
   clock + fixed-step + MotionComponent + path motion + interpolation; Tween/easing/Timeline/
@@ -374,6 +385,7 @@ Actions**. Requirements: documented public APIs, tree-shakable modules, package-
 checks, browser compatibility matrix, changelogs.
 
 Test taxonomy (§92):
+
 - **Unit**: math (vectors/matrices/quaternions), transforms, scene graph, clocks/scheduling,
   animation interpolation, geometry generation, path ops, serialization, physics descriptor/
   adapter normalization.
@@ -402,28 +414,28 @@ All packages are `@fourjs/`-scoped. The scaffold matches §98 (Proposed Monorepo
 24 packages plus the top-level dirs `examples/`, `benchmarks/`, `docs/`, `tests/`, `tools/`,
 `website/`.
 
-| Package | Layer / responsibility |
-|---|---|
-| `core` | Foundation: eventing (§6b), component model (§6a), unit system (§40), plugin host (§81), `FourError` (§89), lifecycle/validation infrastructure |
-| `math` | Vector2/3/4, Matrix3/4, Quaternion, Transform math; math conventions (§7b) |
-| `scene` | Node, Group, Scene, transforms, layers, queries |
-| `motion` | Clocks, fixed-step scheduler, MotionComponent, velocity/acceleration, kinematic controllers, path following, **camera rigs/controls** (§44, §47), trajectories, spring motion, steering, interpolation, **transform authority** (§99, Motion Package) |
-| `animation` | Tweens, easing, timelines, clips, tracks, state machines, blend trees, skeletons, IK, physics-animation blending (§100, Animation Package) |
-| `physics` | **Stable public API**: body/collider descriptors, materials, constraints, joints, force fields, queries, event normalization, solver adapters, snapshots, unit application (unit system lives in `core`), debug data (§101, Physics Package) |
-| `physics-rapier`, `physics-box2d` | Solver adapters implementing the shared adapter interface, declaring capability differences (§102, Solver Packages). *No `physics-matter`/`physics-cannon` — see ERRATA E-3.* |
-| `physics-soft` | Soft bodies and deformables (not a solver adapter) |
-| `particles` | Particle emitters and simulation |
-| `geometry` | 2D/3D geometry, path model, tessellation module (§52) |
-| `materials` | Material families, paints, node materials |
-| `render` | Backend-independent renderer interface, render graph |
-| `render-webgpu`, `render-webgl`, `render-canvas`, `render-svg` | Rendering backends |
-| `input` | Pointer/keyboard/gamepad input, event propagation, picking |
-| `assets` | Asset manager, loaders (glTF, images, fonts) |
-| `text` | Typography, shaping, SDF rendering |
-| `ui` | Retained-mode UI controls, layout, accessibility mirror |
-| `serialization` | `.four.json` / `.four` formats, migration |
-| `diagnostics` | Stats, debug overlays, validation warnings |
-| `four` | Umbrella package (the `import * as Four from "fourJS"` surface); hosts the §45 `Application` composition root (rev 1.4) |
+| Package                                                        | Layer / responsibility                                                                                                                                                                                                                                |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `core`                                                         | Foundation: eventing (§6b), component model (§6a), unit system (§40), plugin host (§81), `FourError` (§89), lifecycle/validation infrastructure                                                                                                       |
+| `math`                                                         | Vector2/3/4, Matrix3/4, Quaternion, Transform math; math conventions (§7b)                                                                                                                                                                            |
+| `scene`                                                        | Node, Group, Scene, transforms, layers, queries                                                                                                                                                                                                       |
+| `motion`                                                       | Clocks, fixed-step scheduler, MotionComponent, velocity/acceleration, kinematic controllers, path following, **camera rigs/controls** (§44, §47), trajectories, spring motion, steering, interpolation, **transform authority** (§99, Motion Package) |
+| `animation`                                                    | Tweens, easing, timelines, clips, tracks, state machines, blend trees, skeletons, IK, physics-animation blending (§100, Animation Package)                                                                                                            |
+| `physics`                                                      | **Stable public API**: body/collider descriptors, materials, constraints, joints, force fields, queries, event normalization, solver adapters, snapshots, unit application (unit system lives in `core`), debug data (§101, Physics Package)          |
+| `physics-rapier`, `physics-box2d`                              | Solver adapters implementing the shared adapter interface, declaring capability differences (§102, Solver Packages). _No `physics-matter`/`physics-cannon` — see ERRATA E-3._                                                                         |
+| `physics-soft`                                                 | Soft bodies and deformables (not a solver adapter)                                                                                                                                                                                                    |
+| `particles`                                                    | Particle emitters and simulation                                                                                                                                                                                                                      |
+| `geometry`                                                     | 2D/3D geometry, path model, tessellation module (§52)                                                                                                                                                                                                 |
+| `materials`                                                    | Material families, paints, node materials                                                                                                                                                                                                             |
+| `render`                                                       | Backend-independent renderer interface, render graph                                                                                                                                                                                                  |
+| `render-webgpu`, `render-webgl`, `render-canvas`, `render-svg` | Rendering backends                                                                                                                                                                                                                                    |
+| `input`                                                        | Pointer/keyboard/gamepad input, event propagation, picking                                                                                                                                                                                            |
+| `assets`                                                       | Asset manager, loaders (glTF, images, fonts)                                                                                                                                                                                                          |
+| `text`                                                         | Typography, shaping, SDF rendering                                                                                                                                                                                                                    |
+| `ui`                                                           | Retained-mode UI controls, layout, accessibility mirror                                                                                                                                                                                               |
+| `serialization`                                                | `.four.json` / `.four` formats, migration                                                                                                                                                                                                             |
+| `diagnostics`                                                  | Stats, debug overlays, validation warnings                                                                                                                                                                                                            |
+| `four`                                                         | Umbrella package (the `import * as Four from "fourJS"` surface); hosts the §45 `Application` composition root (rev 1.4)                                                                                                                               |
 
 Dependency direction to preserve: `math`/`core` at the bottom; `scene`, `motion`, `animation`
 above them; `physics` defines the API that `physics-*` adapters implement; `render` defines

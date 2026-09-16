@@ -107,7 +107,9 @@ describe("validation catalogue", () => {
 
   it("warnCoordinateEnvelope stays quiet inside the envelope", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    expect(warnCoordinateEnvelope({ x: 1, y: 2, z: 3 }, "near origin")).toBe(false);
+    expect(warnCoordinateEnvelope({ x: 1, y: 2, z: 3 }, "near origin")).toBe(
+      false,
+    );
     expect(warn).not.toHaveBeenCalled();
   });
 
@@ -121,16 +123,10 @@ describe("validation catalogue", () => {
   it("warnUnstableScale fires on extreme and near-zero ratios", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     expect(
-      warnUnstableScale(
-        { x: UNSTABLE_SCALE_RATIO + 1, y: 1, z: 1 },
-        "extreme",
-      ),
+      warnUnstableScale({ x: UNSTABLE_SCALE_RATIO + 1, y: 1, z: 1 }, "extreme"),
     ).toBe(true);
     expect(
-      warnUnstableScale(
-        { x: 1, y: NEAR_ZERO_SCALE / 2, z: 1 },
-        "microscopic",
-      ),
+      warnUnstableScale({ x: 1, y: NEAR_ZERO_SCALE / 2, z: 1 }, "microscopic"),
     ).toBe(true);
     expect(warnUnstableScale({ x: 1, y: 1, z: 1 }, "balanced")).toBe(false);
     expect(warn).toHaveBeenCalledTimes(2);
@@ -195,7 +191,9 @@ describe("validation catalogue", () => {
     vi.stubGlobal("__FOUR_DEV__", false);
     vi.resetModules();
     const production = await import("../src/validation.js");
-    expect(production.warnCoordinateEnvelope({ x: 1e6, y: 0, z: 0 }, "n")).toBe(false);
+    expect(production.warnCoordinateEnvelope({ x: 1e6, y: 0, z: 0 }, "n")).toBe(
+      false,
+    );
     expect(production.warnImpossibleMass(-1, "x")).toBe(false);
     expect(production.warnImpossibleInertia(-1, "x")).toBe(false);
     expect(production.warnVersionMismatch(1, 2, "x")).toBe(false);

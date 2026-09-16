@@ -169,7 +169,9 @@ describe("§8 — which space a body may be simulated in", () => {
     const target = new Group();
     target.transformAuthority = "physics";
     target.transform.position.set(2, 4, 0);
-    target.addComponent(new RigidBody({ type: "dynamic", space: "local-plane", mass: 1 }));
+    target.addComponent(
+      new RigidBody({ type: "dynamic", space: "local-plane", mass: 1 }),
+    );
     target.addComponent(
       new Collider({ shape: { type: "sphere", radius: 0.5 } }),
     );

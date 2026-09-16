@@ -29,11 +29,7 @@ afterEach(() => {
 describe("leak registry", () => {
   it("warns with the label and creation site after simulated GC", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const id = trackDisposable(
-      {},
-      "level-atlas",
-      "at loadLevel (demo.ts:40)",
-    );
+    const id = trackDisposable({}, "level-atlas", "at loadLevel (demo.ts:40)");
     expect(id).toBeGreaterThan(0);
     expect(typeof trackedDisposableId).toBe("function");
     reportFinalized(id);
@@ -127,7 +123,11 @@ describe("leak registry", () => {
     vi.resetModules();
     const isolated = await import("../src/leak-registry.js");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const id = isolated.trackDisposable({}, "orphan", "at missing-registry.ts:1");
+    const id = isolated.trackDisposable(
+      {},
+      "orphan",
+      "at missing-registry.ts:1",
+    );
     expect(id).toBeGreaterThan(0);
     isolated.reportFinalized(id);
     expect(isolated.auditFinalizedLeaks()).toBe(1);

@@ -20,7 +20,7 @@ bun run example:build                 # production build into examples/first-2d-
 ```
 
 Every entry below names its own `bun run …:build` script. Those **build** an example —
-they write a `dist/` and open nothing. To *look* at one, use the `bunx vite` form above
+they write a `dist/` and open nothing. To _look_ at one, use the `bunx vite` form above
 with that example's directory; nested examples take their full path, as in
 `bunx vite examples/flagship/motor-digital-twin`.
 

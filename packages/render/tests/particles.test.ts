@@ -16,7 +16,11 @@
  */
 
 import { planeGeometry } from "@fourjs/geometry";
-import { Vector3, constructionCount, resetConstructionCount } from "@fourjs/math";
+import {
+  Vector3,
+  constructionCount,
+  resetConstructionCount,
+} from "@fourjs/math";
 import { SpriteMaterial, UnlitMaterial } from "@fourjs/materials";
 import {
   DEFAULT_LAYER_MASK,

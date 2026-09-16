@@ -38,7 +38,11 @@
  */
 
 import { Vector3 } from "@fourjs/math";
-import { PRIORITY_FORCES, SystemRegistry, createTimeState } from "@fourjs/motion";
+import {
+  PRIORITY_FORCES,
+  SystemRegistry,
+  createTimeState,
+} from "@fourjs/motion";
 import {
   dragField,
   radialField,

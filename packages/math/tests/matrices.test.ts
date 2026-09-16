@@ -959,9 +959,7 @@ describe("Matrix changed hook (plan D3)", () => {
       callsNormal += 1;
     };
     dest.setNormalFromMatrix4(
-      new Matrix4().fromArray([
-        1, 2, 3, 0, 2, 4, 6, 0, 3, 6, 9, 0, 0, 0, 0, 1,
-      ]),
+      new Matrix4().fromArray([1, 2, 3, 0, 2, 4, 6, 0, 3, 6, 9, 0, 0, 0, 0, 1]),
     );
     expect(callsNormal).toBe(0);
 

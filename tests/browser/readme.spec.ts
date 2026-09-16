@@ -123,7 +123,7 @@ function decodePng(png: Buffer): DecodedImage {
   let seenHeader = false;
   const dataChunks: Buffer[] = [];
 
-  for (let offset = 8; offset + 8 <= png.length; ) {
+  for (let offset = 8; offset + 8 <= png.length;) {
     const length = png.readUInt32BE(offset);
     const type = png.toString("ascii", offset + 4, offset + 8);
     const body = png.subarray(offset + 8, offset + 8 + length);

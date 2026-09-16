@@ -8,12 +8,7 @@
     "noEmit": true,
     "strict": false,
     "skipLibCheck": true,
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   },
-  "include": [
-    "pick-latency.mjs",
-    "harness.mjs"
-  ]
+  "include": ["pick-latency.mjs", "harness.mjs"]
 }

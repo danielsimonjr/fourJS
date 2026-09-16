@@ -82,7 +82,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { PRIORITY_FORCES } from "@fourjs/motion";
-import { PARTICLE_DRAWS_PER_SPAWN, PRIORITY_PARTICLES } from "@fourjs/particles";
+import {
+  PARTICLE_DRAWS_PER_SPAWN,
+  PRIORITY_PARTICLES,
+} from "@fourjs/particles";
 import { beforeAll, describe, expect, test } from "vitest";
 
 import {

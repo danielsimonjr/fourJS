@@ -23,9 +23,8 @@ describe("warnDisposedInUse (§83)", () => {
   it("is a no-op when DEV is false", async () => {
     vi.stubGlobal("__FOUR_DEV__", false);
     vi.resetModules();
-    const { warnDisposedInUse: productionWarn } = await import(
-      "../src/resource-warnings.js"
-    );
+    const { warnDisposedInUse: productionWarn } =
+      await import("../src/resource-warnings.js");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     expect(productionWarn("texture", "t-prod")).toBeUndefined();
     expect(warn).not.toHaveBeenCalled();

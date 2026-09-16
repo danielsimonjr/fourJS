@@ -1787,8 +1787,7 @@ export class Application extends EventEmitter<ApplicationEventMap> {
       frameStarted = (this.#now ?? monotonicNowSeconds)();
     }
     const droppedBefore = DEV ? this.scheduler.time.droppedTime : 0;
-    const mathAllocBefore =
-      DEV && stats !== null ? constructionCount() : 0;
+    const mathAllocBefore = DEV && stats !== null ? constructionCount() : 0;
     this.#stepping = true;
     try {
       this.scheduler.step(elapsedSeconds);

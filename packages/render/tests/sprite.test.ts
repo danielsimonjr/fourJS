@@ -1296,11 +1296,7 @@ describe("groupSpritesByTexture (§55 atlas grouping)", () => {
   it("reads Sprite.material.texture and groups a shared atlas", () => {
     const shared = spriteMaterial();
     const other = spriteMaterial();
-    const sprites = [
-      new Sprite(shared),
-      new Sprite(shared),
-      new Sprite(other),
-    ];
+    const sprites = [new Sprite(shared), new Sprite(shared), new Sprite(other)];
 
     expect(groupSpritesByTexture(sprites)).toEqual([
       { texture: shared.texture, start: 0, count: 2 },

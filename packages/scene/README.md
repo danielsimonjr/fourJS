@@ -15,7 +15,7 @@ Implements §6–8, §42–43, and §46–48 of [`docs/SPECIFICATION.md`](../../
 
 ## Staged / not yet implemented
 
-- A render/UI consumer that *places* a node from `NodeSpace`'s presentation modes (`screen` / `viewport` / `camera` / `billboard`). The declaration and §79 pair ship; placement is still §47/§48/§74.
+- A render/UI consumer that _places_ a node from `NodeSpace`'s presentation modes (`screen` / `viewport` / `camera` / `billboard`). The declaration and §79 pair ship; placement is still §47/§48/§74.
 
 Unit tests are colocated in `tests/` per §92.
 

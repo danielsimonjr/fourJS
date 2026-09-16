@@ -26,33 +26,33 @@ between-frames latency record. **Not built:** particle/compute snapshots, async
 
 ## 2. Anti-hallucination sheet
 
-| Fact | Pinned at |
-| --- | --- |
-| `RasterSource { width, height, origin?: "bottom-left" \| "top-left", colorSpace?: ColorSpace, paint?(): void, readPixels(out: Uint8Array): void }` | `packages/render/src/raster.ts:142-187` |
-| `CanvasTexture` keeps `#source` private; `update(): boolean` calls `source.paint?.()` then `source.readPixels(buffer)`; `invalidate()` marks stale; `DEFAULT_MAXIMUM_BYTES = 64 * 1024 * 1024` is **module-private** today (`raster.ts:206`) | `packages/render/src/raster.ts:328-500` |
-| Over-limit size on an application-built source is a **`RangeError`** (§85), not `UNTRUSTED_INPUT_REJECTED` — the comment at `raster.ts:250-252` records why | that file |
-| `Renderer.readPixels?(target, region?): Promise<ArrayBuffer>` — optional member, **presence is the capability**; result is tightly packed RGBA8, rows bottom-to-top, `region` in target texels from the bottom-left; rejects with `FourError` `DEVICE_LOST`/`CONTEXT_LOST`, `INVALID_APPLICATION_STATE`, `UNSUPPORTED_GPU_FEATURE`; a never-rendered target reads zeros | `packages/render/src/renderer.ts:762-808` |
-| `supportsReadPixels(renderer)` narrows to `PixelReader`; `validateReadbackRegion(target, region)` is the shared §85 check | `packages/render/src/read-pixels.ts:37-90` |
-| The `Renderer` interface has **no** `beginFrame`/`endFrame`; the frame is `render(...)` (line 661); `RenderGraph.execute` drives it | `renderer.ts`, `render-graph.ts` |
-| `RenderTarget { id, width, height, disposed, colorTexture: RenderTargetTexture }`; `RenderTargetTexture.isRenderTargetTexture = true as const` with `.renderTarget`; guard `isRenderTargetTexture(value)` | `packages/render/src/render-target.ts:138-160, 409-460` |
-| `collectSampledTargets(root, out: Set<RenderTarget>)` is the feedback scan: it inspects `item.material.texture` (sprites), `item.material.map` (others), and node-material reflection; issues carry `code: "feedback"` with severity `"error"` | `packages/render/src/render-graph.ts:371-405, 700-725` |
-| `Rectangle2 { x, y, width, height }` (mutable, `@fourjs/math`) | `packages/math/src/rectangle2.ts:37-60` |
-| `ColorSpace = "srgb" \| "linear"` (from `@fourjs/math`); `validateColorSpace(value, who)` is a **render-package** helper in `render-target.ts`, imported by `raster.ts` | `packages/math/src/color.ts:114`, `packages/render/src/render-target.ts`, `raster.ts:111, 238-240` |
-| The render barrel's raster block is `packages/render/src/index.ts:162-172`; the umbrella's `render.ts` is `export *` | those files |
-| Display-only scan: `ALLOWED_PACKAGES = {render, render-webgl, four}`; `FORBIDDEN` = `/raster\.js"/` path regex + `RasterSource`, `RasterOrigin`, `CanvasTexture`, `CanvasTextureOptions` | `tests/integration/raster-display-only.test.ts:54-120` |
-| Browser gates: `tests/browser/<name>.spec.ts` bundling `tests/browser/fixtures/<name>-page.ts` with Vite (`bundleFixture`), serving on port 4173, probing pixels; WebGPU gates live in `tests/browser/webgpu/webgpu-<name>.spec.ts` under the `webgpu` Playwright project (launch flag `--enable-unsafe-webgpu`, SwiftShader) | `tests/browser/raster.spec.ts`, `tests/browser/webgpu/webgpu-readpixels-region.spec.ts`, `playwright.config.ts:127-145, 351` |
-| WebGL `readPixels` at `packages/render-webgl/src/webgl-renderer.ts:3291`; WebGPU at `packages/render-webgpu/src/webgpu-renderer.ts:2506` (`mapAsync`) — **do not edit either** | those files |
-| Guide 15 is `docs/guides/raster-painting.md`, listed in `docs/guides/README.md:85` | those files |
-| Commands as in the other plans; `bun run test:browser` runs Playwright (`bunx playwright test`; add `--project=webgpu` for the WebGPU project) | root `package.json` |
+| Fact                                                                                                                                                                                                                                                                                                                                                                    | Pinned at                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `RasterSource { width, height, origin?: "bottom-left" \| "top-left", colorSpace?: ColorSpace, paint?(): void, readPixels(out: Uint8Array): void }`                                                                                                                                                                                                                      | `packages/render/src/raster.ts:142-187`                                                                                      |
+| `CanvasTexture` keeps `#source` private; `update(): boolean` calls `source.paint?.()` then `source.readPixels(buffer)`; `invalidate()` marks stale; `DEFAULT_MAXIMUM_BYTES = 64 * 1024 * 1024` is **module-private** today (`raster.ts:206`)                                                                                                                            | `packages/render/src/raster.ts:328-500`                                                                                      |
+| Over-limit size on an application-built source is a **`RangeError`** (§85), not `UNTRUSTED_INPUT_REJECTED` — the comment at `raster.ts:250-252` records why                                                                                                                                                                                                             | that file                                                                                                                    |
+| `Renderer.readPixels?(target, region?): Promise<ArrayBuffer>` — optional member, **presence is the capability**; result is tightly packed RGBA8, rows bottom-to-top, `region` in target texels from the bottom-left; rejects with `FourError` `DEVICE_LOST`/`CONTEXT_LOST`, `INVALID_APPLICATION_STATE`, `UNSUPPORTED_GPU_FEATURE`; a never-rendered target reads zeros | `packages/render/src/renderer.ts:762-808`                                                                                    |
+| `supportsReadPixels(renderer)` narrows to `PixelReader`; `validateReadbackRegion(target, region)` is the shared §85 check                                                                                                                                                                                                                                               | `packages/render/src/read-pixels.ts:37-90`                                                                                   |
+| The `Renderer` interface has **no** `beginFrame`/`endFrame`; the frame is `render(...)` (line 661); `RenderGraph.execute` drives it                                                                                                                                                                                                                                     | `renderer.ts`, `render-graph.ts`                                                                                             |
+| `RenderTarget { id, width, height, disposed, colorTexture: RenderTargetTexture }`; `RenderTargetTexture.isRenderTargetTexture = true as const` with `.renderTarget`; guard `isRenderTargetTexture(value)`                                                                                                                                                               | `packages/render/src/render-target.ts:138-160, 409-460`                                                                      |
+| `collectSampledTargets(root, out: Set<RenderTarget>)` is the feedback scan: it inspects `item.material.texture` (sprites), `item.material.map` (others), and node-material reflection; issues carry `code: "feedback"` with severity `"error"`                                                                                                                          | `packages/render/src/render-graph.ts:371-405, 700-725`                                                                       |
+| `Rectangle2 { x, y, width, height }` (mutable, `@fourjs/math`)                                                                                                                                                                                                                                                                                                          | `packages/math/src/rectangle2.ts:37-60`                                                                                      |
+| `ColorSpace = "srgb" \| "linear"` (from `@fourjs/math`); `validateColorSpace(value, who)` is a **render-package** helper in `render-target.ts`, imported by `raster.ts`                                                                                                                                                                                                 | `packages/math/src/color.ts:114`, `packages/render/src/render-target.ts`, `raster.ts:111, 238-240`                           |
+| The render barrel's raster block is `packages/render/src/index.ts:162-172`; the umbrella's `render.ts` is `export *`                                                                                                                                                                                                                                                    | those files                                                                                                                  |
+| Display-only scan: `ALLOWED_PACKAGES = {render, render-webgl, four}`; `FORBIDDEN` = `/raster\.js"/` path regex + `RasterSource`, `RasterOrigin`, `CanvasTexture`, `CanvasTextureOptions`                                                                                                                                                                                | `tests/integration/raster-display-only.test.ts:54-120`                                                                       |
+| Browser gates: `tests/browser/<name>.spec.ts` bundling `tests/browser/fixtures/<name>-page.ts` with Vite (`bundleFixture`), serving on port 4173, probing pixels; WebGPU gates live in `tests/browser/webgpu/webgpu-<name>.spec.ts` under the `webgpu` Playwright project (launch flag `--enable-unsafe-webgpu`, SwiftShader)                                           | `tests/browser/raster.spec.ts`, `tests/browser/webgpu/webgpu-readpixels-region.spec.ts`, `playwright.config.ts:127-145, 351` |
+| WebGL `readPixels` at `packages/render-webgl/src/webgl-renderer.ts:3291`; WebGPU at `packages/render-webgpu/src/webgpu-renderer.ts:2506` (`mapAsync`) — **do not edit either**                                                                                                                                                                                          | those files                                                                                                                  |
+| Guide 15 is `docs/guides/raster-painting.md`, listed in `docs/guides/README.md:85`                                                                                                                                                                                                                                                                                      | those files                                                                                                                  |
+| Commands as in the other plans; `bun run test:browser` runs Playwright (`bunx playwright test`; add `--project=webgpu` for the WebGPU project)                                                                                                                                                                                                                          | root `package.json`                                                                                                          |
 
 ## 3. Roster, ownership, waves
 
-| Agent | Owns | Wave |
-| --- | --- | --- |
-| **A1 — the source** | `packages/render/src/gpu-readback.ts` (new), `packages/render/src/raster.ts` (edit: export `DEFAULT_MAXIMUM_BYTES` as `DEFAULT_RASTER_MAXIMUM_BYTES`; add `readbackTarget` accessor), `packages/render/src/index.ts` (edit), `packages/render/tests/gpu-readback.test.ts` (new), `packages/render/tests/raster.test.ts` (append) | 1 |
-| **A2 — feedback check** | `packages/render/src/render-graph.ts` (edit: one branch), `packages/render/tests/render-graph.test.ts` (append) | 2 |
-| **A3 — boundary + browser gates** | `tests/integration/raster-display-only.test.ts` (edit `FORBIDDEN`), `tests/browser/fixtures/gpu-readback-page.ts` + `tests/browser/gpu-readback.spec.ts` (new), `tests/browser/webgpu/webgpu-gpu-readback.spec.ts` (new) | 2 |
-| **A4 — guide + latency record** | `docs/guides/raster-painting.md` (append a section), `docs/guides/README.md` (edit guide 15's blurb), `tests/browser/gpu-readback-latency.spec.ts` (new, opt-in via env), `benchmarks/results/gpu-readback-latency.json` (recorded by hand from that spec's output, with the host line) | 2 |
+| Agent                             | Owns                                                                                                                                                                                                                                                                                                                             | Wave |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| **A1 — the source**               | `packages/render/src/gpu-readback.ts` (new), `packages/render/src/raster.ts` (edit: export `DEFAULT_MAXIMUM_BYTES` as `DEFAULT_RASTER_MAXIMUM_BYTES`; add `readbackTarget` accessor), `packages/render/src/index.ts` (edit), `packages/render/tests/gpu-readback.test.ts` (new), `packages/render/tests/raster.test.ts` (append) | 1    |
+| **A2 — feedback check**           | `packages/render/src/render-graph.ts` (edit: one branch), `packages/render/tests/render-graph.test.ts` (append)                                                                                                                                                                                                                  | 2    |
+| **A3 — boundary + browser gates** | `tests/integration/raster-display-only.test.ts` (edit `FORBIDDEN`), `tests/browser/fixtures/gpu-readback-page.ts` + `tests/browser/gpu-readback.spec.ts` (new), `tests/browser/webgpu/webgpu-gpu-readback.spec.ts` (new)                                                                                                         | 2    |
+| **A4 — guide + latency record**   | `docs/guides/raster-painting.md` (append a section), `docs/guides/README.md` (edit guide 15's blurb), `tests/browser/gpu-readback-latency.spec.ts` (new, opt-in via env), `benchmarks/results/gpu-readback-latency.json` (recorded by hand from that spec's output, with the host line)                                          | 2    |
 
 A1 first (everyone needs the class and the accessor). Then A2–A4 in parallel.
 
@@ -85,16 +85,21 @@ get readbackTarget(): RenderTarget | null {
 **Creates `gpu-readback.ts`:**
 
 ```ts
-export interface GpuReadbackSourceOptions { /* RFC §1 corrected sketch */ }
+export interface GpuReadbackSourceOptions {
+  /* RFC §1 corrected sketch */
+}
 export class GpuReadbackSource implements RasterSource, Disposable {
   readonly isGpuReadbackSource = true as const;
   readonly target: RenderTarget;
-  readonly width: number; readonly height: number;
+  readonly width: number;
+  readonly height: number;
   readonly origin = "bottom-left" as const;
   readonly colorSpace: ColorSpace;
-  readonly #region: Rectangle2 | null;   // copied at construction
-  #snapshot: Uint8Array | null;          // width*height*4, zero-filled until the first refresh
-  #hasSnapshot = false; #disposed = false; #refreshing = false;
+  readonly #region: Rectangle2 | null; // copied at construction
+  #snapshot: Uint8Array | null; // width*height*4, zero-filled until the first refresh
+  #hasSnapshot = false;
+  #disposed = false;
+  #refreshing = false;
   constructor(target: RenderTarget, options: GpuReadbackSourceOptions = {}) {
     // target.disposed → FourError INVALID_APPLICATION_STATE
     // region → validateReadbackRegion(target, region) (its RangeError propagates)
@@ -113,7 +118,9 @@ export class GpuReadbackSource implements RasterSource, Disposable {
     // disposed → FourError INVALID_APPLICATION_STATE; out.length < w*h*4 → RangeError
     // out.set(#snapshot) — zeros before the first successful refresh (RFC Q2)
   }
-  dispose(): void { /* idempotent; drop #snapshot */ }
+  dispose(): void {
+    /* idempotent; drop #snapshot */
+  }
 }
 export function isGpuReadbackSource(value: unknown): value is GpuReadbackSource;
 ```
@@ -158,7 +165,7 @@ cite RFC 0009 §3.
 `UnlitMaterial` whose `map` is a `CanvasTexture(new GpuReadbackSource(target))` → `execute`
 (or the validation entry the existing feedback test uses) reports an issue with
 `code: "feedback"`, severity `"error"`, and the pass name; (2) the same texture sampled in a
-pass drawing into a *different* target → no feedback issue; (3) a sprite material variant
+pass drawing into a _different_ target → no feedback issue; (3) a sprite material variant
 of (1); (4) a `CanvasTexture` over a plain source → no issue (regression guard).
 
 **Done when:** render package build + test green; the existing feedback tests unchanged.
@@ -196,7 +203,7 @@ green locally.
 - `docs/guides/raster-painting.md`: append "## Snapshotting a render target
   (`GpuReadbackSource`, RFC 0009)" — the corrected RFC's class sketch, the three rules
   (between frames only; display-only; feedback refused, with the exact `"feedback"` issue
-  text), a 15-line example, and a *When not to use it* paragraph pointing at
+  text), a 15-line example, and a _When not to use it_ paragraph pointing at
   `RenderTarget.colorTexture` (R-4). Update guide 15's blurb in `docs/guides/README.md`.
   Run `node tools/check-docs.mjs` (it counts runnable examples — read its rules for how a
   guide snippet is marked runnable vs illustrative before adding one).
