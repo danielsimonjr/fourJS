@@ -3,3 +3,9 @@ dist
 docs/api
 .turbo
 coverage
+
+# GENERATED AND DELIBERATELY SINGLE-LINE. tools/create-dependency-graph/create-dependency-graph.ts
+# writes this file (line ~4833) as a minified summary - 16 KB with zero newlines, by design. Prettier
+# wants to expand it; the `graph` CI step would then rewrite it compact again, so a format gate would
+# fail on every run forever and the file would drift from its generator. Ignore, never format.
+docs/Architecture/dependency-summary.compact.json

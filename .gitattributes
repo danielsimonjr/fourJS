@@ -1,0 +1,28 @@
+# Line endings, pinned deliberately.
+#
+# WHY THIS FILE EXISTS. The repo had no .gitattributes, so line endings were decided per-machine by
+# core.autocrlf. On a Windows checkout with autocrlf=true, git rewrote every text file to CRLF in the
+# working tree while storing LF in the object database. Prettier 3 defaults to endOfLine=lf, so it
+# then reported 711 files as "unformatted" on a tree where only TWO genuinely were - the other 709
+# differed by line ending alone. Linux CI, reading the same LF objects, saw none of it. That gap made
+# a local `prettier --check` permanently red and a CI one permanently green, for the same commit.
+#
+# Pinning eol=lf cannot change what CI sees: the objects are already LF and CI runs on ubuntu-latest.
+# It only makes a Windows working tree agree with the objects, and therefore with CI.
+* text=auto eol=lf
+
+# Binary files must never be eol-normalised. This is not cosmetic: packages/assets/tests/
+# bounded-png.test.ts reads the squoosh .wasm as a Buffer and CHECKSUMS it with createHash, so a
+# single byte rewritten by normalisation would fail the test with an error that looks nothing like
+# its cause. The same applies to the harfbuzz .wasm used by packages/text and tests/integration.
+*.wasm  binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
