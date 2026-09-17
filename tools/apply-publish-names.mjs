@@ -288,9 +288,11 @@ export function readWorkspacePackages(root = DEFAULT_ROOT) {
 
 /**
  * Copies one package's publishable content into `<outDir>/<name>/`: the rewritten
- * manifest, everything its `files` array names, and the three files npm always
- * includes regardless of `files`. A package with no LICENSE of its own inherits
- * the repository's, which is what workspace publish helpers do and npm alone does not.
+ * manifest, everything its `files` array names, README, LICENSE and CHANGELOG.
+ * npm always packs README and LICENSE regardless of `files`, but NOT CHANGELOG.md,
+ * so a staged CHANGELOG is added to the staged manifest's `files` (TODO 972). A
+ * package with no LICENSE of its own inherits the repository's, which is what
+ * workspace publish helpers do and npm alone does not.
  */
 function stagePackage(root, pkg, rewritten, outDir) {
   const problems = [];
@@ -299,9 +301,15 @@ function stagePackage(root, pkg, rewritten, outDir) {
     rewritten.name.replace(/^@/, "").split("/").join("__"),
   );
   mkdirSync(dest, { recursive: true });
+  const shipsChangelog =
+    existsSync(join(pkg.dir, "CHANGELOG.md")) &&
+    !(rewritten.files ?? []).includes("CHANGELOG.md");
+  const manifest = shipsChangelog
+    ? { ...rewritten, files: [...rewritten.files, "CHANGELOG.md"] }
+    : rewritten;
   writeFileSync(
     join(dest, "package.json"),
-    `${JSON.stringify(rewritten, null, 2)}\n`,
+    `${JSON.stringify(manifest, null, 2)}\n`,
   );
 
   for (const entry of rewritten.files ?? []) {

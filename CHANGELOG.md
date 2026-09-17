@@ -8,6 +8,18 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-17 — per-package CHANGELOG.md files did not ship in the npm tarballs
+
+#### Fixed
+
+- **Staged packages now list `CHANGELOG.md` in `files`.** `apply-publish-names` copied each
+  package's CHANGELOG into the staging tree, but npm always packs only package.json, README and
+  LICENSE outside `files`, so `npm pack --dry-run` showed the file on disk and absent from the
+  tarball. The staged manifest now appends `CHANGELOG.md` when the package has one; the source
+  manifest is untouched. A new test stages the whole workspace and asserts it, with a control
+  that at least one package carries a CHANGELOG (14/14). Verified on the artifact:
+  `@danielsimonjr/fourjs` 111 → 112 files, `fourjs-core` 45 → 46, CHANGELOG.md present in both.
+
 ### 2026-09-16 — no job in any workflow had a timeout, so a wedged run could hold a runner for six hours
 
 #### Fixed

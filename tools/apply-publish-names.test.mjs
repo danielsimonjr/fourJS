@@ -9,7 +9,14 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -273,4 +280,34 @@ test("code rewrite preserves nested umbrella imports without matching other pack
   assert.ok(text.includes('from "@danielsimonjr/fourjs/text/harfbuzz"'));
   assert.ok(text.includes('import("@danielsimonjr/fourjs/text/harfbuzz")'));
   assert.ok(text.includes('from "fourJS-extra"'));
+});
+
+test("a staged package that carries CHANGELOG.md lists it in `files`, so npm packs it", () => {
+  // npm always packs package.json, README and LICENSE, but NOT CHANGELOG.md: modern npm dropped it
+  // from the always-included set. `npm pack --dry-run` on the staged 0.1.0 tree showed CHANGELOG.md
+  // present on disk and absent from the tarball (TODO 972).
+  const out = mkdtempSync(join(tmpdir(), "fourjs-stage-"));
+  try {
+    const { problems, staged } = applyPublishNames({ root, outDir: out });
+    assert.deepEqual(problems, []);
+    let withChangelog = 0;
+    for (const dir of readdirSync(out)) {
+      const manifest = JSON.parse(
+        readFileSync(join(out, dir, "package.json"), "utf8"),
+      );
+      if (!existsSync(join(out, dir, "CHANGELOG.md"))) continue;
+      withChangelog++;
+      assert.ok(
+        manifest.files.includes("CHANGELOG.md"),
+        `${dir}: CHANGELOG.md staged but not in files`,
+      );
+    }
+    assert.ok(
+      withChangelog > 0,
+      "control: at least one staged package carries a CHANGELOG",
+    );
+    assert.equal(staged.length, readdirSync(out).length);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
 });
