@@ -314,6 +314,12 @@ export default defineConfig({
   // 120 s has no margin on Windows SwiftShader for screenshot-bound specs.
   // 180 s on win32 gives those machines room without hiding a hang on CI/Linux.
   timeout: process.platform === "win32" ? 180_000 : 120_000,
+  // Whole-run bound on CI (2026-09-17). The per-test `timeout` above bounds one test, not
+  // the run: attempt 1 of run 35096863762 sat 44m49s in this step (healthy runs: 5m57s-7m33s,
+  // 115 tests) and was cancelled from the UI, which left NO job log to diagnose it with.
+  // Hitting `globalTimeout` makes Playwright stop, keep the log, and print the last finished
+  // test plus a "did not run" count, which locates the next wedge. 15 min is ~2x the slowest measured healthy step.
+  globalTimeout: process.env["CI"] !== undefined ? 15 * 60_000 : 0,
   use: {
     baseURL: `http://localhost:${String(PORT)}`,
     // Software rasterisation is the point: CI machines have no GPU, and a GPU

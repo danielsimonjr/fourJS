@@ -175,7 +175,12 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       # Runs against the example built above; SwiftShader supplies WebGL 2.
+      # Step bound (2026-09-17), outside Playwright's own 15-min globalTimeout: it catches a
+      # wedge Playwright cannot report, such as a hung browser or web-server teardown. A
+      # step timeout ends in the runner, so the step log is kept; the UI cancel that ended
+      # run 35096863762 attempt 1 left none.
       - name: Browser test
+        timeout-minutes: 20
         run: bun run test:browser
 
       - name: Check bundle size

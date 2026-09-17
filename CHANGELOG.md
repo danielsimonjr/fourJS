@@ -8,6 +8,22 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-17 — the `Browser test` step had no bound of its own, and its one wedge left no log
+
+#### Fixed
+
+- **A wedged browser run could only end by job timeout or a manual cancel, and neither keeps
+  the evidence.** Attempt 1 of run `35096863762` sat **44m49s** in `Browser test` (job 48m23s)
+  and was cancelled by hand. Its log archive is an empty 22-byte zip, so the cause is unknown.
+  The same commit then passed in attempt 2 in **6m41s**; four later healthy runs took
+  5m57s–7m33s for 115 tests, slowest single test 16.7s against a 120s per-test timeout.
+  · `playwright.config.ts`: `globalTimeout` of 15 min on CI. Playwright then stops the run
+  itself. The `list` log keeps the last finished test and a "did not run" count. Verified
+  locally with `--global-timeout 150000`: exit 1 after 156 s, 15 passed, 73 did not run, and
+  no `vite preview` or browser process left over.
+  · `.github/workflows/ci.yml`: `timeout-minutes: 20` on the `Browser test` step, a backstop
+  for a hang that Playwright cannot report. It fits inside the job's 30-min bound.
+
 ### 2026-09-17 — per-package CHANGELOG.md files did not ship in the npm tarballs
 
 #### Fixed
