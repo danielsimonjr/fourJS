@@ -40,7 +40,7 @@ updates:
       # What unblocked it was not a typedoc release. TypeDoc moved into its own workspace
       # package (tools/docs) with typescript@6.0.3 as a DIRECT dependency, so it resolves
       # its own compiler and constrains nothing above it; and typescript-eslint was replaced
-      # by oxlint, whose type-aware mode REQUIRES TypeScript 7. Do not re-add a typescript
+      # by oxlint, whose type-aware mode REQUIRES TypeScript 7. Do not re-add a typescript VERSION
       # ignore here -- the root is deliberately on 7.x now.
       #
       # tools/docs pins typedoc and typescript@6.0.3 as DIRECT dependencies. It is a bun
@@ -50,7 +50,8 @@ updates:
       # `bun run docs` (`PropertyDeclaration`). `tools/docs/check-compiler.mjs` now
       # refuses any 7.x resolve so that failure is a one-line revert, not a TypeDoc
       # stack. Do not "fix" it by moving tools/docs onto 7; wait for typedoc#3098.
-      # Never re-add a typescript ignore to the ROOT, which would pin the compiler too.
+      # Never re-add a typescript VERSION ignore (it would pin the root compiler); see the
+      # semver-major entry at the end of this list, which does not.
       #
       # Vitest 5 and coverage-v8 5 are installed and all coverage gates pass
       # (2026-09-11). Their former >=4 ignores are removed.
@@ -78,6 +79,15 @@ updates:
       # Lift only together with an adapter migration and a new wasm pin.
       - dependency-name: "harfbuzzjs"
         versions: [">0.4.13"]
+      # tools/docs must stay on typescript 6.x until TypeDoc supports 7 (typedoc#3098), but
+      # the root dev-dependency group bumped it to 7.0.2 EVERY WEEK (#82, #102, #105, #108,
+      # #116), each needing the same revert. An ignore cannot be scoped to one workspace.
+      # A MAJOR-only ignore is the scoped fix in practice: the root is already on 7.x, so it
+      # still receives every 7.x minor and patch; only the 6 -> 7 jump in tools/docs (and a
+      # future 8.0 at the root, which deserves a deliberate upgrade anyway) is held back.
+      # Remove this entry when tools/docs moves to TypeScript 7.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # Keep the action versions current. Grouped so a week of bumps is one PR, not six.
   - package-ecosystem: "github-actions"

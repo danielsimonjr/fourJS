@@ -8,6 +8,18 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-18 — Dependabot stops proposing TypeScript 7 for `tools/docs` every week
+
+#### Fixed
+
+- **The weekly dev-dependency group bumped `tools/docs` to typescript 7.0.2 every Monday**
+  (#82, #102, #105, #108, #116). Each run failed CI in `tools/docs/check-compiler.mjs`, which
+  correctly refuses TS 7 until TypeDoc supports it (typedoc#3098). Each PR then needed the same
+  hand revert. `.github/dependabot.yml` now ignores **semver-major** TypeScript updates only.
+  The root is already on 7.x, so it still receives every 7.x minor and patch. A version ignore
+  would have pinned the root compiler, which the file forbids. Remove the entry when `tools/docs`
+  moves to TypeScript 7.
+
 ### 2026-09-17 — the `Browser test` step had no bound of its own, and its one wedge left no log
 
 #### Fixed
