@@ -55,7 +55,7 @@
     "typecheck:ts6": "node tools/docs/node_modules/typescript/bin/tsc --noEmit -p tests && node tools/docs/node_modules/typescript/bin/tsc --noEmit -p examples && node tools/docs/node_modules/typescript/bin/tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
-    "@changesets/cli": "3.0.2",
+    "@changesets/cli": "3.0.3",
     "@fourjs/animation": "workspace:*",
     "@fourjs/assets": "workspace:*",
     "@fourjs/core": "workspace:*",
@@ -80,19 +80,19 @@
     "@fourjs/text": "workspace:*",
     "@fourjs/ui": "workspace:*",
     "@playwright/test": "1.63.0",
-    "@size-limit/preset-small-lib": "13.1.1",
+    "@size-limit/preset-small-lib": "14.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.4.1",
-    "@vitest/coverage-v8": "5.0.0",
+    "@vitest/coverage-v8": "5.0.1",
     "fourJS": "workspace:*",
     "js-yaml": "^4.3.0",
-    "oxlint": "1.82.0",
+    "oxlint": "1.83.0",
     "oxlint-tsgolint": "7.0.2001",
     "prettier": "3.9.6",
-    "size-limit": "13.1.1",
+    "size-limit": "14.0.0",
     "typescript": "7.0.2",
     "vite": "8.3.0",
-    "vitest": "5.0.0",
+    "vitest": "5.0.1",
     "yaml": "2.9.1"
   }
 }
