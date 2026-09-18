@@ -8,6 +8,16 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-18 — dev tooling: size-limit 14 and five patch/minor bumps (#117)
+
+#### Changed
+
+- Dependabot dev group merged: `size-limit` and `@size-limit/preset-small-lib` 13.1.1 -> 14.0.0
+  (MAJOR), `@changesets/cli` 3.0.3, `oxlint` 1.83.0, `vitest` 5.0.1. size-limit 14 makes rolldown
+  the preset's default bundler and raises Node to `^22.19 || ^24.5 || >=26`. CI runs Node 22.22, so
+  it qualifies. `.size-limit.json` uses only `path`, `limit` and `gzip`, which v14 does not change.
+  All 7 size entries pass. The flagship example is closest: 1.98 MB of its 2.05 MB limit.
+
 ### 2026-09-18 — Dependabot stops proposing TypeScript 7 for `tools/docs` every week
 
 #### Fixed
