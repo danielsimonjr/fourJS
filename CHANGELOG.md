@@ -42,6 +42,7 @@ specification; until then, entries are grouped by date under **Unreleased**.
   byte-identical across two runs, and Node 24's projected triangles match Chrome's `points`
   attributes to three decimals (82/82, first and last identical). Consumer typecheck under
   `strict` with `skipLibCheck: false`: **0 errors**, none in fourJS's own declarations.
+
 ### 2026-09-19 — dogfood cycle 9B: the guides carried a stale Rapier version and a wrong stub description
 
 #### Fixed
@@ -96,6 +97,7 @@ specification; until then, entries are grouped by date under **Unreleased**.
   fourJS's own shipped declarations. The 69 errors seen with `"lib": ["ES2022"]` are
   all third-party — `@dimforge/rapier{2,3}d-compat` needs `Symbol.dispose` — and go
   to **0** with `"lib": ["ESNext", "DOM"]`.
+
 ### 2026-09-19 — dogfood cycle 9C: a dev warning shipped a workspace package name, and two READMEs described a dead surface
 
 #### Fixed
