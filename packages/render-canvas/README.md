@@ -1,6 +1,8 @@
 # @fourjs/render-canvas
 
-Canvas 2D backend — **interface reserved; not yet implemented.** Part of [fourJS](../../README.md).
+Canvas 2D backend — **a reserved stub. This package contains no implementation today.** Part of [fourJS](../../README.md).
+
+What a consumer gets by installing it: **one export, `PACKAGE_NAME`, and nothing else** — measured from a consumer seat on 2026-09-19 (dogfood cycle 9) against installed tarballs, in Node and in Chrome. `fourJS/render-canvas` imports cleanly and registers no backend. **The shipped rendering capability lives in [`@fourjs/render-webgl`](../render-webgl/README.md) and [`@fourjs/render-webgpu`](../render-webgpu/README.md)**; an application that needs Canvas 2D writes the backend itself, which the published surface supports — see [docs/guides/custom-renderer-backends.md](../../docs/guides/custom-renderer-backends.md) and the measured paragraph below.
 
 Reserved for the Canvas 2D rendering backend (2D scenes and fallback rendering) per §62 in [`docs/SPECIFICATION.md`](../../docs/SPECIFICATION.md). The §120 MVP renders with WebGL 2 only (`@fourjs/render-webgl`).
 

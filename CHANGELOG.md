@@ -8,6 +8,47 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-20 — the four reserved stubs, made impossible to miss
+
+Documentation only; no source behaviour changes. Four of the 24 workspace packages —
+`physics-box2d`, `physics-soft`, `render-canvas`, `render-svg` — are reserved stubs holding one
+source line each and exporting only `PACKAGE_NAME`. That is a deliberate §102 / RFC-0004
+decision, not a defect. The defect was that it was recorded only inside a dogfooding write-up,
+where it read as history.
+
+#### Added
+
+- **`docs/guides/custom-renderer-backends.md`** — the renderer seam's counterpart to
+  `custom-solver-adapters.md`, and the "sharpest single omission" cycle 9 filed. Covers §61's six
+  required `Renderer` members, the "optional, and its presence is the capability" stance for the
+  seven optional ones, the `Disposable`-versus-TC39 name collision, `registerRenderer` /
+  `resolveRenderer("auto")`, and the rules a backend keeps. Carries cycle 9A's measured numbers
+  (Canvas 2D 35,851 lit pixels / 3 draw calls / 82 triangles; SVG 83 elements; agreement to 1
+  pixel in 230,400; both byte-identical over two runs) and the finding that swapping between them
+  costs **three** consumer lines rather than cycle 3c's two, because `Renderer` has no surface
+  member and Canvas 2D and SVG do not share `HTMLCanvasElement`. Both TypeScript blocks were
+  typechecked under `strict` against the workspace sources: 0 errors.
+- **`docs/guides/README.md` — a _Guide coverage, counted_ table.** Cycles 8 and 9 each
+  rediscovered the same coverage gap; it is now tabulated with the `grep -rl` that measured it, so
+  the next cycle reads a count. It also corrects cycle 9's own wording: "zero `docs/guides/`
+  files" was too strong — each stub package is _named_ in a guide; what is true is that no guide
+  _teaches_ them. The genuinely uncovered surfaces are the nine 3D geometry generators (zero guide
+  mentions) and most of the §83/§85 warning family.
+- **Four open items in `TODO.md`**, one per stub package, each stating what it is reserved for,
+  what a consumer gets today, the exact symptom on selection, the workaround where one exists, and
+  what would close it. Filed separately rather than as one umbrella row so a single row cannot be
+  half-ticked when one of the four ships.
+
+#### Changed
+
+- **The four stub READMEs now say so in their first paragraph.** Each opens with "a reserved stub.
+  This package contains no implementation today", states that a consumer gets one export,
+  `PACKAGE_NAME`, and nothing else (measured 2026-09-19 from installed tarballs, in Node and in
+  Chrome), and points at where the real capability lives: `render-webgl` / `render-webgpu` for the
+  renderer stubs, `physics-rapier` for `physics-box2d`, and nowhere at all for `physics-soft`,
+  which is stated plainly. The renderer stubs' existing measured paragraph from cycle 9 is kept,
+  not duplicated.
+
 ### 2026-09-20 — dogfood cycle 10A: `@fourjs/math` measured from a consumer seat
 
 Everything below was measured against **packed, published-name tarballs** (`npm pack` of the

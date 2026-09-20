@@ -91,6 +91,37 @@ for (until 2026-08-29 it lived only in `raster.ts`'s module header):
     "nothing polls — call `update()` yourself" rule, and the §33 display-only
     boundary painted pixels live under.
 
+A sixteenth is the renderer seam's counterpart to guide 11, written 2026-09-20 after
+dogfood cycle 9 measured that the seam supports a consumer-authored backend and that no
+guide said so:
+
+16. **[Custom renderer backends](custom-renderer-backends.md)** — §61's `Renderer`
+    contract, the "optional, and its presence is the capability" members,
+    `registerRenderer` / `resolveRenderer("auto")`, and the measured three-line cost of
+    swapping between backends whose surfaces differ.
+
+## Guide coverage, counted
+
+Cycles 8 and 9 both rediscovered the same thing: some shipped surfaces have no guide. Both
+judged it a **coverage gap, not a defect** — package READMEs and TypeDoc cover the symbols,
+and no guide teaches a wrong call about them — and that judgement stands. It is tabulated
+here so the next cycle reads a count instead of measuring it again.
+
+Measured 2026-09-20 with `grep -rl <symbol> docs/guides/`:
+
+| Surface                                                                                                                                                                                               | Guide coverage                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The nine 3D geometry generators (`sphereGeometry`, `torusGeometry`, `capsuleGeometry`, `latheGeometry`, `extrudeGeometry`, `coneGeometry`, `cylinderGeometry`, `tubeGeometry`, `heightFieldGeometry`) | **none** — zero guide mentions of any of the nine                                                                                                                                                                                                                                      |
+| `KeyboardState`, `SteeringAgent`, `Scheduler`, `SpatialHash`, `solveTwoBoneIK` (cycle 8)                                                                                                              | **none** — zero guide mentions of any of the five                                                                                                                                                                                                                                      |
+| The §83 / §85 warning family                                                                                                                                                                          | **partial** — `devWarnOnce` and `auditFrameAllocations` appear in [performance-optimization](performance-optimization.md); the family is not taught as a whole                                                                                                                         |
+| `render-canvas`, `render-svg`                                                                                                                                                                         | **status until 2026-09-20** — named as reserved stubs in [materials-and-render-graph](materials-and-render-graph.md) and [raster-painting](raster-painting.md). Now taught by [custom-renderer-backends](custom-renderer-backends.md), which teaches the seam rather than the packages |
+| `physics-box2d`, `physics-soft`                                                                                                                                                                       | **status only** — named as reserved stubs in [custom-solver-adapters](custom-solver-adapters.md)'s honest-state section. No guide teaches them, because a stub has no API to teach                                                                                                     |
+
+Cycle 9's own filing said these surfaces had "zero `docs/guides/` files". Read literally
+that is too strong: each of the four stub packages is _named_ in at least one guide. The
+accurate statement is the one the table makes — no guide **teaches** them, and for the four
+stubs that is correct rather than missing.
+
 ## Conventions every guide assumes
 
 - The world is **right-handed, Y-up, in 2D and 3D alike** (§7a). 2D gravity is

@@ -247,6 +247,77 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 
 ## Now
 
+### Four of the 24 packages are reserved stubs, and each is its own open item
+
+**These four are deliberate §102 / RFC-0004 decisions, not defects — the defect was that the fact
+lived only inside a dogfooding write-up, where it read as history and nobody actioned it.** Each
+stub is filed below as its own `- [ ]` so one can be ticked when it ships without pretending the
+other three did. Common to all four, measured from a consumer seat on 2026-09-19 (dogfood cycle 9)
+against installed tarballs, in Node and in Chrome: **one source line each, exporting only
+`PACKAGE_NAME` — 1 export apiece**. Each imports cleanly and provides nothing.
+
+- [ ] **`@fourjs/physics-box2d` is a reserved stub — 1 export, no solver.**
+      **Reserved for:** the 2D solver adapter backed by Box2D, implementing §37's
+      `PhysicsSolverAdapter` plus the `SolverBodyAccess` / `SolverJointAccess` seams, with its
+      capability differences declared per §102. The recorded motivation: Box2D could honor §28's
+      motor `maxTorque` / `maxForce` as a real hard cap, which Rapier treats as a force-based gain.
+      **Today a consumer gets:** `PACKAGE_NAME` and nothing else — no `register*` function, no
+      adapter class.
+      **Symptom on selection:** `solver: "box2d"` fails with the registry's *"no physics solver is
+      registered"* message (§37) — **not** a module error, because `fourJS/physics-box2d` imports
+      fine.
+      **Workaround:** none short of writing a full §37 adapter yourself
+      (`docs/guides/custom-solver-adapters.md` is that contract). Unlike the renderer seam, cycle 9
+      proved no consumer-side shortcut here — it had nothing to test and ran its §33/§34 battery
+      against Rapier instead, explicitly as a substitution.
+      **Closes when:** a Box2D-backed `PhysicsWorldAdapter` ships, registers, and appears in
+      `docs/COMPATIBILITY.md`'s generated solver table.
+
+- [ ] **`@fourjs/physics-soft` is a reserved stub — 1 export, no soft bodies.**
+      **Reserved for:** §35 soft-body and deformable simulation — cloth, rope, pressure/volume
+      models. It is **not** a solver adapter (ERRATA E-3); the §102 solver packages are
+      `physics-rapier` and `physics-box2d`.
+      **Today a consumer gets:** `PACKAGE_NAME` and nothing else.
+      **Symptom on selection:** there is nothing to select. `fourJS/physics-soft` imports cleanly
+      and exposes no cloth, rope or pressure API at all.
+      **Workaround:** none. Writing a §37 adapter would not fill this package, because §35 is a
+      different seam; rigid-body simulation through `physics-rapier` is the nearest shipped thing.
+      **Closes when:** §35 gets a scheduled implementation phase and that phase lands. No phase is
+      scheduled today.
+
+- [ ] **`@fourjs/render-canvas` is a reserved stub — 1 export, no backend.**
+      **Reserved for:** the §62 Canvas 2D rendering backend (2D scenes and fallback rendering). The
+      §120 MVP renders with WebGL 2 only.
+      **Today a consumer gets:** `PACKAGE_NAME` and nothing else — no `Renderer` implementation, no
+      registration call.
+      **Symptom on selection:** `AUTO_RENDERER_ORDER`'s `"canvas2d"` rung
+      (`renderer-registry.ts:112`) is **unreachable from fourJS packages alone**; with nothing else
+      registered, asking for it yields §62's *"no backend is registered"* error (which, separately,
+      always names `registerWebglRenderer()` — filed under *Cycle 9 residue*).
+      **Workaround — real, and measured:** an application can register **its own** Canvas 2D
+      backend against published exports only (`Renderer`, `RendererCapabilities`,
+      `buildRenderList`, `createRenderStatistics`, `registerRenderer`), and
+      `resolveRenderer("auto")` then selects it exactly as it would a first-party one. Cycle 9
+      wrote one in ~120 lines and measured **35,851 lit pixels / 3 draw calls / 82 triangles**
+      against a meshes-removed control of 0 pixels, byte-identical `toDataURL()` over two runs
+      (§33). The recipe is now `docs/guides/custom-renderer-backends.md`.
+      **Closes when:** the package ships a `Renderer` implementation over `@fourjs/render`'s
+      backend-independent interface and fills the `canvas2d` rung itself.
+
+- [ ] **`@fourjs/render-svg` is a reserved stub — 1 export, no backend.**
+      **Reserved for:** the §62 SVG rendering backend (vector output and 2D fallback).
+      **Today a consumer gets:** `PACKAGE_NAME` and nothing else.
+      **Symptom on selection:** `AUTO_RENDERER_ORDER`'s `"svg"` rung is unreachable from fourJS
+      packages alone, exactly as `canvas2d` is, with the same error.
+      **Workaround — real, and measured:** the same consumer-authored route. Cycle 9's SVG backend
+      emitted **83 elements** (one background `<rect>` plus 82 `<polygon>`) against an
+      emptied-scene control of 1 element, with `outerHTML` byte-identical over two runs (§33), and
+      drew the same picture as its Canvas 2D sibling to **1 pixel in 230,400**. Note the cost of
+      moving between them is **three consumer lines, not two** — import, constructor, *and the
+      surface type*, because Canvas 2D and SVG do not share `HTMLCanvasElement`.
+      **Closes when:** the package ships a `Renderer` implementation and fills the `svg` rung
+      itself.
+
 - [x] **No job in any of the five workflows had `timeout-minutes`, so a wedged run could hold a
       runner to the 6-hour ceiling.** **FIXED 2026-09-16.** Planned work, not discovered — it was
       assigned directly, and it is recorded ticked because it was already complete when filed.
@@ -2655,6 +2726,19 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       cycle. The sharpest single omission: there is no "write a renderer backend" guide,
       although `custom-solver-adapters.md` is exactly that guide for the solver seam, and
       cycle 9A proved the renderer seam supports one.
+      **Partly closed 2026-09-20.** `docs/guides/custom-renderer-backends.md` now exists — the
+      renderer seam's counterpart to `custom-solver-adapters.md`, carrying cycle 9A's measured
+      numbers and the three-line swap. The rest of the gap is now **counted rather than
+      re-measured**: `docs/guides/README.md` gained a *Guide coverage, counted* table listing
+      each uncovered surface with the `grep -rl` that produced it.
+      **One correction to the filing above, from re-measuring it:** "zero `docs/guides/` files"
+      is too strong. Measured 2026-09-20, each of `render-svg`, `physics-box2d` and
+      `physics-soft` **is** named in at least one guide (the renderer stubs in
+      `materials-and-render-graph.md`, the solver stubs in `custom-solver-adapters.md`'s honest
+      state). What is true, and what the new table says instead, is that no guide *teaches*
+      them — which for a stub is correct rather than missing. The geometry generators and the
+      §83/§85 family are the genuinely uncovered ones: **zero** guide mentions of any of the
+      nine 3D generators, and only `devWarnOnce`/`auditFrameAllocations` for the warning family.
 
 - [ ] **A renderer swap costs 3 consumer lines, not 2, and the third is the surface type.**
       Cycle 3c measured a two-line WebGL→WebGPU swap; cycle 9A measured **three** for
