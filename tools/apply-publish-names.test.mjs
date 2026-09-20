@@ -31,6 +31,7 @@ import {
   rewriteCode,
   rewriteManifest,
   strippedOfComments,
+  BARE_SPECIFIER_RESIDUE,
 } from "./apply-publish-names.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -352,5 +353,87 @@ test("strippedOfComments keeps runtime strings and drops prose", () => {
       .split("\n")
       .filter((line) => /@fourjs\//.test(line)).length,
     0,
+  );
+});
+
+// --- the quote-only assumption class, swept across tools/ (cycle 9 residue) --
+//
+// `apply-publish-names.mjs` shipped a workspace name twice because a template
+// literal is a string its `["']` class could not see. These tests pin the two
+// remaining holes of that same class found by the tools/ sweep.
+
+test("a bare `fourJS` specifier in a template literal is rewritten", () => {
+  const source = [
+    'import { a } from "fourJS";',
+    "const m = await import(`fourJS/render`);",
+    "const r = require(`fourJS`);",
+  ].join("\n");
+  const { text, count } = rewriteCode(source);
+  assert.equal(count, 3, "all three specifier positions rewrite");
+  assert.ok(
+    !/["'`]fourJS(?:\/|["'`])/.test(text),
+    `a bare workspace specifier survived: ${text}`,
+  );
+  assert.match(text, /import\(`@danielsimonjr\/fourjs\/render`\)/);
+});
+
+test("an interpolating specifier is left alone — it names no one module", () => {
+  const source = "const m = await import(`fourJS/${name}`);";
+  const { text, count } = rewriteCode(source);
+  assert.equal(count, 0);
+  assert.equal(text, source);
+});
+
+test("the residue guard sees a bare `fourJS` specifier outside a comment", () => {
+  const offending = [
+    "// a line comment about importing from `fourJS/render`",
+    "/** JSDoc prose naming fourJS, which is not a specifier. */",
+    "const m = await import(`fourJS/render`);",
+  ].join("\n");
+  const hits = strippedOfComments(offending)
+    .split("\n")
+    .filter((line) => BARE_SPECIFIER_RESIDUE.test(line));
+  assert.equal(hits.length, 1, "only the real specifier is flagged");
+  assert.match(hits[0], /import\(`fourJS\/render`\)/);
+  // Control: the published name is never flagged.
+  assert.equal(
+    strippedOfComments('import x from "@danielsimonjr/fourjs/render";')
+      .split("\n")
+      .filter((line) => BARE_SPECIFIER_RESIDUE.test(line)).length,
+    0,
+  );
+});
+
+// The second hole the tools/ sweep found, in `check-docs.mjs`: its §45
+// lifecycle guard read a doc fence with bare regexes, so a commented-out
+// `// app.start()` satisfied its skip and the guard reported nothing on a
+// snippet that cannot run. Both tools now ask the question against
+// comment-stripped code, from one shared stripper — this asserts the behaviour
+// that guard depends on.
+test("a commented-out lifecycle call cannot satisfy a code check", () => {
+  const fence = [
+    "const app = new Application({ renderer, canvas });",
+    "await app.initialize();",
+    "// app.start();   <- forgotten",
+    "app.step(1 / 60);",
+  ].join("\n");
+  const code = strippedOfComments(fence);
+  assert.ok(/\bapp\.step\(/.test(code), "the real call is still seen");
+  assert.ok(
+    !/\bapp\.start\(/.test(code),
+    "the commented call must not read as present",
+  );
+  // Control: the same snippet, uncommented, is not flagged.
+  assert.ok(
+    /\bapp\.start\(/.test(
+      strippedOfComments(fence.replace("// app.start();", "app.start();")),
+    ),
+  );
+  // Control: the mirror false positive — a commented binding must not arm the
+  // check at all.
+  assert.ok(
+    !/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new Application\(/.test(
+      strippedOfComments("// const app = new Application({});\napp.step(0);"),
+    ),
   );
 });

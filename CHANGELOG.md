@@ -48,6 +48,81 @@ where it read as history.
   renderer stubs, `physics-rapier` for `physics-box2d`, and nowhere at all for `physics-soft`,
   which is stated plainly. The renderer stubs' existing measured paragraph from cycle 9 is kept,
   not duplicated.
+### 2026-09-20 — dogfood cycles 9 and 10: the engine-side residue, fixed
+
+Four items that cycles 9 and 10 filed as "reported, not fixed". Each claim below was re-verified
+against the source before anything changed; one filed row was already known wrong and is noted.
+
+#### Fixed
+
+- **The §83 allocation warning no longer reads as an accusation against the window it names**
+  (`packages/diagnostics/src/allocation-audit.ts`). `N math object(s) were constructed during
+"Application.step"` named the measurement window in the grammatical position of the culprit.
+  It is not the culprit: `constructed` is the math package's **process-wide** construction delta
+  sampled across that window, so a consumer's own `fixedUpdate` is counted and reported under the
+  engine's label. That is exactly how dogfood cycle 9C came to believe the engine was warning
+  about itself, and it filed a tracker row saying so (cycle 10C measured the opposite and
+  corrected it). The message now says `constructed while "<label>" was running` and then states
+  in one clause that the label is the measurement window, not necessarily the allocator, and that
+  the count covers the whole process including the application's own code. §83 prefix, the §7b
+  remedy and the no-workspace-package-name rule are unchanged.
+- **The unregistered-backend error now names the register call for the backend that was actually
+  asked for** (`packages/render/src/renderer-registry.ts`). Asking for `"canvas2d"` with nothing
+  registered advised `registerWebglRenderer()` — right for one of the four `"auto"` rungs, wrong
+  for the other three. A new `registrationAdvice()` follows the selection: `registerWebgpuRenderer()`
+  for `"webgpu"`, `registerWebglRenderer()` for `"webgl2"`, and, for `"canvas2d"`, `"svg"` and
+  `"null"`, the honest sentence that **no fourJS package implements that backend** — `render-canvas`
+  and `render-svg` are §102 reserved stubs that export a package name and nothing else — so only an
+  application's own `registerRenderer({ backend, isSupported, create })` can fill that rung, which
+  cycle 9A proved works. Applied at both named-backend sites (`resolveRenderer`'s empty-registry
+  branch and `RendererRegistry#resolveExplicit`); `"auto"`, which names no backend, keeps the
+  generic advice. **Selection behaviour, error codes and error context are untouched — this is the
+  message only.**
+- **`PhysicsWorldInit.solver`'s doc comment no longer reads as though Box2D ships**
+  (`packages/physics/src/world.ts`). "every solver Rapier and Box2D ship — wasm images included"
+  was hypothetical prose about an import cost this design avoids, but a reader checking whether
+  Box2D is available met it first and read it against `docs/COMPATIBILITY.md`'s accurate "reserved
+  stub" rows. It now says "every §102 solver package" and adds one parenthesis: only
+  `@fourjs/physics-rapier` ships an implementation today; `physics-box2d` and `physics-soft` are
+  reserved stubs. The argument the sentence existed to make is kept intact.
+
+#### Changed — the quote-only assumption class, swept across `tools/`
+
+`apply-publish-names.mjs` matched `"` and `'` but not backticks, so a workspace package name in a
+**template literal** — how every runtime message is written — passed both the rewriter and its own
+residue guard and shipped to consumers twice (2026-09-13, 2026-09-19). That tool was fixed in
+cycle 9C; the **class** was not swept. All 18 scripts under `tools/` were read. Sixteen are sound
+(they parse JSON, reflect over imported modules, consume a generated graph, or inspect markdown
+prose rather than code). Three holes were found and closed:
+
+- **`tools/check-docs.mjs`** — the §45 lifecycle guard read a doc fence with bare regexes and
+  never stripped comments, so a commented-out `// app.start()` satisfied its skip and the guard
+  reported nothing on a snippet that cannot run; the mirror case let a commented
+  `new Application(` arm the check against a block that runs neither. The fence body is now
+  comment-stripped. Error line numbers still come from the original text.
+- **`tools/create-dependency-graph/create-dependency-graph.ts`** — the inline dynamic-import
+  regex used a `['"]`-only quote class, so ``import(`./foo.js`)`` read as absent and
+  false-flagged its target dormant. The class now includes the backtick, matching what
+  `entryPoints` in the same file already does; an interpolating specifier is still skipped,
+  correctly, because it names no one module. No file in this tree uses the backtick form today,
+  so no generated report changes.
+- **`tools/apply-publish-names.mjs`** — the umbrella's bare `fourJS` specifier was matched with
+  `(["'])` only and was absent from **both** residue checks, so a backticked
+  ``import(`fourJS/render`)`` would have been neither rewritten nor flagged. The rewriter's
+  quote class now includes the backtick (safe here, unlike for `SCOPED_STRING`, because the
+  leading `from` / `import(` / `require(` proves the string is a specifier rather than prose), and
+  a new exported `BARE_SPECIFIER_RESIDUE` guard checks the comment-stripped staged bytes for it.
+
+`strippedOfComments` moved to a new **`tools/strip-comments.mjs`** so `check-docs.mjs` and
+`apply-publish-names.mjs` share one copy — a second copy is how this gap would come back.
+
+Three sites in `create-dependency-graph.ts` are in the same class and were **deliberately not
+changed**: the in-file reference count (`inFileRefs`), the delegation-edge scan, and the hand
+brace-matcher all read raw source and so count a name in a comment or a brace in a string. Each
+feeds the generator's dormancy/routing **scoring**, so changing one alters the committed
+`docs/Architecture/` reports and the duplicate baseline, which would need regenerating — out of
+scope for a message-and-guard change and not covered by the gates run here. They are recorded so
+the next sweep starts from them rather than rediscovering them.
 
 ### 2026-09-20 — dogfood cycle 10A: `@fourjs/math` measured from a consumer seat
 

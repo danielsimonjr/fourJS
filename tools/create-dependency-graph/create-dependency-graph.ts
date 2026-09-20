@@ -1141,7 +1141,18 @@ function parseFile(filePath: string): ParsedFile {
   // type), but they use neither `from` nor a bare statement, so both regexes
   // above miss them and the referenced module was false-flagged dormant. Record
   // as a type-only edge (it carries no runtime import).
-  const inlineImportRegex = /\bimport\s*\(\s*['"](\.[^'"]+)['"]\s*\)/g;
+  // The quote class includes the BACKTICK. A dynamic import's argument is an
+  // expression, so `import(`./foo.js`)` is legal and is how a specifier gets
+  // written when it sits beside interpolated ones; a `['"]`-only class reads it
+  // as absent and false-flags the target dormant — the same assumption that let
+  // a workspace package name inside a template literal ship twice through
+  // `tools/apply-publish-names.mjs` (2026-09-13, 2026-09-19). `entryPoints`
+  // above (`/['"`]([^'"`]+\.ts)['"`]/`) already spells the class this way, so
+  // the omission here was an inconsistency, not a decision. A specifier with an
+  // actual `${…}` in it is still skipped, and correctly: it names no one
+  // module. No file in this tree uses the backtick form today, so this changes
+  // no generated report — it closes the hole before one does.
+  const inlineImportRegex = /\bimport\s*\(\s*['"`](\.[^'"`${]+)['"`]\s*\)/g;
   while ((match = inlineImportRegex.exec(code)) !== null) {
     const source = match[1];
     if (!result.internalDependencies.some((d) => d.file === source)) {

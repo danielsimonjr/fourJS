@@ -55,6 +55,8 @@ import {
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { strippedOfComments } from "./strip-comments.mjs";
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = join(HERE, "..");
 
@@ -200,20 +202,40 @@ const CODE_EXTENSIONS = [".js", ".mjs", ".cjs", ".ts", ".mts", ".cts"];
 // `"@fourjs/render-webgl"`, and the validator below flags both. Matching only the bare
 // name left every subpath token behind and failed the run it was meant to protect.
 const SCOPED_STRING = /(["'])@fourjs\/([a-z0-9-]+(?:\/[a-z0-9-]+)*)\1/g;
+// The quote class includes the BACKTICK, for the reason the scoped residue
+// guard below already learned the hard way: a template literal is a string too,
+// and `import(`fourJS/render`)` is a legal specifier that a `["']` class reads
+// as absent — so it would be neither rewritten here nor caught by either
+// residue check, which is precisely how `@fourjs/…` reached consumers twice
+// (2026-09-13, 2026-09-19). A backtick is safe to REWRITE here, unlike in
+// `SCOPED_STRING`, because the leading `from` / `import(` / `require(` proves
+// the string is a module specifier rather than prose about one. An
+// interpolating specifier is excluded (`[^`$]`): it names no single module.
 const BARE_SPECIFIER =
-  /(\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)(["'])fourJS((?:\/[a-z0-9-]+)*)\2/g;
+  /(\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)(["'`])fourJS((?:\/[a-z0-9-]+)*)\2/g;
+
+/**
+ * The staged-residue form of {@link BARE_SPECIFIER}: one line, any quote, no
+ * `g` flag (a `g` regex carries `lastIndex` between `.test()` calls and would
+ * skip every other offending line — a checker that fails silently on half its
+ * input, which is the failure mode this whole sweep exists to remove).
+ * Exported so its test binds to the shipped pattern rather than a copy.
+ */
+export const BARE_SPECIFIER_RESIDUE =
+  /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)["'`]fourJS(?:\/|["'`])/;
 
 /**
  * `text` with its block and line comments removed, so a check can tell a
  * runtime string from JSDoc prose. `tsc` emits readable, non-minified ESM, so a
  * regex pass is enough here; it is used only by the staging residue check
  * below, never to produce shipped bytes.
+ *
+ * The implementation moved to `tools/strip-comments.mjs`, which now owns the
+ * single copy: `check-docs.mjs` needed exactly this, for exactly this reason,
+ * and a second copy is how the gap it closes would come back. Re-exported here
+ * because it is part of this module's tested surface.
  */
-export function strippedOfComments(text) {
-  return text
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:'"`\\])\/\/[^\n]*/g, "$1");
-}
+export { strippedOfComments };
 
 /**
  * Rewrites workspace names inside emitted code. Returns the new text and the
@@ -371,6 +393,16 @@ function stagePackage(root, pkg, rewritten, outDir) {
       if (/@fourjs\//.test(line)) {
         problems.push(
           `${relative(outDir, file)}: a workspace "@fourjs/" name survives OUTSIDE a comment — ${line.trim().slice(0, 120)}`,
+        );
+      }
+      // The umbrella's bare name, same guard. `fourJS` alone is an ordinary
+      // word, so this asks only about the three specifier positions —
+      // quote-agnostically, which is the whole point: a specifier the rewriter
+      // could not see is exactly the one that survives to a consumer, and
+      // neither residue check looked for this one at all.
+      if (BARE_SPECIFIER_RESIDUE.test(line)) {
+        problems.push(
+          `${relative(outDir, file)}: a bare "fourJS" specifier survives OUTSIDE a comment — ${line.trim().slice(0, 120)}`,
         );
       }
     }

@@ -370,9 +370,13 @@ export interface PhysicsWorldInit extends PhysicsWorldOptions {
    *
    * The alternative to {@link PhysicsWorldInit.adapter}, and the reason it took
    * this long: resolving a name means *something* has to map it to a class, and
-   * that something must not be this package, which would then import every
-   * solver Rapier and Box2D ship — wasm images included — into every program
-   * that ever named `PhysicsWorld`. So a solver package opts in explicitly and
+   * that something must not be this package, which would then have to import
+   * every §102 solver package — wasm images included — into every program that
+   * ever named `PhysicsWorld`. (That is the cost this design avoids; it says
+   * nothing about which solvers exist. Only `@fourjs/physics-rapier` ships an
+   * implementation today — `physics-box2d` and `physics-soft` are reserved
+   * stubs, as `docs/COMPATIBILITY.md` records.) So a solver package opts in
+   * explicitly and
    * this option resolves against whatever the application actually imported:
    *
    * ```ts
