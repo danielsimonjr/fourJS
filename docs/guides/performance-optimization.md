@@ -67,11 +67,12 @@ camera.transform.position.set(0, 0, 10);
 camera.updateProjectionMatrix();
 
 const renderer = new WebglRenderer();
-const app = new Application({
-  renderer,
-  canvas,
-  views: [createFullscreenViewport(camera)],
-});
+const view = createFullscreenViewport(camera);
+// `createFullscreenViewport` sets no `clearColor` on purpose, so a view that
+// never clears is visible rather than hidden behind a default. Set one, or
+// every frame draws on top of the last and the canvas smears.
+view.clearColor = [0.051, 0.059, 0.078, 1];
+const app = new Application({ renderer, canvas, views: [view] });
 renderer.resize(800, 600, window.devicePixelRatio);
 app.scene.add(camera);
 

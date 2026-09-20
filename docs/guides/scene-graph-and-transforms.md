@@ -41,6 +41,10 @@ camera.transform.position.set(0, 0, 5);
 camera.updateProjectionMatrix();
 
 const view = createFullscreenViewport(camera);
+// `createFullscreenViewport` deliberately sets no `clearColor`: a full-surface
+// view that never clears is usually a bug, and a default colour would hide it.
+// Without this line every frame draws on top of the last and movers smear.
+view.clearColor = [0.05, 0.06, 0.09, 1];
 const renderer = new WebglRenderer();
 const app = new Application({ renderer, canvas, views: [view] });
 renderer.resize(800, 600, window.devicePixelRatio);
@@ -118,7 +122,12 @@ Behaviour attaches to nodes as _components_: `RigidBody`, `Collider`,
 `MotionComponent`, `KinematicController`, `PoseTarget`. The rules:
 
 - `node.addComponent(component)` returns the component; **one component per
-  type per node** — adding a second of the same type throws.
+  type per node** — adding a second of the same type does not throw, it
+  **replaces** the first (detaching it, running its `onDetach`) and warns once:
+  `A component of type "motion" is already attached; replacing it (§6a…)`.
+  Adding a node to itself or to one of its own descendants _does_ throw
+  (`FourError`, §85); component replacement is the quieter case, so treat that
+  warning as a wiring bug rather than as noise.
 - Components are state; **systems** (registered on `app.systems`, §39) do the
   per-fixed-step work. A `MotionComponent` does nothing until a
   `MotionSystem` tracks its node.

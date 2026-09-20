@@ -8,6 +8,80 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-20 — dogfood cycle 10B: `scene` from a consumer seat — §42 authority, dirty propagation, reparenting
+
+Engine: clean. Three guide defects, each measured against packed, published-name tarballs
+installed outside the workspace (24 packages staged, 903 specifiers rewritten; control: the seat
+holds **no** `node_modules/@fourjs`, and the bundle a consumer actually runs contains **0**
+workspace specifiers once comments are stripped, against 26 raw occurrences — the stripper's own
+control sees a template-literal occurrence, cycle 9's blind spot). Consumer typecheck under
+`strict` + `skipLibCheck: false`: **0 errors**, fourJS-own and third-party alike.
+
+#### Fixed
+
+- **`docs/guides/transform-authority.md` promised an enforcement the engine does not attempt.**
+  The guide opened with _"conflicts are loud, never silent overwrites"_ and closed with a rule
+  telling readers to treat console silence as proof of a single owner. §42's check runs **in the
+  writing system**, so it sees one writer only. Measured from a consumer seat: a
+  `"kinematic"`-owned node standing at `x = 0.1667` after ten fixed steps, written directly by
+  application code to `x = 999`, was at `x = 999.0167` one step later — the write landed, the
+  system resumed from it, and **0** warnings were printed. Control, the mirror case: the same
+  scene with the node left `"manual"` produced exactly **1** warning naming the node, the writer
+  and the fix, because there the violator was a system. A second uncovered case, also measured: a
+  `"kinematic"`-owned child at local `x = 1.0` under a parent moved to `x = 100` resolves to world
+  `x = 101` with no check, because authority governs a node's **local** transform only. Both are
+  now stated in a new _"What authority does not cover"_ section, and the opening claim is scoped
+  to system-versus-system conflicts.
+
+  What the guide got right, re-verified with controls in Node and in Chrome: with two systems on
+  one node the **owner wins and the engine says so** — `"kinematic"` owner, `MotionSystem` wrote
+  `x = 1.0000000000000013` over 60 steps while `ConstraintSystem` was refused with 1 warning;
+  flipping the owner to `"constraint"` inverted the result exactly (`x = 0`, 1 warning naming
+  `"kinematic"`). Proved by pixels too: in real Chrome over WebGL, the owner's node moved its lit
+  centroid **240.5 → 300.5 device px** (exactly 1.000 world unit at 60 px/unit), while a
+  `"manual"`-owned node tracked by `MotionSystem` at 3 units/s moved **0** units over 60 steps
+  instead of 3.
+
+- **`docs/guides/scene-graph-and-transforms.md` taught a throw that does not happen.** It said
+  adding a second component of the same type "throws". Measured: it does not — the first component
+  is detached and replaced, with one development warning
+  (`A component of type "motion" is already attached; replacing it (§6a…)`). Control: the probe
+  does see real throws, since `node.add(node)` raised `FourError` (§85) in the same run. The bullet
+  now states replacement, quotes the warning, and points at the case that genuinely throws.
+
+- **Two guides omitted `view.clearColor`, and the omission is the bug the engine predicts.**
+  `createFullscreenViewport` sets none on purpose — its own documentation says "a full-surface view
+  that never clears is usually a bug and a default colour would hide it" — and all ten shipped
+  examples set one, including `examples/first-2d-scene/main.ts:182`, which
+  `scene-graph-and-transforms.md` bills itself as reducing to a skeleton. Following the guide
+  verbatim in real Chrome smeared the scene: one disc of constant area measured **2,828 lit
+  pixels** at the first frame and **6,428** after 60 steps, and the trail halved the apparent
+  motion of its centroid to **+30 px** against a true **+60 px**. With `clearColor` set, the same
+  run gives **2,828 → 2,828** lit pixels and **+60.0 px**. Both `scene-graph-and-transforms.md`
+  and `performance-optimization.md` now set one and say why.
+
+#### Verified (no change needed)
+
+- **Dirty propagation and lazy world matrices are exactly as documented.** Over a 20-node scene —
+  a 10-deep chain beside a 10-node flat subtree — `resolveWorldTransforms` recomputed **20 of 20**
+  on the first pass, **0 of 20** on an unmutated second pass, **9 of 20** after moving the top of
+  the chain (the sibling subtree untouched), and **1 of 20** after moving the chain's leaf. Laziness
+  proved directly: after mutating the chain root the leaf's world `x` still read the stale `1`, and
+  only an explicit `resolveWorldTransform` made it `2` (`worldVersion` 3 → 4). Same shape in Chrome
+  over WebGL: 12 visited, **0** recomputed clean, **11** after a parent move, **1** after one child
+  move. `Application.step` resolves once per fixed step, as the guide says — `worldVersion`
+  advanced **0 → 60** over 60 steps with the world matrix tracking the local transform to `1e-9`.
+- **Reparenting.** `parent.add(child)` bumps **no** transform version, and the world matrix stays
+  stale until the next resolve — measured `10 → (still) 10 → -10`, which the resolver catches on
+  its parent-identity check (**1** of 4 visited recomputed). A node removed from the scene keeps
+  its last world matrix until resolved as its own root, then equals its local transform exactly.
+- **§7a Y-up through the scene layer and the render path.** World translation `(3, 5, 0)` for a
+  `+1` move in y with z untouched, default forward `(0, 0, -1)`; in Chrome a 2-unit upward move
+  took the lit centroid from device y **239.5 to 119.5** — 120 px up at 60 px/unit.
+- **All 7 `TRANSFORM_AUTHORITIES` values assign** from a consumer seat, `"blended"` included.
+- Scene package suite: **374 tests in 18 files, all passing**. `check-docs` OK, `check-spec` OK,
+  Prettier clean on the three edited guides. Chrome reported **0** console errors across both runs.
+
 ### 2026-09-19 — dogfood cycle 9A: the §62 renderer seam holds for a backend fourJS does not ship
 
 #### Fixed
