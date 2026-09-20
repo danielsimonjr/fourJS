@@ -22,6 +22,8 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { strippedOfComments } from "./strip-comments.mjs";
+
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const errors = [];
 
@@ -463,6 +465,18 @@ for (const rel of prosePaths()) {
 //     `.initialize()` and `.step()` hit four guides that step a *PhysicsWorld*
 //     (`world.step(1 / 60)`) and rightly never call `app.start()`: four false
 //     positives out of five hits. Only `new Application(...)`'s own variable counts.
+//   - It reads the fence body with its COMMENTS STRIPPED. Every clause here is
+//     a bare regex over the snippet text, so `// app.start()` in a snippet that
+//     never calls it satisfied the skip on the next line and the guard reported
+//     nothing — a false negative produced by the reader's own eye for a comment
+//     being better than the check's. The mirror case is a false positive: a
+//     commented `new Application(` or `app.step(` binds and arms the check
+//     against a block that runs neither. This is the same assumption class as
+//     `tools/apply-publish-names.mjs`'s quote-only residue guard, which shipped
+//     a workspace name inside a template literal twice (2026-09-13,
+//     2026-09-19); its fix is the same one, and this file reuses that helper's
+//     approach rather than a second copy of the idea. Line numbers still come
+//     from the ORIGINAL text, so an error still points at the real line.
 const LIFECYCLE_FENCE = /```(?:ts|typescript)\r?\n([\s\S]*?)```/g;
 const APPLICATION_BINDING =
   /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new Application\(/;
@@ -470,7 +484,7 @@ for (const rel of prosePaths()) {
   const text = read(rel);
   if (text === null) continue;
   for (const match of text.matchAll(LIFECYCLE_FENCE)) {
-    const body = match[1];
+    const body = strippedOfComments(match[1]);
     const bound = APPLICATION_BINDING.exec(body);
     if (bound === null) continue;
     const app = bound[1];

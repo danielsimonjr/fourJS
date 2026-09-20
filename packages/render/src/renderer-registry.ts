@@ -317,6 +317,39 @@ function describeBackends(backends: readonly RendererBackend[]): string {
     : backends.map((backend) => JSON.stringify(backend)).join(", ");
 }
 
+/**
+ * The registration sentence to print for a backend nobody registered.
+ *
+ * The registry knows which backend was asked for, so the message names *that*
+ * backend's register call rather than always naming `registerWebglRenderer()`
+ * — advice that was right for one of the four `"auto"` rungs and wrong for the
+ * other three (dogfood cycle 9A: asking for `"canvas2d"` was told to call the
+ * WebGL registrar).
+ *
+ * `"canvas2d"` and `"svg"` are §102 reserved stubs: `@fourjs/render-canvas`
+ * and `@fourjs/render-svg` export a package name and nothing else, so there is
+ * no register function to point at and pretending otherwise sends a reader to
+ * an import that does not exist. Those rungs say so plainly — they are
+ * reachable, but only through an application's own {@link registerRenderer}
+ * (which cycle 9A proved works). `"null"` is the same shape: the headless tier
+ * is whatever the caller registers.
+ *
+ * Selection is untouched by any of this; only the text changes.
+ */
+function registrationAdvice(backend: RendererBackend): string {
+  switch (backend) {
+    case "webgpu":
+      return "Call `registerWebgpuRenderer()` from the render-webgpu package first, or pass a Renderer instance (§45).";
+    case "webgl2":
+      return "Call `registerWebglRenderer()` from the render-webgl package first, or pass a Renderer instance (§45).";
+    case "canvas2d":
+    case "svg":
+      return `No fourJS package implements the ${JSON.stringify(backend)} backend yet — it is a reserved §102 stub — so nothing exports a register function for it. Register your own implementation with registerRenderer({ backend: ${JSON.stringify(backend)}, isSupported, create }), or pass a Renderer instance (§45).`;
+    case "null":
+      return 'The headless tier has no package of its own: register your own implementation with registerRenderer({ backend: "null", isSupported, create }), or pass a Renderer instance (§45).';
+  }
+}
+
 /** The declarable-name set, for {@link validateCapabilityDeclaration}. */
 const CAPABILITY_NAME_SET: ReadonlySet<string> = new Set(
   RENDERER_CAPABILITY_NAMES,
@@ -616,7 +649,7 @@ export class RendererRegistry {
     if (registration === undefined) {
       throw new FourError(
         SELECTION_ERROR_CODE,
-        `No ${JSON.stringify(backend)} renderer is registered (§62). Registered: ${describeBackends(this.backends)}. A backend registers itself only when the application calls its register function — for example \`registerWebglRenderer()\` from the render-webgl package.`,
+        `No ${JSON.stringify(backend)} renderer is registered (§62). Registered: ${describeBackends(this.backends)}. A backend is available only once the application registers it. ${registrationAdvice(backend)}`,
         { context: { selection: backend, registered: this.backends } },
       );
     }
@@ -775,13 +808,21 @@ export async function resolveRenderer(
 ): Promise<Renderer> {
   const target = registry ?? sharedRegistry;
   if (target === undefined) {
-    // Deliberately the shortest message in this module. Every *other* failure
-    // here is reported by `RendererRegistry`, which only exists in a bundle
-    // that registered something; this one is the branch every application
-    // carries, so it says the one thing that is actionable and stops (§85).
+    // Deliberately the shortest *actionable* message in this module. Every
+    // *other* failure here is reported by `RendererRegistry`, which only
+    // exists in a bundle that registered something; this one is the branch
+    // every application carries, so it says the one thing that is actionable
+    // and stops (§85). "Actionable" is per selection: the advice names the
+    // register call for the backend that was actually asked for, because a
+    // fixed `registerWebglRenderer()` is the wrong instruction for three of
+    // the four rungs (cycle 9A).
     throw new FourError(
       SELECTION_ERROR_CODE,
-      `Cannot select renderer ${JSON.stringify(selection)}: no backend is registered (§62). Call e.g. registerWebglRenderer() from the render-webgl package first, or pass a Renderer instance (§45).`,
+      `Cannot select renderer ${JSON.stringify(selection)}: no backend is registered (§62). ${
+        selection === "auto"
+          ? "Call a backend's register function — for example `registerWebglRenderer()` from the render-webgl package — first, or pass a Renderer instance (§45)."
+          : registrationAdvice(selection)
+      }`,
       { context: { selection, registered: [] } },
     );
   }

@@ -98,9 +98,22 @@ export function auditFrameAllocations(
   // class as the render-webgl finding of 2026-09-13. The sibling
   // `warnPerFrameAllocations` in `dev-warnings.ts` already words it this way,
   // and `tools/apply-publish-names.mjs` now fails a staging run that reverts it.
+  // "During <label>" alone reads as an accusation against <label>. It is not
+  // one: the label names the measurement WINDOW, and `constructed` is the math
+  // package's process-wide construction delta sampled across it — so every
+  // allocation any code made while the window was open lands in this number,
+  // the caller's own `fixedUpdate` included. Dogfood cycle 9C read the old
+  // wording as "the engine is warning about itself" and filed a tracker item
+  // on it; cycle 10C measured the opposite (alloc-0 in the window is silent,
+  // four `new Vector3` in the consumer's own update reproduce the string
+  // exactly). The message now separates the two so a reader knows where to
+  // look.
   const message =
-    `§83: ${String(constructed)} math object(s) were constructed during ` +
-    `"${label}" (threshold ${String(threshold)}); steady-state per-frame code ` +
+    `§83: ${String(constructed)} math object(s) were constructed while ` +
+    `"${label}" was running (threshold ${String(threshold)}). "${label}" is ` +
+    "the measurement window, not necessarily the allocator: the count is " +
+    "every math object constructed anywhere in the process during it, " +
+    "including the application's own code. Steady-state per-frame code " +
     "should reuse out-parameters and pooled buffers (§7b).";
 
   if (options.warn !== false) {

@@ -421,3 +421,90 @@ describe("resolveRenderer", () => {
     }
   });
 });
+
+describe("the unregistered-backend message names the right register call", () => {
+  // Cycle 9A: asking for "canvas2d" with nothing registered was told to call
+  // `registerWebglRenderer()`. The registry knows which backend was asked
+  // for; the advice now follows it. Selection behaviour is unchanged — every
+  // case below still throws RENDERER_INITIALIZATION_FAILED.
+  afterEach(() => {
+    clearRegisteredRenderers();
+  });
+
+  it("points an unregistered webgpu selection at the webgpu registrar", async () => {
+    await expect(resolveRenderer("webgpu")).rejects.toThrow(
+      /registerWebgpuRenderer\(\).*render-webgpu/s,
+    );
+    await expect(resolveRenderer("webgpu")).rejects.toThrow(
+      /no backend is registered/,
+    );
+  });
+
+  it("points an unregistered webgl2 selection at the webgl registrar", async () => {
+    await expect(resolveRenderer("webgl2")).rejects.toThrow(
+      /registerWebglRenderer\(\).*render-webgl/s,
+    );
+  });
+
+  for (const backend of ["canvas2d", "svg"] as const) {
+    it(`says no fourJS package implements ${backend}, and names registerRenderer`, async () => {
+      let thrown: unknown;
+      try {
+        await resolveRenderer(backend);
+      } catch (error: unknown) {
+        thrown = error;
+      }
+      expect(isFourError(thrown)).toBe(true);
+      if (!isFourError(thrown)) return;
+      expect(thrown.code).toBe("RENDERER_INITIALIZATION_FAILED");
+      expect(thrown.message).toContain("No fourJS package implements");
+      expect(thrown.message).toContain(`"${backend}"`);
+      expect(thrown.message).toContain("reserved §102 stub");
+      expect(thrown.message).toContain("registerRenderer(");
+      // The wrong advice, in every rendering: it must not send a reader to
+      // the WebGL or WebGPU package for a backend neither provides.
+      expect(thrown.message).not.toContain("registerWebglRenderer");
+      expect(thrown.message).not.toContain("registerWebgpuRenderer");
+      expect(thrown.context).toEqual({ selection: backend, registered: [] });
+    });
+  }
+
+  it("keeps the generic advice for auto, which names no backend", async () => {
+    await expect(resolveRenderer("auto")).rejects.toThrow(
+      /registerWebglRenderer\(\)/,
+    );
+  });
+
+  it("follows the requested backend on a non-empty registry too", async () => {
+    const registry = new RendererRegistry();
+    registry.register({
+      backend: "webgl2",
+      isSupported: () => true,
+      create: () => new NullRenderer(),
+    });
+    let thrown: unknown;
+    try {
+      await registry.resolve("canvas2d");
+    } catch (error: unknown) {
+      thrown = error;
+    }
+    expect(isFourError(thrown)).toBe(true);
+    if (!isFourError(thrown)) return;
+    expect(thrown.message).toContain('No "canvas2d" renderer is registered');
+    expect(thrown.message).toContain('Registered: "webgl2"');
+    expect(thrown.message).toContain("No fourJS package implements");
+    expect(thrown.message).not.toContain("registerWebglRenderer");
+  });
+
+  it("names the webgpu registrar for an unregistered webgpu on a live registry", async () => {
+    const registry = new RendererRegistry();
+    registry.register({
+      backend: "webgl2",
+      isSupported: () => true,
+      create: () => new NullRenderer(),
+    });
+    await expect(registry.resolve("webgpu")).rejects.toThrow(
+      /registerWebgpuRenderer\(\)/,
+    );
+  });
+});

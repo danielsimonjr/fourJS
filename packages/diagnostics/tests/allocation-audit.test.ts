@@ -48,3 +48,38 @@ describe("auditFrameAllocations", () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("auditFrameAllocations message attribution (cycle 9/10 residue)", () => {
+  // Dogfood cycle 9C read `N math object(s) were constructed during
+  // "Application.step"` as the engine warning about its own allocations and
+  // filed a tracker item on it. Cycle 10C measured the opposite: the label is
+  // the measurement WINDOW, and the count is the math package's process-wide
+  // construction delta across it, so a consumer's own `fixedUpdate` lands in
+  // the number under the engine's label. The message must let a reader tell
+  // the two apart.
+  it("names the label as the window and says the count is not scoped to it", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { message } = auditFrameAllocations(0, 4, {
+      label: "Application.step",
+    });
+    expect(message).toContain("4 math object(s)");
+    expect(message).toContain('"Application.step" is the measurement window');
+    expect(message).toContain("not necessarily the allocator");
+    expect(message).toContain("anywhere in the process");
+    expect(message).toContain("the application's own code");
+    // Still §83, still the §7b remedy, still no workspace package name.
+    expect(message).toContain("§83:");
+    expect(message).toContain("§7b");
+    expect(message).not.toContain("@fourjs/");
+  });
+
+  it("does not phrase the window as the thing that allocated", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { message } = auditFrameAllocations(0, 1, { label: "simulate" });
+    // The bare "during <label>" of the old wording is what read as an
+    // accusation; "while <label> was running" plus the window sentence does
+    // not.
+    expect(message).not.toContain('constructed during "simulate"');
+    expect(message).toContain('constructed while "simulate" was running');
+  });
+});
