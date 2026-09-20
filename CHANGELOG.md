@@ -158,6 +158,79 @@ control sees a template-literal occurrence, cycle 9's blind spot). Consumer type
 - **All 7 `TRANSFORM_AUTHORITIES` values assign** from a consumer seat, `"blended"` included.
 - Scene package suite: **374 tests in 18 files, all passing**. `check-docs` OK, `check-spec` OK,
   Prettier clean on the three edited guides. Chrome reported **0** console errors across both runs.
+### 2026-09-19 — dogfood cycle 10C: `packages/core`, from a consumer seat
+
+Measured against 24 staged published-name tarballs installed into a project outside the
+workspace, compiled against the shipped declarations, and run in Node 24 and real Chrome.
+Control: 688 shipped `.js`/`.d.ts` files scanned with comments stripped contain **0**
+workspace `@fourjs/*` names (a deliberately injected template literal was caught, so the
+scanner is live). Consumer typecheck under `strict` + `skipLibCheck: false`: **0 errors**,
+own and third-party, with 311 fourJS and 478 `node_modules` declaration files in the program.
+27 core error paths triggered; every message named a real callable, none named a package a
+consumer cannot install, and all but one named the field or option to inspect.
+
+#### Fixed
+
+- **`performance-optimization.md`'s production-build table was stale in both directions.** It
+  recorded the four examples at 23–37 kB gzip saving 0.46–0.52 kB. Re-measured 2026-09-19 by
+  building each example twice, once as committed and once with the `define` line removed:
+  first-2d-scene 59.47 → 56.17 kB (**3.30 kB**), first-3d-scene 43.67 → 40.41 (3.26),
+  particles-demo 45.34 → 42.16 (3.18), ui-demo 52.13 → 48.60 (3.53). The bundles have grown
+  ~20 kB and the flag removes six to seven times more than the row claimed. The §86 payload
+  bullet at the top of the guide carried the same stale 36.79 kB / 0.48 kB pair and is
+  corrected to the 56.66 kB that `bun run size` reports today.
+- **The guide said a production build stops shipping author-facing warnings. One does not.**
+  `@fourjs/scene` is a §33 simulation package and may not import `DEV`, so its §83
+  detached-listener warning is a bare `console.warn` with a `WeakSet` suppressor and **prints
+  in production** — measured in Chrome against a real production bundle, where it was the only
+  console line the page produced. The guide now states the exception, quotes the message, and
+  says the remedy is to unsubscribe rather than to expect the build flag to hide it.
+- **"`@fourjs/diagnostics` leaves the bundle entirely" is bundler-dependent.** True under
+  Vite/Rollup, where `"math object(s)"`, `"already attached"` and `"steady-state"` each drop
+  from 1 occurrence to 0. False under bare esbuild with the documented
+  `--define:__FOUR_DEV__=false`, where the production bundle is **37 bytes** smaller than its
+  development twin (54,988 vs 55,025 B) and still carries every dev message string, because
+  esbuild folds `DEV` to a `false` binding without propagating it into the guards. The
+  branches do not run — `DEV` really is `false` in Chrome — but they ship. The guide names the
+  bundler difference, since it names esbuild in the recipe.
+- **`cloneJsonValue`'s `@throws` was incomplete in a way that breaks a consumer's `catch`.** It
+  documented only `TypeError`, but the depth refusal is a `FourError`. Measured: the depth
+  throw reports `instanceof TypeError === false` while the `Date` refusal from the same call
+  site reports `true`, so `catch (e) { if (e instanceof TypeError) … }` silently misses it.
+  The tag now names both, and records that the ceiling is fixed — the refusal's
+  `context.limitName` reads `"maximumDepth"` to match `parseUntrustedJson`'s vocabulary, but
+  this function takes no limits argument and the name is not a knob reachable from here.
+- **Cycle 9A's `Disposable` collision note was in a place TypeScript does not show.** It went
+  into the module header, and a module header does not travel to a symbol. Measured with the
+  TypeScript API against the installed tarball: the documentation attached to `Disposable` —
+  what an editor shows a consumer who hovers it — was the 51-character one-line summary and
+  said nothing about `[Symbol.dispose]`. The note now sits on the interface itself; the same
+  probe against the rebuilt declarations returns 774 characters mentioning `Symbol.dispose`.
+- **`tools/apply-publish-names.test.mjs`'s residue assertion could not fail.** It tested
+  `!/["']@four\//`, naming a scope — `@four/` — that appears nowhere in this repository, so it
+  passed for every possible input including a completely un-rewritten file. This is the same
+  quote-character blind spot that let a workspace name reach a shipped runtime message twice
+  (2026-09-13, 2026-09-19); the corrected pattern is `/["'`]@fourjs\//`, backticks included.
+  15/15 tool tests pass with the live assertion.
+
+#### Added
+
+- **`performance-optimization.md` now documents the §83 per-frame allocation warning**, which
+  no guide covered. It records what only a measurement shows: `"Application.step"` in the
+  message is the **measurement window, not the culprit**. The counter is the math package's
+  process-wide construction count sampled around the step, so a consumer's own `fixedUpdate`
+  is counted under the engine's label. Measured from an installed tarball, in Node and Chrome:
+  a headless application with a scene, a camera and a registered system allocates **0** math
+  objects per step and prints nothing over 120 steps; adding four `new Vector3(…)` to that
+  system reproduces the exact message cycle 9 attributed to the engine. Also recorded: it
+  needs `stats: true` (off by default), it fires once per **process** rather than per
+  `Application`, and the threshold is 0 with no option to raise it.
+- **`disposeAll`'s edge behaviour is documented**, all four cases measured from an installed
+  tarball: reverse order (`[a,b,c]` → `c,b,a`); a throwing disposer does not stop the pass and
+  the value re-thrown is the first in **reverse** order; `null`, `undefined` and a
+  `[Symbol.dispose]`-only object are each treated exactly like a throwing disposer, so every
+  remaining item is still disposed and the `TypeError` surfaces at the end; and nothing
+  deduplicates, so a non-idempotent `dispose()` must guard itself.
 
 ### 2026-09-19 — dogfood cycle 9A: the §62 renderer seam holds for a backend fourJS does not ship
 

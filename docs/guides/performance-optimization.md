@@ -21,10 +21,12 @@ say:
 - **Scene:** a clean world-transform pass is only ~3× cheaper than a full
   recompute — dirty-tracking helps but is not free; scene depth is
   recursion-limited around ~8 k.
-- **Payload:** the §86 gate holds the minimal 2D app at **36.79 kB gzip** of
-  its 150 kB budget (32.13 kB when this line was written; the example has
-  gained scene content since, and 0.48 kB of the current figure came back off
-  it when the production build mode landed — see below). Solver wasm is outside
+- **Payload:** the §86 gate holds the minimal 2D app at **56.66 kB gzip** of
+  its 150 kB budget (`bun run size`, 2026-09-19; 32.13 kB when this line was
+  first written and 36.79 kB at the previous re-measure — the example keeps
+  gaining scene content, so re-measure rather than quote). **3.30 kB** of that
+  figure is what the production build mode takes back off it — see below.
+  Solver wasm is outside
   the budget by its wording (~670 kB gzip per Rapier dimension) — load it async
   and show a loading state, as every physics example does.
 
@@ -167,19 +169,44 @@ examples:
 
 | Example        | development | production | saved   |
 | -------------- | ----------- | ---------- | ------- |
-| first-2d-scene | 37.27 kB    | 36.79 kB   | 0.48 kB |
-| first-3d-scene | 25.50 kB    | 25.04 kB   | 0.46 kB |
-| particles-demo | 23.56 kB    | 23.04 kB   | 0.52 kB |
-| ui-demo        | 30.96 kB    | 30.46 kB   | 0.50 kB |
+| first-2d-scene | 59.47 kB    | 56.17 kB   | 3.30 kB |
+| first-3d-scene | 43.67 kB    | 40.41 kB   | 3.26 kB |
+| particles-demo | 45.34 kB    | 42.16 kB   | 3.18 kB |
+| ui-demo        | 52.13 kB    | 48.60 kB   | 3.53 kB |
 
-(gzip, `bun run size`. The flagship is unchanged at 1.54 MB — its payload is
-Rapier's two wasm images, which dwarf half a kilobyte.)
+(gzip, re-measured 2026-09-19 by building each example twice — once as
+committed, once with the `define` line removed. The flagship is dominated by
+Rapier's two wasm images, which dwarf three kilobytes.)
+
+These numbers replace a table written when the examples were roughly 20 kB
+smaller, which recorded a saving of about 0.5 kB. **Both halves were stale, and
+in opposite directions**: the bundles have grown, and the flag now removes
+**six to seven times** more than the old row claimed. A measured table is worth
+re-measuring, not trusting — `bun run size` reports 56.66 kB for the
+first-2d-scene production artifact above, within 1% of the `gzip -9` figure.
+
+**Rollup does this; esbuild alone does not.** The examples build through Vite,
+and Vite's Rollup pipeline deletes the guarded blocks and their message strings
+outright — measured: `"math object(s)"`, `"already attached"` and
+`"steady-state"` each appear once in the development artifact and zero times in
+the production one. A consumer who bundles the same application with **esbuild**
+directly (`esbuild --bundle --minify --define:__FOUR_DEV__=false`) gets a
+production bundle that is 37 bytes smaller than its development twin and still
+carries every dev message string, because esbuild folds `DEV` to a `false`
+binding without propagating it into the guards. The branches do not _run_ — the
+runtime flag really is `false`, confirmed in Chrome — but they still ship. If
+bundle size is the goal, verify it on your own output rather than assuming the
+`define` did the work.
 
 Three things go, and they are all things only an author reads:
 
 - **§84's statistics wiring.** `app.stats` is `null` in a production build even
-  if you passed `stats: true`, and `@fourjs/diagnostics` leaves the bundle
-  entirely. The option and the member keep their types in both builds, so
+  if you passed `stats: true` — verified in Chrome 2026-09-19 against a real
+  production bundle, where the same page reports `FrameStats` in development.
+  Whether `@fourjs/diagnostics` leaves the bundle **depends on your bundler**:
+  it does under Vite/Rollup, and it does not under bare esbuild, where
+  `auditFrameAllocations` survives with its message intact (see the note above
+  the table). The option and the member keep their types in both builds, so
   `app.stats?.drawCalls` compiles and runs either way — it simply answers
   `undefined`. Measure in development.
 - **§6a's duplicate-component warning.** The _behaviour_ — one component of a
@@ -193,6 +220,25 @@ Three things go, and they are all things only an author reads:
 scene-graph cycles, serialization version mismatches, invalid geometry indices,
 lifecycle misuse. If a check must hold in the field, it is a throw, not a
 warning.
+
+**One warning also never moves, and it is the one you are most likely to see.**
+`@fourjs/scene` is a §33 simulation package, so it may not import `DEV` at all
+(`tests/integration/dev-build-mode.test.ts` enforces that). Its §83
+detached-listener warning is therefore written as a bare `console.warn` with a
+`WeakSet` for the once-per-node suppression, and it **prints in production**:
+
+```
+[fourJS] §83: node "node-5" was detached with 1 event listener(s) still
+registered; call the unsubscribers from on() or removeAllListeners() so the
+subtree is not retained (§6b).
+```
+
+Measured in Chrome 2026-09-19 against a production bundle, where it was the
+only console line the page produced. Removing a node that still has listeners
+is a genuine retention bug, so the warning is doing its job — but if your
+production console must be silent, unsubscribe on teardown rather than
+expecting the build flag to hide it. `@fourjs/scene`'s `node.ts` is the only
+place in the engine with this shape.
 
 **And nothing the simulation computes may depend on it** (§33). A replay
 recorded in a development build has to reproduce bit-exactly in a production
@@ -226,6 +272,40 @@ does nothing in production, which is §85's "expensive validation" exactly. Use
 it for scans an author must fix before shipping; never for a condition a
 shipped program is expected to hit, and never where the code below it depends
 on the throw having fired.
+
+### The per-frame allocation warning (§83), and who it is about
+
+With `stats: true` in a development build, a frame that constructs any math
+object prints once per process:
+
+```
+[fourJS] §83: 4 math object(s) were constructed during "Application.step"
+(threshold 0); steady-state per-frame code should reuse out-parameters and
+pooled buffers (§7b).
+```
+
+**Read the label as a window, not as a culprit.** `"Application.step"` names
+the measurement interval, not the code that allocated. The counter is the math
+package's process-wide construction count, sampled before and after the step,
+so **anything** that runs inside the step is counted — including your own
+`fixedUpdate`. Measured 2026-09-19 from an installed tarball: a headless
+application with a scene, a camera and a registered system allocates **0** math
+objects per step and prints nothing over 120 steps; add four `new Vector3(…)`
+to that system's `fixedUpdate` and the message above appears, reporting four.
+The same is true in Chrome.
+
+Three facts worth knowing before you go looking for a leak:
+
+- **It needs `stats: true`.** The audit sits behind `DEV && this.stats !== null`
+  and statistics are off by default, so an application that never opts in never
+  sees it. Passing `stats: false`, or omitting the option, silences it.
+- **Once per process, not once per application.** The suppression key is the
+  label, and `devWarnOnce` keys live for the lifetime of the module — a second
+  `Application` in the same process stays quiet. `resetDevWarnings()` re-arms
+  it.
+- **The threshold is 0 and there is no option for it.** `Application` calls the
+  audit with a label and nothing else, so any allocation at all is reported.
+  Production silences it along with every other dev warning.
 
 ### Auditing for leaked resources (§83)
 
