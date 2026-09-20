@@ -99,6 +99,8 @@ and tier 4 surfaces the decisions that block otherwise-small work.
 
 Historical audit as of **2026-09-10**, recounted not estimated (`grep -c '^- \[ \]'` / `'^- \[x\]'`): **11 open**, **260 closed**. Closed this pass: **RFC 0005 residue** (WebGPU skinned id pass was the last named slice). Audit confirmed the other 11 still have remaining work or are standing/owner-gated. Same-day slices on still-open rows: WebGPU idle-skip (`WgpuBatching.#canSkipUpload`). Of the 11, **1 is standing** (dogfooding map), **1 is owner-gated** (first publish), and the rest are post-1.0 / hardware packets. TypeDoc/`typescript@6.0.3` isolation remains in tier 4 (Vitest 5 already landed; not a second `[ ]`). Superseded 2026-09-11: RFC 0007/0008/0009 accepted and implemented to the packet scopes above. The 11 standing/residue rows remain open.
 
+Recount **2026-09-19**, same method: **16 open**, **265 closed**. The delta is not new work — seven are dogfood cycle 9's residue, filed under *Cycle 9 residue* at the end of **Now** so they stop living inside a cycle write-up where they read as history. They are unranked here on purpose: this index is a working document and its ordering is its author's, not a filed agent's to rewrite.
+
 ### 0 · Blocked on an event, not on effort
 
 Each waits on a **second solver adapter** existing. None is minutes-work; none is work at
@@ -2495,6 +2497,73 @@ leak + `pointercancel`), `A-15` (unregistered components no longer dropped on sa
 
 - [x] §45 renderer-string ("auto") selection — **done 2026-08-07** (A-8/R-2/PH-19
       closure; the 2026-08-01 instance-injection deferral is retired, not reversed)
+
+### Cycle 9 residue (2026-09-19) — filed out of the dogfooding narrative so they are actionable
+
+Each of these was measured during dogfood cycle 9 and then judged **not** a defect, or left
+as a decision. They are filed here because a finding that lives only inside a cycle write-up
+gets read as history and never actioned. None is urgent; none blocks anything.
+
+- [ ] **The engine's first word to a consumer is a warning about itself.** With DEV
+      diagnostics on, `§83: 4 math object(s) were constructed during "Application.step"
+      (threshold 0)` fires once per session against the engine's own step, because the
+      default threshold is `0`. Behaviour is as designed (dev-only, warn-once) and the
+      message is correct — but it is the first thing a new consumer sees in their console,
+      and it reports the engine to the user as if the user had done something. Decision, not
+      a bug fix: raise the default threshold to the engine's own known floor, exclude the
+      engine's own step from the audit, or keep it and say so in the diagnostics guide.
+      Measured from a consumer seat, Node and Chrome (cycle 9C).
+
+- [ ] **`AUTO_RENDERER_ORDER` carries two rungs no fourJS package can fill.**
+      `renderer-registry.ts:112` lists `webgpu`, `webgl2`, `canvas2d`, `svg`; the last two
+      are reserved stubs (§102), so `resolveRenderer("auto")` can only reach them if an
+      **application** registers its own backend — which cycle 9A proved works. Decision:
+      keep the rungs as the published contract for consumer-authored backends (and say so
+      in the doc comment), or drop them until the packages ship. Either is defensible; the
+      current state teaches neither.
+
+- [ ] **The unregistered-backend error always names `registerWebglRenderer()`.** Asking for
+      `"canvas2d"` with nothing registered yields *"…no backend is registered (§62). Call
+      e.g. registerWebglRenderer() from the render-webgl package first, or pass a Renderer
+      instance (§45)."* The advice is real and the second half is always right, but the
+      named call is wrong for three of the four backends. Cheap fix if the registry knows
+      which backend was asked for; skipped in cycle 9A because the honest per-backend
+      message ("that package is a stub") belongs in the README, where it now is.
+
+- [ ] **`packages/physics/src/world.ts:374` reads as though Box2D ships.** "every solver
+      Rapier and Box2D ship — wasm images included" is hypothetical prose about what the
+      physics package would import, but a reader checking whether Box2D is available finds
+      this line first. One sentence; not wrong, just easy to misread against
+      `COMPATIBILITY.md`'s accurate "reserved stub" rows.
+
+- [ ] **Audit the other tools for the quote-only assumption that let the §83 defect ship.**
+      `apply-publish-names.mjs` matched `"` and `'` but not backticks, so a workspace name
+      in a **template literal** — how every runtime message is written — passed both the
+      rewriter and its own residue guard. Fixed there (cycle 9C) with a comment-stripping
+      check measured at 1 true positive / 0 false positives over 344 shipped files. The
+      **class** is what needs the sweep: any other check that inspects emitted code by
+      quote character has the same blind spot. `tools/` is small enough to read in one pass.
+
+- [ ] **Guide coverage is absent for five surfaces that have shipped code.** Measured
+      2026-09-19 across `docs/guides/`: `render-svg`, `physics-box2d` and `physics-soft`
+      have **zero** guide files; the geometry generators and the §83/§85 warning family have
+      none either (cycle 8 found the same for `KeyboardState`, `SteeringAgent`, `Scheduler`,
+      `SpatialHash`, `solveTwoBoneIK`). Consistent with cycle 8's judgement this is a
+      **coverage gap, not a defect** — package READMEs and TypeDoc cover the symbols and no
+      guide teaches a wrong call. Filed so the gap is counted rather than re-discovered each
+      cycle. The sharpest single omission: there is no "write a renderer backend" guide,
+      although `custom-solver-adapters.md` is exactly that guide for the solver seam, and
+      cycle 9A proved the renderer seam supports one.
+
+- [ ] **A renderer swap costs 3 consumer lines, not 2, and the third is the surface type.**
+      Cycle 3c measured a two-line WebGL→WebGPU swap; cycle 9A measured **three** for
+      Canvas 2D→SVG, because those backends take `HTMLCanvasElement` and `SVGSVGElement`
+      respectively. `Renderer` has no surface member — each backend takes its own surface in
+      its own constructor — so the seam is clean by design and the cost is one line, not a
+      redesign. Recorded so §62's "swapping the backend is one import and one constructor"
+      claim is read with the surface handle in mind; decide whether to state the exception
+      in the renderer docs or to accept it silently.
+
 
 ## Backlog
 
