@@ -8,6 +8,41 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-19 — dogfood cycle 9a: the §62 renderer seam holds for a backend fourJS does not ship
+
+#### Fixed
+
+- **`Disposable` (`packages/core/src/disposable.ts`) never said it is not TC39's.** The name is
+  also a TypeScript global — the explicit-resource-management protocol keyed on `[Symbol.dispose]`
+  — in any consumer whose `lib` includes `ESNext.Disposable`. A consumer reading
+  `interface Renderer extends Disposable` in the shipped declarations therefore implements
+  `[Symbol.dispose]()`, which nothing in this repository calls. The module header now states which
+  interface it is and that `dispose()` is the member every owner and `disposeAll` invoke.
+
+#### Changed
+
+- **`@fourjs/render-canvas` and `@fourjs/render-svg` READMEs now answer "what can I do today?"**
+  Both said only that the package is a reserved stub that _will_ provide a `Renderer`
+  implementation. Measured from a clean consumer against packed, published-name tarballs: the
+  published surface is already sufficient for an application to write either backend itself —
+  `Renderer`, `RendererCapabilities`, `buildRenderList`, `createRenderStatistics` and
+  `registerRenderer` all reach the consumer through `fourJS/render`, and a consumer-authored
+  backend is selected by `resolveRenderer("auto")` exactly as a first-party one would be. Both
+  READMEs now say so, and both record that `AUTO_RENDERER_ORDER`'s `"canvas2d"` and `"svg"` rungs
+  are unreachable from fourJS packages alone while the stubs stand.
+
+  Evidence (Chrome 153, one scene of three unlit 2D meshes at 640×360, both backends written only
+  against umbrella subpaths): Canvas 2D **35,851 lit pixels** / 194,549 background pixels, 3 draw
+  calls, **82 triangles**; SVG **82 `<polygon>` elements** beside one background `<rect>`, the
+  three emitted fills `#ff4040`/`#40ff59`/`#4d73ff` matching the three materials. Rasterising the
+  SVG output gives **35,850** lit pixels against Canvas 2D's 35,851 — 1 pixel of 230,400, with
+  1,209 pixels differing by more than 8 in a channel, all on antialiased shape edges. Controls:
+  the same two backends over an emptied scene give **0** lit pixels and **0** polygons, and
+  zeroing one material's colour moves exactly that one fill to `#000000`. §33: both backends
+  byte-identical across two runs, and Node 24's projected triangles match Chrome's `points`
+  attributes to three decimals (82/82, first and last identical). Consumer typecheck under
+  `strict` with `skipLibCheck: false`: **0 errors**, none in fourJS's own declarations.
+
 ### 2026-09-18 — dev tooling: size-limit 14 and five patch/minor bumps (#117)
 
 #### Changed

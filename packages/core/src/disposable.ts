@@ -5,6 +5,17 @@
  * materials, physics worlds, and the application itself all expose
  * `dispose()`. This module defines the shared interface and the batch helper
  * every owner uses to tear its children down.
+ *
+ * **This `Disposable` is fourJS's own, not TC39's.** The name is also a
+ * TypeScript global — the explicit-resource-management protocol whose member is
+ * `[Symbol.dispose]()`, reachable in any consumer whose `lib` includes
+ * `ESNext.Disposable`. The two are unrelated. Reading `interface Renderer
+ * extends Disposable` in a shipped declaration therefore invites implementing
+ * `[Symbol.dispose]()`, which nothing in this repository calls; the member
+ * every owner and {@link disposeAll} invoke is the plain `dispose()` declared
+ * below. Implementing both is harmless, and implementing only `[Symbol.dispose]`
+ * does not satisfy this interface. (Found 2026-09-19 from a consumer seat, by
+ * an application writing its own renderer backend against `@fourjs/render`.)
  */
 
 /** A resource whose lifetime is owned explicitly (§83). */
