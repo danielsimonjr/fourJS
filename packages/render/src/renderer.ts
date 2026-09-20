@@ -432,6 +432,27 @@ export interface RenderInterpolation {
  * renderer.dispose();
  * ```
  *
+ * ## Swapping the backend: one import, one constructor — and the surface type
+ *
+ * §62's promise is that changing backend is an import and a constructor. That
+ * holds, with one measured exception a reader meets immediately: **this
+ * interface has no surface member**. Each backend takes its own surface in its
+ * own constructor, so the swap costs a third line whenever the two backends'
+ * surface types differ.
+ *
+ * - **Two lines** (cycle 3c): WebGL 2 → WebGPU. Both take an
+ *   `HTMLCanvasElement`, so only the import and the constructor change.
+ * - **Three lines** (cycle 9A): Canvas 2D → SVG. `Canvas2dRenderer` takes an
+ *   `HTMLCanvasElement` and `SvgRenderer` an `SVGSVGElement`, so the surface
+ *   handle changes too.
+ *
+ * The seam held in both cases — nothing above the surface moved, and the
+ * per-frame calls are identical. The cost is one line, not a redesign, and it
+ * is by design rather than omission: a surface member on this interface would
+ * have to name a union of every backend's surface type, which is exactly the
+ * backend coupling §62 keeps out. `docs/guides/custom-renderer-backends.md`
+ * shows the diff.
+ *
  * ## Device and context loss is a first-class event (§61, spec rev 1.3)
  *
  * §61: *"Device and context loss (WebGL context loss, WebGPU device loss) is a

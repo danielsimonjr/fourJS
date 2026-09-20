@@ -38,3 +38,105 @@ export function strippedOfComments(text) {
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/(^|[^:'"`\\])\/\/[^\n]*/g, "$1");
 }
+
+/**
+ * The same text with every comment body and every string body replaced by
+ * spaces, **offset for offset**, so an index into the result is an index into
+ * the original.
+ *
+ * {@link strippedOfComments} answers "what does this code do"; this answers
+ * "where is this character", which is what a scanner that walks a source by
+ * index needs. The dependency-graph generator brace-matched an object literal
+ * by counting `{` and `}` over raw source, so a brace inside a string or a
+ * template literal — `` `${a} { b}` ``, a regex-ish message, a CSS snippet —
+ * moved its depth counter and ended the block in the wrong place. Blanking the
+ * bodies rather than deleting them is the whole point: the delimiters, the
+ * newlines and every code character keep their positions, so the caller can
+ * scan the blanked copy and slice the original.
+ *
+ * Unlike {@link strippedOfComments} this is a real (small) scanner, because an
+ * index-preserving answer cannot be had from independent regexes. It tracks
+ * line and block comments, `'` / `"` strings with escapes, and template
+ * literals including nested `${ … }` expressions — whose contents ARE code and
+ * are therefore left intact. Regular-expression literals are deliberately not
+ * modelled: telling `/` division from a regex needs the parser's context, and a
+ * brace inside a regex literal has never occurred in the sources these checks
+ * read. That is a recorded limit, not an oversight.
+ *
+ * @param {string} text Source or emitted code.
+ * @returns {string} Same length as `text`; comment and string bodies blanked.
+ */
+export function blankedCommentsAndStrings(text) {
+  const out = Array.from(text);
+  const blank = (index) => {
+    if (out[index] !== "\n") out[index] = " ";
+  };
+  // Each entry is a template literal we are inside; the number counts the
+  // `{` depth of the `${ … }` expression currently open within it, or -1 when
+  // no expression is open. That is what makes `` `${ {a:1} }` `` work.
+  const templates = [];
+  let index = 0;
+  while (index < text.length) {
+    const c = text[index];
+    const next = text[index + 1];
+    const inTemplateExpression =
+      templates.length > 0 && templates[templates.length - 1] >= 0;
+    const inTemplateBody = templates.length > 0 && !inTemplateExpression;
+
+    if (!inTemplateBody && c === "/" && next === "/") {
+      while (index < text.length && text[index] !== "\n") blank(index++);
+      continue;
+    }
+    if (!inTemplateBody && c === "/" && next === "*") {
+      const end = text.indexOf("*/", index + 2);
+      const stop = end === -1 ? text.length : end + 2;
+      while (index < stop) blank(index++);
+      continue;
+    }
+    if (!inTemplateBody && (c === "'" || c === '"')) {
+      index += 1; // Keep the opening quote in place.
+      while (index < text.length && text[index] !== c) {
+        if (text[index] === "\\") blank(index++);
+        if (index < text.length) blank(index++);
+      }
+      index += 1; // Keep the closing quote in place.
+      continue;
+    }
+    if (inTemplateBody) {
+      if (c === "\\") {
+        blank(index);
+        blank(index + 1);
+        index += 2;
+        continue;
+      }
+      if (c === "$" && next === "{") {
+        templates[templates.length - 1] = 1; // Expression opens at depth 1.
+        index += 2;
+        continue;
+      }
+      if (c === "`") {
+        templates.pop();
+        index += 1;
+        continue;
+      }
+      blank(index++);
+      continue;
+    }
+    if (c === "`") {
+      templates.push(-1);
+      index += 1;
+      continue;
+    }
+    if (inTemplateExpression) {
+      if (c === "{") templates[templates.length - 1] += 1;
+      else if (c === "}") {
+        templates[templates.length - 1] -= 1;
+        if (templates[templates.length - 1] === 0) {
+          templates[templates.length - 1] = -1; // Back into the template body.
+        }
+      }
+    }
+    index += 1;
+  }
+  return out.join("");
+}

@@ -108,6 +108,22 @@ export type RendererSelection = "auto" | RendererBackend;
  * Registration order is deliberately **not** consulted: §62 fixes the
  * preference, so two applications that register the same backends in different
  * orders must still resolve `"auto"` the same way (§33).
+ *
+ * ## `"canvas2d"` and `"svg"` are rungs no fourJS package can fill — kept on purpose
+ *
+ * `@fourjs/render-canvas` and `@fourjs/render-svg` are §102 reserved stubs (one
+ * export each, no `Renderer`), so from fourJS packages alone these two rungs are
+ * unreachable and `"auto"` stops at WebGPU/WebGL 2. **The rungs stay**, because
+ * they are not decoration: they are the published contract an **application's
+ * own** backend registers into. `registerRenderer({ backend: "canvas2d", … })`
+ * from consumer code makes `resolveRenderer("auto")` select it exactly as it
+ * would a first-party backend — measured end to end in dogfood cycle 9A, which
+ * wrote a Canvas 2D backend against published exports only (~120 lines,
+ * **35,851 lit pixels / 3 draw calls / 82 triangles** against a 0-pixel control)
+ * and an SVG one beside it (**83 elements** against a 1-element control).
+ * Dropping the rungs to tidy the cosmetic gap would remove a working extension
+ * point; a stub package shipping later fills its own rung with no change here.
+ * The recipe is `docs/guides/custom-renderer-backends.md`.
  */
 export const AUTO_RENDERER_ORDER = [
   "webgpu",

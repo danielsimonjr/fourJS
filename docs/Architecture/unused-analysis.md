@@ -1,6 +1,6 @@
 # Unused Files and Exports Analysis
 
-**Generated**: 2026-09-13
+**Generated**: 2026-09-20
 
 ## Summary
 
@@ -8,9 +8,9 @@
 - **Dormant files** (runtime code on disk, unreachable from any entry/build root): 4
   - **Orphaned (reachable from nothing — delete/wire candidates)**: 0
   - **Test-only (exercised by a test, ships nothing)**: 4
-- **Potentially unused exports**: 5
+- **Potentially unused exports**: 7
   - **Unreferenced anywhere (deletion candidates)**: 0
-  - **Referenced in-module (type contracts / helpers backing live exports)**: 5
+  - **Referenced in-module (type contracts / helpers backing live exports)**: 7
 
 ## Dormant Files — Orphaned (delete/wire candidates)
 
@@ -57,7 +57,7 @@ interfaces typing live guards and per-package API completeness, not rot.
 
 ### `packages/fourjs/src/scene-serializers.ts`
 
-- `CANVAS_VIEW_NODE_TYPE` (constant) — 3 in-file refs
+- `CANVAS_VIEW_NODE_TYPE` (constant) — 2 in-file refs
 
 ### `packages/geometry/src/geometry.ts`
 
@@ -70,6 +70,11 @@ interfaces typing live guards and per-package API completeness, not rot.
 ### `packages/geometry/src/svg-document.ts`
 
 - `parseTransform` (function) — 1 in-file ref
+
+### `packages/render-webgpu/src/wgpu-pipeline-memo.ts`
+
+- `WgpuPipelineRequest` (interface) — 1 in-file ref
+- `MutableWgpuPipelineRequest` (interface) — 1 in-file ref
 
 ### `packages/text/src/shaping.ts`
 

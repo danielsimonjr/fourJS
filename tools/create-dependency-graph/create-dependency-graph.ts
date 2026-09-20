@@ -37,6 +37,15 @@ import {
 import yaml from "js-yaml";
 import { basename, dirname, join, relative } from "path";
 
+// The shared code scanner every `tools/` check uses, so this generator cannot
+// grow a fourth private copy of the quote-and-comment blind spot that shipped a
+// defect twice (2026-09-13, 2026-09-19). Three call sites below inspected raw
+// source and counted what a comment or a string said.
+import {
+  blankedCommentsAndStrings,
+  strippedOfComments,
+} from "../strip-comments.mjs";
+
 // Types
 interface Dependency {
   file: string;
@@ -1927,11 +1936,20 @@ function detectUnused(
     // In-file reference count: occurrences of the symbol in its own file beyond
     // the export definition. Splits "type contract / helper backing live exports"
     // (refs > 0) from "unreferenced anywhere" (refs = 0, the deletion candidates).
+    //
+    // Counted over the file with its COMMENTS REMOVED. A name written in prose
+    // — `{@link Foo}`, "superseded by `Foo`", a commented-out call — is not a
+    // reference to anything, and this codebase documents heavily, so counting
+    // prose moved exports out of "deletion candidates" and into "type contract"
+    // on the strength of their own doc comment. That is the one distinction
+    // this report exists to make.
     let fileContent: string | undefined;
     const inFileRefs = (name: string): number => {
       if (fileContent === undefined) {
         try {
-          fileContent = readFileSync(join(ROOT_DIR, file.path), "utf-8");
+          fileContent = strippedOfComments(
+            readFileSync(join(ROOT_DIR, file.path), "utf-8"),
+          );
         } catch {
           fileContent = "";
         }
@@ -3026,7 +3044,12 @@ function analyzeWasmRuntime(rootDir: string): {
       const p = join(dir, e.name);
       if (e.isDirectory()) walk(p);
       else if (e.name.endsWith(".ts")) {
-        const src = readFileSync(p, "utf-8");
+        // Comments removed first: the scan below decides whether a dispatch
+        // reaches the AssemblyScript path by looking for a helper name in its
+        // body, so a comment that merely NAMES a helper — "used to delegate to
+        // besselOrderDispatch; now inlined" — manufactured an edge and reported
+        // a js-fallback entry as wasm.
+        const src = strippedOfComments(readFileSync(p, "utf-8"));
         // Slice the file into per-`*Dispatch` segments (def start → next def start).
         const segs: { name: string; body: string }[] = [];
         let dm: RegExpExecArray | null;
@@ -3196,21 +3219,7 @@ function analyzeWasmPairing(rootDir: string): WasmPairing | null {
     while ((m = re.exec(src)) !== null) {
       const name = m[1];
       // Brace-match the mathTyped({...}) object literal starting at its `{`.
-      let depth = 0;
-      const start = m.index + m[0].length - 1;
-      let end = start;
-      for (let i = start; i < src.length; i++) {
-        const c = src[i];
-        if (c === "{") depth++;
-        else if (c === "}") {
-          depth--;
-          if (depth === 0) {
-            end = i;
-            break;
-          }
-        }
-      }
-      const block = src.slice(start, end + 1);
+      const block = matchBraceBlock(src, m.index + m[0].length - 1);
       const dispatch = Array.from(
         new Set(block.match(/\b\w+Dispatch\b/g) ?? []),
       ).sort();
@@ -3372,11 +3381,25 @@ interface WebGPUPairing {
   standaloneAccelerated: WebGPUPairingEntry[];
 }
 
-/** Brace-match a block starting at `startBrace` (index of its `{`). */
+/**
+ * Brace-match a block starting at `startBrace` (index of its `{`).
+ *
+ * Depth is counted over an index-preserving copy whose string, template and
+ * comment bodies are blanked, because a `}` inside a message, a template
+ * literal or a comment is not a closing brace. Counting raw characters ended a
+ * block at the first such brace, truncating it and losing every marker after
+ * it — which reports a wasm-routed or parallel entry as js-only. The slice
+ * still comes from the real source: `blankedCommentsAndStrings` preserves every
+ * offset.
+ *
+ * This is the one matcher: three inline copies of the same loop lived beside it
+ * and each carried the same blind spot, so they call this instead.
+ */
 function matchBraceBlock(src: string, startBrace: number): string {
+  const scan = blankedCommentsAndStrings(src);
   let depth = 0;
-  for (let i = startBrace; i < src.length; i++) {
-    const c = src[i];
+  for (let i = startBrace; i < scan.length; i++) {
+    const c = scan[i];
     if (c === "{") depth++;
     else if (c === "}") {
       depth--;
@@ -3411,21 +3434,7 @@ function analyzeWebGPUPairing(rootDir: string): WebGPUPairing | null {
     while ((m = re.exec(src)) !== null) {
       const name = m[1];
       // Brace-match the mathTyped({...}) object literal starting at its `{`.
-      let depth = 0;
-      const start = m.index + m[0].length - 1;
-      let end = start;
-      for (let i = start; i < src.length; i++) {
-        const c = src[i];
-        if (c === "{") depth++;
-        else if (c === "}") {
-          depth--;
-          if (depth === 0) {
-            end = i;
-            break;
-          }
-        }
-      }
-      const block = src.slice(start, end + 1);
+      const block = matchBraceBlock(src, m.index + m[0].length - 1);
       const markers = Array.from(new Set(block.match(gpuDispatchRe) ?? []));
       const refMatch = block.match(gpuRefRe);
       if (refMatch) markers.push(refMatch[0]);
@@ -3791,21 +3800,7 @@ function analyzeParallelPairing(rootDir: string): ParallelPairing | null {
     while ((m = re.exec(src)) !== null) {
       const name = m[1];
       // Brace-match the mathTyped({...}) object literal starting at its `{`.
-      let depth = 0;
-      const start = m.index + m[0].length - 1;
-      let end = start;
-      for (let i = start; i < src.length; i++) {
-        const c = src[i];
-        if (c === "{") depth++;
-        else if (c === "}") {
-          depth--;
-          if (depth === 0) {
-            end = i;
-            break;
-          }
-        }
-      }
-      const block = src.slice(start, end + 1);
+      const block = matchBraceBlock(src, m.index + m[0].length - 1);
 
       // Named computePool ops (excluding infra) + generic-kernel detection.
       const ops = new Set<string>();

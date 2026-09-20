@@ -42,6 +42,7 @@
     "release:publish": ": \"${FOUR_PUBLISH_STAGING:?set it to a staging directory outside the checkout}\" && bun tools/apply-publish-names.mjs --out=\"$FOUR_PUBLISH_STAGING\" && for dir in \"$FOUR_PUBLISH_STAGING\"/*/; do npm publish \"$dir\" --access public || exit 1; done",
     "release:version": "bunx changeset version",
     "size": "bunx size-limit",
+    "strip-comments:test": "node --test tools/strip-comments.test.mjs",
     "test": "bun tools/run-in-packages.mjs --concurrency=4 --script test",
     "test:browser": "bunx playwright test",
     "test:suites": "bunx vitest run --config vitest.suites.config.ts --passWithNoTests",

@@ -2704,7 +2704,18 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       the message, or leave it and let the new guide subsection carry the explanation.
       `packages/diagnostics/src/allocation-audit.ts:101`. Reported, not fixed (cycle 10C).
 
-- [ ] **`AUTO_RENDERER_ORDER` carries two rungs no fourJS package can fill.**
+- [x] **`AUTO_RENDERER_ORDER` carries two rungs no fourJS package can fill.**
+      **DECIDED 2026-09-20 — KEEP the rungs, and the doc comment now says why.**
+      They are not decoration: they are the published contract a consumer-authored
+      backend registers into, and cycle 9A proved that path end to end
+      (`registerRenderer({ backend: "canvas2d", … })` from application code, then
+      `resolveRenderer("auto")` selecting it exactly as it would a first-party
+      backend — 35,851 lit pixels against a 0-pixel control, and an SVG sibling at
+      83 elements against a 1-element control). Dropping them would break a working
+      extension point to tidy a cosmetic gap, and a stub package shipping later
+      fills its own rung with no change to the registry. The reasoning and a pointer
+      to `docs/guides/custom-renderer-backends.md` are in the `AUTO_RENDERER_ORDER`
+      doc comment, which is where the reader who wonders meets it.
       `renderer-registry.ts:112` lists `webgpu`, `webgl2`, `canvas2d`, `svg`; the last two
       are reserved stubs (§102), so `resolveRenderer("auto")` can only reach them if an
       **application** registers its own backend — which cycle 9A proved works. Decision:
@@ -2733,6 +2744,30 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       check measured at 1 true positive / 0 false positives over 344 shipped files. The
       **class** is what needs the sweep: any other check that inspects emitted code by
       quote character has the same blind spot. `tools/` is small enough to read in one pass.
+      **Three sites closed 2026-09-20 — the dependency-graph generator, which was the one
+      known holdout.** All three fed the generator's SCORING, which is why they were left:
+      fixing them changes the committed `docs/Architecture/` reports. Now fixed, regenerated
+      and committed. (1) `inFileRefs` counted a name in a JSDoc block or a commented-out call
+      as a live in-file reference, so an export could be moved out of "deletion candidate" by
+      its own doc comment; it now counts over `strippedOfComments`. Measured effect on this
+      tree: exactly one entry moves — `CANVAS_VIEW_NODE_TYPE` **3 → 2** in-file refs, the
+      third being `scene-serializers.ts:1319`, a `//` comment. (2) The delegation scan read a
+      `*Dispatch` name in a comment as a real edge and reported a js-fallback entry as wasm;
+      it now segments `strippedOfComments(src)`. (3) The hand brace-matcher counted `{`/`}`
+      inside strings, template literals and comments, so one such brace ended an object
+      literal early and lost every marker after it; it now counts over
+      `blankedCommentsAndStrings`, an index-preserving blanked copy, so the slice still comes
+      from the real source. **Three inline copies of that matcher existed beside the shared
+      `matchBraceBlock`, each with the same blind spot** — the filing named one; all four are
+      now the one function. (2) and (3) live in analyzers gated on `functions/src/typed` /
+      `src/typed` / `functions/src/wasm`, none of which exists in this repo, so their report
+      effect here is **0 → 0**; they are fixed as a defect class, not for a visible number.
+      · Still open on this row: the read-through of the rest of `tools/`. One candidate found
+      and deliberately NOT changed — `generate-compatibility.mjs`'s `interfaceMembers` ends an
+      interface at the first `\n}` in the `.d.ts` text. `tsc` emits doc-comment lines as
+      ` * …`, so a column-0 `}` inside one has never occurred, and the 4-space member anchor
+      means a truncation could only DROP members (a loud gate failure), never invent one.
+      Recorded so the next pass starts from a read rather than a re-discovery.
 
 - [ ] **Guide coverage is absent for five surfaces that have shipped code.** Measured
       2026-09-19 across `docs/guides/`: `render-svg`, `physics-box2d` and `physics-soft`
@@ -2758,7 +2793,17 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       §83/§85 family are the genuinely uncovered ones: **zero** guide mentions of any of the
       nine 3D generators, and only `devWarnOnce`/`auditFrameAllocations` for the warning family.
 
-- [ ] **A renderer swap costs 3 consumer lines, not 2, and the third is the surface type.**
+- [x] **A renderer swap costs 3 consumer lines, not 2, and the third is the surface type.**
+      **STATED 2026-09-20, where the reader meets the claim.** The exception now sits
+      in the `Renderer` interface's own doc comment (`packages/render/src/renderer.ts`)
+      — two lines for WebGL 2 → WebGPU (cycle 3c, shared `HTMLCanvasElement`), three
+      for Canvas 2D → SVG (cycle 9A, `HTMLCanvasElement` vs `SVGSVGElement`) — beside
+      the reason it is by design: a surface member on `Renderer` would have to name a
+      union of every backend's surface type, which is the backend coupling §62 keeps
+      out. Deliberately not overstated: the seam held, nothing above the surface moved,
+      and the cost is one line. `docs/guides/custom-renderer-backends.md` already
+      carried the same measurement with the diff; the guide is where a reader looks
+      afterwards, the interface is where they meet the claim first.
       Cycle 3c measured a two-line WebGL→WebGPU swap; cycle 9A measured **three** for
       Canvas 2D→SVG, because those backends take `HTMLCanvasElement` and `SVGSVGElement`
       respectively. `Renderer` has no surface member — each backend takes its own surface in

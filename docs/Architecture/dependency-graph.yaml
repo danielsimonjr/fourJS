@@ -1,10 +1,10 @@
 metadata:
   name: fourjs-monorepo
   version: 0.0.0
-  lastUpdated: "2026-09-13"
-  totalFiles: 335
+  lastUpdated: "2026-09-20"
+  totalFiles: 340
   totalModules: 24
-  totalExports: 3387
+  totalExports: 3434
 entryPoints:
   - file: packages/animation/src/index.ts
     type: main
@@ -17,7 +17,7 @@ entryPoints:
     description: §83 FinalizationRegistry leak bookkeeping (A-4 remainder, 2026-09-06).
   - file: packages/diagnostics/src/index.ts
     type: main
-    description: --- PH-20 (§33 rollback) ---------------------------------------------------
+    description: "--- PH-20 (§33 rollback) ---------------------------------------------------"
   - file: packages/fourjs/src/index.ts
     type: main
     description: "The umbrella package (§98): one namespace per workspace package, plus the"
@@ -86,6 +86,10 @@ modules:
       nodeDependencies: []
       internalDependencies: []
       workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
         - package: "@fourjs/motion"
           directory: packages/motion
           imports:
@@ -1156,6 +1160,7 @@ modules:
         - AssetGraphLoadOptions
         - ResponseHeadersLike
         - TimerLike
+        - AssetLoadContext
         - FetchInit
         - AbortHandle
         - AbortSignalLike
@@ -1243,6 +1248,7 @@ modules:
           imports:
             - DEFAULT_MAXIMUM_BYTES
             - resolveGlobalFetch
+            - AssetLoadContext
             - AssetLoader
             - FetchLike
             - FetchResponse
@@ -1400,6 +1406,7 @@ modules:
             - AssetGraph
             - AssetGraphLoadOptions
             - AssetLoadOptions
+            - AssetLoadContext
             - AssetLoader
             - AssetManagerOptions
             - AssetProgressEvent
@@ -1426,6 +1433,7 @@ modules:
             - AssetManifest
             - AssetManifestEntry
             - ManifestLoadOptions
+            - ManifestParseOptions
           reExport: true
           typeOnly: true
         - file: ./texture.js
@@ -1507,6 +1515,7 @@ modules:
         - AssetGraph
         - AssetGraphLoadOptions
         - AssetLoadOptions
+        - AssetLoadContext
         - AssetLoader
         - AssetManagerOptions
         - AssetProgressEvent
@@ -1525,6 +1534,7 @@ modules:
         - AssetManifest
         - AssetManifestEntry
         - ManifestLoadOptions
+        - ManifestParseOptions
         - DecodedTexels
         - TexelDecodeLike
         - TexelProbeLike
@@ -1582,6 +1592,7 @@ modules:
         - AssetGraph
         - AssetGraphLoadOptions
         - AssetLoadOptions
+        - AssetLoadContext
         - AssetLoader
         - AssetManagerOptions
         - AssetProgressEvent
@@ -1600,6 +1611,7 @@ modules:
         - AssetManifest
         - AssetManifestEntry
         - ManifestLoadOptions
+        - ManifestParseOptions
         - DecodedTexels
         - TexelDecodeLike
         - TexelProbeLike
@@ -1711,6 +1723,7 @@ modules:
       interfaces:
         - AssetManifestEntry
         - ManifestLoadOptions
+        - ManifestParseOptions
       functions:
         - parseAssetManifest
         - loadFromManifest
@@ -2185,7 +2198,10 @@ modules:
       description: JSON value typing and validation shared by every document format (§34, §79).
       externalDependencies: []
       nodeDependencies: []
-      internalDependencies: []
+      internalDependencies:
+        - file: ./errors.js
+          imports:
+            - FourError
       workspaceDependencies: []
       exports:
         - cloneJsonValue
@@ -2449,7 +2465,7 @@ modules:
         - DEBUG_DRAW_DEFAULT_COLORS
         - DEBUG_DRAW_STAGED
     packages/diagnostics/src/index.ts:
-      description: --- PH-20 (§33 rollback) ---------------------------------------------------
+      description: "--- PH-20 (§33 rollback) ---------------------------------------------------"
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
@@ -6168,6 +6184,9 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
+        - file: ./alloc-counter.js
+          imports:
+            - noteConstruction
         - file: ./matrix4.js
           imports:
             - DepthRange
@@ -6588,6 +6607,7 @@ modules:
         - package: "@fourjs/core"
           directory: packages/core
           imports:
+            - FourError
             - Component
             - ComponentHost
         - package: "@fourjs/math"
@@ -7371,6 +7391,7 @@ modules:
         - package: "@fourjs/core"
           directory: packages/core
           imports:
+            - FourError
             - Component
             - ComponentHost
         - package: "@fourjs/math"
@@ -7412,6 +7433,7 @@ modules:
         - package: "@fourjs/core"
           directory: packages/core
           imports:
+            - FourError
             - Component
             - ComponentHost
         - package: "@fourjs/math"
@@ -8272,7 +8294,11 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies: []
-      workspaceDependencies: []
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
       exports:
         - PRIORITY_PARTICLES
         - ParticleSystem
@@ -8417,6 +8443,7 @@ modules:
         - PhysicsQueryCapabilities
         - PhysicsTuningCapabilities
         - PhysicsCapabilities
+        - PhysicsEventInterest
         - PhysicsSolverAdapter
       functions:
         - resolveTuningCapabilities
@@ -8898,6 +8925,7 @@ modules:
           imports:
             - PhysicsCapabilities
             - PhysicsQueryCapabilities
+            - PhysicsEventInterest
             - PhysicsSolverAdapter
             - PhysicsTuningCapabilities
           reExport: true
@@ -9239,6 +9267,7 @@ modules:
         - PACKAGE_NAME
         - PhysicsCapabilities
         - PhysicsQueryCapabilities
+        - PhysicsEventInterest
         - PhysicsSolverAdapter
         - PhysicsTuningCapabilities
         - SolverBodyAccess
@@ -9496,6 +9525,7 @@ modules:
         - liveSolverJointCount
         - PhysicsCapabilities
         - PhysicsQueryCapabilities
+        - PhysicsEventInterest
         - PhysicsSolverAdapter
         - PhysicsTuningCapabilities
         - SolverBodyAccess
@@ -10139,6 +10169,7 @@ modules:
         - COLLISION_SHAPE_TYPES_2D
         - COLLISION_SHAPE_TYPES_3D
         - COMPOSITE_COLLISION_SHAPE_TYPES
+        - MAXIMUM_SHAPE_POINTS
         - shapeIsConvex
         - shapeSupportsDimension
         - shapeMaximumExtent
@@ -10168,6 +10199,7 @@ modules:
         - COLLISION_SHAPE_TYPES_2D
         - COLLISION_SHAPE_TYPES_3D
         - COMPOSITE_COLLISION_SHAPE_TYPES
+        - MAXIMUM_SHAPE_POINTS
     packages/physics/src/solver-registry.ts:
       description: 'The §37 solver registry — how `solver: "auto"` becomes an adapter without'
       externalDependencies: []
@@ -10263,6 +10295,7 @@ modules:
           directory: packages/core
           imports:
             - DEV_WARNING_PREFIX
+            - FourError
         - package: "@fourjs/core"
           directory: packages/core
           imports:
@@ -11246,6 +11279,7 @@ modules:
             - PhysicsColliderHandle
             - PhysicsDimension
             - PhysicsEvent
+            - PhysicsEventInterest
             - PhysicsJointHandle
             - PhysicsSolverAdapter
             - PhysicsWorldOptions
@@ -11358,6 +11392,7 @@ modules:
             - PhysicsColliderHandle
             - PhysicsDimension
             - PhysicsEvent
+            - PhysicsEventInterest
             - PhysicsJointHandle
             - PhysicsSolverAdapter
             - PhysicsWorldOptions
@@ -13785,6 +13820,32 @@ modules:
         - RenderBatching
       functions:
         - createGlBatching
+    packages/render-webgl/src/gl-effect-registry.ts:
+      description: The effect pipeline's registration slot (§70, §62; 2026-09-11) — the
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./gl-program.js
+          imports:
+            - WebglContext
+          typeOnly: true
+      workspaceDependencies: []
+      exports:
+        - EFFECT_TEXTURE_UNIT
+        - EFFECT_VERTEX_COUNT
+        - setEffectPipelineFactory
+        - resolveEffectPipelineFactory
+        - clearRegisteredEffectPipeline
+      interfaces:
+        - EffectPipeline
+        - EffectPipelineFactory
+      functions:
+        - setEffectPipelineFactory
+        - resolveEffectPipelineFactory
+        - clearRegisteredEffectPipeline
+      constants:
+        - EFFECT_TEXTURE_UNIT
+        - EFFECT_VERTEX_COUNT
     packages/render-webgl/src/gl-effect.ts:
       description: The full-screen effect pipeline for the WebGL 2 backend — §70's blit, colour
       externalDependencies: []
@@ -13797,6 +13858,11 @@ modules:
             - GlProgramHandle
             - GlUniformLocation
             - WebglContext
+        - file: ./gl-effect-registry.js
+          imports:
+            - EFFECT_TEXTURE_UNIT
+            - EFFECT_VERTEX_COUNT
+            - setEffectPipelineFactory
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -13805,12 +13871,12 @@ modules:
       exports:
         - EFFECT_TEXTURE_UNIT
         - EFFECT_VERTEX_COUNT
+        - registerEffectPipeline
         - EffectProgram
       classes:
         - EffectProgram
-      constants:
-        - EFFECT_TEXTURE_UNIT
-        - EFFECT_VERTEX_COUNT
+      functions:
+        - registerEffectPipeline
     packages/render-webgl/src/gl-geometry.ts:
       description: "GPU-side geometry for the WebGL 2 backend: one vertex array per"
       externalDependencies: []
@@ -13948,6 +14014,42 @@ modules:
         - GlNodeUniformBlock
       classes:
         - GlNodeUniformBlock
+    packages/render-webgl/src/gl-particles-registry.ts:
+      description: The particle pipeline's registration slot (§36, §62; 2026-09-11) — the
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./gl-particles.js
+          imports:
+            - ParticleBatchCache
+            - ParticleGlContext
+            - ParticleTrailBatchCache
+          typeOnly: true
+      workspaceDependencies:
+        - package: "@fourjs/render"
+          directory: packages/render
+          imports:
+            - PARTICLE_INSTANCE_FLOATS
+            - ParticleRenderItem
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix4
+      exports:
+        - particleItemFloats
+        - setParticlePipelineFactory
+        - resolveParticlePipelineFactory
+        - clearRegisteredParticlePipeline
+      interfaces:
+        - ParticleBillboardPipeline
+        - ParticleAppearancePipeline
+        - ParticlePrograms
+        - ParticlePipelineFactory
+      functions:
+        - particleItemFloats
+        - setParticlePipelineFactory
+        - resolveParticlePipelineFactory
+        - clearRegisteredParticlePipeline
     packages/render-webgl/src/gl-particles.ts:
       description: The batched particle pipeline for the WebGL 2 backend (§36, §64 stage 6,
       externalDependencies: []
@@ -13966,6 +14068,11 @@ modules:
             - GlUniformLocation
             - GlVertexArray
             - WebglContext
+        - file: ./gl-particles-registry.js
+          imports:
+            - particleItemFloats
+            - setParticlePipelineFactory
+            - ParticlePrograms
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -13979,7 +14086,6 @@ modules:
           directory: packages/render
           imports:
             - PARTICLE_COLOR_OFFSET
-            - PARTICLE_INSTANCE_FLOATS
             - PARTICLE_POSITION_OFFSET
             - PARTICLE_ROTATION_OFFSET
             - PARTICLE_SIZE_OFFSET
@@ -13990,11 +14096,12 @@ modules:
             - TRAIL_VERTEX_FLOATS
             - ParticleRenderItem
       exports:
+        - particleItemFloats
         - PARTICLE_GL
         - PARTICLE_ATTRIBUTE_LOCATIONS
         - PARTICLE_VERTEX_SHADER_SOURCE
         - PARTICLE_DEPTH_TEXTURE_UNIT
-        - particleItemFloats
+        - registerParticlePipeline
         - ParticleProgram
         - ParticleAppearanceProgram
         - ParticleBatchCache
@@ -14011,7 +14118,7 @@ modules:
         - ParticleBatchRecord
         - ParticleTrailBatchRecord
       functions:
-        - particleItemFloats
+        - registerParticlePipeline
       constants:
         - PARTICLE_GL
         - PARTICLE_ATTRIBUTE_LOCATIONS
@@ -14239,6 +14346,31 @@ modules:
         - RenderTargetCache
       interfaces:
         - RenderTargetRecord
+    packages/render-webgl/src/gl-shadow-registry.ts:
+      description: The shadow pipeline's registration slot (§69, §62; 2026-09-11) — the
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./gl-program.js
+          imports:
+            - WebglContext
+          typeOnly: true
+      workspaceDependencies:
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix4
+      exports:
+        - setShadowPipelineFactory
+        - resolveShadowPipelineFactory
+        - clearRegisteredShadowPipeline
+      interfaces:
+        - ShadowCasterPipeline
+        - ShadowPipelineFactory
+      functions:
+        - setShadowPipelineFactory
+        - resolveShadowPipelineFactory
+        - clearRegisteredShadowPipeline
     packages/render-webgl/src/gl-shadow.ts:
       description: The depth-only caster pipeline (§69) — this backend's seventh program (R-18,
       externalDependencies: []
@@ -14252,6 +14384,9 @@ modules:
             - GlProgramHandle
             - GlUniformLocation
             - WebglContext
+        - file: ./gl-shadow-registry.js
+          imports:
+            - setShadowPipelineFactory
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -14262,9 +14397,12 @@ modules:
           imports:
             - Matrix4
       exports:
+        - registerShadowPipeline
         - ShadowProgram
       classes:
         - ShadowProgram
+      functions:
+        - registerShadowPipeline
     packages/render-webgl/src/gl-skinning-glsl.ts:
       description: The vertex-stage skinning chunk both the colour/caster programs
       externalDependencies: []
@@ -14365,6 +14503,35 @@ modules:
         - SkinnedShadowProgram
       functions:
         - registerSkinningPipeline
+    packages/render-webgl/src/gl-standard-registry.ts:
+      description: The standard pipeline's registration slot (§59, §62; 2026-09-11) — the
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./gl-program.js
+          imports:
+            - WebglContext
+          typeOnly: true
+      workspaceDependencies:
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix4
+        - package: "@fourjs/render"
+          directory: packages/render
+          imports:
+            - SceneLights
+      exports:
+        - setStandardPipelineFactory
+        - resolveStandardPipelineFactory
+        - clearRegisteredStandardPipeline
+      interfaces:
+        - StandardPipeline
+        - StandardPipelineFactory
+      functions:
+        - setStandardPipelineFactory
+        - resolveStandardPipelineFactory
+        - clearRegisteredStandardPipeline
     packages/render-webgl/src/gl-standard.ts:
       description: The metallic-roughness pipeline (§59, §68) — this backend's sixth program,
       externalDependencies: []
@@ -14388,6 +14555,9 @@ modules:
             - GlProgramHandle
             - GlUniformLocation
             - WebglContext
+        - file: ./gl-standard-registry.js
+          imports:
+            - setStandardPipelineFactory
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -14405,9 +14575,12 @@ modules:
       exports:
         - NORMAL_TEXTURE_UNIT
         - OCCLUSION_TEXTURE_UNIT
+        - registerStandardPipeline
         - StandardProgram
       classes:
         - StandardProgram
+      functions:
+        - registerStandardPipeline
       constants:
         - NORMAL_TEXTURE_UNIT
         - OCCLUSION_TEXTURE_UNIT
@@ -14450,15 +14623,27 @@ modules:
             - GlBatching
             - createGlBatching
           reExport: true
-        - file: ./gl-effect.js
+        - file: ./gl-effect-registry.js
           imports:
             - EFFECT_TEXTURE_UNIT
             - EFFECT_VERTEX_COUNT
+            - clearRegisteredEffectPipeline
+            - resolveEffectPipelineFactory
+          reExport: true
+        - file: ./gl-effect.js
+          imports:
             - EffectProgram
+            - registerEffectPipeline
           reExport: true
         - file: ./gl-geometry.js
           imports:
             - GeometryCache
+          reExport: true
+        - file: ./gl-particles-registry.js
+          imports:
+            - clearRegisteredParticlePipeline
+            - particleItemFloats
+            - resolveParticlePipelineFactory
           reExport: true
         - file: ./gl-particles.js
           imports:
@@ -14471,7 +14656,7 @@ modules:
             - ParticleProgram
             - ParticleTrailBatchCache
             - ParticleTrailProgram
-            - particleItemFloats
+            - registerParticlePipeline
           reExport: true
         - file: ./gl-program.js
           imports:
@@ -14543,13 +14728,25 @@ modules:
             - emitShaderGraphGlsl
             - registerNodeMaterialPipeline
           reExport: true
+        - file: ./gl-shadow-registry.js
+          imports:
+            - clearRegisteredShadowPipeline
+            - resolveShadowPipelineFactory
+          reExport: true
         - file: ./gl-shadow.js
           imports:
             - ShadowProgram
+            - registerShadowPipeline
+          reExport: true
+        - file: ./gl-standard-registry.js
+          imports:
+            - clearRegisteredStandardPipeline
+            - resolveStandardPipelineFactory
           reExport: true
         - file: ./gl-standard.js
           imports:
             - StandardProgram
+            - registerStandardPipeline
           reExport: true
         - file: ./gl-texture.js
           imports:
@@ -14570,10 +14767,24 @@ modules:
             - RenderBatching
           reExport: true
           typeOnly: true
+        - file: ./gl-effect-registry.js
+          imports:
+            - EffectPipeline
+            - EffectPipelineFactory
+          reExport: true
+          typeOnly: true
         - file: ./gl-geometry.js
           imports:
             - CacheableGeometry
             - GeometryRecord
+          reExport: true
+          typeOnly: true
+        - file: ./gl-particles-registry.js
+          imports:
+            - ParticleAppearancePipeline
+            - ParticleBillboardPipeline
+            - ParticlePipelineFactory
+            - ParticlePrograms
           reExport: true
           typeOnly: true
         - file: ./gl-particles.js
@@ -14636,6 +14847,18 @@ modules:
             - EmittedNodeShader
           reExport: true
           typeOnly: true
+        - file: ./gl-shadow-registry.js
+          imports:
+            - ShadowCasterPipeline
+            - ShadowPipelineFactory
+          reExport: true
+          typeOnly: true
+        - file: ./gl-standard-registry.js
+          imports:
+            - StandardPipeline
+            - StandardPipelineFactory
+          reExport: true
+          typeOnly: true
         - file: ./gl-texture.js
           imports:
             - CacheableTexture
@@ -14655,8 +14878,14 @@ modules:
         - createGlBatching
         - EFFECT_TEXTURE_UNIT
         - EFFECT_VERTEX_COUNT
+        - clearRegisteredEffectPipeline
+        - resolveEffectPipelineFactory
         - EffectProgram
+        - registerEffectPipeline
         - GeometryCache
+        - clearRegisteredParticlePipeline
+        - particleItemFloats
+        - resolveParticlePipelineFactory
         - PARTICLE_ATTRIBUTE_LOCATIONS
         - PARTICLE_DEPTH_TEXTURE_UNIT
         - PARTICLE_GL
@@ -14666,7 +14895,7 @@ modules:
         - ParticleProgram
         - ParticleTrailBatchCache
         - ParticleTrailProgram
-        - particleItemFloats
+        - registerParticlePipeline
         - COLOR_ATTRIBUTE_LOCATION
         - GL
         - LitProgram
@@ -14710,8 +14939,14 @@ modules:
         - GlNodeProgramCache
         - emitShaderGraphGlsl
         - registerNodeMaterialPipeline
+        - clearRegisteredShadowPipeline
+        - resolveShadowPipelineFactory
         - ShadowProgram
+        - registerShadowPipeline
+        - clearRegisteredStandardPipeline
+        - resolveStandardPipelineFactory
         - StandardProgram
+        - registerStandardPipeline
         - TextureCache
         - isWebgl2Supported
         - registerWebglRenderer
@@ -14719,8 +14954,14 @@ modules:
         - PACKAGE_NAME
         - BatchGlContext
         - RenderBatching
+        - EffectPipeline
+        - EffectPipelineFactory
         - CacheableGeometry
         - GeometryRecord
+        - ParticleAppearancePipeline
+        - ParticleBillboardPipeline
+        - ParticlePipelineFactory
+        - ParticlePrograms
         - ParticleBatchRecord
         - ParticleGlContext
         - ParticleTrailBatchRecord
@@ -14749,6 +14990,10 @@ modules:
         - NodeMaterialProgram
         - NodeMaterialPrograms
         - EmittedNodeShader
+        - ShadowCasterPipeline
+        - ShadowPipelineFactory
+        - StandardPipeline
+        - StandardPipelineFactory
         - CacheableTexture
         - TextureRecord
         - WebglCanvas
@@ -14759,8 +15004,14 @@ modules:
         - createGlBatching
         - EFFECT_TEXTURE_UNIT
         - EFFECT_VERTEX_COUNT
+        - clearRegisteredEffectPipeline
+        - resolveEffectPipelineFactory
         - EffectProgram
+        - registerEffectPipeline
         - GeometryCache
+        - clearRegisteredParticlePipeline
+        - particleItemFloats
+        - resolveParticlePipelineFactory
         - PARTICLE_ATTRIBUTE_LOCATIONS
         - PARTICLE_DEPTH_TEXTURE_UNIT
         - PARTICLE_GL
@@ -14770,7 +15021,7 @@ modules:
         - ParticleProgram
         - ParticleTrailBatchCache
         - ParticleTrailProgram
-        - particleItemFloats
+        - registerParticlePipeline
         - COLOR_ATTRIBUTE_LOCATION
         - GL
         - LitProgram
@@ -14814,16 +15065,28 @@ modules:
         - GlNodeProgramCache
         - emitShaderGraphGlsl
         - registerNodeMaterialPipeline
+        - clearRegisteredShadowPipeline
+        - resolveShadowPipelineFactory
         - ShadowProgram
+        - registerShadowPipeline
+        - clearRegisteredStandardPipeline
+        - resolveStandardPipelineFactory
         - StandardProgram
+        - registerStandardPipeline
         - TextureCache
         - isWebgl2Supported
         - registerWebglRenderer
         - WebglRenderer
         - BatchGlContext
         - RenderBatching
+        - EffectPipeline
+        - EffectPipelineFactory
         - CacheableGeometry
         - GeometryRecord
+        - ParticleAppearancePipeline
+        - ParticleBillboardPipeline
+        - ParticlePipelineFactory
+        - ParticlePrograms
         - ParticleBatchRecord
         - ParticleGlContext
         - ParticleTrailBatchRecord
@@ -14852,6 +15115,10 @@ modules:
         - NodeMaterialProgram
         - NodeMaterialPrograms
         - EmittedNodeShader
+        - ShadowCasterPipeline
+        - ShadowPipelineFactory
+        - StandardPipeline
+        - StandardPipelineFactory
         - CacheableTexture
         - TextureRecord
         - WebglCanvas
@@ -14923,11 +15190,12 @@ modules:
           imports:
             - RenderBatching
           typeOnly: true
-        - file: ./gl-effect.js
+        - file: ./gl-effect-registry.js
           imports:
             - EFFECT_TEXTURE_UNIT
             - EFFECT_VERTEX_COUNT
-            - EffectProgram
+            - resolveEffectPipelineFactory
+            - EffectPipeline
         - file: ./gl-geometry.js
           imports:
             - GeometryCache
@@ -14935,15 +15203,17 @@ modules:
           imports:
             - GlGpuTimer
             - hasDisjointTimerQuery
+        - file: ./gl-particles-registry.js
+          imports:
+            - particleItemFloats
+            - resolveParticlePipelineFactory
+            - ParticleAppearancePipeline
+            - ParticleBillboardPipeline
+            - ParticlePrograms
         - file: ./gl-particles.js
           imports:
-            - ParticleAppearanceProgram
-            - ParticleBatchCache
-            - ParticleProgram
-            - ParticleTrailBatchCache
-            - ParticleTrailProgram
-            - particleItemFloats
             - ParticleGlContext
+          typeOnly: true
         - file: ./gl-program.js
           imports:
             - GL
@@ -14974,14 +15244,18 @@ modules:
             - resolveNodeMaterialPipelineFactory
             - NodeMaterialProgram
             - NodeMaterialPrograms
-        - file: ./gl-shadow.js
-          imports:
-            - ShadowProgram
         - file: ./gl-standard.js
           imports:
-            - StandardProgram
             - NORMAL_TEXTURE_UNIT
             - OCCLUSION_TEXTURE_UNIT
+        - file: ./gl-shadow-registry.js
+          imports:
+            - resolveShadowPipelineFactory
+            - ShadowCasterPipeline
+        - file: ./gl-standard-registry.js
+          imports:
+            - resolveStandardPipelineFactory
+            - StandardPipeline
         - file: ./gl-texture.js
           imports:
             - TextureCache
@@ -16212,7 +16486,10 @@ modules:
           imports:
             - WgpuPipelineCache
             - WgpuPipelineDescriptor
-            - WgpuStencilDescriptor
+        - file: ./wgpu-pipeline-memo.js
+          imports:
+            - WgpuPipelineMemo
+            - createPipelineRequest
         - file: ./wgpu-readback.js
           imports:
             - readTexturePixels
@@ -16339,6 +16616,10 @@ modules:
             - POSITION_SHADER_LOCATION
             - UV_SHADER_LOCATION
       workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
         - package: "@fourjs/render"
           directory: packages/render
           imports:
@@ -16528,7 +16809,11 @@ modules:
             - GpuCommandEncoder
             - GpuDevice
             - GpuQuerySet
-      workspaceDependencies: []
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
       exports:
         - WgpuGpuTimer
       classes:
@@ -17136,6 +17421,37 @@ modules:
         - blendStateFor
         - pipelineKey
         - stencilStateFor
+    packages/render-webgpu/src/wgpu-pipeline-memo.ts:
+      description: A "same as the previous draw" fast path in front of {@link WgpuPipelineCache}
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./webgpu-device.js
+          imports:
+            - GpuRenderPipeline
+          typeOnly: true
+        - file: ./wgpu-pipeline-cache.js
+          imports:
+            - WgpuPipelineCache
+            - WgpuPipelineDescriptor
+            - WgpuPipelineKind
+          typeOnly: true
+        - file: ./wgpu-stencil.js
+          imports:
+            - STENCIL_ALL_BITS
+            - stencilDescriptor
+            - WgpuStencilSource
+      workspaceDependencies: []
+      exports:
+        - createPipelineRequest
+        - WgpuPipelineMemo
+      classes:
+        - WgpuPipelineMemo
+      interfaces:
+        - WgpuPipelineRequest
+        - MutableWgpuPipelineRequest
+      functions:
+        - createPipelineRequest
     packages/render-webgpu/src/wgpu-readback.ts:
       description: "`readPixels`' mechanism: `copyTextureToBuffer` + `mapAsync` (WP-R1.6; §61,"
       externalDependencies: []
@@ -17148,6 +17464,10 @@ modules:
             - GpuDevice
             - GpuTexture
       workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
         - package: "@fourjs/math"
           directory: packages/math
           imports:
@@ -19751,12 +20071,15 @@ dependencyGraph:
       - - packages/render/src/renderer.ts
         - packages/render/src/picking.ts
         - packages/render/src/renderer.ts
+      - - packages/render-webgl/src/gl-particles-registry.ts
+        - packages/render-webgl/src/gl-particles.ts
+        - packages/render-webgl/src/gl-particles-registry.ts
       - - packages/scene/src/node.ts
         - packages/scene/src/world-transforms.ts
         - packages/scene/src/node.ts
-    total: 7
+    total: 8
     runtimeCount: 0
-    typeOnlyCount: 7
+    typeOnlyCount: 8
   layers:
     - name: Packages/animation
       files:
@@ -20039,20 +20362,24 @@ dependencyGraph:
     - name: Packages/render-webgl
       files:
         - packages/render-webgl/src/gl-batch.ts
+        - packages/render-webgl/src/gl-effect-registry.ts
         - packages/render-webgl/src/gl-effect.ts
         - packages/render-webgl/src/gl-geometry.ts
         - packages/render-webgl/src/gl-gpu-timer.ts
         - packages/render-webgl/src/gl-node-program.ts
         - packages/render-webgl/src/gl-node-uniform-block.ts
+        - packages/render-webgl/src/gl-particles-registry.ts
         - packages/render-webgl/src/gl-particles.ts
         - packages/render-webgl/src/gl-picking-registry.ts
         - packages/render-webgl/src/gl-picking.ts
         - packages/render-webgl/src/gl-program.ts
         - packages/render-webgl/src/gl-render-target.ts
+        - packages/render-webgl/src/gl-shadow-registry.ts
         - packages/render-webgl/src/gl-shadow.ts
         - packages/render-webgl/src/gl-skinning-glsl.ts
         - packages/render-webgl/src/gl-skinning-registry.ts
         - packages/render-webgl/src/gl-skinning.ts
+        - packages/render-webgl/src/gl-standard-registry.ts
         - packages/render-webgl/src/gl-standard.ts
         - packages/render-webgl/src/gl-texture.ts
         - packages/render-webgl/src/index.ts
@@ -20080,6 +20407,7 @@ dependencyGraph:
         - packages/render-webgpu/src/wgpu-picking-registry.ts
         - packages/render-webgpu/src/wgpu-picking.ts
         - packages/render-webgpu/src/wgpu-pipeline-cache.ts
+        - packages/render-webgpu/src/wgpu-pipeline-memo.ts
         - packages/render-webgpu/src/wgpu-readback.ts
         - packages/render-webgpu/src/wgpu-render-target.ts
         - packages/render-webgpu/src/wgpu-shadow.ts
@@ -20142,19 +20470,19 @@ dependencyGraph:
         - packages/ui/src/slider.ts
         - packages/ui/src/widget.ts
 statistics:
-  totalTypeScriptFiles: 335
+  totalTypeScriptFiles: 340
   totalModules: 24
-  totalLinesOfCode: 160359
-  totalExports: 3387
-  totalClasses: 212
-  totalInterfaces: 624
-  totalFunctions: 551
+  totalLinesOfCode: 163063
+  totalExports: 3434
+  totalClasses: 213
+  totalInterfaces: 639
+  totalFunctions: 568
   totalTypeGuards: 28
   totalEnums: 0
-  totalConstants: 499
-  totalReExports: 2147
-  totalTypeOnlyImports: 428
+  totalConstants: 500
+  totalReExports: 2172
+  totalTypeOnlyImports: 439
   runtimeCircularDeps: 0
-  typeOnlyCircularDeps: 7
+  typeOnlyCircularDeps: 8
   unusedFilesCount: 0
-  unusedExportsCount: 5
+  unusedExportsCount: 7

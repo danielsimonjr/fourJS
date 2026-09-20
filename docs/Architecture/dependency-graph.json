@@ -2,10 +2,10 @@
   "metadata": {
     "name": "fourjs-monorepo",
     "version": "0.0.0",
-    "lastUpdated": "2026-09-13",
-    "totalFiles": 335,
+    "lastUpdated": "2026-09-20",
+    "totalFiles": 340,
     "totalModules": 24,
-    "totalExports": 3387
+    "totalExports": 3434
   },
   "entryPoints": [
     {
@@ -137,6 +137,11 @@
         "nodeDependencies": [],
         "internalDependencies": [],
         "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          },
           {
             "package": "@fourjs/motion",
             "directory": "packages/motion",
@@ -1290,6 +1295,7 @@
           "AssetGraphLoadOptions",
           "ResponseHeadersLike",
           "TimerLike",
+          "AssetLoadContext",
           "FetchInit",
           "AbortHandle",
           "AbortSignalLike",
@@ -1384,6 +1390,7 @@
             "imports": [
               "DEFAULT_MAXIMUM_BYTES",
               "resolveGlobalFetch",
+              "AssetLoadContext",
               "AssetLoader",
               "FetchLike",
               "FetchResponse"
@@ -1572,6 +1579,7 @@
               "AssetGraph",
               "AssetGraphLoadOptions",
               "AssetLoadOptions",
+              "AssetLoadContext",
               "AssetLoader",
               "AssetManagerOptions",
               "AssetProgressEvent",
@@ -1600,7 +1608,8 @@
             "imports": [
               "AssetManifest",
               "AssetManifestEntry",
-              "ManifestLoadOptions"
+              "ManifestLoadOptions",
+              "ManifestParseOptions"
             ],
             "reExport": true,
             "typeOnly": true
@@ -1694,6 +1703,7 @@
           "AssetGraph",
           "AssetGraphLoadOptions",
           "AssetLoadOptions",
+          "AssetLoadContext",
           "AssetLoader",
           "AssetManagerOptions",
           "AssetProgressEvent",
@@ -1712,6 +1722,7 @@
           "AssetManifest",
           "AssetManifestEntry",
           "ManifestLoadOptions",
+          "ManifestParseOptions",
           "DecodedTexels",
           "TexelDecodeLike",
           "TexelProbeLike",
@@ -1770,6 +1781,7 @@
           "AssetGraph",
           "AssetGraphLoadOptions",
           "AssetLoadOptions",
+          "AssetLoadContext",
           "AssetLoader",
           "AssetManagerOptions",
           "AssetProgressEvent",
@@ -1788,6 +1800,7 @@
           "AssetManifest",
           "AssetManifestEntry",
           "ManifestLoadOptions",
+          "ManifestParseOptions",
           "DecodedTexels",
           "TexelDecodeLike",
           "TexelProbeLike",
@@ -1907,7 +1920,11 @@
           "loadFromManifest",
           "manifestUrl"
         ],
-        "interfaces": ["AssetManifestEntry", "ManifestLoadOptions"],
+        "interfaces": [
+          "AssetManifestEntry",
+          "ManifestLoadOptions",
+          "ManifestParseOptions"
+        ],
         "functions": ["parseAssetManifest", "loadFromManifest", "manifestUrl"],
         "constants": ["manifestLoader"]
       },
@@ -2416,7 +2433,12 @@
         "description": "JSON value typing and validation shared by every document format (§34, §79).",
         "externalDependencies": [],
         "nodeDependencies": [],
-        "internalDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./errors.js",
+            "imports": ["FourError"]
+          }
+        ],
         "workspaceDependencies": [],
         "exports": ["cloneJsonValue"],
         "functions": ["cloneJsonValue"]
@@ -6839,6 +6861,10 @@
         "nodeDependencies": [],
         "internalDependencies": [
           {
+            "file": "./alloc-counter.js",
+            "imports": ["noteConstruction"]
+          },
+          {
             "file": "./matrix4.js",
             "imports": ["DepthRange", "Matrix4"],
             "typeOnly": true
@@ -7293,7 +7319,7 @@
           {
             "package": "@fourjs/core",
             "directory": "packages/core",
-            "imports": ["Component", "ComponentHost"]
+            "imports": ["FourError", "Component", "ComponentHost"]
           },
           {
             "package": "@fourjs/math",
@@ -8164,7 +8190,7 @@
           {
             "package": "@fourjs/core",
             "directory": "packages/core",
-            "imports": ["Component", "ComponentHost"]
+            "imports": ["FourError", "Component", "ComponentHost"]
           },
           {
             "package": "@fourjs/math",
@@ -8209,7 +8235,7 @@
           {
             "package": "@fourjs/core",
             "directory": "packages/core",
-            "imports": ["Component", "ComponentHost"]
+            "imports": ["FourError", "Component", "ComponentHost"]
           },
           {
             "package": "@fourjs/math",
@@ -9188,7 +9214,13 @@
         "externalDependencies": [],
         "nodeDependencies": [],
         "internalDependencies": [],
-        "workspaceDependencies": [],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          }
+        ],
         "exports": ["PRIORITY_PARTICLES", "ParticleSystem"],
         "classes": ["ParticleSystem"],
         "interfaces": [
@@ -9343,6 +9375,7 @@
           "PhysicsQueryCapabilities",
           "PhysicsTuningCapabilities",
           "PhysicsCapabilities",
+          "PhysicsEventInterest",
           "PhysicsSolverAdapter"
         ],
         "functions": ["resolveTuningCapabilities"],
@@ -9931,6 +9964,7 @@
             "imports": [
               "PhysicsCapabilities",
               "PhysicsQueryCapabilities",
+              "PhysicsEventInterest",
               "PhysicsSolverAdapter",
               "PhysicsTuningCapabilities"
             ],
@@ -10323,6 +10357,7 @@
           "PACKAGE_NAME",
           "PhysicsCapabilities",
           "PhysicsQueryCapabilities",
+          "PhysicsEventInterest",
           "PhysicsSolverAdapter",
           "PhysicsTuningCapabilities",
           "SolverBodyAccess",
@@ -10581,6 +10616,7 @@
           "liveSolverJointCount",
           "PhysicsCapabilities",
           "PhysicsQueryCapabilities",
+          "PhysicsEventInterest",
           "PhysicsSolverAdapter",
           "PhysicsTuningCapabilities",
           "SolverBodyAccess",
@@ -11303,6 +11339,7 @@
           "COLLISION_SHAPE_TYPES_2D",
           "COLLISION_SHAPE_TYPES_3D",
           "COMPOSITE_COLLISION_SHAPE_TYPES",
+          "MAXIMUM_SHAPE_POINTS",
           "shapeIsConvex",
           "shapeSupportsDimension",
           "shapeMaximumExtent",
@@ -11334,7 +11371,8 @@
         "constants": [
           "COLLISION_SHAPE_TYPES_2D",
           "COLLISION_SHAPE_TYPES_3D",
-          "COMPOSITE_COLLISION_SHAPE_TYPES"
+          "COMPOSITE_COLLISION_SHAPE_TYPES",
+          "MAXIMUM_SHAPE_POINTS"
         ]
       },
       "packages/physics/src/solver-registry.ts": {
@@ -11443,7 +11481,7 @@
           {
             "package": "@fourjs/core",
             "directory": "packages/core",
-            "imports": ["DEV_WARNING_PREFIX"]
+            "imports": ["DEV_WARNING_PREFIX", "FourError"]
           },
           {
             "package": "@fourjs/core",
@@ -12598,6 +12636,7 @@
               "PhysicsColliderHandle",
               "PhysicsDimension",
               "PhysicsEvent",
+              "PhysicsEventInterest",
               "PhysicsJointHandle",
               "PhysicsSolverAdapter",
               "PhysicsWorldOptions",
@@ -12727,6 +12766,7 @@
               "PhysicsColliderHandle",
               "PhysicsDimension",
               "PhysicsEvent",
+              "PhysicsEventInterest",
               "PhysicsJointHandle",
               "PhysicsSolverAdapter",
               "PhysicsWorldOptions",
@@ -15379,6 +15419,33 @@
         "interfaces": ["BatchGlContext", "RenderBatching"],
         "functions": ["createGlBatching"]
       },
+      "packages/render-webgl/src/gl-effect-registry.ts": {
+        "description": "The effect pipeline's registration slot (§70, §62; 2026-09-11) — the",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./gl-program.js",
+            "imports": ["WebglContext"],
+            "typeOnly": true
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": [
+          "EFFECT_TEXTURE_UNIT",
+          "EFFECT_VERTEX_COUNT",
+          "setEffectPipelineFactory",
+          "resolveEffectPipelineFactory",
+          "clearRegisteredEffectPipeline"
+        ],
+        "interfaces": ["EffectPipeline", "EffectPipelineFactory"],
+        "functions": [
+          "setEffectPipelineFactory",
+          "resolveEffectPipelineFactory",
+          "clearRegisteredEffectPipeline"
+        ],
+        "constants": ["EFFECT_TEXTURE_UNIT", "EFFECT_VERTEX_COUNT"]
+      },
       "packages/render-webgl/src/gl-effect.ts": {
         "description": "The full-screen effect pipeline for the WebGL 2 backend — §70's blit, colour",
         "externalDependencies": [],
@@ -15393,6 +15460,14 @@
               "GlUniformLocation",
               "WebglContext"
             ]
+          },
+          {
+            "file": "./gl-effect-registry.js",
+            "imports": [
+              "EFFECT_TEXTURE_UNIT",
+              "EFFECT_VERTEX_COUNT",
+              "setEffectPipelineFactory"
+            ]
           }
         ],
         "workspaceDependencies": [
@@ -15405,10 +15480,11 @@
         "exports": [
           "EFFECT_TEXTURE_UNIT",
           "EFFECT_VERTEX_COUNT",
+          "registerEffectPipeline",
           "EffectProgram"
         ],
         "classes": ["EffectProgram"],
-        "constants": ["EFFECT_TEXTURE_UNIT", "EFFECT_VERTEX_COUNT"]
+        "functions": ["registerEffectPipeline"]
       },
       "packages/render-webgl/src/gl-geometry.ts": {
         "description": "GPU-side geometry for the WebGL 2 backend: one vertex array per",
@@ -15560,6 +15636,52 @@
         "exports": ["GlNodeUniformBlock"],
         "classes": ["GlNodeUniformBlock"]
       },
+      "packages/render-webgl/src/gl-particles-registry.ts": {
+        "description": "The particle pipeline's registration slot (§36, §62; 2026-09-11) — the",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./gl-particles.js",
+            "imports": [
+              "ParticleBatchCache",
+              "ParticleGlContext",
+              "ParticleTrailBatchCache"
+            ],
+            "typeOnly": true
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/render",
+            "directory": "packages/render",
+            "imports": ["PARTICLE_INSTANCE_FLOATS", "ParticleRenderItem"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Matrix4"]
+          }
+        ],
+        "exports": [
+          "particleItemFloats",
+          "setParticlePipelineFactory",
+          "resolveParticlePipelineFactory",
+          "clearRegisteredParticlePipeline"
+        ],
+        "interfaces": [
+          "ParticleBillboardPipeline",
+          "ParticleAppearancePipeline",
+          "ParticlePrograms",
+          "ParticlePipelineFactory"
+        ],
+        "functions": [
+          "particleItemFloats",
+          "setParticlePipelineFactory",
+          "resolveParticlePipelineFactory",
+          "clearRegisteredParticlePipeline"
+        ]
+      },
       "packages/render-webgl/src/gl-particles.ts": {
         "description": "The batched particle pipeline for the WebGL 2 backend (§36, §64 stage 6,",
         "externalDependencies": [],
@@ -15580,6 +15702,14 @@
               "GlVertexArray",
               "WebglContext"
             ]
+          },
+          {
+            "file": "./gl-particles-registry.js",
+            "imports": [
+              "particleItemFloats",
+              "setParticlePipelineFactory",
+              "ParticlePrograms"
+            ]
           }
         ],
         "workspaceDependencies": [
@@ -15598,7 +15728,6 @@
             "directory": "packages/render",
             "imports": [
               "PARTICLE_COLOR_OFFSET",
-              "PARTICLE_INSTANCE_FLOATS",
               "PARTICLE_POSITION_OFFSET",
               "PARTICLE_ROTATION_OFFSET",
               "PARTICLE_SIZE_OFFSET",
@@ -15612,11 +15741,12 @@
           }
         ],
         "exports": [
+          "particleItemFloats",
           "PARTICLE_GL",
           "PARTICLE_ATTRIBUTE_LOCATIONS",
           "PARTICLE_VERTEX_SHADER_SOURCE",
           "PARTICLE_DEPTH_TEXTURE_UNIT",
-          "particleItemFloats",
+          "registerParticlePipeline",
           "ParticleProgram",
           "ParticleAppearanceProgram",
           "ParticleBatchCache",
@@ -15635,7 +15765,7 @@
           "ParticleBatchRecord",
           "ParticleTrailBatchRecord"
         ],
-        "functions": ["particleItemFloats"],
+        "functions": ["registerParticlePipeline"],
         "constants": [
           "PARTICLE_GL",
           "PARTICLE_ATTRIBUTE_LOCATIONS",
@@ -15896,6 +16026,36 @@
         "classes": ["RenderTargetCache"],
         "interfaces": ["RenderTargetRecord"]
       },
+      "packages/render-webgl/src/gl-shadow-registry.ts": {
+        "description": "The shadow pipeline's registration slot (§69, §62; 2026-09-11) — the",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./gl-program.js",
+            "imports": ["WebglContext"],
+            "typeOnly": true
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Matrix4"]
+          }
+        ],
+        "exports": [
+          "setShadowPipelineFactory",
+          "resolveShadowPipelineFactory",
+          "clearRegisteredShadowPipeline"
+        ],
+        "interfaces": ["ShadowCasterPipeline", "ShadowPipelineFactory"],
+        "functions": [
+          "setShadowPipelineFactory",
+          "resolveShadowPipelineFactory",
+          "clearRegisteredShadowPipeline"
+        ]
+      },
       "packages/render-webgl/src/gl-shadow.ts": {
         "description": "The depth-only caster pipeline (§69) — this backend's seventh program (R-18,",
         "externalDependencies": [],
@@ -15911,6 +16071,10 @@
               "GlUniformLocation",
               "WebglContext"
             ]
+          },
+          {
+            "file": "./gl-shadow-registry.js",
+            "imports": ["setShadowPipelineFactory"]
           }
         ],
         "workspaceDependencies": [
@@ -15925,8 +16089,9 @@
             "imports": ["Matrix4"]
           }
         ],
-        "exports": ["ShadowProgram"],
-        "classes": ["ShadowProgram"]
+        "exports": ["registerShadowPipeline", "ShadowProgram"],
+        "classes": ["ShadowProgram"],
+        "functions": ["registerShadowPipeline"]
       },
       "packages/render-webgl/src/gl-skinning-glsl.ts": {
         "description": "The vertex-stage skinning chunk both the colour/caster programs",
@@ -16052,6 +16217,41 @@
         ],
         "functions": ["registerSkinningPipeline"]
       },
+      "packages/render-webgl/src/gl-standard-registry.ts": {
+        "description": "The standard pipeline's registration slot (§59, §62; 2026-09-11) — the",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./gl-program.js",
+            "imports": ["WebglContext"],
+            "typeOnly": true
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Matrix4"]
+          },
+          {
+            "package": "@fourjs/render",
+            "directory": "packages/render",
+            "imports": ["SceneLights"]
+          }
+        ],
+        "exports": [
+          "setStandardPipelineFactory",
+          "resolveStandardPipelineFactory",
+          "clearRegisteredStandardPipeline"
+        ],
+        "interfaces": ["StandardPipeline", "StandardPipelineFactory"],
+        "functions": [
+          "setStandardPipelineFactory",
+          "resolveStandardPipelineFactory",
+          "clearRegisteredStandardPipeline"
+        ]
+      },
       "packages/render-webgl/src/gl-standard.ts": {
         "description": "The metallic-roughness pipeline (§59, §68) — this backend's sixth program,",
         "externalDependencies": [],
@@ -16077,6 +16277,10 @@
               "GlUniformLocation",
               "WebglContext"
             ]
+          },
+          {
+            "file": "./gl-standard-registry.js",
+            "imports": ["setStandardPipelineFactory"]
           }
         ],
         "workspaceDependencies": [
@@ -16099,9 +16303,11 @@
         "exports": [
           "NORMAL_TEXTURE_UNIT",
           "OCCLUSION_TEXTURE_UNIT",
+          "registerStandardPipeline",
           "StandardProgram"
         ],
         "classes": ["StandardProgram"],
+        "functions": ["registerStandardPipeline"],
         "constants": ["NORMAL_TEXTURE_UNIT", "OCCLUSION_TEXTURE_UNIT"]
       },
       "packages/render-webgl/src/gl-texture.ts": {
@@ -16146,17 +16352,32 @@
             "reExport": true
           },
           {
-            "file": "./gl-effect.js",
+            "file": "./gl-effect-registry.js",
             "imports": [
               "EFFECT_TEXTURE_UNIT",
               "EFFECT_VERTEX_COUNT",
-              "EffectProgram"
+              "clearRegisteredEffectPipeline",
+              "resolveEffectPipelineFactory"
             ],
+            "reExport": true
+          },
+          {
+            "file": "./gl-effect.js",
+            "imports": ["EffectProgram", "registerEffectPipeline"],
             "reExport": true
           },
           {
             "file": "./gl-geometry.js",
             "imports": ["GeometryCache"],
+            "reExport": true
+          },
+          {
+            "file": "./gl-particles-registry.js",
+            "imports": [
+              "clearRegisteredParticlePipeline",
+              "particleItemFloats",
+              "resolveParticlePipelineFactory"
+            ],
             "reExport": true
           },
           {
@@ -16171,7 +16392,7 @@
               "ParticleProgram",
               "ParticleTrailBatchCache",
               "ParticleTrailProgram",
-              "particleItemFloats"
+              "registerParticlePipeline"
             ],
             "reExport": true
           },
@@ -16271,13 +16492,29 @@
             "reExport": true
           },
           {
+            "file": "./gl-shadow-registry.js",
+            "imports": [
+              "clearRegisteredShadowPipeline",
+              "resolveShadowPipelineFactory"
+            ],
+            "reExport": true
+          },
+          {
             "file": "./gl-shadow.js",
-            "imports": ["ShadowProgram"],
+            "imports": ["ShadowProgram", "registerShadowPipeline"],
+            "reExport": true
+          },
+          {
+            "file": "./gl-standard-registry.js",
+            "imports": [
+              "clearRegisteredStandardPipeline",
+              "resolveStandardPipelineFactory"
+            ],
             "reExport": true
           },
           {
             "file": "./gl-standard.js",
-            "imports": ["StandardProgram"],
+            "imports": ["StandardProgram", "registerStandardPipeline"],
             "reExport": true
           },
           {
@@ -16302,8 +16539,25 @@
             "typeOnly": true
           },
           {
+            "file": "./gl-effect-registry.js",
+            "imports": ["EffectPipeline", "EffectPipelineFactory"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
             "file": "./gl-geometry.js",
             "imports": ["CacheableGeometry", "GeometryRecord"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
+            "file": "./gl-particles-registry.js",
+            "imports": [
+              "ParticleAppearancePipeline",
+              "ParticleBillboardPipeline",
+              "ParticlePipelineFactory",
+              "ParticlePrograms"
+            ],
             "reExport": true,
             "typeOnly": true
           },
@@ -16381,6 +16635,18 @@
             "typeOnly": true
           },
           {
+            "file": "./gl-shadow-registry.js",
+            "imports": ["ShadowCasterPipeline", "ShadowPipelineFactory"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
+            "file": "./gl-standard-registry.js",
+            "imports": ["StandardPipeline", "StandardPipelineFactory"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
             "file": "./gl-texture.js",
             "imports": ["CacheableTexture", "TextureRecord"],
             "reExport": true,
@@ -16403,8 +16669,14 @@
           "createGlBatching",
           "EFFECT_TEXTURE_UNIT",
           "EFFECT_VERTEX_COUNT",
+          "clearRegisteredEffectPipeline",
+          "resolveEffectPipelineFactory",
           "EffectProgram",
+          "registerEffectPipeline",
           "GeometryCache",
+          "clearRegisteredParticlePipeline",
+          "particleItemFloats",
+          "resolveParticlePipelineFactory",
           "PARTICLE_ATTRIBUTE_LOCATIONS",
           "PARTICLE_DEPTH_TEXTURE_UNIT",
           "PARTICLE_GL",
@@ -16414,7 +16686,7 @@
           "ParticleProgram",
           "ParticleTrailBatchCache",
           "ParticleTrailProgram",
-          "particleItemFloats",
+          "registerParticlePipeline",
           "COLOR_ATTRIBUTE_LOCATION",
           "GL",
           "LitProgram",
@@ -16458,8 +16730,14 @@
           "GlNodeProgramCache",
           "emitShaderGraphGlsl",
           "registerNodeMaterialPipeline",
+          "clearRegisteredShadowPipeline",
+          "resolveShadowPipelineFactory",
           "ShadowProgram",
+          "registerShadowPipeline",
+          "clearRegisteredStandardPipeline",
+          "resolveStandardPipelineFactory",
           "StandardProgram",
+          "registerStandardPipeline",
           "TextureCache",
           "isWebgl2Supported",
           "registerWebglRenderer",
@@ -16467,8 +16745,14 @@
           "PACKAGE_NAME",
           "BatchGlContext",
           "RenderBatching",
+          "EffectPipeline",
+          "EffectPipelineFactory",
           "CacheableGeometry",
           "GeometryRecord",
+          "ParticleAppearancePipeline",
+          "ParticleBillboardPipeline",
+          "ParticlePipelineFactory",
+          "ParticlePrograms",
           "ParticleBatchRecord",
           "ParticleGlContext",
           "ParticleTrailBatchRecord",
@@ -16497,6 +16781,10 @@
           "NodeMaterialProgram",
           "NodeMaterialPrograms",
           "EmittedNodeShader",
+          "ShadowCasterPipeline",
+          "ShadowPipelineFactory",
+          "StandardPipeline",
+          "StandardPipelineFactory",
           "CacheableTexture",
           "TextureRecord",
           "WebglCanvas",
@@ -16508,8 +16796,14 @@
           "createGlBatching",
           "EFFECT_TEXTURE_UNIT",
           "EFFECT_VERTEX_COUNT",
+          "clearRegisteredEffectPipeline",
+          "resolveEffectPipelineFactory",
           "EffectProgram",
+          "registerEffectPipeline",
           "GeometryCache",
+          "clearRegisteredParticlePipeline",
+          "particleItemFloats",
+          "resolveParticlePipelineFactory",
           "PARTICLE_ATTRIBUTE_LOCATIONS",
           "PARTICLE_DEPTH_TEXTURE_UNIT",
           "PARTICLE_GL",
@@ -16519,7 +16813,7 @@
           "ParticleProgram",
           "ParticleTrailBatchCache",
           "ParticleTrailProgram",
-          "particleItemFloats",
+          "registerParticlePipeline",
           "COLOR_ATTRIBUTE_LOCATION",
           "GL",
           "LitProgram",
@@ -16563,16 +16857,28 @@
           "GlNodeProgramCache",
           "emitShaderGraphGlsl",
           "registerNodeMaterialPipeline",
+          "clearRegisteredShadowPipeline",
+          "resolveShadowPipelineFactory",
           "ShadowProgram",
+          "registerShadowPipeline",
+          "clearRegisteredStandardPipeline",
+          "resolveStandardPipelineFactory",
           "StandardProgram",
+          "registerStandardPipeline",
           "TextureCache",
           "isWebgl2Supported",
           "registerWebglRenderer",
           "WebglRenderer",
           "BatchGlContext",
           "RenderBatching",
+          "EffectPipeline",
+          "EffectPipelineFactory",
           "CacheableGeometry",
           "GeometryRecord",
+          "ParticleAppearancePipeline",
+          "ParticleBillboardPipeline",
+          "ParticlePipelineFactory",
+          "ParticlePrograms",
           "ParticleBatchRecord",
           "ParticleGlContext",
           "ParticleTrailBatchRecord",
@@ -16601,6 +16907,10 @@
           "NodeMaterialProgram",
           "NodeMaterialPrograms",
           "EmittedNodeShader",
+          "ShadowCasterPipeline",
+          "ShadowPipelineFactory",
+          "StandardPipeline",
+          "StandardPipelineFactory",
           "CacheableTexture",
           "TextureRecord",
           "WebglCanvas",
@@ -16685,11 +16995,12 @@
             "typeOnly": true
           },
           {
-            "file": "./gl-effect.js",
+            "file": "./gl-effect-registry.js",
             "imports": [
               "EFFECT_TEXTURE_UNIT",
               "EFFECT_VERTEX_COUNT",
-              "EffectProgram"
+              "resolveEffectPipelineFactory",
+              "EffectPipeline"
             ]
           },
           {
@@ -16701,16 +17012,19 @@
             "imports": ["GlGpuTimer", "hasDisjointTimerQuery"]
           },
           {
-            "file": "./gl-particles.js",
+            "file": "./gl-particles-registry.js",
             "imports": [
-              "ParticleAppearanceProgram",
-              "ParticleBatchCache",
-              "ParticleProgram",
-              "ParticleTrailBatchCache",
-              "ParticleTrailProgram",
               "particleItemFloats",
-              "ParticleGlContext"
+              "resolveParticlePipelineFactory",
+              "ParticleAppearancePipeline",
+              "ParticleBillboardPipeline",
+              "ParticlePrograms"
             ]
+          },
+          {
+            "file": "./gl-particles.js",
+            "imports": ["ParticleGlContext"],
+            "typeOnly": true
           },
           {
             "file": "./gl-program.js",
@@ -16752,16 +17066,16 @@
             ]
           },
           {
-            "file": "./gl-shadow.js",
-            "imports": ["ShadowProgram"]
+            "file": "./gl-standard.js",
+            "imports": ["NORMAL_TEXTURE_UNIT", "OCCLUSION_TEXTURE_UNIT"]
           },
           {
-            "file": "./gl-standard.js",
-            "imports": [
-              "StandardProgram",
-              "NORMAL_TEXTURE_UNIT",
-              "OCCLUSION_TEXTURE_UNIT"
-            ]
+            "file": "./gl-shadow-registry.js",
+            "imports": ["resolveShadowPipelineFactory", "ShadowCasterPipeline"]
+          },
+          {
+            "file": "./gl-standard-registry.js",
+            "imports": ["resolveStandardPipelineFactory", "StandardPipeline"]
           },
           {
             "file": "./gl-texture.js",
@@ -18126,11 +18440,11 @@
           },
           {
             "file": "./wgpu-pipeline-cache.js",
-            "imports": [
-              "WgpuPipelineCache",
-              "WgpuPipelineDescriptor",
-              "WgpuStencilDescriptor"
-            ]
+            "imports": ["WgpuPipelineCache", "WgpuPipelineDescriptor"]
+          },
+          {
+            "file": "./wgpu-pipeline-memo.js",
+            "imports": ["WgpuPipelineMemo", "createPipelineRequest"]
           },
           {
             "file": "./wgpu-readback.js",
@@ -18283,6 +18597,11 @@
           }
         ],
         "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          },
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
@@ -18493,7 +18812,13 @@
             ]
           }
         ],
-        "workspaceDependencies": [],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          }
+        ],
         "exports": ["WgpuGpuTimer"],
         "classes": ["WgpuGpuTimer"]
       },
@@ -19205,6 +19530,40 @@
         ],
         "functions": ["blendStateFor", "pipelineKey", "stencilStateFor"]
       },
+      "packages/render-webgpu/src/wgpu-pipeline-memo.ts": {
+        "description": "A \"same as the previous draw\" fast path in front of {@link WgpuPipelineCache}",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./webgpu-device.js",
+            "imports": ["GpuRenderPipeline"],
+            "typeOnly": true
+          },
+          {
+            "file": "./wgpu-pipeline-cache.js",
+            "imports": [
+              "WgpuPipelineCache",
+              "WgpuPipelineDescriptor",
+              "WgpuPipelineKind"
+            ],
+            "typeOnly": true
+          },
+          {
+            "file": "./wgpu-stencil.js",
+            "imports": [
+              "STENCIL_ALL_BITS",
+              "stencilDescriptor",
+              "WgpuStencilSource"
+            ]
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": ["createPipelineRequest", "WgpuPipelineMemo"],
+        "classes": ["WgpuPipelineMemo"],
+        "interfaces": ["WgpuPipelineRequest", "MutableWgpuPipelineRequest"],
+        "functions": ["createPipelineRequest"]
+      },
       "packages/render-webgpu/src/wgpu-readback.ts": {
         "description": "`readPixels`' mechanism: `copyTextureToBuffer` + `mapAsync` (WP-R1.6; §61,",
         "externalDependencies": [],
@@ -19221,6 +19580,11 @@
           }
         ],
         "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          },
           {
             "package": "@fourjs/math",
             "directory": "packages/math",
@@ -22131,14 +22495,19 @@
           "packages/render/src/renderer.ts"
         ],
         [
+          "packages/render-webgl/src/gl-particles-registry.ts",
+          "packages/render-webgl/src/gl-particles.ts",
+          "packages/render-webgl/src/gl-particles-registry.ts"
+        ],
+        [
           "packages/scene/src/node.ts",
           "packages/scene/src/world-transforms.ts",
           "packages/scene/src/node.ts"
         ]
       ],
-      "total": 7,
+      "total": 8,
       "runtimeCount": 0,
-      "typeOnlyCount": 7
+      "typeOnlyCount": 8
     },
     "layers": [
       {
@@ -22469,20 +22838,24 @@
         "name": "Packages/render-webgl",
         "files": [
           "packages/render-webgl/src/gl-batch.ts",
+          "packages/render-webgl/src/gl-effect-registry.ts",
           "packages/render-webgl/src/gl-effect.ts",
           "packages/render-webgl/src/gl-geometry.ts",
           "packages/render-webgl/src/gl-gpu-timer.ts",
           "packages/render-webgl/src/gl-node-program.ts",
           "packages/render-webgl/src/gl-node-uniform-block.ts",
+          "packages/render-webgl/src/gl-particles-registry.ts",
           "packages/render-webgl/src/gl-particles.ts",
           "packages/render-webgl/src/gl-picking-registry.ts",
           "packages/render-webgl/src/gl-picking.ts",
           "packages/render-webgl/src/gl-program.ts",
           "packages/render-webgl/src/gl-render-target.ts",
+          "packages/render-webgl/src/gl-shadow-registry.ts",
           "packages/render-webgl/src/gl-shadow.ts",
           "packages/render-webgl/src/gl-skinning-glsl.ts",
           "packages/render-webgl/src/gl-skinning-registry.ts",
           "packages/render-webgl/src/gl-skinning.ts",
+          "packages/render-webgl/src/gl-standard-registry.ts",
           "packages/render-webgl/src/gl-standard.ts",
           "packages/render-webgl/src/gl-texture.ts",
           "packages/render-webgl/src/index.ts",
@@ -22513,6 +22886,7 @@
           "packages/render-webgpu/src/wgpu-picking-registry.ts",
           "packages/render-webgpu/src/wgpu-picking.ts",
           "packages/render-webgpu/src/wgpu-pipeline-cache.ts",
+          "packages/render-webgpu/src/wgpu-pipeline-memo.ts",
           "packages/render-webgpu/src/wgpu-readback.ts",
           "packages/render-webgpu/src/wgpu-render-target.ts",
           "packages/render-webgpu/src/wgpu-shadow.ts",
@@ -22591,21 +22965,21 @@
     ]
   },
   "statistics": {
-    "totalTypeScriptFiles": 335,
+    "totalTypeScriptFiles": 340,
     "totalModules": 24,
-    "totalLinesOfCode": 160359,
-    "totalExports": 3387,
-    "totalClasses": 212,
-    "totalInterfaces": 624,
-    "totalFunctions": 551,
+    "totalLinesOfCode": 163063,
+    "totalExports": 3434,
+    "totalClasses": 213,
+    "totalInterfaces": 639,
+    "totalFunctions": 568,
     "totalTypeGuards": 28,
     "totalEnums": 0,
-    "totalConstants": 499,
-    "totalReExports": 2147,
-    "totalTypeOnlyImports": 428,
+    "totalConstants": 500,
+    "totalReExports": 2172,
+    "totalTypeOnlyImports": 439,
     "runtimeCircularDeps": 0,
-    "typeOnlyCircularDeps": 7,
+    "typeOnlyCircularDeps": 8,
     "unusedFilesCount": 0,
-    "unusedExportsCount": 5
+    "unusedExportsCount": 7
   }
 }

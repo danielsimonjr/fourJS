@@ -8,6 +8,86 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-20 — cycle 9 and 10 residue: a wrong spec sentence, two decisions, one tool defect class
+
+Closes the last findings carried out of dogfood cycles 9 and 10. Three of the four are
+documentation or a doc comment and carry no behaviour change, so no test applies to them and
+none was invented; the fourth changes a generator and is tested.
+
+#### Fixed
+
+- **`docs/SPECIFICATION.md` §3.1 credited `math` with "curves", which it has never owned**
+  (specification revision **1.18**). Verified before changing: `packages/math/src` contains no
+  curve type — the path model is `geometry` (§52, `path.ts` / `svg-path.ts`) and the
+  time-sampled path is `motion`'s §13 `Trajectory`, whose own source says "the codebase has no
+  `Curve` type". The same bullet omitted two surfaces `math` does own and ship: the §87
+  frustum-cull primitive (`frustum.ts`) and the §60a colour tuple types with the sRGB transfer
+  functions (`color.ts`). The bullet now names both and states where curves live, so no reader
+  can infer a `math` curve type. Recorded in the spec's own amendments table, not in
+  `ERRATA.md`: the statement was simply wrong, while `ERRATA.md` tracks the frozen PDF's
+  numbering. The header revision number was also lagging at 1.16 behind a table that already
+  carried 1.17 — the same drift revision 1.13 recorded — and is corrected. `check-spec` passes
+  (129 sections, 103 code blocks).
+- **`tools/create-dependency-graph` counted what comments and strings said.** Three sites, all
+  the quote-and-comment blind spot that shipped a defect twice (2026-09-13, 2026-09-19), and all
+  deliberately left until now because each feeds the generator's scoring and therefore the
+  committed `docs/Architecture/` reports.
+  - `inFileRefs` counted a name in a JSDoc block or a commented-out call as a live in-file
+    reference, which is the one distinction `unused-analysis.md` exists to make: an export could
+    be lifted out of "deletion candidate" by its own doc comment. Now counted over
+    `strippedOfComments`. Effect on this tree, measured by regenerating with and without the
+    fix and diffing: **exactly one entry moves** — `CANVAS_VIEW_NODE_TYPE` 3 → 2 in-file refs,
+    the third occurrence being a `//` comment at `scene-serializers.ts:1319`.
+  - The delegation scan treated a `*Dispatch` name inside a comment as a real edge, so a
+    js-fallback entry could be reported as wasm-routed. Now segments comment-free source.
+  - The hand brace-matcher counted braces inside strings, template literals and comments, so one
+    such brace ended an object literal early and lost every routing marker after it. Now counts
+    over `blankedCommentsAndStrings`. **Three inline copies of that matcher sat beside the
+    shared `matchBraceBlock`, each with the same blind spot**; all four are now one function.
+  - The last two live in analyzers gated on `functions/src/typed` / `src/typed` /
+    `functions/src/wasm`, none of which exists in this repo, so their effect on these reports is
+    **0 → 0**. They are fixed as a defect class, not for a visible number.
+
+#### Added
+
+- **`blankedCommentsAndStrings` in `tools/strip-comments.mjs`** — the index-preserving companion
+  to `strippedOfComments`. It blanks comment and string bodies offset for offset, tracking line
+  and block comments, escapes, and template literals including nested `${ … }` expressions
+  (which are code and survive), so a scanner that walks source by index can scan the blanked
+  copy and slice the original. Regular-expression literals are a recorded limit, not an
+  oversight: telling `/` division from a regex needs a parser's context.
+- **`tools/strip-comments.test.mjs`** (`node --test`, 5 tests) — offset preservation, a brace
+  inside a string, a brace inside a template literal, a JSDoc mention that is not a reference,
+  and a comment that is not a delegation edge. RED before the change: 0 pass / 1 fail (the
+  module had no such export). GREEN after: 5 pass / 0 fail.
+
+#### Changed
+
+- **`AUTO_RENDERER_ORDER` keeps its `"canvas2d"` and `"svg"` rungs, and the doc comment now says
+  why.** Both are §102 reserved stubs, so `resolveRenderer("auto")` cannot reach them from
+  fourJS packages alone — but the rungs are the published contract a consumer-authored backend
+  registers into, and cycle 9A proved that path end to end (a Canvas 2D backend written against
+  published exports only: 35,851 lit pixels / 3 draw calls / 82 triangles against a 0-pixel
+  control; an SVG sibling at 83 elements against a 1-element control). Dropping them would break
+  a working extension point to tidy a cosmetic gap, and a stub package shipping later fills its
+  own rung with no change here. Points at `docs/guides/custom-renderer-backends.md`.
+- **The `Renderer` interface states the surface-type exception to §62's swap claim.** Swapping a
+  backend is one import and one constructor, except that this interface has no surface member:
+  **two** consumer lines for WebGL 2 → WebGPU (cycle 3c, both take an `HTMLCanvasElement`),
+  **three** for Canvas 2D → SVG (cycle 9A, `HTMLCanvasElement` versus `SVGSVGElement`).
+  Deliberately not overstated — the seam held, nothing above the surface moved, and the cost is
+  one line. It is by design: a surface member would have to name a union of every backend's
+  surface type, which is the backend coupling §62 keeps out.
+- **`docs/Architecture/` regenerated.** Most of the diff is **not** this change:
+  the committed reports were last generated on **2026-09-13** and the tree has moved since —
+  335 → 340 files, 3,387 → 3,434 exports, 160,359 → 163,026 LOC, and two `wgpu-pipeline-memo.ts`
+  interfaces newly listed as referenced in-module. That stale-baseline drift was measured
+  separately, by regenerating from an unmodified tree first; the generator fix's own contribution
+  is the single `CANVAS_VIEW_NODE_TYPE` line above. Spot-checked against source:
+  `CANVAS_VIEW_NODE_TYPE` (4 occurrences — 1 definition, 1 comment, 2 live) ✓,
+  `ringsContain` (2 live call sites, unchanged) ✓, `validateShapingDirection` (1 live call site,
+  unchanged) ✓.
+
 ### 2026-09-20 — the four reserved stubs, made impossible to miss
 
 Documentation only; no source behaviour changes. Four of the 24 workspace packages —
