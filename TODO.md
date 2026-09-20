@@ -1145,6 +1145,92 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       87-byte re-export and returned "no matches" — absence at the wrong path is not
       absence. Standing: next cycle picks a new surface. The stubs are now dogfooded as
       stubs; they need re-doing only when one of them ships an implementation.
+      **Cycle 10 (2026-09-20, three agents) — `math`, `scene`, `core`: the last three
+      packages never dogfooded, and the ones every other package depends on. TWO ENGINE
+      DEFECTS, one of them a wrong answer shipped in the most-used method in the repo.**
+      **`math` — `Vector3.cross(a, a)` returned garbage.** `cross` snapshotted the
+      RECEIVER into temporaries but read the ARGUMENT live, so an aliased call read
+      components it had already overwritten: `(1,2,3)×itself` gave `(0,-3,-3)` where the
+      answer is `(0,0,0)`. Two things make it worth reading twice. The method's own comment
+      explained why the temporaries existed — the author snapshotted the wrong operand. And
+      `vectors.test.ts:197` *looks* like it covers the case: it writes `a.clone().cross(a)`,
+      which never aliases. Fixed at `vector3.ts:104` by reading both operands into scalars,
+      with the invariant written into the comment so the next method inherits it, plus a
+      regression test that does alias.
+      **`math` — the §83 allocation counter had a blind spot shaped exactly like
+      `Frustum`.** That class never called `noteConstruction`, so a per-view `new Frustum()`
+      (a `Float64Array(24)`) left `constructionCount()` flat: the one instrument built to
+      catch per-frame allocation could not see the case it would be pointed at. Fixed at
+      `frustum.ts:70`; every `Frustum` the engine owns is a singleton, so the added events
+      are bounded. Re-verified after the fix: math 221, diagnostics 343, render 2,101 pass.
+      **`math` — what §33 actually guarantees, measured across two V8 builds.** Algebraic
+      operations are **bit-identical** between Node 24 and Chrome 153 (FNV-1a `8ae80b30`
+      both sides, 38,336-byte trace); exactly **three** operations differ —
+      `Quaternion.setFromAxisAngle`, `Quaternion.slerp`, `Matrix4.setPerspective` — and all
+      three call JS transcendentals. That is the entire reason math declares
+      `same-runtime` rather than `same-platform`, and it explains cycle 9B's Node/Chrome
+      physics-checksum agreement without contradicting the tier: that path touched none of
+      the three. Controls: each trace repeated byte-for-byte within a runtime, and a
+      one-ulp perturbation changed the checksum, so the comparison can fail.
+      **`math` — `normalize()` has three undocumented ranges**, because the guard tests the
+      SQUARED length: a component at or above 1.3407807929942597e+154 overflows the square
+      and normalizes to the **zero vector**; components below 1.5717277847026288e-162
+      underflow and are left unchanged and non-unit; a non-finite component yields `NaN` in
+      that slot. The doc promised it avoids `NaN`. Documented with the measured bounds
+      rather than changed — clamping or throwing on a per-frame path is an owner decision.
+      **`scene` — §42 authority is enforced only against SYSTEMS, and the guide promised
+      more.** Measured: system vs system warns and refuses (1 warning naming node, writer,
+      owner and fix); a **direct application write to a system-owned node lands silently** —
+      a `"kinematic"`-owned node at `x=0.1667` written to `999` was at `999.0167` one step
+      later with **zero** warnings. Confirmed architectural, not a bug: every caller of
+      `warnAuthorityConflict` is a writing system and a plain property write has no hook
+      (`node.ts:717` says so). `transform-authority.md` now scopes the claim to systems and
+      states the rule as a contract the application keeps, not an invariant the engine can
+      enforce against it.
+      **`scene` — fresh evidence on the open `new Node()` item, decision untouched.** From
+      a JS consumer seat `new Node()` does not throw, and the object is not merely
+      working-looking: it took a parent, took a child, composed that child's world matrix to
+      `(10,5,0)`, and **0 of its 14 prototype members** are abstract at runtime. Control: a
+      class with a throwing constructor was detected by the same probe. Dirty propagation
+      measured and correct — 20/20 recomputed cold, **0/20** on a clean pass, 9/20 after
+      moving a chain top, 1/20 after a leaf; lazy confirmed by a stale world matrix
+      surviving until an explicit resolve.
+      **`core` — error quality audited as counts, not impressions: 27 refusal paths
+      triggered, 27 named a real callable, 26 named the field to inspect, and ZERO named a
+      package a consumer cannot install** — cycle 9C's regression has not returned, and an
+      independent scanner over all 688 shipped files (comments stripped) found 0 workspace
+      names, with an injected template literal proving the scanner live.
+      **`core` — a production bundle keeps dev-only strings under bare esbuild.** With the
+      guide's own `--define:__FOUR_DEV__=false`, **33 spec-marked message literals survive
+      identically in dev and prod bundles** (4 of them dev-only); they do not run, they
+      ship. Under Vite/Rollup the same literals are deleted. The guide's size table was
+      stale in BOTH directions — examples grew ~20 kB and the flag removes 6-7x more than
+      recorded — so all four rows were re-measured by building each example twice.
+      **`core` — cycle 9A's `Disposable` fix was insufficient, measured not judged.** The
+      collision note went into the MODULE header, which TypeScript does not attach to the
+      symbol: probed with the TS API against the installed tarball, the doc a consumer sees
+      hovering `Disposable` was **51 characters** and never mentioned `Symbol.dispose`.
+      Moved onto the interface; the same probe now returns **774** characters containing it.
+      A doc fix that the reader cannot see is not a doc fix.
+      **`core` — an assertion in `apply-publish-names.test.mjs` could not fail.** It tested
+      `/["']@four\//` — the scope `@four/`, which no source in this repository contains —
+      so it passed for every possible input including a completely un-rewritten file. This
+      sat in the file whose NEW guard was reviewed and approved one cycle earlier: the
+      addition was checked, the neighbours were not. Fixed to `@fourjs/` and widened to
+      backticks, the form that shipped the defect twice.
+      **Correction to this row's own cycle-9 residue.** The filed item "the engine's first
+      word to a consumer is a warning about itself" was WRONG; 10C disproved it. The §83
+      warning fires only with `stats` explicitly on and only when the step allocated, and
+      the count is the CONSUMER's allocation reported under the engine's label. The item
+      has been rewritten in place rather than deleted, because the wrong version was pushed.
+      **Review before push (Starship).** Every engine claim re-verified against `origin/main`
+      independently — including working the `cross` arithmetic by hand and re-running the
+      three suites that assert on the allocation counter. Typecheck under `strict` +
+      `skipLibCheck: false`: **0 errors in fourJS's own declarations** on all three seats,
+      one of which proved `skipLibCheck: false` really reads the shipped declarations by
+      breaking one deliberately and seeing 3 errors. Standing: every package is now
+      dogfooded at least once; the four reserved stubs need re-doing only when one ships an
+      implementation.
 
 
 - [x] **`registerRapierSolver()` throws on a second call — awkward for anything building more than
@@ -2504,15 +2590,30 @@ Each of these was measured during dogfood cycle 9 and then judged **not** a defe
 as a decision. They are filed here because a finding that lives only inside a cycle write-up
 gets read as history and never actioned. None is urgent; none blocks anything.
 
-- [ ] **The engine's first word to a consumer is a warning about itself.** With DEV
-      diagnostics on, `§83: 4 math object(s) were constructed during "Application.step"
-      (threshold 0)` fires once per session against the engine's own step, because the
-      default threshold is `0`. Behaviour is as designed (dev-only, warn-once) and the
-      message is correct — but it is the first thing a new consumer sees in their console,
-      and it reports the engine to the user as if the user had done something. Decision, not
-      a bug fix: raise the default threshold to the engine's own known floor, exclude the
-      engine's own step from the audit, or keep it and say so in the diagnostics guide.
-      Measured from a consumer seat, Node and Chrome (cycle 9C).
+- [ ] **The §83 allocation warning names the wrong culprit.** ~~The engine's first word to a
+      consumer is a warning about itself.~~ **The filing above was WRONG and cycle 10C
+      disproved it — corrected here rather than quietly deleted, because the wrong version
+      was pushed to this repo on 2026-09-19 and someone may have read it.** What the
+      original filing claimed: that `§83: 4 math object(s) were constructed during
+      "Application.step" (threshold 0)` fires by default against the engine's own step.
+      Both halves are false.
+      **Measured (cycle 10C, Node and Chrome, consumer seat):** it fires only when
+      `DEV && stats === true && the step allocated > 0`, and `stats` is **off by default** —
+      a headless app with a scene, a camera and a registered system allocates **0** math
+      objects per step and prints **nothing** over 120 steps. Adding four `new Vector3(…)`
+      to the consumer's *own* `fixedUpdate` reproduces the exact string. Control both ways:
+      alloc-0 silent, alloc-1 and alloc-4 warn.
+      **So the real defect is narrower and more interesting: the label misattributes.**
+      `"Application.step"` is the measurement *window* — the math package's process-wide
+      construction count sampled around the step — not the culprit. The engine reports the
+      **consumer's** allocation under the engine's own label, which is exactly how cycle 9C
+      came to believe the engine was warning about itself. Fires once per process
+      (`devWarnOnce` keyed on the label); `resetDevWarnings()` re-arms it; there is no
+      threshold knob, because `Application` passes only a label
+      (`packages/fourjs/src/application.ts:1818`).
+      **Owner's call, unchanged in scope:** name the window and the culprit separately in
+      the message, or leave it and let the new guide subsection carry the explanation.
+      `packages/diagnostics/src/allocation-audit.ts:101`. Reported, not fixed (cycle 10C).
 
 - [ ] **`AUTO_RENDERER_ORDER` carries two rungs no fourJS package can fill.**
       `renderer-registry.ts:112` lists `webgpu`, `webgl2`, `canvas2d`, `svg`; the last two

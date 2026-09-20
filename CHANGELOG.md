@@ -85,6 +85,7 @@ and **0** `@fourjs/*` keys in any installed manifest.
   (§13). The same line omitted the frustum-cull primitive (§87) and the §60a colour tuples and
   transfer functions, which do live there. `bun run check-spec` is OK (129 sections, 103 code
   blocks).
+
 ### 2026-09-20 — dogfood cycle 10B: `scene` from a consumer seat — §42 authority, dirty propagation, reparenting
 
 Engine: clean. Three guide defects, each measured against packed, published-name tarballs
@@ -158,6 +159,7 @@ control sees a template-literal occurrence, cycle 9's blind spot). Consumer type
 - **All 7 `TRANSFORM_AUTHORITIES` values assign** from a consumer seat, `"blended"` included.
 - Scene package suite: **374 tests in 18 files, all passing**. `check-docs` OK, `check-spec` OK,
   Prettier clean on the three edited guides. Chrome reported **0** console errors across both runs.
+
 ### 2026-09-19 — dogfood cycle 10C: `packages/core`, from a consumer seat
 
 Measured against 24 staged published-name tarballs installed into a project outside the

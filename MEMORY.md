@@ -30,6 +30,56 @@ readable; never delete the pointer itself.
 
 ## Decisions
 
+- **2026-09-20 — Dogfood cycle 10: `math`, `scene`, `core` — the last three
+  packages never dogfooded, and the ones everything depends on.** Three
+  agents, consumer seat through the umbrella subpaths only, Node + Chrome.
+  **TWO ENGINE DEFECTS, both in `math`.** (1) `Vector3.cross(a, a)` returned
+  **`(0,-3,-3)` for `(1,2,3)` where the answer is `(0,0,0)`**: the method
+  snapshotted the receiver into temporaries and read the argument LIVE, so an
+  aliased call read components it had already overwritten. Its own comment
+  explained why the temporaries existed — the wrong operand was snapshotted —
+  and `vectors.test.ts:197` _looked_ like it covered the case while writing
+  `a.clone().cross(a)`, which never aliases. (2) `Frustum` never called
+  `noteConstruction`, so the §83 counter — the one instrument built to catch
+  per-frame allocation — could not see a per-view `new Frustum()`. Both fixed
+  with regression tests; math 221 / diagnostics 343 / render 2,101 re-verified
+  after.
+  **§33, measured across two V8 builds:** algebraic ops are bit-identical
+  Node↔Chrome (FNV-1a `8ae80b30`, 38,336-byte trace) and exactly THREE differ —
+  `setFromAxisAngle`, `slerp`, `setPerspective`, all JS transcendentals. That is
+  the whole reason math declares `same-runtime`, and it explains cycle 9B's
+  Node/Chrome physics agreement without contradicting the tier.
+  **`normalize()` guards on the SQUARED length**, so a component ≥1.34e+154
+  normalizes to the ZERO vector and one below 1.57e-162 is left non-unit, while
+  the doc promised it avoids `NaN`. Documented, not changed — an owner call.
+  **§42 authority is enforced only against SYSTEMS.** A direct application write
+  to a system-owned node lands **silently** (`x=0.1667` → written `999` →
+  `999.0167` one step later, **0** warnings), because every caller of
+  `warnAuthorityConflict` is a system and a property write has no hook. The
+  guide had promised "never silent overwrites"; it now scopes the claim and
+  calls the rule a contract the application keeps.
+  **`core` error quality, as counts:** 27 refusal paths triggered, 27 named a
+  real callable, 26 named the field, **0 named a package a consumer cannot
+  install** — cycle 9C's regression has not returned.
+  **A production bundle keeps dev-only strings under bare esbuild:** 33
+  spec-marked literals survive identically in dev and prod (4 dev-only); Vite
+  deletes them. The guide's size table was stale in BOTH directions.
+  **Cycle 9A's `Disposable` fix was insufficient** — the note sat in the MODULE
+  header, which TS does not attach to the symbol, so a consumer hovering it saw
+  **51 characters** and no mention of `Symbol.dispose`; moved onto the interface,
+  now **774**. A doc fix the reader cannot see is not a doc fix.
+  **An assertion in `apply-publish-names.test.mjs` could not fail** — it tested
+  the scope `@four/`, which no source contains, so it passed for every input.
+  It sat in the file whose NEW guard I reviewed one cycle earlier: I checked the
+  addition and not its neighbours.
+  **I also corrected my own filed item:** cycle 9's "the engine warns about
+  itself" was WRONG. The §83 warning needs `stats` explicitly on and fires only
+  when the step allocated; the count is the CONSUMER's allocation reported under
+  the engine's `"Application.step"` label. Rewritten in place, not deleted,
+  because the wrong version had been pushed.
+  Every package is now dogfooded at least once; the four reserved stubs need
+  re-doing only when one ships an implementation.
+
 - **2026-09-19 — Dogfood cycle 9: the seven packages no cycle had
   touched — `render-canvas`, `render-svg`, `physics-box2d`,
   `physics-soft`, `geometry`, `materials`, `diagnostics`.** Three agents,
