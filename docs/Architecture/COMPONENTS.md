@@ -264,11 +264,11 @@ export class PhysicsWorld {
 
 ### @fourjs/physics-rapier
 
-**Purpose**: The first solver adapter (Phase 5, §108) — Rapier 2D and 3D via `@dimforge/rapier*-compat@0.19.3` WebAssembly, implementing `PhysicsSolverAdapter` plus the `SolverBodyAccess`/`SolverJointAccess` seams.
+**Purpose**: The first solver adapter (Phase 5, §108) — Rapier 2D and 3D via `@dimforge/rapier*-compat@0.20.0` WebAssembly, implementing `PhysicsSolverAdapter` plus the `SolverBodyAccess`/`SolverJointAccess` seams.
 
 **Spec**: §37, §102, §108. **Direct deps**: `physics` (+ `core`, `math` declared directly per WP-5.4-fix1). **Status**: implemented.
 
-Key exports (selected from ~45): `Rapier2dAdapter`, `Rapier3dAdapter`, `RapierBodyAccess`, `initializeRapier2d`/`initializeRapier3d` (async wasm init inside `adapter.initialize()`), and the conversion helpers (`toRapierVector2/3`, `fromRapierVector2/3`, `toRapierRotation3`, `packInteractionGroups`, `resolveCcdMode`, …). Recorded capability facts: adapters own monotonic never-reused ids (§33 checksum order); `collisionstay` is adapter-derived from a touching-pair map; restitution combine forced to Max per Appendix A; `reportsJointReactions` is false (Rapier 0.19.3 has no reaction getters, so breakable joints are refused); motor `maxTorque`/`maxForce` is a force-based gain, not §28's hard cap (recorded deviation).
+Key exports (selected from ~45): `Rapier2dAdapter`, `Rapier3dAdapter`, `RapierBodyAccess`, `initializeRapier2d`/`initializeRapier3d` (async wasm init inside `adapter.initialize()`), and the conversion helpers (`toRapierVector2/3`, `fromRapierVector2/3`, `toRapierRotation3`, `packInteractionGroups`, `resolveCcdMode`, …). Recorded capability facts: adapters own monotonic never-reused ids (§33 checksum order); `collisionstay` is adapter-derived from a touching-pair map; restitution combine forced to Max per Appendix A; `reportsJointReactions` is false (Rapier 0.20.0 has no reaction getters, so breakable joints are refused); motor `maxTorque`/`maxForce` is a force-based gain, not §28's hard cap (recorded deviation).
 
 ---
 
