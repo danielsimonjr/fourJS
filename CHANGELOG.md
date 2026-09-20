@@ -8,6 +8,61 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-19 — dogfood cycle 9B: the guides carried a stale Rapier version and a wrong stub description
+
+#### Fixed
+
+- **Three guide lines named Rapier `0.19.3` while the shipped adapters depend on
+  `0.20.0`.** `@fourjs/physics-rapier` pins `@dimforge/rapier2d-compat` and
+  `rapier3d-compat` at `0.20.0`, and `docs/COMPATIBILITY.md` — generated from the
+  adapters themselves — says `0.20.0`. The hand-written guides did not:
+  `custom-solver-adapters.md` twice (the joint-reaction deviation, and "Honest state",
+  which also claimed the pin), and `engineering-dashboard.md` once (the `maxTorque`
+  gain note). A reader checking the deviation against their own `node_modules` found
+  two different versions and no way to tell which claim was current. All three now say
+  `0.20.0`.
+- **`custom-solver-adapters.md` described `physics-box2d` and `physics-soft` as
+  "package directories with no implementation".** Measured from a consumer seat
+  against packed tarballs installed outside the workspace: both packages build,
+  publish, and export exactly **1** symbol, `PACKAGE_NAME`. So the subpaths
+  `fourJS/physics-box2d` and `fourJS/physics-soft` import cleanly and register
+  nothing — `solver: "box2d"` fails with the registry's §37 "no physics solver is
+  registered" message, not a module error. The guide now says what a consumer
+  actually meets, matching `docs/COMPATIBILITY.md`'s generated "reserved stub" rows.
+
+#### Verified (no change needed)
+
+- `docs/COMPATIBILITY.md`'s solver table matches measurement exactly: **0**
+  discrepancies. `node tools/generate-compatibility.mjs --check` reports it current
+  (2 adapters, 2 reserved solver packages), and the two "reserved stub … exports
+  `PACKAGE_NAME` only" rows are precisely the 1-export surface measured from the
+  installed tarballs, in Node and in headless Chrome.
+- §33 and §34 on the one registrable solver, from the consumer seat, 8 dynamic
+  bodies x 40 fixed steps of 1/60 s, comparing the **full** state (position xyz +
+  rotation quaternion xyzw per body, plus `world.checksum()`) rather than a summary:
+  two runs byte-identical; snapshot at step 20 restored into a second world and
+  continued 20 steps reproduced the original tail byte for byte (snapshot payload
+  **7351 B**, checksum `3239799278` either side of the restore). Controls: a 1e-3 m
+  teleport at t=0 changes the result; the scene is still in motion at the tail
+  (state(40) != state(39)); one extra step on the restored world breaks equality.
+- **`checksum()` alone is a coarser instrument than the full state, exactly as
+  documented.** A 1e-7 m divergence changes the compared state but leaves the
+  checksum at `3398811672`, which is §33's documented `Math.round(v * 1e6)`
+  quantization doing its job. A 1e-9 m divergence changes nothing at all, being below
+  the f32 resolution of the solver's own storage. Both numbers argue for comparing
+  state, not digests.
+- **WASM loads in a real browser from the consumer seat.** Headless Chrome
+  153.0.8010.12 over Playwright, page bundled from the installed tarballs: 8 bodies
+  after 40 steps, **0** console errors and **0** page errors (the listener was proved
+  live with a deliberate `console.error`), snapshot round-trip identical, and the
+  browser checksum `3398811672` equals the Node checksum for the same scene —
+  stronger than the declared `determinism: "same-runtime"` tier, which stays as
+  declared because it is the conservative claim.
+- Consumer typecheck under `strict` with `skipLibCheck: false`: **0** errors in
+  fourJS's own shipped declarations. The 69 errors seen with `"lib": ["ES2022"]` are
+  all third-party — `@dimforge/rapier{2,3}d-compat` needs `Symbol.dispose` — and go
+  to **0** with `"lib": ["ESNext", "DOM"]`.
+
 ### 2026-09-18 — dev tooling: size-limit 14 and five patch/minor bumps (#117)
 
 #### Changed

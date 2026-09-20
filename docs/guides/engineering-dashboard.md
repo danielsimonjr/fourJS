@@ -57,7 +57,7 @@ app.on("fixedUpdate", (time) => {
 Two solver facts to hold while tuning (both measured, recorded in MEMORY and
 the API docs):
 
-- On Rapier 0.19.3, `maxTorque` is a force-based **gain**, not a torque
+- On Rapier 0.20.0, `maxTorque` is a force-based **gain**, not a torque
   ceiling — if you modulate it, it becomes part of your loop gain. Hold it
   fixed and command velocity.
 - A velocity written after `world.addBody` reaches no solver; author initial

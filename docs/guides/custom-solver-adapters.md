@@ -50,7 +50,7 @@ readonly capabilities: PhysicsCapabilities = {
 ```
 
 Declare honestly. The engine's posture on missing features is _loud refusal
-with the measured reason_, not emulation — Rapier 0.19.3 exposes no joint
+with the measured reason_, not emulation — Rapier 0.20.0 exposes no joint
 reaction forces, so both adapters declare `reportsJointReactions = false` on
 their joint-access seam and breakable joints are refused; per-axis limits cannot form a cone, so a limited spherical joint is
 refused quoting the numbers.
@@ -111,10 +111,15 @@ demonstrates it across dimensions with a six-field kit.
 
 ## Honest state
 
-- Shipped: `Rapier2dAdapter`, `Rapier3dAdapter` (pinned `-compat@0.19.3`,
+- Shipped: `Rapier2dAdapter`, `Rapier3dAdapter` (pinned `-compat@0.20.0`,
   base64 wasm), verified bit-identical across dimensions on mirrored scenes.
-- Scaffold only: `physics-box2d`, `physics-soft` (§35) — package directories
-  with no implementation.
+- Scaffold only: `physics-box2d`, `physics-soft` (§35) — reserved stubs
+  (§102). Each package builds, publishes, and exports `PACKAGE_NAME` and
+  nothing else, so `fourJS/physics-box2d` and `fourJS/physics-soft` import
+  cleanly but register no solver: selecting `solver: "box2d"` fails with the
+  registry's "no physics solver is registered" message (§37), not with a
+  module error. Measured from a consumer seat 2026-09-19 (dogfood cycle 9):
+  **1 export each**, no `register*` function, in Node and in Chrome.
 - Known seam gaps: §32 sleep thresholds and §28 solver iterations are not
   yet exposed through the adapter interface (recorded TODOs).
 - Reference material: the transcribed Rapier type subset in
