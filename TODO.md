@@ -2655,6 +2655,24 @@ leak + `pointercancel`), `A-15` (unregistered components no longer dropped on sa
 - [x] §45 renderer-string ("auto") selection — **done 2026-08-07** (A-8/R-2/PH-19
       closure; the 2026-08-01 instance-injection deferral is retired, not reversed)
 
+### Flaky gate, caught 2026-09-20 - `smoothness.spec.ts` §106 mid-step frames
+
+- [ ] **`tests/browser/smoothness.spec.ts:869` ("§106: moving primitives render mid-step") failed once
+      and passed on re-run of the SAME commit.** First CI run on `ec60e2e`: received **1** mid-step frame
+      against `MINIMUM_MID_STEP_FRAMES`, 114 other browser tests passing; re-run of the identical commit:
+      green. The commit is provably incapable of causing it - its only source changes are an error-message
+      string in `render/src/renderer-registry.ts`, a message string in `diagnostics`, and a comment in
+      `physics/src/world.ts`; nothing in the interpolation or frame-timing path is touched.
+      **Filed rather than shrugged off, because a test that passes on retry is a defect with a longer fuse:**
+      it either measures something the runner cannot guarantee, or it has a real intermittent behind it, and
+      today nothing distinguishes those two. This suite has been stabilised twice before (both DONE
+      2026-09-06: the virtual-frame parity sampler, and the flaky-gate fix), so this is a RECURRENCE of a
+      known class rather than a first sighting.
+      **To close:** make the assertion measure what the test means - frames the app actually rendered
+      between fixed steps - rather than a count that depends on the runner's scheduling, or record a
+      measured floor with the evidence for it. Do not simply lower the threshold or add a retry: that
+      converts a signal into silence, which is what the two earlier fixes were careful to avoid.
+
 ### Cycle 9 residue (2026-09-19) — filed out of the dogfooding narrative so they are actionable
 
 Each of these was measured during dogfood cycle 9 and then judged **not** a defect, or left
