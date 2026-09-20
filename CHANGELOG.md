@@ -48,6 +48,7 @@ where it read as history.
   renderer stubs, `physics-rapier` for `physics-box2d`, and nowhere at all for `physics-soft`,
   which is stated plainly. The renderer stubs' existing measured paragraph from cycle 9 is kept,
   not duplicated.
+
 ### 2026-09-20 — dogfood cycles 9 and 10: the engine-side residue, fixed
 
 Four items that cycles 9 and 10 filed as "reported, not fixed". Each claim below was re-verified
