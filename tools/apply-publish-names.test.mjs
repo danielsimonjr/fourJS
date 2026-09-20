@@ -30,6 +30,7 @@ import {
   resolveWorkspaceRange,
   rewriteCode,
   rewriteManifest,
+  strippedOfComments,
 } from "./apply-publish-names.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -310,4 +311,39 @@ test("a staged package that carries CHANGELOG.md lists it in `files`, so npm pac
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
+});
+
+// The 2026-09-19 dogfood finding: a workspace name inside a TEMPLATE LITERAL is
+// invisible to `rewriteCode` (which matches `"` and `'` only, on purpose) and
+// was invisible to the staging residue check too. `strippedOfComments` is what
+// lets that check tell a runtime message from JSDoc prose.
+test("strippedOfComments keeps runtime strings and drops prose", () => {
+  const source = [
+    "/** A doc comment naming `@fourjs/math` in prose. */",
+    "const message = `§83: ${n} @fourjs/math object(s) were constructed`;",
+    "// a line comment about @fourjs/render",
+    "const ok = `§83: ${n} math object(s) were constructed`;",
+  ].join("\n");
+  const offenders = strippedOfComments(source)
+    .split("\n")
+    .filter((line) => /@fourjs\//.test(line));
+  assert.equal(
+    offenders.length,
+    1,
+    "only the template-literal message remains",
+  );
+  assert.match(offenders[0], /object\(s\)/);
+  // Control: without the strip, the same scan blames all three lines, which is
+  // why the check could not simply widen its quote class.
+  assert.equal(
+    source.split("\n").filter((line) => /@fourjs\//.test(line)).length,
+    3,
+  );
+  // Control: a file naming only PUBLISHED packages yields nothing.
+  assert.equal(
+    strippedOfComments('const x = "@danielsimonjr/fourjs-math";')
+      .split("\n")
+      .filter((line) => /@fourjs\//.test(line)).length,
+    0,
+  );
 });

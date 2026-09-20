@@ -96,6 +96,62 @@ specification; until then, entries are grouped by date under **Unreleased**.
   fourJS's own shipped declarations. The 69 errors seen with `"lib": ["ES2022"]` are
   all third-party — `@dimforge/rapier{2,3}d-compat` needs `Symbol.dispose` — and go
   to **0** with `"lib": ["ESNext", "DOM"]`.
+### 2026-09-19 — dogfood cycle 9c: a dev warning shipped a workspace package name, and two READMEs described a dead surface
+
+#### Fixed
+
+- **A §83 development warning named `@fourjs/math` — a package a consumer cannot install.**
+  `auditFrameAllocations` built its message as `§83: ${n} @fourjs/math object(s) were
+constructed …` and `devWarnOnce`'d it. A consumer installs the published names, so that
+  string told them about a package that does not exist for them. Measured from a consumer
+  seat against the staged, packed, installed packages: the message reached both Node and a
+  real Chrome frame, and `import("@fourjs/math")` from that seat fails with
+  `ERR_MODULE_NOT_FOUND`. The sibling `warnPerFrameAllocations` in `dev-warnings.ts` had
+  always worded the same sentence without a package name; `allocation-audit.ts` now matches
+  it, and its unit test asserts the absence rather than the old text. Same defect class as
+  the `@fourjs/render-webgl` finding of 2026-09-13.
+- **`tools/apply-publish-names.mjs` could not see that class of defect, which is why it
+  recurred.** `rewriteCode`'s `SCOPED_STRING` matches `"` and `'` only — deliberately, since
+  almost every backticked `@fourjs/x` in a staged file is JSDoc prose about a package — and
+  the staging residue check used the same quote class. A template literal is both how prose
+  is written and how a runtime message is written, so the one real offender hid among the
+  prose. The residue check now strips comments first (`strippedOfComments`) and fails a
+  staging run on any workspace name left outside one. Measured over a full staging run: 344
+  shipped `.js` files, exactly one offending line before the fix and none after, with the
+  control scan still finding 357 published-name occurrences. The new check caught the live
+  defect in `publish-names:test` before the source fix landed.
+
+#### Changed
+
+- **`packages/materials/README.md` described a package three shipments out of date.** Its
+  "Staged / not yet implemented" section still listed `StandardMaterial`, lighting and the
+  node-material shader system, which shipped on 2026-08-08, 2026-08-04 and 2026-08-28; its
+  "What's here" listed 2 of the subpath's 26 exports. Measured from a consumer seat: the
+  `fourJS/materials` subpath resolves **26** exports, and an `UnlitMaterial`, a `LitMaterial`
+  and a `StandardMaterial` drew **20,128**, **14,923** and **6,636** pixels in one WebGL 2
+  frame in Chrome. `docs/guides/materials-and-render-graph.md` had already been corrected;
+  this file had not.
+- **`packages/diagnostics/README.md` called `app.stats.*` "not implemented".** It shipped on
+  2026-08-08 with the dev/production build split. Measured in the same Chrome frame:
+  `app.stats.drawCalls` **4** and `app.stats.triangles` **4620**, with the control that the
+  same `Application` built without `stats: true` reports `null`. The README now says what is
+  genuinely absent — a drawn overlay widget — and its "What's here" lists the §83/§85
+  warning, validation and disposal-tracking family and the §84 frame-statistics recorders,
+  roughly thirty exports it never mentioned.
+
+#### Verified, no change needed
+
+- **`packages/geometry` is clean.** Every invariant its module headers promise holds from a
+  consumer seat: `boxGeometry` gives 24 vertices / 36 indices with bounds exactly ±half, one
+  shared outward normal per face on 6 of 6 faces and the whole `[0,1]²` uv on 6 of 6 faces;
+  normals are unit length on every 3D builder (max `||n| − 1|` = 0 across box, sphere,
+  cylinder, cone, capsule and torus); winding agrees with the authored normals on every
+  non-degenerate triangle (box 12/12, cylinder 96/96, torus 1024/1024, sphere 960/960,
+  capsule 1024/1024, cone 48/48); uvs stay inside `[0,1]`; and `v = 0` at the −Y end on all
+  four surfaces of revolution. The zero-area triangles at a sphere's poles and a cone's apex
+  (32 of 1024 and 24 of 72) are the documented, deliberate cost of the shared grid stitcher,
+  named in `primitive-support.ts` and in both builders' headers. Two builds of the same
+  parameters are byte-identical (§33) and a changed parameter differs.
 
 ### 2026-09-18 — dev tooling: size-limit 14 and five patch/minor bumps (#117)
 

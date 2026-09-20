@@ -90,8 +90,16 @@ export function auditFrameAllocations(
   }
 
   const label = options.label ?? "this frame";
+  // Plain "math object(s)": a runtime message must never name a WORKSPACE
+  // package. A consumer installs the published names, so the workspace name of
+  // the math package is one they cannot install — and this string reached them,
+  // measured 2026-09-19 from a consumer seat in Node and in Chrome, where
+  // importing that workspace name fails with ERR_MODULE_NOT_FOUND. Same defect
+  // class as the render-webgl finding of 2026-09-13. The sibling
+  // `warnPerFrameAllocations` in `dev-warnings.ts` already words it this way,
+  // and `tools/apply-publish-names.mjs` now fails a staging run that reverts it.
   const message =
-    `§83: ${String(constructed)} @fourjs/math object(s) were constructed during ` +
+    `§83: ${String(constructed)} math object(s) were constructed during ` +
     `"${label}" (threshold ${String(threshold)}); steady-state per-frame code ` +
     "should reuse out-parameters and pooled buffers (§7b).";
 

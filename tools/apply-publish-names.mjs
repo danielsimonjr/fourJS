@@ -204,6 +204,18 @@ const BARE_SPECIFIER =
   /(\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)(["'])fourJS((?:\/[a-z0-9-]+)*)\2/g;
 
 /**
+ * `text` with its block and line comments removed, so a check can tell a
+ * runtime string from JSDoc prose. `tsc` emits readable, non-minified ESM, so a
+ * regex pass is enough here; it is used only by the staging residue check
+ * below, never to produce shipped bytes.
+ */
+export function strippedOfComments(text) {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:'"`\\])\/\/[^\n]*/g, "$1");
+}
+
+/**
  * Rewrites workspace names inside emitted code. Returns the new text and the
  * number of substitutions, which the CLI reports so a release cannot silently
  * stage a tree where nothing was renamed.
@@ -343,6 +355,24 @@ function stagePackage(root, pkg, rewritten, outDir) {
       problems.push(
         `${relative(outDir, file)}: a quoted "@fourjs/" name survives in the staged file`,
       );
+    }
+    // The same failure, one quote character away. `rewriteCode` deliberately
+    // leaves backticks alone, because almost every backticked `@fourjs/x` in a
+    // staged file is JSDoc prose *about* a package and rewriting prose is not
+    // this tool's job. But a template literal is also how a runtime MESSAGE is
+    // written, and a message that names a workspace package tells a user to
+    // install something that does not exist for them — found in the wild on
+    // 2026-09-13 (`@fourjs/render-webgl`) and again on 2026-09-19
+    // (`@fourjs/math`, in `diagnostics/allocation-audit.ts`), which the check
+    // above could not see. Stripping comments first separates the two cases:
+    // measured over the 344 shipped `.js` files of a full staging run, it found
+    // exactly one line — the real defect — and no prose false positives.
+    for (const line of strippedOfComments(text).split("\n")) {
+      if (/@fourjs\//.test(line)) {
+        problems.push(
+          `${relative(outDir, file)}: a workspace "@fourjs/" name survives OUTSIDE a comment — ${line.trim().slice(0, 120)}`,
+        );
+      }
     }
   }
   return { problems, rewrites };
