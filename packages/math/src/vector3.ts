@@ -100,12 +100,18 @@ export class Vector3 {
    * Right-handed cross product, mutating this vector to `this × v` (this
    * vector is the left operand). Reading the result requires the temporaries
    * below because two components are overwritten before the third is read.
+   *
+   * Aliasing-safe: `v` may be `this`. **Both** operands are read into scalars
+   * first, not just the receiver — reading `v` live while writing `this` is
+   * the whole bug when the two are the same object, and `a.cross(a)` must be
+   * the zero vector.
    */
   cross(v: Vector3): this {
     const { x, y, z } = this;
-    this.x = y * v.z - z * v.y;
-    this.y = z * v.x - x * v.z;
-    this.z = x * v.y - y * v.x;
+    const { x: vx, y: vy, z: vz } = v;
+    this.x = y * vz - z * vy;
+    this.y = z * vx - x * vz;
+    this.z = x * vy - y * vx;
     this.onChanged?.();
     return this;
   }
@@ -127,6 +133,27 @@ export class Vector3 {
    * leaves it at `(0, 0, 0)` rather than producing `NaN` or throwing — there is
    * no meaningful direction to pick, and poisoning a hot path with `NaN` is
    * worse than a no-op. The change hook still fires.
+   *
+   * Range behaviour — the guard below tests the **squared** length, so three
+   * ranges leave this vector non-unit and none of them reports an error
+   * (measured from a consumer seat, dogfood cycle 10):
+   *
+   * - **Underflow.** A vector whose squared length rounds to `0` — every
+   *   component below about `1.57e-162` — takes the zero-length branch and is
+   *   left unchanged, non-unit. Just above that bound the square is denormal
+   *   and has lost most of its mantissa, so the result can be as far off as
+   *   `0.707` in length.
+   * - **Overflow.** A component at or above `1.3407807929942597e+154` squares
+   *   to `Infinity`, so `1 / Math.sqrt(lengthSquared)` is `0` and every
+   *   component is written as `0`: a large finite vector normalizes to the
+   *   **zero vector**.
+   * - **Non-finite input.** An infinite component gives `NaN` in that slot and
+   *   `0` in the others. A `NaN` component leaves the vector untouched,
+   *   because `NaN > 0` is false. The zero-length promise above covers a zero
+   *   input, not a non-finite one — `normalize()` does produce `NaN` here.
+   *
+   * Nothing clamps and nothing throws (§85, §61): a hot path that can see such
+   * magnitudes scales into range before normalizing.
    */
   normalize(): this {
     const lengthSquared = this.x * this.x + this.y * this.y + this.z * this.z;

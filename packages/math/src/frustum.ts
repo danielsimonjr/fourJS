@@ -1,3 +1,4 @@
+import { noteConstruction } from "./alloc-counter.js";
 import type { DepthRange, Matrix4 } from "./matrix4.js";
 import type { Vector3 } from "./vector3.js";
 
@@ -72,6 +73,21 @@ export class Frustum {
    * documentation. The array itself is never replaced, only rewritten.
    */
   readonly planes: Float64Array = new Float64Array(24);
+
+  /**
+   * Reports to the §83 allocation audit like every other math constructor.
+   *
+   * Without this the counter has a blind spot exactly the shape of this class:
+   * a `new Frustum()` on a per-view path allocates a `Float64Array(24)` and
+   * `constructionCount()` stays flat, so the instrument that exists to catch
+   * per-frame allocation would pass the one case it was pointed at. A gauge
+   * that cannot move is dead, not stable. Every `Frustum` the engine owns is a
+   * module-level or per-renderer singleton, so this adds construction events at
+   * setup time and none inside a step.
+   */
+  constructor() {
+    noteConstruction();
+  }
 
   /**
    * Extracts the six planes from `viewProjection` (`projection · view`) and

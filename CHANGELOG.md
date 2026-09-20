@@ -8,6 +8,84 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-09-20 — dogfood cycle 10A: `@fourjs/math` measured from a consumer seat
+
+Everything below was measured against **packed, published-name tarballs** (`npm pack` of the
+`apply-publish-names` staging tree) installed into a project outside the workspace, importing only
+through the umbrella subpath `@danielsimonjr/fourjs/math`. Control on the seat: **0** `@fourjs/*`
+import or export specifiers in the installed `.js`/`.d.ts`, against **698** published-name ones,
+and **0** `@fourjs/*` keys in any installed manifest.
+
+#### Fixed
+
+- **`Vector3.cross` was not aliasing-safe** (`packages/math/src/vector3.ts`). It read the receiver
+  into scalars and the argument live, so when the two were the same object the second and third
+  components were computed from values the first two assignments had already overwritten:
+  `a.cross(a)` on `(1, 2, 3)` returned **`(0, -3, -3)`** where the cross product of any vector
+  with itself is the zero vector. Both operands are now read into scalars. The method's own
+  comment already claimed the temporaries were there for this reason — it had snapshotted the
+  wrong side. Non-aliased results are unchanged: `(1,2,3) × (4,5,6)` is `(-3, 6, -3)` before and
+  after, and a 38,336-byte cross-engine determinism trace that exercises `cross` keeps the
+  identical FNV-1a checksum `8ae80b30`. The existing "zero for parallel vectors" assertion missed
+  this because it wrote `a.clone().cross(a)`; a genuinely aliased regression test now sits beside
+  it.
+
+- **`Frustum` was the one math constructor invisible to the §83 allocation audit**
+  (`packages/math/src/frustum.ts`). `alloc-counter.ts` states that every math constructor reports
+  itself, and seven of the eight do: `new Frustum()` moved `constructionCount()` by **0** where
+  every other class moved it by **1**, although it allocates a `Float64Array(24)`. A per-view
+  `new Frustum()` was therefore the one allocation the instrument built to catch that kind of
+  allocation could not see. The constructor now calls `noteConstruction()`. Every `Frustum` the
+  engine owns is a module-level or per-renderer singleton, so this adds construction events at
+  setup and none inside a step: `render` 760, `render-webgl` 772, `render-webgpu` 567 and
+  `diagnostics` 343 tests all still pass, and `setFromViewProjection` remains allocation-free.
+
+#### Changed
+
+- **`normalize()` now documents what it does outside the finite middle** (`Vector2`, `Vector3`,
+  `Vector4`, `Quaternion`). All four guard on `lengthSquared > 0`, a test on the **square**, and
+  all four promised to return a zero vector "rather than producing `NaN`". Measured, three ranges
+  break that promise silently: a component at or above **1.3407807929942597e+154** squares to
+  `Infinity`, so the reciprocal is `0` and a large finite vector normalizes to the **zero
+  vector**; a squared length that underflows (components below about **1.5717277847026288e-162**)
+  takes the zero-length branch and leaves a non-unit vector unchanged, and just above that bound
+  the denormal square has lost so much mantissa that `normalize()` returns a length of
+  **0.7071068518972258** instead of 1; an infinite component writes `NaN` into that slot and `0`
+  into the others. `Quaternion.normalize` additionally resets to the identity on a `NaN`
+  component, discarding the value. Behaviour is unchanged — only the documentation, because
+  clamping or throwing on a per-frame path is a design decision, not a doc fix.
+
+- **`packages/math/README.md` no longer names an export that does not exist.** It listed
+  `noteConstruction` beside `constructionCount` and `resetConstructionCount` as the package's
+  allocation-counter trio; the barrel exports **19** names and `noteConstruction` is not one of
+  them — it is internal on purpose, so a consumer cannot move the gauge. The README also listed
+  only `ColorRGBA` for a color surface that ships `ColorRGB`, `ColorSpace`, both transfer
+  functions with their `RGB`/`RGBA` in-place forms, and `parseColor`/`parseColorRGB`; omitted
+  `Rectangle2` entirely; and described an "`out?` optional-allocation policy" when every `out` on
+  the surface is **required** except `parseColor`/`parseColorRGB`. All corrected, and the package
+  ships **0** static factories, which the §7b wording implied it had.
+
+- **`packages/math/README.md` records what §33 determinism actually buys, measured across two
+  runtimes.** The same trace module, imported unchanged by Node 24.19.0 and by a real Chrome
+  153.0.8010.48 (Playwright, `channel: "chrome"`), values compared as raw IEEE-754 bit patterns:
+  the algebraic trace (38,336 bytes) is **bit-identical**, FNV-1a `8ae80b30` on both; the
+  transcendental trace (34,258 bytes) is **not**, `e653d62a` on Node against `a3b63ba9` in Chrome.
+  Per operation, the three that differ are `Quaternion.setFromAxisAngle` (`Math.sin`/`cos`),
+  `Quaternion.slerp` (`Math.acos`/`sin`) and `Matrix4.setPerspective` (`Math.tan`); `normalize`,
+  `length`, `cross`, `invert`, `determinant`, `setOrthographic`, `rotateVector3` and the whole
+  `Frustum` path agree, because they use `+ - * /` and `Math.sqrt` only and `Math.sqrt` is
+  correctly rounded. So the package is `same-runtime` exactly as §33 declares, and those three
+  operations are precisely what stops it being `same-platform`. Both traces repeated
+  byte-for-byte within each runtime, and a deliberately perturbed trace produced a different
+  checksum, so the comparison can fail.
+
+- **`docs/SPECIFICATION.md` §3.1 package responsibilities: `math` does not own curves.** The line
+  listed "curves" among the math package's responsibilities; no curve type is exported from it,
+  and none exists in its source. The path model is `geometry` (§52) and trajectories are `motion`
+  (§13). The same line omitted the frustum-cull primitive (§87) and the §60a colour tuples and
+  transfer functions, which do live there. `bun run check-spec` is OK (129 sections, 103 code
+  blocks).
+
 ### 2026-09-19 — dogfood cycle 9A: the §62 renderer seam holds for a backend fourJS does not ship
 
 #### Fixed

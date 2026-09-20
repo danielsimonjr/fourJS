@@ -13,7 +13,13 @@
 
 import { describe, expect, it } from "vitest";
 
-import { Frustum, Matrix4, Vector3 } from "../src/index.js";
+import {
+  constructionCount,
+  Frustum,
+  Matrix4,
+  resetConstructionCount,
+  Vector3,
+} from "../src/index.js";
 
 /** The six planes as `[nx, ny, nz, d]` tuples, for readable assertions. */
 function planesOf(frustum: Frustum): number[][] {
@@ -242,5 +248,23 @@ describe("Frustum — allocation and reuse (§7b, plan D7)", () => {
   it("returns itself, so extraction chains", () => {
     const frustum = new Frustum();
     expect(frustum.setFromViewProjection(new Matrix4())).toBe(frustum);
+  });
+
+  it("reports its own construction to the §83 counter, and rebuilds do not", () => {
+    // Dogfood cycle 10: this constructor was the one math constructor that did
+    // not call `noteConstruction`, so a per-view `new Frustum()` — which does
+    // allocate a `Float64Array(24)` — was invisible to the audit that exists to
+    // catch exactly that. A gauge that cannot move is dead, not stable.
+    resetConstructionCount();
+    const frustum = new Frustum();
+    expect(constructionCount()).toBe(1);
+
+    // the build itself stays allocation-free (the Matrix4 argument is the only
+    // other construction, so the delta is 1, not 2)
+    resetConstructionCount();
+    const viewProjection = new Matrix4();
+    frustum.setFromViewProjection(viewProjection);
+    frustum.setFromViewProjection(viewProjection);
+    expect(constructionCount()).toBe(1);
   });
 });

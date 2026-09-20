@@ -296,6 +296,21 @@ export class Quaternion {
    * which leaves the zero vector alone — the zero *vector* is a legitimate
    * value downstream, the zero *quaternion* never is. The change hook fires in
    * either case.
+   *
+   * Range behaviour — the guard below tests the **squared** length, so three
+   * ranges do not produce a unit quaternion and none of them reports an error
+   * (measured from a consumer seat, dogfood cycle 10):
+   *
+   * - **Underflow.** A squared length that rounds to `0` (components below
+   *   about `1.57e-162`) is read as zero length, so the quaternion is **reset
+   *   to the identity** — a tiny but real rotation is discarded silently.
+   * - **Overflow.** A component at or above `1.3407807929942597e+154` squares
+   *   to `Infinity`, so the reciprocal is `0` and every component becomes `0`,
+   *   including `w`. Unlike the zero-length branch, this leaves the **zero**
+   *   quaternion rather than the identity.
+   * - **Non-finite input.** A `NaN` component makes `lengthSquared > 0` false,
+   *   so the quaternion is reset to the identity; an infinite component gives
+   *   `NaN` in that slot and `0` in the others.
    */
   normalize(): this {
     const lengthSquared =

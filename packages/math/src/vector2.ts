@@ -111,6 +111,20 @@ export class Vector2 {
    * producing `NaN` or throwing. There is no meaningful direction to pick, and
    * silently poisoning a hot path with `NaN` is worse than a no-op. The change
    * hook still fires, because the method completed as a mutator.
+   *
+   * Range behaviour — the guard below tests the **squared** length, so three
+   * ranges leave this vector non-unit and none of them reports an error
+   * (measured from a consumer seat, dogfood cycle 10); `Vector3.normalize`
+   * documents the same three with numbers:
+   *
+   * - **Underflow.** A squared length that rounds to `0` (components below
+   *   about `1.57e-162`) takes the zero-length branch, so the vector is left
+   *   unchanged and non-unit.
+   * - **Overflow.** A component at or above `1.3407807929942597e+154` squares
+   *   to `Infinity`, so the reciprocal is `0` and this vector becomes `(0, 0)`.
+   * - **Non-finite input.** An infinite component gives `NaN` in that slot and
+   *   `0` in the other; a `NaN` component leaves the vector untouched, because
+   *   `NaN > 0` is false.
    */
   normalize(): this {
     const lengthSquared = this.x * this.x + this.y * this.y;

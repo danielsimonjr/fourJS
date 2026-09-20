@@ -3496,7 +3496,10 @@ Responsibilities of the packages not detailed in §99-102:
 
 - `core`: eventing (§6b), component model (§6a), unit system (§40), plugin host
   (§81), error model (§89), lifecycle primitives;
-- `math`: vectors, matrices, quaternions, curves, math conventions (§7b);
+- `math`: vectors, matrices, quaternions, the frustum-cull primitive (§87), the
+  colour tuple types and sRGB transfer functions (§60a), math conventions (§7b).
+  Curves are **not** here: the path model is `geometry` (§52) and trajectories are
+  `motion` (§13);
 - `scene`: nodes, transforms, cameras (§47), viewports (§48), layers, queries, space
   modes, serialization hooks;
 - `geometry`: 2D and 3D geometry, path model, tessellation module (§52);

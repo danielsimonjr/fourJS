@@ -200,6 +200,20 @@ describe("Vector3", () => {
     ).toBe(true);
   });
 
+  it("cross is aliasing-safe: the argument may be the receiver", () => {
+    // Every assertion above clones first, so none of them passes the SAME
+    // object as both operands — which is exactly the case that was wrong
+    // (dogfood cycle 10: `a.cross(a)` on `(1, 2, 3)` returned `(0, -3, -3)`
+    // because the receiver was read into scalars and the argument was not).
+    const a = new Vector3(1, 2, 3);
+    expect(a.cross(a)).toBe(a);
+    expect([a.x, a.y, a.z]).toEqual([0, 0, 0]);
+
+    // and the non-aliased result is unchanged by the fix
+    const b = new Vector3(1, 2, 3).cross(new Vector3(4, 5, 6));
+    expect([b.x, b.y, b.z]).toEqual([-3, 6, -3]);
+  });
+
   it("cross result is perpendicular to both inputs", () => {
     const a = new Vector3(1, 2, 3);
     const b = new Vector3(-4, 5, 6);
