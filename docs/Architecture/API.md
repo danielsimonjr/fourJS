@@ -440,7 +440,7 @@ Worked mechanisms: `examples/mechanism` (motorized slider-crank with limits),
 
 | Symbol                                                                 | Contract                                                                                                                                               |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Rapier2dAdapter` / `Rapier3dAdapter`                                  | The shipped §37 adapters over Rapier 0.19.3 (`-compat` wasm, decoded inside `initialize()`). Swapping the adapter is the only line that changes (§20). |
+| `Rapier2dAdapter` / `Rapier3dAdapter`                                  | The shipped §37 adapters over Rapier 0.20.0 (`-compat` wasm, decoded inside `initialize()`). Swapping the adapter is the only line that changes (§20). |
 | `PhysicsSolverAdapter` / `PhysicsWorldAdapter` (`four/physics`)        | The contract a new solver implements: lifecycle, body/collider/joint registration, step, queries, `drainEvents`, snapshots.                            |
 | `PhysicsCapabilities`                                                  | What the adapter honestly declares (e.g. `reportsJointReactions: false` on Rapier — breakable joints are refused there).                               |
 | `SolverBodyAccess` / `SolverJointAccess` (`four/physics`)              | Required engine seams beyond §37's sketch: per-handle transform/velocity/force/kinematic accessors and live joint limit/motor commands.                |
