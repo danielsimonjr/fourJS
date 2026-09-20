@@ -31,7 +31,10 @@ describe("auditFrameAllocations", () => {
     const report = auditFrameAllocations(2, 5, { label: "simulate" });
     expect(report.excessive).toBe(true);
     expect(report.constructed).toBe(3);
-    expect(report.message).toContain("3 @fourjs/math object(s)");
+    expect(report.message).toContain("3 math object(s)");
+    // A runtime message must never name a workspace package a consumer
+    // cannot install (2026-09-19 dogfood finding).
+    expect(report.message).not.toContain("@fourjs/");
     expect(warn).toHaveBeenCalledTimes(1);
     auditFrameAllocations(0, 9, { label: "simulate" });
     expect(warn).toHaveBeenCalledTimes(1);
