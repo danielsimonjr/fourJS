@@ -18,7 +18,22 @@
  * an application writing its own renderer backend against `@fourjs/render`.)
  */
 
-/** A resource whose lifetime is owned explicitly (§83). */
+/**
+ * A resource whose lifetime is owned explicitly (§83).
+ *
+ * **Not TC39's `Disposable`.** The member is the plain `dispose()` below, never
+ * `[Symbol.dispose]()`. Implementing both is harmless; implementing only
+ * `[Symbol.dispose]` does not satisfy this interface, and {@link disposeAll}
+ * then throws `TypeError: item.dispose is not a function` — in a minified
+ * build, with the parameter renamed and no §83 marker to search for.
+ *
+ * The warning is repeated on this symbol rather than left in the module header
+ * above, because the header does not travel: measured 2026-09-19 from an
+ * installed tarball with the TypeScript API, the documentation attached to
+ * this symbol — what an editor shows a consumer who hovers `Disposable` — was
+ * the one-line summary alone. A collision note one file away from the name it
+ * is about is a note nobody reads.
+ */
 export interface Disposable {
   dispose(): void;
 }
@@ -31,7 +46,17 @@ export interface Disposable {
  *
  * Every item is disposed even if an earlier one throws — a failed dispose must
  * not leak the resources behind it (§83). If any `dispose()` threw, the first
- * thrown value is re-thrown after the pass completes.
+ * thrown value is re-thrown after the pass completes. "First" is first **in
+ * reverse order**, so for `[a, b, c]` where `b` and `c` both throw, the value
+ * re-thrown is `c`'s.
+ *
+ * An entry that is not disposable at all — `null`, `undefined`, or an object
+ * carrying only `[Symbol.dispose]` — is treated exactly like a throwing
+ * disposer: the `TypeError` is captured, every remaining item is still
+ * disposed, and the `TypeError` is re-thrown at the end. Calling this twice on
+ * the same item calls `dispose()` twice; nothing here deduplicates, so an
+ * implementation that is not idempotent must guard itself. All four behaviours
+ * measured 2026-09-19 from an installed tarball.
  */
 export function disposeAll(items: Iterable<Disposable>): void {
   const ordered = [...items].reverse();

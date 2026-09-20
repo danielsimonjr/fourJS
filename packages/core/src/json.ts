@@ -50,8 +50,20 @@ export type JsonValue =
  *
  * @param value the value to validate and copy
  * @param path a dotted path used in error messages, e.g. `"metadata"`
+ * The nesting ceiling is **fixed**, not an option: this function takes no
+ * limits argument, so a caller cannot raise or disable it. The refusal's
+ * `context.limitName` reads `"maximumDepth"` to match `parseUntrustedJson`'s
+ * vocabulary — it names the *kind* of limit, not a knob reachable from here.
+ *
  * @returns a frozen deep copy
- * @throws TypeError if the value is not representable JSON
+ * @throws TypeError if the value is not representable JSON — a `Date`, a
+ * `Map`, `undefined`, a function, a non-finite number, or a `__proto__` own key
+ * @throws FourError `UNTRUSTED_INPUT_REJECTED` if the value nests deeper than
+ * the fixed ceiling. **This one is not a `TypeError`**, so `catch (e) { if (e
+ * instanceof TypeError) … }` does not cover it; use `isFourError` or
+ * catch both. (Measured 2026-09-19 from an installed tarball: the depth refusal
+ * reports `instanceof TypeError === false`, while the `Date` refusal above
+ * reports `true`.)
  */
 export function cloneJsonValue(value: unknown, path = "value"): JsonValue {
   return cloneJson(value, path, new Set<object>(), 1);

@@ -129,7 +129,14 @@ test("rewriteCode renames quoted workspace names in emitted code", () => {
   ].join("\n");
   const { text, count } = rewriteCode(source);
   assert.equal(count, 5);
-  assert.ok(!/["']@four\//.test(text));
+  // `@fourjs/` — not `@four/`, which is the scope this assertion used to name
+  // and which no source in this repository contains, so the check passed for
+  // every possible input including a completely un-rewritten file. Measured
+  // 2026-09-19: `/["']@four\//.test('import x from "@fourjs/scene";')` is
+  // `false`. Backticks are included because a template literal is how every
+  // runtime message is written, and a workspace name in one shipped to a
+  // consumer twice (2026-09-13, 2026-09-19) past a quote-only check.
+  assert.ok(!/["'`]@fourjs\//.test(text));
   assert.ok(text.includes(`from "${PUBLISH_PREFIX}scene"`));
   assert.ok(text.includes(`import("${PUBLISH_UMBRELLA}")`));
   assert.ok(text.includes(`PACKAGE_NAME = "${PUBLISH_PREFIX}core"`));
