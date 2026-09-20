@@ -10,9 +10,13 @@ node.transformAuthority = "kinematic";
 
 The authorities are `"manual"` (application code, the default), `"animation"`,
 `"kinematic"`, `"physics"`, `"blended"`, `"constraint"`, and `"network"`.
-A system that is asked to write a transform it does not own **refuses the
-write and warns once** (`warnAuthorityConflict` in `four/scene`) — conflicts
-are loud, never silent overwrites.
+A **system** that is asked to write a transform it does not own **refuses the
+write and warns once** (`warnAuthorityConflict` in `four/scene`) — a conflict
+between two systems is loud, never a silent overwrite.
+
+Read that sentence exactly: it is about systems. See
+[what authority does not cover](#what-authority-does-not-cover) before relying
+on it.
 
 ## Declaring owners
 
@@ -28,6 +32,36 @@ uiRoot.transformAuthority = "manual"; // the application places the root panel
 UI layout writes children under `"constraint"` (§74); `"network"` is reserved
 for replicated state. Render interpolation (§43) is **not** an authority — it
 never writes transforms back, it only affects what is drawn.
+
+## What authority does not cover
+
+Enforcement lives in the **writing systems**, not in `Node` or `Transform`:
+`Node` records ownership and systems honour it (`Node.transformAuthority`).
+Two consequences are easy to read the wrong way round, so they are stated
+here rather than left to be discovered:
+
+1. **A direct application write is never refused and never warns**, whoever
+   owns the node. Assign `"physics"` to a node, then write
+   `node.position.set(…)` from your own code, and the write lands — the owning
+   system simply carries on from the value you wrote. Measured from a consumer
+   seat: a `"kinematic"`-owned node at `x = 0.1667` after ten fixed steps,
+   written to `x = 999`, was at `x = 999.0167` one step later, with **zero**
+   warnings. The check runs in the writer, and your code is not one of the
+   writers the engine can see. This is the mirror of the case that _does_
+   warn: a system writing a node the application owns (`"manual"`) is refused
+   and warns, because there the writer is a system.
+
+   So the rule "one owner per node" is a **contract you keep**, not an
+   invariant the engine can enforce against you. If your application needs to
+   write a node a system owns, do the handover below rather than writing
+   through it.
+
+2. **Authority is per node and per _local_ transform.** An ancestor's
+   transform still composes into a system-owned node's world pose, and no
+   check fires: a `"kinematic"`-owned child at local `x = 1.0` under a parent
+   moved to `x = 100` resolves to world `x = 101`, silently and correctly.
+   Authority says who writes _this node's_ local transform; it says nothing
+   about where the node ends up in the world.
 
 ## Handovers: the drag pattern
 
@@ -125,6 +159,8 @@ cycle and measures the per-step displacement at each switch.
 4. Render interpolation never feeds back into simulation state.
 5. A refused write warns once per conflict — treat any authority warning in
    the console as a bug in your scene wiring, not as noise.
+6. Silence is not proof of a single owner: only **system** writes are checked.
+   Your own writes, and every ancestor transform, are outside the check.
 
 ## Cross-references
 
