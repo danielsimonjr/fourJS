@@ -30,6 +30,39 @@ readable; never delete the pointer itself.
 
 ## Decisions
 
+- **2026-09-19 — Dogfood cycle 9: the seven packages no cycle had
+  touched — `render-canvas`, `render-svg`, `physics-box2d`,
+  `physics-soft`, `geometry`, `materials`, `diagnostics`.** Three agents,
+  consumer seat through the umbrella subpaths only, Node + Chrome.
+  **The premise was wrong and that was the finding: four of the seven are
+  reserved stubs** — one source line each, **1 export apiece** measured from
+  installed tarballs. So there is no canvas/SVG renderer to swap to and no
+  box2d/soft solver to run §33/§34 against; both experiments were re-aimed,
+  not faked. Renderer seam: both backends written from the consumer seat and
+  measured (Canvas **35,851 lit px** vs a 0-px control; SVG **83 elements** vs
+  a 1-element control; the two agree to **1 px in 230,400**), and the swap is
+  **3 lines, not cycle 3c's 2**, because Canvas 2D and SVG do not share
+  `HTMLCanvasElement`. Solvers: the battery ran against Rapier as a harness
+  proof — §33 byte-identical over full state, §34 **7351 B** snapshot restored
+  byte-identical — and **two controls failed first** (the scene was at rest at
+  the tail, so "equal" held for the wrong reason). A 1e-7 m divergence moves
+  the state but not `checksum()`: compare state, not digests. `geometry` was
+  the only surface clean in both engine and docs (winding **0 disagreements**
+  over 3,198 triangles; max `‖n‖−1` = **0**). `materials` proved through a real
+  renderer (Lambert ramp **33→255**; control: no standard pipeline → **0 px**).
+  **ENGINE defect, a RECURRENCE of 2026-09-13's class:** `auditFrameAllocations`
+  shipped `@fourjs/math` in a runtime warning. Root cause was the tooling —
+  `apply-publish-names.mjs` matched `"`/`'` only, so a **template literal** passed
+  both the rewriter and its own guard. Fixed at both levels; the new
+  comment-stripping guard measures **1 true positive, 0 false positives** over
+  344 shipped files and caught the live defect before the source fix landed.
+  Review before push found cycle 9B's Rapier version fix **incomplete** — five
+  more stale references in `docs/Architecture`, swept; history left alone — and
+  re-checked the reaction-getter claim on 0.20.0 before propagating the version,
+  after a first check read an 87-byte re-export and wrongly returned "no
+  matches". Standing: next cycle picks a new surface; the stubs need re-doing
+  only when one ships an implementation.
+
 - **2026-09-16 — Dogfood cycle 8: `motion` + `input`, the two packages
   never dogfooded.** Consumer seat through the umbrella subpaths only
   (`fourJS/motion` 100 exports, `fourJS/input` 16) — never `src/`.

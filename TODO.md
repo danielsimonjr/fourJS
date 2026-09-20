@@ -1063,6 +1063,86 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       trajectory classes have **zero** `docs/guides/` coverage — a coverage gap rather than a
       defect, since the package READMEs and TypeDoc do cover them, and no guide teaches a wrong
       call about them. Standing: next cycle picks a new surface, not motion or input.
+      **Cycle 9 (2026-09-19, three agents) — the seven packages no cycle had touched:
+      `render-canvas`, `render-svg`, `physics-box2d`, `physics-soft`, `geometry`,
+      `materials`, `diagnostics`. The cycle's premise was wrong, and finding that out
+      was most of its value.** Four of the seven — both renderer backends and both
+      extra solvers — are **reserved stubs**: one source line each, exporting only
+      `PACKAGE_NAME`, measured from installed tarballs as **1 export apiece** in Node
+      and in Chrome. So the two experiments the brief asked for could not run as
+      written: there is no canvas/SVG renderer to swap to, and no box2d/soft solver to
+      run §33/§34 against. Neither was faked; both were re-aimed and the substitution
+      is stated in each entry below.
+      **Renderer seam (`render-canvas`, `render-svg`).** With nothing to swap to, both
+      backends were **written from the consumer seat** against the published interface
+      (~120 lines each, umbrella subpaths only) and measured: Canvas 2D **35,851 lit
+      px** / 3 draw calls / 82 triangles against a meshes-removed control of **0 px**;
+      SVG **83 elements** (1 `<rect>` + 82 `<polygon>`) against an emptied-scene control
+      of 1 element; the two backends draw the same picture to **1 px in 230,400**
+      (0.0004%), the differing 1,209 px being antialiased edges. §33: `toDataURL()` and
+      `outerHTML` byte-identical over two runs, and a Node projection reproduced
+      Chrome's first and last `points` attributes exactly. **The swap is 3 lines, not
+      cycle 3c's 2** — import, constructor, *and the surface type*, because Canvas 2D
+      and SVG do not share `HTMLCanvasElement`. The seam holds above the surface; the
+      surface handle leaks into consumer code by design (`Renderer` has no surface
+      member). `resolveRenderer("auto")` selected a consumer-registered backend, so
+      §62's ladder accepts a third-party rung — but `AUTO_RENDERER_ORDER`'s `canvas2d`
+      and `svg` rungs are **unreachable from fourJS packages alone** while the stubs
+      stand.
+      **Solvers (`physics-box2d`, `physics-soft`).** Nothing to test, so the battery ran
+      against the one registrable solver as a proof the harness works: §33 two runs
+      **byte-identical** over the full state (position + quaternion per body, not a
+      digest); §34 snapshot **7351 B** restored and continued **byte-identical**.
+      **Two controls failed first and were fixed** — the original scene was at rest at
+      the tail, so "equal" held for the wrong reason; shortened until `state(40) !=
+      state(39)`. A 1e-7 m divergence moves the state but **not** `checksum()`
+      (§33's documented `Math.round(v*1e6)`), which argues for comparing state rather
+      than digests. `docs/COMPATIBILITY.md`'s solver table: **0 discrepancies**.
+      **`geometry` — engine and docs both clean, the only surface with nothing to fix.**
+      Every promised invariant measured against its source comment: box 24 verts / 36
+      indices / exact bounds; winding agreement with authored normals **0 disagreements**
+      across 8 primitives (3,198 triangles); max `‖n‖−1` = **0**; uv inside [0,1];
+      §85 `RangeError` on a negative extent; §33 byte-identical rebuilds. Controls:
+      reversing one triangle drops winding to 11/12, doubling one normal drives the
+      error to 1.0.
+      **`materials` — proved through a renderer, not just constructed.** Real
+      `WebglRenderer` in headless Chromium: Unlit **20,128 px**, Lit **14,923 px** with
+      a **33→255** Lambert ramp, Standard **6,636 px**, 4 draw calls / 4,620 triangles,
+      **0 console errors**, two runs byte-identical (PNG md5 equal). Control: without
+      `registerStandardPipeline()` the Standard draw is **0 px** and the engine names
+      the exact call to add.
+      **`diagnostics` — the cycle's one ENGINE defect, and it is a RECURRENCE.**
+      `auditFrameAllocations` shipped the WORKSPACE name in a runtime warning
+      (`"§83: 4096 @fourjs/math object(s) …"`), telling a consumer to install a package
+      that does not exist for them — the same class as 2026-09-13's `@fourjs/render-webgl`.
+      **Root cause found in the tooling, which is why it recurred:**
+      `tools/apply-publish-names.mjs` matched `"` and `'` only, so a workspace name in a
+      **template literal** — how runtime messages are written — passed both the rewriter
+      and its own residue guard. Fixed at both levels: the message now reads `math
+      object(s)` (matching its already-correct sibling in `dev-warnings.ts`), and the
+      staging check strips comments before scanning, measured over the 344 shipped `.js`
+      files at **1 true positive, 0 prose false positives**. The new guard caught the
+      live defect before the source fix landed. Two README defects fixed alongside:
+      `materials` still called `StandardMaterial`, lighting and node materials "not yet
+      implemented" (all shipped Aug 2026) and listed 2 of 26 exports; `diagnostics`
+      called the §84 `app.stats.*` overlay unimplemented (shipped 2026-08-08).
+      **`core/disposable.ts` (docs, in source).** Its `Disposable` shares a name with
+      TypeScript's TC39 global, so a consumer reading `interface Renderer extends
+      Disposable` implements `[Symbol.dispose]()`, which nothing calls. Header now says so.
+      **Typecheck under `strict` + `skipLibCheck: false`: 0 errors in fourJS's own
+      declarations** on all three seats (one seat loaded 151 `.d.ts`: 66 own, 85
+      third-party, 0 errors either side). The 69 `Symbol.dispose` errors seen with a
+      Rapier import are third-party and vanish under `lib: esnext` — COMPATIBILITY.md §0.
+      **Review before push (Starship).** Every headline re-verified independently, and
+      two things changed as a result: cycle 9B fixed the stale Rapier version in three
+      guide lines and left **five more** in `docs/Architecture` — swept, with history
+      (CHANGELOG, MEMORY.md, archived analyses) deliberately left alone; and the
+      reaction-getter claim inside that sentence was re-checked against the installed
+      0.20.0 declarations before the version was propagated, because a version swap
+      turns a verified claim into an unverified one. A first check of that read an
+      87-byte re-export and returned "no matches" — absence at the wrong path is not
+      absence. Standing: next cycle picks a new surface. The stubs are now dogfooded as
+      stubs; they need re-doing only when one of them ships an implementation.
 
 
 - [x] **`registerRapierSolver()` throws on a second call — awkward for anything building more than
