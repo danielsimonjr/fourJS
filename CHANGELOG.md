@@ -8,6 +8,19 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### Security
+
+- `brace-expansion` moves from 5.0.9 to 5.0.12 in `bun.lock`. Two HIGH advisories apply to 5.0.9, both
+  denial of service by uncontrolled recursion: GHSA-qhr7-859c-m2p7 (nested brace groups, affected range
+  `>=4.0.0 <5.0.11`) and GHSA-6j4f-fj2g-mc7p (`parseCommaParts`, affected range `>=4.0.0 <5.0.10`). The
+  `bun audit --audit-level=high` step in CI failed on every run while 5.0.9 was locked, and these two were
+  the ONLY advisories it reported. It now finds no vulnerabilities across 194 packages.
+- The package is a transitive DEVELOPMENT dependency of one workspace, through
+  `@fourjs-tools/docs` > `typedoc` > `minimatch` > `brace-expansion`, so no published package contains it.
+  `minimatch` accepts `^5.0.8`, so 5.0.12 satisfies the range already declared: the change is one line of
+  `bun.lock`, with no manifest edit and no `overrides` entry. `bun run docs`, the only consumer, builds
+  clean on the new version.
+
 ### Fixed
 
 - **Removed the dead root `npm` Dependabot entry.** No dependency-update ecosystem works on a
