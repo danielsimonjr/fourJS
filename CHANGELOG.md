@@ -8,6 +8,16 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Removed the dead root `npm` Dependabot entry.** No dependency-update ecosystem works on a
+  Bun-managed root right now: `bun` fails with "Unsupported bun.lock 'lockfileVersion' 2" and `npm`
+  aborts during file fetching with "npm_and_yarn ecosystem cannot update bun.lock". Each error
+  recommends the other. Measured fleet-wide 2026-10-01: 19 dead updater jobs. The entry was failing
+  weekly and proposing nothing, so it was removed and the reason recorded in `dependabot.yml`.
+  Security alerts are unaffected; automated remediation is what stops. `github-actions` updates
+  continue.
+
 ### 2026-09-20 — cycle 9 and 10 residue: a wrong spec sentence, two decisions, one tool defect class
 
 Closes the last findings carried out of dogfood cycles 9 and 10. Three of the four are
