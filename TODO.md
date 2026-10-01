@@ -4,6 +4,59 @@ Task tracker for four.js. Keep entries short and actionable; move finished items
 (newest first) with the date. Larger context and decisions belong in `MEMORY.md`; released
 changes in `CHANGELOG.md`.
 
+## Dependabot ignore rules to restore when remediation returns
+
+The root Dependabot entry was removed on 2026-10-01 because no updater ecosystem works on a
+Bun-managed root (see `.github/dependabot.yml`). The ignore rules below went with it. They are
+NOT obsolete - they are inert only while nothing proposes updates, and each one must be restored
+with the entry.
+
+- [ ] 🔴 **THREE Dependabot ignore rules must come back with the entry, and two are hard blocks
+      with proof attached.** Restore all three:
+
+      ```yaml
+      - dependency-name: "js-yaml"
+        versions: [">=5"]
+      - dependency-name: "harfbuzzjs"
+        versions: [">0.4.13"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      ```
+
+      **js-yaml >=5** — BLOCKED by a vendored tool. js-yaml 5 removed its default export and
+      `tools/create-dependency-graph` does `import yaml from 'js-yaml'`, so `bun run graph` dies
+      with "Missing 'default' export" before reading a file. That tool is kept BYTE-IDENTICAL with
+      the copy in llm-wiki (see `.oxlintrc.json` ignorePatterns); changing the import here would
+      guarantee the two copies drift, which is worse than staying on 4. Lift only when both copies
+      move together. (MathTS has the same js-yaml follow-up, from its own root `overrides` floor.)
+
+      **harfbuzzjs >0.4.13** — pinned at EXACTLY the supported ABI for the optional shaping
+      adapter. 1.x removed the explicit Wasm init/disposal APIs (`hb.js` / `hbjs.js`) that
+      `packages/text/src/harfbuzz` uses (#96 merged 2026-09-12, reverted in `d9347f2`; #103
+      re-proposed). Any other version fails `tests/harfbuzz.test.ts` "pins wasm", which asserts
+      the SHA-256 of the 0.4.13 `hb.wasm` (#106 proposed 0.10.3 on 2026-09-15 and failed exactly
+      there). Lift only together with an adapter migration and a new wasm pin.
+
+      **typescript semver-major** — `tools/docs` must stay on TypeScript 6.x until TypeDoc
+      supports 7 (typedoc#3098), but the root dev-dependency group bumped it to 7.0.2 EVERY WEEK
+      (#82, #102, #105, #108, #116), each needing the same revert. An ignore cannot be scoped to
+      one workspace, so a MAJOR-only ignore is the scoped fix in practice: the root is already on
+      7.x and still receives every 7.x minor and patch; only the 6 -> 7 jump in `tools/docs` is
+      held back. Remove when `tools/docs` moves to TypeScript 7.
+
+- [ ] 🟡 **Do NOT re-add these when restoring — they were removed deliberately.** A `typescript`
+      VERSION ignore (it would pin the root compiler, which is deliberately on 7.x; the
+      semver-major entry above is the correct form). An `eslint` ignore (eslint and
+      typescript-eslint are no longer dependencies at all; linting is oxlint). The vitest and
+      `@vitest/coverage-v8` `>=4` ignores (5 is installed and all coverage gates passed
+      2026-09-11). A `@dimforge/rapier{2,3}d-compat` 0.20 ignore on the old behavioural notes —
+      0.20.0 was adopted 2026-09-06 and the goldens now track it.
+
+- [ ] 🟢 **`.github/workflows/dependabot-bun-lock.yml` is now dormant, not broken.** It regenerates
+      `bun.lock` on Dependabot PRs, and with the updater removed there are no such PRs to act on.
+      Leave it in place — it is needed again the moment remediation is restored — but do not read
+      its idle runs as health.
+
 ## 2026-09-12 — §96 image decoder memory
 
 - Implemented `createBoundedPngDecoder`: a pinned PNG Wasm heap capped before
