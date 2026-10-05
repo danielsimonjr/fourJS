@@ -2852,7 +2852,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 item.material.transparent === true,
                 item.clip ?? null,
               );
-              morphLit.setReceiving(shadowActive && item.receiveShadow);
+              morphLit.setReceivesShadow(shadowActive && item.receiveShadow);
               morphLit.setMorphWeight(weight);
               morphLit.setModel(item.worldMatrix);
               morphLit.setColor(item.material.color, opacityOf(item.material));
