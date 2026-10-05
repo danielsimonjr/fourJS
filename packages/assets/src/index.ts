@@ -127,14 +127,7 @@ export {
   DEFAULT_IMAGE_WORKING_BYTES,
 } from "./bounded-png.js";
 export type { BoundedPngDecoderOptions } from "./bounded-png.js";
-export {
-  createBoundedJpegDecoder,
-} from "./bounded-jpeg.js";
+export { createBoundedJpegDecoder } from "./bounded-jpeg.js";
 export type { BoundedJpegDecoderOptions } from "./bounded-jpeg.js";
-export {
-  probeImage,
-  probeJpeg,
-  probePng,
-  probeWebp,
-} from "./image-probe.js";
+export { probeImage, probeJpeg, probePng, probeWebp } from "./image-probe.js";
 export type { ImageDimensions } from "./image-probe.js";

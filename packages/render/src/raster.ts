@@ -433,11 +433,11 @@ export class CanvasTexture implements MaterialTexture, Disposable {
    * The RGBA8 bytes as last read from the source — row 0 is `v = 0` whatever
    * the source's {@link RasterSource.origin} — or `null` once disposed.
    *
- * Engine-owned and reused until {@link CanvasTexture.resize} or
- * {@link CanvasTexture.dispose}; readable by anyone holding
- * the texture (the upload path reads it), which is why §77a's display-only
- * rule is an import rule on packages, not a readability rule on this field —
- * see the module header.
+   * Engine-owned and reused until {@link CanvasTexture.resize} or
+   * {@link CanvasTexture.dispose}; readable by anyone holding
+   * the texture (the upload path reads it), which is why §77a's display-only
+   * rule is an import rule on packages, not a readability rule on this field —
+   * see the module header.
    */
   get data(): Uint8Array | null {
     return this.#buffer;

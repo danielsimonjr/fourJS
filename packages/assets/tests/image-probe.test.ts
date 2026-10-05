@@ -48,7 +48,9 @@ describe("image header probes (§96)", () => {
       width: 320,
       height: 200,
     });
-    expect(probeJpeg(new Uint8Array([0xff, 0xd8, 0x00]).buffer)).toBeUndefined();
+    expect(
+      probeJpeg(new Uint8Array([0xff, 0xd8, 0x00]).buffer),
+    ).toBeUndefined();
   });
 
   it("skips JPEG APPn segments to reach SOF", () => {

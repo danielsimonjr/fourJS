@@ -21,7 +21,11 @@
  */
 
 import { FourError } from "@fourjs/core";
-import { Node, runOwnedTransformWrite, warnAuthorityConflict } from "@fourjs/scene";
+import {
+  Node,
+  runOwnedTransformWrite,
+  warnAuthorityConflict,
+} from "@fourjs/scene";
 import type { TransformAuthority } from "@fourjs/scene";
 
 import type { Advanceable } from "./animation-system.js";

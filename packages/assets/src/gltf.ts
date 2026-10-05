@@ -2122,7 +2122,9 @@ async function parseGltf(
       matrix,
       mesh,
       skin,
-      ...(nodeMorphWeights === undefined ? {} : { morphWeights: nodeMorphWeights }),
+      ...(nodeMorphWeights === undefined
+        ? {}
+        : { morphWeights: nodeMorphWeights }),
     };
     const extras = extrasOf(record);
     nodes.push(extras === undefined ? node : { ...node, extras });

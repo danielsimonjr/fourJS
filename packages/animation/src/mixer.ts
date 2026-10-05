@@ -81,7 +81,11 @@
 
 import { FourError } from "@fourjs/core";
 import { Quaternion, type Vector3 } from "@fourjs/math";
-import { Node, runOwnedTransformWrite, warnAuthorityConflict } from "@fourjs/scene";
+import {
+  Node,
+  runOwnedTransformWrite,
+  warnAuthorityConflict,
+} from "@fourjs/scene";
 import type { TransformAuthority } from "@fourjs/scene";
 
 import { createBinding, type PropertyBinding } from "./binding.js";

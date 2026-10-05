@@ -79,7 +79,12 @@ import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-import { framesFor, readStatusData, waitForFrames, waitForProbe } from "./helpers/wait.js";
+import {
+  framesFor,
+  readStatusData,
+  waitForFrames,
+  waitForProbe,
+} from "./helpers/wait.js";
 
 declare global {
   interface Window {
@@ -899,9 +904,7 @@ test.describe("§106: moving primitives render smoothly under fixed-step simulat
     const appFrameNumbers: number[] = [];
     const publishedAlphas: number[] = [];
     for (let i = 0; i < INTERPOLATION_SAMPLE_COUNT; i++) {
-      const startFrames = Number(
-        (await readStatusData(page))["frames"] ?? "0",
-      );
+      const startFrames = Number((await readStatusData(page))["frames"] ?? "0");
       await page.evaluate(() => {
         window.__fourPauseAfterStep = true;
         window.__fourPauseRaf = false;

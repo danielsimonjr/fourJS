@@ -60,17 +60,17 @@ or above the minimum that can make a surface. Violations throw `RangeError`
 
 ## The nine builders
 
-| Function | What it is | Axis / parameter |
-| -------- | ---------- | ---------------- |
-| `sphereGeometry({ radius, widthSegments, heightSegments })` | UV sphere | meridians around +Y; parallels −Y to +Y |
-| `cylinderGeometry({ radius, height, radialSegments, heightSegments, capped })` | tube about +Y | `capped: false` omits both discs |
-| `coneGeometry({ radius, height, … })` | tapered cylinder, tip at +Y | same options as the cylinder |
-| `capsuleGeometry({ radius, height, … })` | cylinder plus hemispherical caps | physics capsule collider uses the same radius/height about +Y |
-| `torusGeometry({ radius, tube, radialSegments, tubularSegments })` | ring in the XZ plane | major radius in XZ; tube radius |
-| `latheGeometry({ points, segments })` | profile in the (r, y) half-plane swept about +Y | `points[i].x` is radius (≥ 0); `x = 0` is a pole |
-| `extrudeGeometry({ shape, depth, capped })` | closed XY outline extruded along **Z** | `shape` is `{ x, y }[]` (≥ 3); the solid spans `[-depth/2, depth/2]` |
-| `tubeGeometry({ path, radius, tubularSegments, radialSegments })` | circle swept along a 3D polyline | `path` is `{ x, y, z }[]` |
-| `heightFieldGeometry({ columns, rows, width, depth, heights })` | sampled Y height over XZ | `heights.length === rows * columns`; open grid, no seam |
+| Function                                                                       | What it is                                      | Axis / parameter                                                     |
+| ------------------------------------------------------------------------------ | ----------------------------------------------- | -------------------------------------------------------------------- |
+| `sphereGeometry({ radius, widthSegments, heightSegments })`                    | UV sphere                                       | meridians around +Y; parallels −Y to +Y                              |
+| `cylinderGeometry({ radius, height, radialSegments, heightSegments, capped })` | tube about +Y                                   | `capped: false` omits both discs                                     |
+| `coneGeometry({ radius, height, … })`                                          | tapered cylinder, tip at +Y                     | same options as the cylinder                                         |
+| `capsuleGeometry({ radius, height, … })`                                       | cylinder plus hemispherical caps                | physics capsule collider uses the same radius/height about +Y        |
+| `torusGeometry({ radius, tube, radialSegments, tubularSegments })`             | ring in the XZ plane                            | major radius in XZ; tube radius                                      |
+| `latheGeometry({ points, segments })`                                          | profile in the (r, y) half-plane swept about +Y | `points[i].x` is radius (≥ 0); `x = 0` is a pole                     |
+| `extrudeGeometry({ shape, depth, capped })`                                    | closed XY outline extruded along **Z**          | `shape` is `{ x, y }[]` (≥ 3); the solid spans `[-depth/2, depth/2]` |
+| `tubeGeometry({ path, radius, tubularSegments, radialSegments })`              | circle swept along a 3D polyline                | `path` is `{ x, y, z }[]`                                            |
+| `heightFieldGeometry({ columns, rows, width, depth, heights })`                | sampled Y height over XZ                        | `heights.length === rows * columns`; open grid, no seam              |
 
 A first call that looks like a scene:
 

@@ -578,7 +578,9 @@ describe("BufferGeometry", () => {
       expect(geometry.byteLength).toBe(9 * 4 + 9 * 4 + 9 * 4);
       const clone = geometry.clone();
       expect(clone.positions1).not.toBe(positions1);
-      expect(Array.from(clone.positions1 ?? [])).toEqual(Array.from(positions1));
+      expect(Array.from(clone.positions1 ?? [])).toEqual(
+        Array.from(positions1),
+      );
       geometry.dispose();
       expect(geometry.positions1).toBeUndefined();
       clone.dispose();

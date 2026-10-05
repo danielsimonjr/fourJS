@@ -312,7 +312,13 @@ export function layoutText(
   }
 
   if (wrapWidth !== undefined) {
-    return layoutIdentityWrapped(text, atlas, options, letterSpacing, wrapWidth);
+    return layoutIdentityWrapped(
+      text,
+      atlas,
+      options,
+      letterSpacing,
+      wrapWidth,
+    );
   }
 
   const align = options.align ?? "left";

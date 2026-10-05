@@ -185,9 +185,7 @@ describe("application writes on a system-owned transform (§42 DEV)", () => {
     node.position.set(999, 0, 0);
     expect(node.position.x).toBe(999);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(String(warn.mock.calls[0]?.[0])).toContain(
-      "the write was applied",
-    );
+    expect(String(warn.mock.calls[0]?.[0])).toContain("the write was applied");
     node.position.set(1000, 0, 0);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(node.position.x).toBe(1000);

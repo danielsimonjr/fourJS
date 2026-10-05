@@ -4722,4 +4722,3 @@ absolute streams; `meshes.weights`/`nodes.weights` length 1; `weights`
 animation channels still refused. Further targets, bone-texture palettes,
 Box2D/soft/Canvas/SVG backends, TypeDoc→TS7, harfbuzzjs>0.4.13, js-yaml≥5,
 repo-wide Prettier, and default-on batching were explicitly not started.
-

@@ -2799,7 +2799,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               );
               morphUnlit.setMorphWeight(weight);
               morphUnlit.setModel(item.worldMatrix);
-              morphUnlit.setColor(item.material.color, opacityOf(item.material));
+              morphUnlit.setColor(
+                item.material.color,
+                opacityOf(item.material),
+              );
             } else {
               const morphLit = morph.lit;
               if (activeKind !== "lit-morph") {

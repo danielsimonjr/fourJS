@@ -13,11 +13,11 @@ label that dogfood cycle 10C misread.
 
 ## When anything prints
 
-| Gate | What it does |
-| ---- | ------------ |
-| `DEV` (`__FOUR_DEV__`) | Production bundles fold it false. Unbundled tests default true. |
-| `app.stats` / an explicit audit call | Allocation and leak audits run only when something asks. |
-| `devWarnOnce(key, message)` | First time per process for that key; `resetDevWarnings()` re-arms. |
+| Gate                                 | What it does                                                       |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| `DEV` (`__FOUR_DEV__`)               | Production bundles fold it false. Unbundled tests default true.    |
+| `app.stats` / an explicit audit call | Allocation and leak audits run only when something asks.           |
+| `devWarnOnce(key, message)`          | First time per process for that key; `resetDevWarnings()` re-arms. |
 
 A headless app with a scene, a camera, and a registered system allocates
 **zero** math objects per step and prints **nothing** over 120 steps. That was
@@ -80,16 +80,16 @@ diagnostic that never turns off; the engine does not install one.
 Import from `fourJS/diagnostics`. Every helper no-ops when `DEV` is false
 without reading its arguments.
 
-| Helper | What it catches |
-| ------ | --------------- |
-| `assertFinite` / `assertFiniteVec3` | NaN / ±Infinity on a number or `{ x, y, z }` |
-| `assertNoSceneGraphCycle` | adding a node to itself or an ancestor |
-| `warnCoordinateEnvelope` | a position farther than `COORDINATE_ENVELOPE` (1e5) from the origin |
-| `warnSingularScale` | a zero scale component (world matrix will not invert) |
-| `warnUnstableScale` | components differing by more than `UNSTABLE_SCALE_RATIO` (1e4):1, or a near-zero component |
-| `warnImpossibleMass` / `warnImpossibleInertia` | negative or non-finite mass/inertia (`mass === 0` is quiet: static bodies) |
-| `warnVersionMismatch` | `expected !== actual` on a document/format pair |
-| `validateSceneNode` / `validateSceneSubtree` | the finite + envelope + scale checks, walking children |
+| Helper                                         | What it catches                                                                            |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `assertFinite` / `assertFiniteVec3`            | NaN / ±Infinity on a number or `{ x, y, z }`                                               |
+| `assertNoSceneGraphCycle`                      | adding a node to itself or an ancestor                                                     |
+| `warnCoordinateEnvelope`                       | a position farther than `COORDINATE_ENVELOPE` (1e5) from the origin                        |
+| `warnSingularScale`                            | a zero scale component (world matrix will not invert)                                      |
+| `warnUnstableScale`                            | components differing by more than `UNSTABLE_SCALE_RATIO` (1e4):1, or a near-zero component |
+| `warnImpossibleMass` / `warnImpossibleInertia` | negative or non-finite mass/inertia (`mass === 0` is quiet: static bodies)                 |
+| `warnVersionMismatch`                          | `expected !== actual` on a document/format pair                                            |
+| `validateSceneNode` / `validateSceneSubtree`   | the finite + envelope + scale checks, walking children                                     |
 
 `validateSceneSubtree` is the one-call walk. It returns the warning count;
 assertions still throw (`INVALID_SCENE_GRAPH`, `INVALID_APPLICATION_STATE`).

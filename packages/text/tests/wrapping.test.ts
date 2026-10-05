@@ -78,7 +78,8 @@ describe("layoutText wrapWidth", () => {
     const fontId = shaper.addFont(new Uint8Array());
     const options = { size: 12, wrapWidth: 36 };
     expect(
-      layoutText("hello world", atlas, { ...options, shaper, fontId }).lineCount,
+      layoutText("hello world", atlas, { ...options, shaper, fontId })
+        .lineCount,
     ).toBe(layoutText("hello world", atlas, options).lineCount);
     shaper.dispose();
   });
@@ -87,7 +88,11 @@ describe("layoutText wrapWidth", () => {
 describe("wrapToWidth", () => {
   it("leaves a single overflowing item on its own line", () => {
     expect(
-      wrapToWidth([{ advance: 10, breakAfter: false, breakBefore: false }], 3, 0),
+      wrapToWidth(
+        [{ advance: 10, breakAfter: false, breakBefore: false }],
+        3,
+        0,
+      ),
     ).toEqual([[{ advance: 10, breakAfter: false, breakBefore: false }]]);
   });
 });
