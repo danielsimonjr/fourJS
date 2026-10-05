@@ -630,75 +630,9 @@ async function useVirtualFrameClock(
   }, frameSeconds * 1000);
 }
 
-/**
- * Screenshots with the virtual clock held so the PNG encode cannot sneak
- * extra 1.5Δ frames between the wait and the pixels.
- */
-async function grabWithClockPaused(
-  page: Page,
-  canvas: Locator,
-): Promise<DecodedImage> {
-  await page.evaluate(() => {
-    window.__fourPauseRaf = true;
-  });
-  try {
-    // Two host frames let SwiftShader present the last unpaused draw. Must
-    // not go through the patched rAF — that would increment the virtual
-    // clock (and skip the example's loop) while we are trying to hold it.
-    await pumpHostAnimationFrame(page);
-    await pumpHostAnimationFrame(page);
-    return await grab(canvas);
-  } finally {
-    await page.evaluate(() => {
-      window.__fourPauseRaf = false;
-    });
-  }
-}
-
 /** How many virtual frames the injected clock has delivered. */
 async function virtualFrameCount(page: Page): Promise<number> {
   return page.evaluate(() => window.__fourVirtualFrames ?? 0);
-}
-
-/**
- * How long {@link waitForVirtualFrameCount} will wait for the next virtual
- * frame before failing. One delivered frame is a browser rAF (~16 ms); fifteen
- * seconds is a hung clock, not a slow runner.
- */
-const VIRTUAL_FRAME_WAIT_BUDGET_MS = 15_000;
-
-/**
- * Waits until the injected clock has delivered at least `minimum` virtual
- * frames. Each poll pumps one **host** `requestAnimationFrame` turn so
- * headless SwiftShader advances the example's patched loop between checks
- * without the wait itself incrementing `__fourVirtualFrames`.
- *
- * Playwright's `waitForFunction` (default `polling: "raf"`) deadlocks against
- * this test's `requestAnimationFrame` override — CI hung 120 s on `b55a8c1`
- * even though `page.evaluate` could read `__fourVirtualFrames`. Waiting for
- * `start + 1` avoids parity-matching races when two increments land per pump.
- *
- * Pumping the *patched* rAF (2026-09-09, `d2f36a5`) added one extra virtual
- * frame per sample on top of the example's own loop. Combined with pause-
- * during-grab that produced only even frame numbers — alpha 0.0 every time.
- */
-async function waitForVirtualFrameCount(
-  page: Page,
-  minimum: number,
-): Promise<number> {
-  const deadline = Date.now() + VIRTUAL_FRAME_WAIT_BUDGET_MS;
-  while (Date.now() < deadline) {
-    const n = await virtualFrameCount(page);
-    if (n >= minimum) {
-      return n;
-    }
-    await pumpHostAnimationFrame(page);
-  }
-  const stuck = await virtualFrameCount(page);
-  throw new Error(
-    `virtual frame ${String(minimum)} not reached within ${String(VIRTUAL_FRAME_WAIT_BUDGET_MS / 1000)} s ` +
-      `(stuck at ${String(stuck)})`,
-  );
 }
 
 /** One real display frame, bypassing the virtual clock. */
