@@ -93,11 +93,12 @@ cost to the §10 accumulator.
 - **The colour-space default is `"srgb"`**, deliberately different from
   `TextureSource`'s `"linear"`: a host 2D canvas produces sRGB-encoded bytes
   unambiguously (RFC 0004 Q3, with the note at both types).
-- **The size is fixed for the texture's life.** The source's dimensions are
-  re-validated on every `update()`; a source that changes size is refused with
-  `INVALID_APPLICATION_STATE` (§89) rather than silently reallocated.
-  Resizing means constructing a new `CanvasTexture` and disposing the old one
-  (gated on §77 change notification, R-30).
+- **The size is mutable through `CanvasTexture.resize()`.** Call it after the
+  source's `width`/`height` change and before the next `update()`. The buffer
+  and §83 totals update immediately; `version` waits for the next successful
+  `update()`. A source that changes size without `resize()` is still refused
+  with `INVALID_APPLICATION_STATE` (§89). Construction-time `maximumBytes`
+  still caps the new size.
 - **§96 bounds the surface**: `width * height * 4` may not exceed
   `maximumBytes`, default 64 MiB (exactly a 4096 × 4096 RGBA8 surface);
   `Number.POSITIVE_INFINITY` is the explicit in-source opt-out.
@@ -113,8 +114,9 @@ cost to the §10 accumulator.
   module header this guide's recipe is taken from.
 - The §73 canvas-view widget (`CanvasViewWidget` in `four/ui`) draws a
   `CanvasTexture` in the UI layer; deferred siblings — video textures,
-  `ImageBitmap` sources, in-place resize, dirty-rectangle upload — are listed
-  with what each waits on in RFC 0004's §6 table.
+  `ImageBitmap` sources, dirty-rectangle upload — are listed
+  with what each waits on in RFC 0004's §6 table. In-place resize shipped
+  2026-10-05 as `CanvasTexture.resize()`.
 
 ## GPU readback snapshots (RFC 0009)
 

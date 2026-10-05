@@ -69,6 +69,8 @@ with the entry.
   mutable decoder options, and worker-transfer expansion-ratio bypasses.
 - This focused branch starts at `7fe7098` on main. Earlier Draco/Basis work remains
   in local roadmap commit `b1240b4`; it is not duplicated or marked landed here.
+- 2026-10-05: JPEG joins the same factory shape (`createBoundedJpegDecoder`, pin
+  `@jsquash/jpeg@1.6.0`) with SOF/WebP/PNG header probes (`image-probe.ts`).
 - Validation: 7,763 package tests, 685 integration/determinism tests, assets
   coverage (508 tests), focused Chromium PNG check, builds/typechecks/lint/docs
   and all bundle budgets pass. Restored incompatible baseline HarfBuzz/TypeDoc
@@ -118,18 +120,20 @@ are accepted; spec revision 1.16 records the §56 shaping decision. This pass do
 - RFC 0007: waypoint A*, steering, trajectory conversion and plugin token implemented;
   independent shortest-path oracle, fresh-process golden and 256² graph benchmarks.
 - RFC 0008 first packet: optional HarfBuzz, identity shaping, glyph IDs, shaped layout,
-  Text/Label forwarding, OFL fixtures and real-font goldens. Automatic bidi, wrapping,
+  Text/Label forwarding, OFL fixtures and real-font goldens. **Wrapping (`wrapWidth`,
+  UAX #14-lite) shipped 2026-10-05** on identity and HarfBuzz paths. Automatic bidi,
   vertical layout and font rasterization remain outside that first packet.
 - RFC 0009: asynchronous display snapshots, lifecycle/size guards, synchronous raster
   reads and feedback provenance across all standard material texture slots.
 - RFC 0003: CPU skinning now feeds Mesh rendering, interpolation, bounds, picking and
-  serialization; GPU morph streams and bone-texture palettes remain open.
+  serialization; **one-target GPU morph shipped 2026-10-05** (locations 6/7, WebGL mix,
+  WebGPU skip). Bone-texture palettes remain open.
 - RFC 0001: opt-in std140 WebGL transport, reusable/declarative subgraphs, finite named
   variants and node source maps. Storage-buffer graph bindings, automatic scene-light
   inputs and IR conditional defines/cache specialization remain open.
 - RFC 0004/R-30c: regional texture updates, CanvasTexture sampler settings, bitmap/video
-  adapters, residency and asynchronous preparation. Cube/array/3D/compressed sampling
-  and in-place CanvasTexture resizing remain open.
+  adapters, residency and asynchronous preparation. **In-place `CanvasTexture.resize()`
+  shipped 2026-10-05.** Cube/array/3D/compressed sampling remain open.
 - Lighting: WebGL normal/occlusion maps and factors, including glTF ingestion. WebGPU
   map parity, multi-directional/area/clustered lights, wider shadows, IBL and tone mapping
   remain open.
@@ -255,7 +259,7 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 - RFC 0004 residue (all deferred by the RFC's own §6 table, none scheduled):
 - RFC 0005 residue — **CLOSED 2026-09-10** (WebGPU skinned id pass). All named slices landed.
 - RFC 0001 residue (staged in source, 2026-08-28):
-- RFC 0003 residue (staged in source, 2026-08-28): WebGPU colour pair DONE 2026-09-09; WebGL shadow caster DONE 2026-09-09; WebGPU skinned id DONE 2026-09-10 (lives in `wgpu-picking.ts`); CPU skinning DONE 2026-09-11; WebGPU skinned shadow DONE 2026-09-10. Still GPU morph and bone-texture.
+- RFC 0003 residue (staged in source, 2026-08-28): WebGPU colour pair DONE 2026-09-09; WebGL shadow caster DONE 2026-09-09; WebGPU skinned id DONE 2026-09-10 (lives in `wgpu-picking.ts`); CPU skinning DONE 2026-09-11; WebGPU skinned shadow DONE 2026-09-10. ~~GPU morph~~ **DONE 2026-10-05** (one-target WebGL at 6/7; WebGPU skip). Still bone-texture.
 - RFC 0003 prototype measurements — DONE 2026-09-09 (`benchmarks/skinning-resolve.mjs`):
 - Tokens for the five absent §81 extension points — DONE 2026-09-06 (`ASSET_LOADERS`, `SHADER_OPERATORS`, `UI_CONTROLS`, `EDITOR_TOOLS`, `COMPUTE_WORKLOADS`)
 - Lighting follow-ups (MVP tier shipped 2026-08-04 — see Done): ~~point/spot multi-light~~ **DONE 2026-08-09** (R-17, 8 punctual); ~~hemisphere~~ **DONE 2026-09-10** (`HemisphereLight`, first-match, +Y sky); still multi-directional + area + clustered path, shadows (§69 — directional tier shipped; cascades, point/spot maps, the atlas, transparent masks and contact shadows remain), §59 PBR rest, §60a tone-mapping operator + IBL (sRGB encode + color grade shipped), light layers. CSS light colors + WebGL/WebGPU normal-matrix hoist DONE 2026-09-09. WebGPU `metalRoughnessMap` sampling DONE 2026-09-09. WebGL `emissiveMap` (unit 3) DONE 2026-09-09 (still open: extra directionals / area / clustered, cascades, PBR rest, tone-map operator, light layers, WebGPU `normalMap` / `occlusionMap` and emissive; WebGL normal/AO DONE 2026-09-11).
@@ -1596,7 +1600,8 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       scheduled):** ~~video textures (frame-arrival signal, DOM-free)~~ **DONE 2026-09-11**;
       ~~`ImageBitmap` raster sources, partial/dirty-rect uploads and raster
       mipmaps/filter modes~~ **DONE 2026-09-11** (explicit host surfaces and bounded
-      multi-reader upload journal). In-place resize remains open; ~~GPU readback as a raster source (wants its own RFC)~~ **Implemented
+      multi-reader upload journal). ~~In-place resize~~ **DONE 2026-10-05**
+      (`CanvasTexture.resize()`; `version` waits for `update()`). ~~GPU readback as a raster source (wants its own RFC)~~ **Implemented
       2026-09-11** (`docs/rfcs/0009-gpu-readback-raster-source.md` — display-only
       snapshot, not riding 0004/0005; corrected 2026-09-10, plan
       `docs/plans/RFC-0009-GPU-READBACK_PLAN.md`); the §62
@@ -1689,8 +1694,11 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       GraphEffect, deferred list); samples typechecked against dist and graphs
       validated at runtime.
 
-- [ ] **RFC 0003 residue (staged in source, 2026-08-28):** GPU morph path (the
-      extra-vertex-stream layout decision, stated in `mesh.ts`/`render-list.ts`/§54);
+- [ ] **RFC 0003 residue (staged in source, 2026-08-28):** ~~GPU morph path (the
+      extra-vertex-stream layout decision, stated in `mesh.ts`/`render-list.ts`/§54)~~
+      **DONE 2026-10-05** (one-target WebGL: `positions1`/`normals1` at 6/7,
+      `JOINTS_1`/`WEIGHTS_1` at 8/9, spec revision 1.19; WebGPU skips morph
+      draws; further targets staged);
       ~~skinned shadow caster program (the §69 pass skips skinned draws — a bind-pose
       shadow is a different picture)~~ **DONE 2026-09-09** (WebGL
       `SkinnedShadowProgram` via `acquireShadow()` on the first skinned
@@ -2732,7 +2740,7 @@ Each of these was measured during dogfood cycle 9 and then judged **not** a defe
 as a decision. They are filed here because a finding that lives only inside a cycle write-up
 gets read as history and never actioned. None is urgent; none blocks anything.
 
-- [ ] **The §83 allocation warning names the wrong culprit.** ~~The engine's first word to a
+- [x] **The §83 allocation warning names the wrong culprit.** ~~The engine's first word to a
       consumer is a warning about itself.~~ **The filing above was WRONG and cycle 10C
       disproved it — corrected here rather than quietly deleted, because the wrong version
       was pushed to this repo on 2026-09-19 and someone may have read it.** What the
@@ -2752,10 +2760,13 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       came to believe the engine was warning about itself. Fires once per process
       (`devWarnOnce` keyed on the label); `resetDevWarnings()` re-arms it; there is no
       threshold knob, because `Application` passes only a label
-      (`packages/fourjs/src/application.ts:1818`).
-      **Owner's call, unchanged in scope:** name the window and the culprit separately in
-      the message, or leave it and let the new guide subsection carry the explanation.
-      `packages/diagnostics/src/allocation-audit.ts:101`. Reported, not fixed (cycle 10C).
+      (`packages/fourjs/src/application.ts:1819-1821`).
+      **CLOSED 2026-10-05.** `packages/diagnostics/src/allocation-audit.ts:111-117` already
+      splits window vs process-wide count (`"…while "${label}" was running… is the
+      measurement window, not necessarily the allocator"`). Regression in
+      `allocation-audit.test.ts`. `docs/guides/development-warnings.md` now teaches the
+      family. The sibling `warnPerFrameAllocations` in `dev-warnings.ts` still says
+      "during"; `Application.step` does not call it.
 
 - [x] **`AUTO_RENDERER_ORDER` carries two rungs no fourJS package can fill.**
       **DECIDED 2026-09-20 — KEEP the rungs, and the doc comment now says why.**
@@ -2776,19 +2787,28 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       in the doc comment), or drop them until the packages ship. Either is defensible; the
       current state teaches neither.
 
-- [ ] **The unregistered-backend error always names `registerWebglRenderer()`.** Asking for
+- [x] **The unregistered-backend error always names `registerWebglRenderer()`.** Asking for
       `"canvas2d"` with nothing registered yields *"…no backend is registered (§62). Call
       e.g. registerWebglRenderer() from the render-webgl package first, or pass a Renderer
       instance (§45)."* The advice is real and the second half is always right, but the
       named call is wrong for three of the four backends. Cheap fix if the registry knows
       which backend was asked for; skipped in cycle 9A because the honest per-backend
       message ("that package is a stub") belongs in the README, where it now is.
+      **CLOSED 2026-10-05 — already in source when this row was still `[ ]`.**
+      `registrationAdvice` in `packages/render/src/renderer-registry.ts:355` names
+      `registerWebgpuRenderer()` / `registerWebglRenderer()` per backend; `canvas2d`/`svg`
+      say they are reserved stubs with no registrar. Tests in
+      `renderer-registry.test.ts` 434–508. `"auto"` still names the WebGL registrar by
+      design.
 
-- [ ] **`packages/physics/src/world.ts:374` reads as though Box2D ships.** "every solver
+- [x] **`packages/physics/src/world.ts:374` reads as though Box2D ships.** "every solver
       Rapier and Box2D ship — wasm images included" is hypothetical prose about what the
       physics package would import, but a reader checking whether Box2D is available finds
       this line first. One sentence; not wrong, just easy to misread against
       `COMPATIBILITY.md`'s accurate "reserved stub" rows.
+      **CLOSED 2026-10-05 — already in source.** `world.ts:367-380` now says the wasm-import
+      cost is what the registry avoids, then: only `@fourjs/physics-rapier` ships;
+      `physics-box2d` and `physics-soft` are reserved stubs, as `COMPATIBILITY.md` records.
 
 - [ ] **Audit the other tools for the quote-only assumption that let the §83 defect ship.**
       `apply-publish-names.mjs` matched `"` and `'` but not backticks, so a workspace name
@@ -2822,7 +2842,7 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       means a truncation could only DROP members (a loud gate failure), never invent one.
       Recorded so the next pass starts from a read rather than a re-discovery.
 
-- [ ] **Guide coverage is absent for five surfaces that have shipped code.** Measured
+- [x] **Guide coverage is absent for five surfaces that have shipped code.** Measured
       2026-09-19 across `docs/guides/`: `render-svg`, `physics-box2d` and `physics-soft`
       have **zero** guide files; the geometry generators and the §83/§85 warning family have
       none either (cycle 8 found the same for `KeyboardState`, `SteeringAgent`, `Scheduler`,
@@ -2845,6 +2865,11 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       them — which for a stub is correct rather than missing. The geometry generators and the
       §83/§85 family are the genuinely uncovered ones: **zero** guide mentions of any of the
       nine 3D generators, and only `devWarnOnce`/`auditFrameAllocations` for the warning family.
+      **CLOSED 2026-10-05 for the two genuine holes.** `docs/guides/geometry-3d-primitives.md`
+      and `docs/guides/development-warnings.md` teach the nine generators and the §83/§85
+      family. Indexed as guides 17–18 in `docs/guides/README.md` and on `website/index.html`.
+      `KeyboardState` / `SteeringAgent` / `Scheduler` / `SpatialHash` / `solveTwoBoneIK` remain
+      in the coverage table as none — that is cycle 8 residue, not this row's close condition.
 
 - [x] **A renderer swap costs 3 consumer lines, not 2, and the third is the surface type.**
       **STATED 2026-09-20, where the reader meets the claim.** The exception now sits

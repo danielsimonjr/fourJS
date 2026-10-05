@@ -4,9 +4,9 @@
  *
  * The tests pin the decisions, not just the arithmetic: one buffer for the
  * texture's life, paint-before-read ordering, the one flip rule, the
- * constant-size refusal (`R-30`'s gate), the §96 byte ceiling, exact §83
- * accounting, and the "`update()` touches nothing unless stale" dirty
- * tracking that is the tier's whole upload-efficiency claim.
+ * constant-size refusal unless `resize()` ran, the §96 byte ceiling, exact §83
+ * accounting, in-place resize, and the "`update()` touches nothing unless stale"
+ * dirty tracking that is the tier's whole upload-efficiency claim.
  */
 
 import { isFourError } from "@fourjs/core";
@@ -323,8 +323,8 @@ describe("the one flip rule (§7a)", () => {
   });
 });
 
-describe("the constant-size rule (§77a, gated on R-30)", () => {
-  it("refuses a source that changed size — even mid-paint — and reads nothing", () => {
+describe("the recorded-size rule (§77a)", () => {
+  it("refuses a source that changed size without resize() — even mid-paint — and reads nothing", () => {
     let width = 2;
     let reads = 0;
     const source: RasterSource = {
@@ -350,7 +350,7 @@ describe("the constant-size rule (§77a, gated on R-30)", () => {
     expect(isFourError(failure) && failure.code).toBe(
       "INVALID_APPLICATION_STATE",
     );
-    expect(String(failure)).toMatch(/constant for its life .*R-30/s);
+    expect(String(failure)).toMatch(/call CanvasTexture.resize\(\)/);
     expect(reads).toBe(0); // the old-size buffer was never read into
     expect(texture.version).toBe(0); // and nothing pretended it was
     width = 2;
@@ -370,6 +370,124 @@ describe("the constant-size rule (§77a, gated on R-30)", () => {
     expect(() => texture.update()).toThrow(/now reports 2×1/);
     height = 2;
     texture.dispose();
+  });
+});
+
+describe("CanvasTexture.resize() (§77a, RFC 0004)", () => {
+  it("reallocates, bills the byte delta, and waits for update() to bump version", () => {
+    const bytes = textureMemoryBytes();
+    const count = liveTextureCount();
+    let width = 2;
+    let height = 2;
+    const seen: Uint8Array[] = [];
+    const source: RasterSource = {
+      get width() {
+        return width;
+      },
+      get height() {
+        return height;
+      },
+      readPixels: (out) => {
+        seen.push(out);
+        out.fill(9);
+      },
+    };
+    const texture = new CanvasTexture(source);
+    expect(texture.update()).toBe(true);
+    expect(texture.version).toBe(1);
+    expect(seen[0]).toHaveLength(2 * 2 * 4);
+    expect(textureMemoryBytes() - bytes).toBe(2 * 2 * 4);
+
+    width = 4;
+    height = 3;
+    texture.resize();
+    expect(texture.width).toBe(4);
+    expect(texture.height).toBe(3);
+    expect(texture.byteLength).toBe(4 * 3 * 4);
+    expect(texture.version).toBe(1); // version waits for update()
+    expect(textureMemoryBytes() - bytes).toBe(4 * 3 * 4);
+    expect(liveTextureCount() - count).toBe(1);
+
+    expect(texture.update()).toBe(true);
+    expect(texture.version).toBe(2);
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[1]).toHaveLength(4 * 3 * 4);
+    expect(texture.data).toBe(seen[1]);
+    expect(texture.data?.[0]).toBe(9);
+
+    texture.dispose();
+    expect(textureMemoryBytes()).toBe(bytes);
+    expect(liveTextureCount()).toBe(count);
+  });
+
+  it("is a no-op when the source size already matches", () => {
+    const { source } = solidSource(2, 2);
+    const texture = new CanvasTexture(source);
+    texture.update();
+    const buffer = texture.data;
+    const version = texture.version;
+    texture.resize();
+    expect(texture.data).toBe(buffer);
+    expect(texture.version).toBe(version);
+    texture.dispose();
+  });
+
+  it("refuses a grow that exceeds the construction-time byte ceiling", () => {
+    let width = 1;
+    const source: RasterSource = {
+      get width() {
+        return width;
+      },
+      height: 1,
+      readPixels: () => {},
+    };
+    const texture = new CanvasTexture(source, { maximumBytes: 4 });
+    width = 2;
+    expect(() => texture.resize()).toThrow(
+      /8 bytes, over the 4-byte maximumBytes limit/,
+    );
+    expect(texture.width).toBe(1);
+    texture.dispose();
+  });
+
+  it("grows a top-left flip scratch to the new row width", () => {
+    let width = 2;
+    const source: RasterSource = {
+      get width() {
+        return width;
+      },
+      height: 2,
+      origin: "top-left",
+      readPixels: (out) => {
+        out.fill(1, 0, width * 4);
+        out.fill(2, width * 4);
+      },
+    };
+    const texture = new CanvasTexture(source);
+    texture.update();
+    width = 3;
+    texture.resize();
+    texture.update();
+    expect(texture.data?.length).toBe(3 * 2 * 4);
+    // Row 0 of data is v = 0, the BOTTOM — the source wrote value 2 last.
+    expect(texture.data?.[0]).toBe(2);
+    expect(texture.data?.[3 * 4]).toBe(1);
+    texture.dispose();
+  });
+
+  it("refuses resize() on a disposed texture", () => {
+    const { source } = solidSource(1, 1);
+    const texture = new CanvasTexture(source);
+    texture.dispose();
+    let failure: unknown;
+    try {
+      texture.resize();
+    } catch (error) {
+      failure = error;
+    }
+    expect(isFourError(failure) && failure.code).toBe(
+      "INVALID_APPLICATION_STATE",
+    );
   });
 });
 

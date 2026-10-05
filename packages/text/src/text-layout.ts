@@ -60,16 +60,13 @@
  *
  * ## What this tier does not do (§56, staged)
  *
- * Line **breaking** and wrapping (only an explicit `\n` breaks a line here),
- * **vertical** alignment, word spacing, rich-text spans, text on
- * paths and bidirectional reordering. Optional shaping, ligatures and kerning
- * use the RFC0008 shaping seam; the default code-point walk stays unchanged.
- * wrapping is not blocked by that, it is simply the next packet — and it is a
- * *different* kind of change from alignment, because a wrap decides where lines
- * end (a word-breaking rule, i.e. UAX #14 and a language) rather than where a
- * finished line sits. Vertical alignment is a one-line offset the caller
- * already has the numbers for ({@link TextLayout.height}), and putting it here
- * would be inventing an origin convention that §56 does not state.
+ * Line **breaking** wraps at UAX #14-lite opportunities when
+ * {@link TextLayoutOptions.wrapWidth} is a finite positive measure; omitted,
+ * only an explicit `\n` ends a line (bit-identical to the pre-wrapping walk).
+ * **Vertical** alignment, word spacing, rich-text spans, text on
+ * paths and bidirectional reordering remain staged. Optional shaping, ligatures
+ * and kerning use the RFC 0008 shaping seam; the default code-point walk stays
+ * unchanged when wrapping is not asked for.
  */
 
 import {
@@ -78,6 +75,12 @@ import {
   type ShapingDirection,
 } from "./shaping.js";
 import type { GlyphAtlas, GlyphAtlasEntry } from "./glyph-atlas.js";
+import {
+  canBreakAfter,
+  canBreakBefore,
+  wrapToWidth,
+  type Wrappable,
+} from "./line-break.js";
 
 /**
  * One glyph's rectangle: where it goes, and what it samples.
@@ -167,6 +170,16 @@ export interface TextLayoutOptions {
    * subtracts `width / 2` exactly as before.
    */
   align?: TextAlign;
+
+  /**
+   * Maximum line width in world units. Omitted (or `Infinity`) leaves line
+   * ends at explicit `\n` only — bit-identical to the pre-wrapping walk.
+   * A finite positive measure wraps at UAX #14-lite opportunities
+   * (`line-break.ts`): breaking spaces, hyphen-minus, and CJK; a single
+   * unbreakable run wider than the measure overflows rather than being
+   * clipped.
+   */
+  wrapWidth?: number;
 }
 
 /** What {@link layoutText} produces. */
@@ -290,11 +303,16 @@ export function layoutText(
     "letterSpacing",
     options.letterSpacing ?? 0,
   );
+  const wrapWidth = resolveWrapWidth(options.wrapWidth);
 
   if (options.shaper) {
     if (!options.fontId)
       throw new RangeError("fontId is required with a shaper");
-    return layoutShaped(text, atlas, options, letterSpacing);
+    return layoutShaped(text, atlas, options, letterSpacing, wrapWidth);
+  }
+
+  if (wrapWidth !== undefined) {
+    return layoutIdentityWrapped(text, atlas, options, letterSpacing, wrapWidth);
   }
 
   const align = options.align ?? "left";
@@ -405,12 +423,154 @@ export function layoutText(
   });
 }
 
-/** Shapes each explicit line; bidi resolution and wrapping remain caller responsibilities. */
+/** `undefined` means no wrap (the bit-identical path). */
+function resolveWrapWidth(value: number | undefined): number | undefined {
+  if (value === undefined || value === Number.POSITIVE_INFINITY) {
+    return undefined;
+  }
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new RangeError(
+      `layoutText: wrapWidth must be a positive finite measure, or omitted; ` +
+        `got ${String(value)} (§85).`,
+    );
+  }
+  return value;
+}
+
+interface IdentityWrapItem extends Wrappable {
+  readonly entry: GlyphAtlasEntry;
+}
+
+function applyAlignment(
+  quads: MutableTextQuad[],
+  lineStarts: readonly number[],
+  lineWidths: readonly number[],
+  width: number,
+  align: TextAlign,
+): void {
+  if (align === "left") {
+    return;
+  }
+  const factor = align === "center" ? 0.5 : 1;
+  for (let line = 0; line < lineWidths.length; line += 1) {
+    const offset = (width - lineWidths[line]) * factor;
+    if (offset === 0) {
+      continue;
+    }
+    const end =
+      line + 1 < lineStarts.length ? lineStarts[line + 1] : quads.length;
+    for (let i = lineStarts[line]; i < end; i += 1) {
+      const quad = quads[i];
+      quad.x0 += offset;
+      quad.x1 += offset;
+    }
+  }
+}
+
+function layoutIdentityWrapped(
+  text: string,
+  atlas: GlyphAtlas,
+  options: TextLayoutOptions,
+  letterSpacing: number,
+  wrapWidth: number,
+): TextLayout {
+  if (text === "") {
+    return Object.freeze<TextLayout>({
+      quads: Object.freeze([]),
+      width: 0,
+      height: 0,
+      lineCount: 0,
+    });
+  }
+  const size = options.size;
+  const scale = size / atlas.lineHeight;
+  const top = atlas.ascent * scale;
+  const bottom = atlas.descent * scale;
+  const cellWidth = atlas.cellWidth * scale;
+  const paragraphs = text.split("\n");
+  const quads: MutableTextQuad[] = [];
+  const lineStarts: number[] = [];
+  const lineWidths: number[] = [];
+  let width = 0;
+  let lineCount = 0;
+  let baselineY = 0;
+
+  for (let p = 0; p < paragraphs.length; p += 1) {
+    const paragraph = paragraphs[p];
+    const items: IdentityWrapItem[] = [];
+    for (const char of paragraph) {
+      if (char === "\r") {
+        continue;
+      }
+      const codePoint = char.codePointAt(0)!;
+      const entry: GlyphAtlasEntry = atlas.glyphs.get(char) ?? atlas.fallback;
+      items.push({
+        advance: entry.advance * scale,
+        breakAfter: canBreakAfter(codePoint),
+        breakBefore: canBreakBefore(codePoint),
+        entry,
+      });
+    }
+    const wrapped =
+      items.length === 0 ? [[]] : wrapToWidth(items, wrapWidth, letterSpacing);
+    for (const line of wrapped) {
+      lineStarts.push(quads.length);
+      let penX = 0;
+      for (let i = 0; i < line.length; i += 1) {
+        if (i > 0) {
+          penX += letterSpacing;
+        }
+        const item = line[i];
+        if (!item.entry.blank) {
+          quads.push({
+            x0: penX,
+            y0: baselineY - bottom,
+            x1: penX + cellWidth,
+            y1: baselineY + top,
+            u0: item.entry.u0,
+            v0: item.entry.v0,
+            u1: item.entry.u1,
+            v1: item.entry.v1,
+          });
+        }
+        penX += item.advance;
+      }
+      lineWidths.push(penX);
+      width = Math.max(width, penX);
+      lineCount += 1;
+      baselineY -= size;
+    }
+  }
+
+  applyAlignment(quads, lineStarts, lineWidths, width, options.align ?? "left");
+  for (const quad of quads) {
+    Object.freeze(quad);
+  }
+  return Object.freeze<TextLayout>({
+    quads: Object.freeze(quads as TextQuad[]),
+    width,
+    height: lineCount * size,
+    lineCount,
+  });
+}
+
+interface ShapedWrapItem extends Wrappable {
+  readonly glyph: {
+    readonly glyphId: number;
+    readonly cluster: number;
+    readonly offsetX: number;
+    readonly offsetY: number;
+  };
+  readonly direction: "ltr" | "rtl" | "ttb" | "btt";
+}
+
+/** Shapes each explicit paragraph, then wraps when `wrapWidth` is set. */
 function layoutShaped(
   text: string,
   atlas: GlyphAtlas,
   options: TextLayoutOptions,
   spacing: number,
+  wrapWidth: number | undefined,
 ): TextLayout {
   if (!text)
     return Object.freeze({
@@ -427,42 +587,44 @@ function layoutShaped(
       ? atlas.glyphs.get(String.fromCodePoint(glyphId))
       : atlas.glyphsById?.get(glyphId)) ?? atlas.fallback;
   const quads: (MutableTextQuad & { cluster: number })[] = [];
-  const lines = text.split("\n"),
+  const paragraphs = text.split("\n"),
     widths: number[] = [],
     starts: number[] = [];
   let source = 0,
     baseline = 0,
-    width = 0;
-  for (const line of lines) {
+    width = 0,
+    lineCount = 0;
+
+  const emitLine = (
+    glyphs: readonly ShapedWrapItem[],
+    paragraph: string,
+  ): void => {
     starts.push(quads.length);
     let pen = 0,
       count = 0;
-    const runs = options.shaper!.shape({
-      ...options,
-      text: line,
-      fontId: options.fontId!,
-    });
-    for (const run of runs) {
-      const glyphs = run.glyphs.filter((g) => line[g.cluster] !== "\r");
-      const advances = glyphs.map((g) =>
-        identity
-          ? entryFor(g.glyphId).advance * scale
-          : (g.advanceX * size) / 1000,
-      );
-      let runWidth = 0;
-      for (let i = 0; i < glyphs.length; i++) {
-        if (i) runWidth += spacing;
-        runWidth += advances[i];
+    let i = 0;
+    while (i < glyphs.length) {
+      const direction = glyphs[i].direction;
+      let end = i + 1;
+      while (end < glyphs.length && glyphs[end].direction === direction) {
+        end += 1;
       }
-      if (glyphs.length && count) pen += spacing;
-      let cursor = run.direction === "rtl" ? pen + runWidth : pen;
-      for (let i = 0; i < glyphs.length; i++) {
-        const g = glyphs[i],
-          entry = entryFor(g.glyphId);
-        if (run.direction === "rtl") {
-          if (i) cursor -= spacing;
-          cursor -= advances[i];
-        } else if (i) cursor += spacing;
+      const run = glyphs.slice(i, end);
+      let runWidth = 0;
+      for (let r = 0; r < run.length; r += 1) {
+        if (r) runWidth += spacing;
+        runWidth += run[r].advance;
+      }
+      if (run.length && count) pen += spacing;
+      let cursor = direction === "rtl" ? pen + runWidth : pen;
+      for (let r = 0; r < run.length; r += 1) {
+        const item = run[r];
+        const g = item.glyph;
+        const entry = entryFor(g.glyphId);
+        if (direction === "rtl") {
+          if (r) cursor -= spacing;
+          cursor -= item.advance;
+        } else if (r) cursor += spacing;
         const x = g.offsetX === 0 ? cursor : cursor + (g.offsetX * size) / 1000;
         const y =
           g.offsetY === 0 ? baseline : baseline + (g.offsetY * size) / 1000;
@@ -478,18 +640,56 @@ function layoutShaped(
             v1: entry.v1,
             cluster: source + g.cluster,
           });
-        if (run.direction !== "rtl") cursor += advances[i];
+        if (direction !== "rtl") cursor += item.advance;
       }
-      pen = run.direction === "rtl" ? pen + runWidth : cursor;
-      count += glyphs.length;
+      pen = direction === "rtl" ? pen + runWidth : cursor;
+      count += run.length;
+      i = end;
     }
     widths.push(pen);
     width = Math.max(width, pen);
-    source += line.length + 1;
+    lineCount += 1;
     baseline -= size;
+    void paragraph;
+  };
+
+  for (const paragraph of paragraphs) {
+    const runs = options.shaper!.shape({
+      ...options,
+      text: paragraph,
+      fontId: options.fontId!,
+    });
+    const items: ShapedWrapItem[] = [];
+    for (const run of runs) {
+      const glyphs = run.glyphs.filter((g) => paragraph[g.cluster] !== "\r");
+      for (const g of glyphs) {
+        const codePoint = paragraph.codePointAt(g.cluster) ?? 0;
+        items.push({
+          advance: identity
+            ? entryFor(g.glyphId).advance * scale
+            : (g.advanceX * size) / 1000,
+          breakAfter: canBreakAfter(codePoint),
+          breakBefore: canBreakBefore(codePoint),
+          glyph: g,
+          direction: run.direction,
+        });
+      }
+    }
+    const wrapped =
+      wrapWidth === undefined
+        ? items.length === 0
+          ? [[]]
+          : [items]
+        : items.length === 0
+          ? [[]]
+          : wrapToWidth(items, wrapWidth, spacing);
+    for (const line of wrapped) {
+      emitLine(line, paragraph);
+    }
+    source += paragraph.length + 1;
   }
   if (options.align && options.align !== "left")
-    for (let line = 0; line < lines.length; line++) {
+    for (let line = 0; line < lineCount; line++) {
       const offset =
         (width - widths[line]) * (options.align === "center" ? 0.5 : 1);
       if (offset)
@@ -505,7 +705,7 @@ function layoutShaped(
   return Object.freeze({
     quads: Object.freeze(quads.map((q) => Object.freeze(q))),
     width,
-    height: lines.length * size,
-    lineCount: lines.length,
+    height: lineCount * size,
+    lineCount,
   });
 }

@@ -121,6 +121,8 @@ function geometry(mask = 0) {
     colors: undefined as Float32Array | undefined,
     joints: undefined as Uint16Array | undefined,
     weights: undefined as Float32Array | undefined,
+    positions1: undefined as Float32Array | undefined,
+    normals1: undefined as Float32Array | undefined,
     indices: undefined as Uint16Array | Uint32Array | undefined,
     mode: "triangles" as "triangles" | "lines",
     get drawCount() {
@@ -357,6 +359,22 @@ describe("GeometryCache refresh — data, bindings, and lifetimes", () => {
     expect(cache.size).toBe(0);
     ctx.control.failBuffer = false;
     expect(cache.acquire(cacheable(data))).not.toBeNull();
+    cache.dispose();
+  });
+
+  it("uploads positions1 at location 6 and normals1 at location 7", () => {
+    const ctx = geometryContext();
+    const cache = new GeometryCache(ctx.gl);
+    const data = geometry();
+    data.positions1 = new Float32Array([0, 1, 0, 1, 1, 0, 0, 2, 0]);
+    data.normals1 = new Float32Array(9).fill(1);
+    const record = cache.acquire(cacheable(data))!;
+    const attributes = ctx.vaos.get(record.vertexArray)!.attributes;
+    expect(attributes.get(6)).toBe(record.position1Buffer);
+    expect(attributes.get(7)).toBe(record.normal1Buffer);
+    expect(ctx.buffers.get(record.position1Buffer!)).toEqual(
+      bytes(data.positions1),
+    );
     cache.dispose();
   });
 });

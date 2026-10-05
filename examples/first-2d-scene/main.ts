@@ -141,6 +141,15 @@ import { OrthographicCamera, createFullscreenViewport } from "fourJS/scene";
 import { buildGlyphAtlas } from "fourJS/text";
 import { Text } from "fourJS";
 
+declare global {
+  interface Window {
+    /** Injected by the smoothness gate: hold virtual time after the next app.step. */
+    __fourPauseAfterStep?: boolean;
+    /** Injected by the smoothness gate: freeze the virtual rAF clock. */
+    __fourPauseRaf?: boolean;
+  }
+}
+
 // --- surface ---------------------------------------------------------------
 
 const canvas = document.querySelector<HTMLCanvasElement>("#scene");
@@ -730,6 +739,7 @@ function syncStatus(): void {
   status.dataset["alpha"] = app.time.interpolationAlpha.toFixed(4);
   status.dataset["dropped"] = app.time.droppedTime.toFixed(6);
   status.dataset["substeps"] = String(app.scheduler.fixedStepsLastFrame);
+  status.dataset["frames"] = String(appFrames);
 }
 
 // --- the frame loop ---------------------------------------------------------
@@ -748,11 +758,16 @@ function syncStatus(): void {
 // negative first delta would make app.step throw and kill the loop
 // (WP-3.7-fix1, caught by the WP-3.8 browser gate).
 let last: number | null = null;
+let appFrames = 0;
 
 function frame(now: number): void {
   if (last !== null) {
     app.step((now - last) / 1000);
+    appFrames += 1;
     syncStatus();
+    if (window.__fourPauseAfterStep === true) {
+      window.__fourPauseRaf = true;
+    }
   }
   last = now;
   requestAnimationFrame(frame);

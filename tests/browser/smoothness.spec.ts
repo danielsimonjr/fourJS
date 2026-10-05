@@ -79,7 +79,7 @@ import { inflateSync } from "node:zlib";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-import { framesFor, waitForFrames } from "./helpers/wait.js";
+import { framesFor, readStatusData, waitForFrames, waitForProbe } from "./helpers/wait.js";
 
 declare global {
   interface Window {
@@ -98,6 +98,11 @@ declare global {
      * only → every sample on-step).
      */
     __fourHostRaf?: typeof requestAnimationFrame;
+    /**
+     * When true, the example pauses the virtual clock after the next
+     * completed `app.step` so a Playwright round-trip cannot overshoot.
+     */
+    __fourPauseAfterStep?: boolean;
   }
 }
 
@@ -886,27 +891,40 @@ test.describe("§106: moving primitives render smoothly under fixed-step simulat
       "the injected virtual clock never delivered a frame",
     ).toBeGreaterThan(0);
 
+    await waitForProbe(page, (status) => Number(status["frames"]) >= 1, {
+      message: "the example never completed an app.step (data-frames)",
+    });
+
     const fractions: number[] = [];
-    const frameNumbers: number[] = [];
+    const appFrameNumbers: number[] = [];
+    const publishedAlphas: number[] = [];
     for (let i = 0; i < INTERPOLATION_SAMPLE_COUNT; i++) {
-      // One new virtual frame per sample — consecutive counts alternate parity,
-      // so both alpha 0.5 and 0.0 appear without a wall-clock alias. The wait
-      // pumps host rAF so it cannot increment the virtual clock itself (that
-      // plus pause produced even frames only on `d2f36a5`). The screenshot is
-      // taken with the clock paused: otherwise SwiftShader encode time advances
-      // 1.5Δ frames and a stable stride of 3 aliases every sample onto an
-      // on-step pose (the 2026-09-08 same-commit flake).
-      const start = await virtualFrameCount(page);
-      frameNumbers.push(await waitForVirtualFrameCount(page, start + 1));
-      const image = await grabWithClockPaused(page, canvas);
+      const startFrames = Number(
+        (await readStatusData(page))["frames"] ?? "0",
+      );
+      await page.evaluate(() => {
+        window.__fourPauseAfterStep = true;
+        window.__fourPauseRaf = false;
+      });
+      await waitForProbe(
+        page,
+        (status) => Number(status["frames"]) >= startFrames + 1,
+        {
+          message: `sample ${String(i)}: data-frames never advanced past ${String(startFrames)}`,
+        },
+      );
+      await pumpHostAnimationFrame(page);
+      await pumpHostAnimationFrame(page);
+      const status = await readStatusData(page);
+      appFrameNumbers.push(Number(status["frames"] ?? "NaN"));
+      publishedAlphas.push(Number(status["alpha"] ?? "NaN"));
+      const image = await grab(canvas);
       const fix = locateOrbiter(image);
       expect(
         fix,
         `sample ${String(i)}: no orange orbiter pixels to measure`,
       ).not.toBeNull();
       const found = fix as OrbiterFix;
-      // The sub-step reading is only meaningful if the centroid really is the
-      // orbiter, so re-run the same identity checks the continuity test makes.
       expect(
         found.matched / pixelCount(image),
         `sample ${String(i)}: only ${String(found.matched)} orange pixels, too few to trust as the orbiter`,
@@ -915,14 +933,28 @@ test.describe("§106: moving primitives render smoothly under fixed-step simulat
         Math.abs(found.radius - ORBIT_RADIUS),
         `sample ${String(i)}: recovered radius ${found.radius.toFixed(3)} is not the trajectory's ${String(ORBIT_RADIUS)}`,
       ).toBeLessThanOrEqual(RADIUS_TOLERANCE_WORLD);
-      fractions.push(fractionalStep(found.angle));
+      const fraction = fractionalStep(found.angle);
+      fractions.push(fraction);
+      const alpha = Number(status["alpha"] ?? "NaN");
+      if (alpha >= MID_STEP_LOW && alpha <= MID_STEP_HIGH) {
+        expect(
+          fraction,
+          `sample ${String(i)}: data-alpha=${alpha.toFixed(3)} is mid-step but the centroid fraction ${fraction.toFixed(3)} is not`,
+        ).toBeGreaterThanOrEqual(MID_STEP_LOW);
+        expect(fraction).toBeLessThanOrEqual(MID_STEP_HIGH);
+      }
+      await page.evaluate(() => {
+        window.__fourPauseAfterStep = false;
+        window.__fourPauseRaf = false;
+      });
     }
 
     const midStep = fractions.filter(
       (f) => f >= MID_STEP_LOW && f <= MID_STEP_HIGH,
     ).length;
     console.log(
-      `virtual frames: ${frameNumbers.join(", ")}; ` +
+      `app frames: ${appFrameNumbers.join(", ")}; ` +
+        `published alpha: ${publishedAlphas.map((a) => a.toFixed(3)).join(", ")}; ` +
         `position within fixed step: ${fractions.map((f) => f.toFixed(3)).join(", ")}`,
     );
     console.log(
@@ -932,7 +964,8 @@ test.describe("§106: moving primitives render smoothly under fixed-step simulat
     console.log(
       `clock diagnostics: alpha=${(await status.getAttribute("data-alpha")) ?? "?"} ` +
         `dropped=${(await status.getAttribute("data-dropped")) ?? "?"} ` +
-        `substeps=${(await status.getAttribute("data-substeps")) ?? "?"}`,
+        `substeps=${(await status.getAttribute("data-substeps")) ?? "?"} ` +
+        `frames=${(await status.getAttribute("data-frames")) ?? "?"}`,
     );
 
     expect(

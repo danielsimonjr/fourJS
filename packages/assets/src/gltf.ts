@@ -24,8 +24,9 @@
  *   with no transport at all still refuses loudly: presence is still the
  *   capability, the loader just looks for one before giving up.
  * - **Geometry**: every attribute the engine's geometry layer has — positions,
- *   normals, uvs, colors, joints, weights — plus indices, `triangles` and
- *   `lines` modes, interleaved and strided accessors.
+ *   normals, uvs, colors, joints, weights, and one morph target (`targets[0]`
+ *   `POSITION`/`NORMAL`, stored as absolute `positions1`/`normals1`) — plus
+ *   indices, `triangles` and `lines` modes, interleaved and strided accessors.
  * - **Materials**: §59's metallic-roughness tier — base colour factor and
  *   texture, metallic/roughness factors, packed `metallicRoughnessTexture`
  *   (linear), emissive factor, `OPAQUE`/`BLEND`. Packed MR and emissive
@@ -54,13 +55,13 @@
  *
  * **Refused, loudly and by name** (§85, §96 — retrying cannot fix a file):
  * any `extensionsRequired` entry (Draco and every other compression extension
- * arrives as one), sparse accessors, morph targets (`primitive.targets`,
- * `mesh.weights`, `node.weights`, `weights` animation channels — the GPU
- * morph path is staged, and loading weights that deform nothing would draw
- * the wrong picture), `CUBICSPLINE` samplers, `MASK` alpha (no cutoff in the
- * material tier), point/strip/fan primitive modes, `TEXCOORD_1`-indexed
- * texture slots, accessors without a buffer view, and non-base64 `data:`
- * URIs.
+ * arrives as one), sparse accessors, more than one morph target
+ * (`primitive.targets.length !== 1`, `meshes.weights`/`nodes.weights` not
+ * length 1, a target `TANGENT` stream), `weights` animation channels (the
+ * GPU path ships one static weight; a clip that deforms it is a follow-up),
+ * `CUBICSPLINE` samplers, `MASK` alpha (no cutoff in the material tier),
+ * point/strip/fan primitive modes, `TEXCOORD_1`-indexed texture slots,
+ * accessors without a buffer view, and non-base64 `data:` URIs.
  *
  * **Ignored with a record** (content whose absence cannot corrupt the
  * picture; each is pushed into {@link GltfAsset.ignored} and §85-warned
@@ -195,6 +196,10 @@ export interface GltfPrimitiveRecord {
   readonly joints?: Uint16Array;
   /** Optional joint weights, 4 per vertex, index-parallel with `joints`. */
   readonly weights?: Float32Array;
+  /** Optional first morph-target positions (`POSITION` of `targets[0]`). */
+  readonly positions1?: Float32Array;
+  /** Optional first morph-target normals (`NORMAL` of `targets[0]`). */
+  readonly normals1?: Float32Array;
   /** Optional indices, each validated `< vertexCount` (§96). */
   readonly indices?: Uint16Array | Uint32Array;
   /** Primitive assembly. */
@@ -209,6 +214,8 @@ export interface GltfMeshRecord {
   readonly name: string;
   /** The mesh's primitives, in file order; never empty. */
   readonly primitives: readonly GltfPrimitiveRecord[];
+  /** One-target morph weights from `meshes[i].weights`, when authored. */
+  readonly morphWeights?: Float32Array;
   /** §78 user metadata (`extras`), detached from the parsed document. */
   readonly extras?: JsonValue;
 }
@@ -283,6 +290,8 @@ export interface GltfNodeRecord {
   readonly mesh: number | null;
   /** Index into {@link GltfAsset.skins}, or `null`. */
   readonly skin: number | null;
+  /** One-target morph weights from `nodes[i].weights`, when authored. */
+  readonly morphWeights?: Float32Array;
   /** §78 user metadata (`extras`). */
   readonly extras?: JsonValue;
 }
@@ -1970,12 +1979,21 @@ async function parseGltf(
   for (let i = 0; i < meshRecords.length; i += 1) {
     const where = `meshes[${String(i)}]`;
     const record = asObject(meshRecords[i], url, where);
+    let morphWeights: Float32Array | undefined;
     if (record["weights"] !== undefined) {
-      refuse(
-        url,
-        `${where}.weights`,
-        "morph targets are refused by name at this tier — the GPU morph path is staged, and weights that deform nothing would draw the wrong picture.",
-      );
+      const list = asArray(record["weights"], url, `${where}.weights`);
+      if (list.length !== 1) {
+        refuse(
+          url,
+          `${where}.weights`,
+          "this tier ships one GPU morph target; meshes.weights must have length 1.",
+        );
+      }
+      const value = list[0];
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        refuse(url, `${where}.weights[0]`, "must be a finite number.");
+      }
+      morphWeights = new Float32Array([value]);
     }
     const primitiveValues = asArray(
       record["primitives"],
@@ -2004,6 +2022,7 @@ async function parseGltf(
     const mesh: GltfMeshRecord = {
       name: nameOf(record, url, where),
       primitives,
+      ...(morphWeights === undefined ? {} : { morphWeights }),
     };
     const extras = extrasOf(record);
     meshes.push(extras === undefined ? mesh : { ...mesh, extras });
@@ -2019,12 +2038,21 @@ async function parseGltf(
   for (let i = 0; i < nodeRecords.length; i += 1) {
     const where = `nodes[${String(i)}]`;
     const record = asObject(nodeRecords[i], url, where);
+    let nodeMorphWeights: Float32Array | undefined;
     if (record["weights"] !== undefined) {
-      refuse(
-        url,
-        `${where}.weights`,
-        "morph-target weights are refused by name at this tier.",
-      );
+      const list = asArray(record["weights"], url, `${where}.weights`);
+      if (list.length !== 1) {
+        refuse(
+          url,
+          `${where}.weights`,
+          "this tier ships one GPU morph target; nodes.weights must have length 1.",
+        );
+      }
+      const value = list[0];
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        refuse(url, `${where}.weights[0]`, "must be a finite number.");
+      }
+      nodeMorphWeights = new Float32Array([value]);
     }
     const childrenValue = record["children"];
     const children: number[] = [];
@@ -2094,6 +2122,7 @@ async function parseGltf(
       matrix,
       mesh,
       skin,
+      ...(nodeMorphWeights === undefined ? {} : { morphWeights: nodeMorphWeights }),
     };
     const extras = extrasOf(record);
     nodes.push(extras === undefined ? node : { ...node, extras });
@@ -2438,13 +2467,6 @@ function parsePrimitive(
   where: string,
 ): GltfPrimitiveRecord {
   const { url } = context;
-  if (record["targets"] !== undefined) {
-    refuse(
-      url,
-      `${where}.targets`,
-      "morph targets are refused by name at this tier — the GPU morph path is staged.",
-    );
-  }
   const modeValue = record["mode"] ?? 4;
   let mode: GltfPrimitiveMode;
   if (modeValue === 4) {
@@ -2612,6 +2634,91 @@ function parsePrimitive(
   }
 
   const material = optionalIndex(record, "material", materialCount, url, where);
+  let positions1: Float32Array | undefined;
+  let normals1: Float32Array | undefined;
+  if (record["targets"] !== undefined) {
+    const targets = asArray(record["targets"], url, `${where}.targets`);
+    if (targets.length !== 1) {
+      refuse(
+        url,
+        `${where}.targets`,
+        "this tier ships one GPU morph target; primitive.targets must have length 1.",
+      );
+    }
+    const targetWhere = `${where}.targets[0]`;
+    const target = asObject(targets[0], url, targetWhere);
+    if (target["TANGENT"] !== undefined) {
+      refuse(
+        url,
+        `${targetWhere}.TANGENT`,
+        "morph-target tangents are refused by name at this tier.",
+      );
+    }
+    for (const key of Object.keys(target)) {
+      if (key !== "POSITION" && key !== "NORMAL") {
+        ignore(context, `${targetWhere}.${key}`);
+      }
+    }
+    const morphIndex = (key: string): number | null => {
+      const value = target[key];
+      if (value === undefined) {
+        return null;
+      }
+      const index = requiredIndex(
+        value,
+        context.accessors.length,
+        url,
+        `${targetWhere}.${key}`,
+      );
+      if (context.accessors[index].count !== vertexCount) {
+        refuse(
+          url,
+          `${targetWhere}.${key}`,
+          `has ${String(context.accessors[index].count)} elements; POSITION has ${String(vertexCount)} (§85).`,
+          { count: context.accessors[index].count, vertexCount },
+        );
+      }
+      return index;
+    };
+    const position1Index = morphIndex("POSITION");
+    if (position1Index !== null) {
+      // glTF morph POSITION is a displacement. The WebGL mix shader takes an
+      // absolute target pose, so convert once here (hand-authored geometry
+      // already stores absolute `positions1`).
+      const delta = readFloats(
+        context,
+        position1Index,
+        ["VEC3"],
+        "none",
+        `${targetWhere}.POSITION`,
+      );
+      positions1 = new Float32Array(delta.length);
+      for (let i = 0; i < delta.length; i += 1) {
+        positions1[i] = positions[i] + delta[i];
+      }
+    }
+    const normal1Index = morphIndex("NORMAL");
+    if (normal1Index !== null) {
+      if (normals === undefined) {
+        refuse(
+          url,
+          `${targetWhere}.NORMAL`,
+          "a morph NORMAL requires attributes.NORMAL on the primitive.",
+        );
+      }
+      const delta = readFloats(
+        context,
+        normal1Index,
+        ["VEC3"],
+        "none",
+        `${targetWhere}.NORMAL`,
+      );
+      normals1 = new Float32Array(delta.length);
+      for (let i = 0; i < delta.length; i += 1) {
+        normals1[i] = normals[i] + delta[i];
+      }
+    }
+  }
   const result: GltfPrimitiveRecord = {
     positions,
     mode,
@@ -2621,6 +2728,8 @@ function parsePrimitive(
     ...(colors === undefined ? {} : { colors }),
     ...(joints === undefined ? {} : { joints }),
     ...(weights === undefined ? {} : { weights }),
+    ...(positions1 === undefined ? {} : { positions1 }),
+    ...(normals1 === undefined ? {} : { normals1 }),
     ...(indices === undefined ? {} : { indices }),
   };
   return result;

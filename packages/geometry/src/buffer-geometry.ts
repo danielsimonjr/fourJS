@@ -65,11 +65,13 @@
  *   data.
  *
  * Four influences per vertex matches glTF's `JOINTS_0`/`WEIGHTS_0` and fixes
- * the attribute budget; a second set (`JOINTS_1`/`WEIGHTS_1`) is the named
- * extension point, at the next two locations, so the layout is not
- * re-litigated (RFC 0003 open question 2, adopted). The WebGL backend binds
- * these at the fixed attribute locations **4 (joints)** and **5 (weights)**,
- * continuing R-19's numbering — 0 position, 1 normal, 2 uv, 3 colour.
+ * the attribute budget. Morph target `k` occupies `POSITION_k`/`NORMAL_k` at
+ * locations `6 + 2(k−1)` / `7 + 2(k−1)` — this packet ships **one** target
+ * (`positions1` / `normals1` at **6 / 7**). `JOINTS_1`/`WEIGHTS_1` keep their
+ * reserved slots at **8 / 9**, past the first morph pair, so an eight-influence
+ * skin and a one-target morph can coexist (spec revision 1.19). The WebGL
+ * backend binds joints/weights at **4 / 5**, continuing R-19's numbering —
+ * 0 position, 1 normal, 2 uv, 3 colour.
  *
  * ## Version, not events
  *
@@ -203,6 +205,18 @@ export interface BufferGeometryOptions {
    */
   weights?: Float32Array;
   /**
+   * Optional first morph-target positions (`POSITION_1`) as xyz triplets,
+   * index-aligned with `positions` (§54 GPU morph path). Length must equal
+   * `positions.length`. Bound at attribute location **6**.
+   */
+  positions1?: Float32Array;
+  /**
+   * Optional first morph-target normals (`NORMAL_1`) as xyz triplets,
+   * index-aligned with `positions` (§54). Length must equal `positions.length`.
+   * Bound at attribute location **7**.
+   */
+  normals1?: Float32Array;
+  /**
    * Optional index buffer. Every entry must be a valid vertex index and the
    * length must be a multiple of the mode's primitive size (§85).
    */
@@ -273,6 +287,8 @@ function validate(
   colors: Float32Array | undefined,
   joints: Uint16Array | undefined,
   weights: Float32Array | undefined,
+  positions1: Float32Array | undefined,
+  normals1: Float32Array | undefined,
   indices: GeometryIndexArray | undefined,
   mode: GeometryDrawMode,
 ): void {
@@ -297,6 +313,8 @@ function validate(
   validateAttribute("colors", colors, 4, vertexCount, "§53, §60a");
   validateAttribute("joints", joints, 4, vertexCount, "§53, §54");
   validateAttribute("weights", weights, 4, vertexCount, "§53, §54");
+  validateAttribute("positions1", positions1, 3, vertexCount, "§53, §54");
+  validateAttribute("normals1", normals1, 3, vertexCount, "§53, §54");
 
   const size = primitiveSize(mode);
 
@@ -355,6 +373,10 @@ export class BufferGeometry extends Geometry {
 
   #weights: Float32Array | undefined;
 
+  #positions1: Float32Array | undefined;
+
+  #normals1: Float32Array | undefined;
+
   #indices: GeometryIndexArray | undefined;
 
   #mode: GeometryDrawMode;
@@ -393,6 +415,8 @@ export class BufferGeometry extends Geometry {
       options.colors,
       options.joints,
       options.weights,
+      options.positions1,
+      options.normals1,
       options.indices,
       mode,
     );
@@ -402,6 +426,8 @@ export class BufferGeometry extends Geometry {
     this.#colors = options.colors;
     this.#joints = options.joints;
     this.#weights = options.weights;
+    this.#positions1 = options.positions1;
+    this.#normals1 = options.normals1;
     this.#indices = options.indices;
     this.#mode = mode;
     noteGeometry(1, this.byteLength);
@@ -441,6 +467,8 @@ export class BufferGeometry extends Geometry {
       this.#colors,
       this.#joints,
       this.#weights,
+      this.#positions1,
+      this.#normals1,
       this.#indices,
       this.#mode,
     );
@@ -474,6 +502,8 @@ export class BufferGeometry extends Geometry {
       this.#colors,
       this.#joints,
       this.#weights,
+      this.#positions1,
+      this.#normals1,
       this.#indices,
       this.#mode,
     );
@@ -509,6 +539,8 @@ export class BufferGeometry extends Geometry {
       this.#colors,
       this.#joints,
       this.#weights,
+      this.#positions1,
+      this.#normals1,
       this.#indices,
       this.#mode,
     );
@@ -544,6 +576,8 @@ export class BufferGeometry extends Geometry {
       value,
       this.#joints,
       this.#weights,
+      this.#positions1,
+      this.#normals1,
       this.#indices,
       this.#mode,
     );
@@ -578,6 +612,8 @@ export class BufferGeometry extends Geometry {
       this.#colors,
       value,
       this.#weights,
+      this.#positions1,
+      this.#normals1,
       this.#indices,
       this.#mode,
     );
@@ -606,11 +642,65 @@ export class BufferGeometry extends Geometry {
       this.#colors,
       this.#joints,
       value,
+      this.#positions1,
+      this.#normals1,
       this.#indices,
       this.#mode,
     );
     const before = this.byteLength;
     this.#weights = value;
+    this.#mutated(before);
+  }
+
+  /**
+   * Optional first morph-target positions, or `undefined` (§54 GPU morph).
+   * Location **6**. Same assignment rules as {@link BufferGeometry.normals}.
+   */
+  get positions1(): Float32Array | undefined {
+    return this.#positions1;
+  }
+
+  set positions1(value: Float32Array | undefined) {
+    validate(
+      this.#positions,
+      this.#normals,
+      this.#uvs,
+      this.#colors,
+      this.#joints,
+      this.#weights,
+      value,
+      this.#normals1,
+      this.#indices,
+      this.#mode,
+    );
+    const before = this.byteLength;
+    this.#positions1 = value;
+    this.#mutated(before);
+  }
+
+  /**
+   * Optional first morph-target normals, or `undefined` (§54 GPU morph).
+   * Location **7**. Same assignment rules as {@link BufferGeometry.normals}.
+   */
+  get normals1(): Float32Array | undefined {
+    return this.#normals1;
+  }
+
+  set normals1(value: Float32Array | undefined) {
+    validate(
+      this.#positions,
+      this.#normals,
+      this.#uvs,
+      this.#colors,
+      this.#joints,
+      this.#weights,
+      this.#positions1,
+      value,
+      this.#indices,
+      this.#mode,
+    );
+    const before = this.byteLength;
+    this.#normals1 = value;
     this.#mutated(before);
   }
 
@@ -632,6 +722,8 @@ export class BufferGeometry extends Geometry {
       this.#colors,
       this.#joints,
       this.#weights,
+      this.#positions1,
+      this.#normals1,
       value,
       this.#mode,
     );
@@ -657,6 +749,8 @@ export class BufferGeometry extends Geometry {
       this.#colors,
       this.#joints,
       this.#weights,
+      this.#positions1,
+      this.#normals1,
       this.#indices,
       value,
     );
@@ -708,7 +802,7 @@ export class BufferGeometry extends Geometry {
   /**
    * Bytes this geometry holds (§83, §84's `bufferMemory`) — the sum of the
    * `byteLength`s of `positions` and whichever of `normals`, `uvs`, `colors`,
-   * `joints`, `weights`, and `indices` are present, and therefore exactly what
+   * `joints`, `weights`, `positions1`, `normals1`, and `indices` are present, and therefore exactly what
    * a backend uploads for it.
    *
    * ```ts
@@ -737,6 +831,8 @@ export class BufferGeometry extends Geometry {
       (this.#colors?.byteLength ?? 0) +
       (this.#joints?.byteLength ?? 0) +
       (this.#weights?.byteLength ?? 0) +
+      (this.#positions1?.byteLength ?? 0) +
+      (this.#normals1?.byteLength ?? 0) +
       (this.#indices?.byteLength ?? 0)
     );
   }
@@ -883,6 +979,8 @@ export class BufferGeometry extends Geometry {
       colors: this.#colors?.slice(),
       joints: this.#joints?.slice(),
       weights: this.#weights?.slice(),
+      positions1: this.#positions1?.slice(),
+      normals1: this.#normals1?.slice(),
       indices: this.#indices?.slice(),
       mode: this.#mode,
     });
@@ -920,6 +1018,8 @@ export class BufferGeometry extends Geometry {
     this.#colors = undefined;
     this.#joints = undefined;
     this.#weights = undefined;
+    this.#positions1 = undefined;
+    this.#normals1 = undefined;
     this.#indices = undefined;
     noteGeometry(-1, -before);
     releaseGeometryDisposable(this);

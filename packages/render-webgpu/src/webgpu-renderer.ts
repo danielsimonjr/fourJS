@@ -1720,6 +1720,18 @@ export class WebgpuRenderer implements Renderer {
           }
           continue;
         }
+        if (!maskPass && item.geometry.positions1 !== undefined) {
+          if (DEV) {
+            devWarnOnce(
+              "webgpu-gpu-morph-skip",
+              "§54: this scene contains a mesh with GPU morph streams " +
+                "(positions1) but the WebGPU backend does not draw them yet; " +
+                "those items are skipped rather than shown in bind pose " +
+                "(RFC 0003 WP-SK.4). Use the WebGL 2 one-target path.",
+            );
+          }
+          continue;
+        }
         if (
           !maskPass &&
           item.kind !== "unlit" &&

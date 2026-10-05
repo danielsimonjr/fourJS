@@ -99,12 +99,13 @@ import type { RenderTarget } from "./render-target.js";
  * ## Ownership and accounting (§83)
  *
  * The engine owns the buffer; the source owns the pixels. One `Uint8Array` of
- * `width * height * 4` bytes is allocated at construction and reused for the
- * texture's life — no per-frame allocation, and the §83 totals
- * (`textureMemoryBytes`, `liveTextureCount`, via `noteTexture`) have something
- * concrete to count, which is exactly what the application-side repaint recipe
- * this class replaces could not report (§84's `textureMemory` under-reported
- * by the most churn-heavy allocation an application makes).
+ * `width * height * 4` bytes is allocated at construction and reused until
+ * {@link CanvasTexture.resize} or {@link CanvasTexture.dispose} — no per-frame
+ * allocation, and the §83 totals (`textureMemoryBytes`, `liveTextureCount`,
+ * via `noteTexture`) have something concrete to count, which is exactly what
+ * the application-side repaint recipe this class replaces could not report
+ * (§84's `textureMemory` under-reported by the most churn-heavy allocation an
+ * application makes).
  */
 
 import { FourError, type Disposable } from "@fourjs/core";
@@ -146,10 +147,16 @@ const ORIGINS: readonly RasterOrigin[] = ["bottom-left", "top-left"];
  * lives under.
  */
 export interface RasterSource {
-  /** Width in texels. A finite integer ≥ 1, and constant for this source's life. */
+  /**
+   * Width in texels. A finite integer ≥ 1. Constant until the application
+   * calls {@link CanvasTexture.resize} after changing it.
+   */
   readonly width: number;
 
-  /** Height in texels. A finite integer ≥ 1, and constant for this source's life. */
+  /**
+   * Height in texels. A finite integer ≥ 1. Constant until the application
+   * calls {@link CanvasTexture.resize} after changing it.
+   */
   readonly height: number;
 
   /**
@@ -198,11 +205,12 @@ export interface CanvasTextureOptions extends Pick<
   "filter" | "wrap" | "mipmaps" | "minFilter" | "anisotropy"
 > {
   /**
-   * §96 ceiling on `width * height * 4` — refused at construction and, because
-   * the size is re-checked there, effectively on every
-   * {@link CanvasTexture.update}. Defaults to **64 MiB** (a 4096 × 4096 RGBA8
-   * surface); `Number.POSITIVE_INFINITY` is the explicit in-source opt-out.
-   * See the module header for the A-23 reasoning.
+   * §96 ceiling on `width * height * 4` — refused at construction and on
+   * {@link CanvasTexture.resize}, and re-checked on every
+   * {@link CanvasTexture.update} against the size last recorded. Defaults to
+   * **64 MiB** (a 4096 × 4096 RGBA8 surface); `Number.POSITIVE_INFINITY` is
+   * the explicit in-source opt-out. See the module header for the A-23
+   * reasoning.
    */
   readonly maximumBytes?: number;
 }
@@ -320,19 +328,23 @@ function flipRows(
  * application that forgets `update()` after `invalidate()` sees a stale
  * texture and no diagnostic.
  *
- * ## The size is fixed for the texture's life
+ * ## In-place resize (RFC 0004, unblocked once R-30 landed)
  *
  * {@link RasterSource.width}/{@link RasterSource.height} are re-validated on
- * every {@link CanvasTexture.update}; a source that changes size is refused
- * with `INVALID_APPLICATION_STATE` (§89) rather than silently reallocated.
- * Resizing means constructing a new `CanvasTexture` and disposing the old one.
- * This is deliberate and gated, not provisional: §77's change notification is
- * `R-30`'s unshipped half, R-29 recorded that a §55 sprite `frame` is
- * validated against its texture's size only at write time, and a version bump
- * tells a cache to re-read, not a dependent to re-validate — so in-place
- * resize is forbidden precisely so the stale-frame hazard cannot arise, and
- * lifting the restriction is explicitly gated on `R-30` (RFC 0004 Q5,
- * adopted).
+ * every {@link CanvasTexture.update}. A source that changes size **without**
+ * {@link CanvasTexture.resize} is still refused with
+ * `INVALID_APPLICATION_STATE` (§89) rather than silently reallocated — the
+ * mid-paint panel-resize hazard must not be read at the old size.
+ *
+ * {@link CanvasTexture.resize} is the sanctioned path: it re-validates the
+ * source against the construction-time §96 ceiling, reallocates the
+ * engine-owned buffer, updates §83 accounting by the byte delta, marks the
+ * surface fully dirty, and sets the stale flag. It does **not** bump
+ * {@link CanvasTexture.version}; the next successful {@link CanvasTexture.update}
+ * does, so a backend cache keyed on version re-uploads once, after the new
+ * pixels exist. §55 sprite `frame` rectangles are still validated at write
+ * time only — a frame authored against the previous size may be stale until
+ * the application writes it again.
  */
 export class CanvasTexture implements MaterialTexture, Disposable {
   /**
@@ -344,21 +356,24 @@ export class CanvasTexture implements MaterialTexture, Disposable {
 
   readonly #source: RasterSource;
 
-  /** Size recorded at construction — the values the source must keep (§2a). */
-  readonly #width: number;
+  /** Size last recorded by construction or {@link CanvasTexture.resize}. */
+  #width: number;
 
-  readonly #height: number;
+  #height: number;
 
-  /** Resolved once, like the size — see {@link RasterSource.origin}. */
+  /** Resolved once, like origin — see {@link RasterSource.origin}. */
   readonly #origin: RasterOrigin;
 
   readonly #colorSpace: ColorSpace;
+
+  /** Construction-time §96 ceiling; `resize()` re-checks against it. */
+  readonly #maximumBytes: number;
 
   /** The engine-owned pixel buffer; `null` once disposed. */
   #buffer: Uint8Array | null;
 
   /** One-row scratch for the `"top-left"` flip; `null` when no flip is needed. */
-  readonly #row: Uint8Array | null;
+  #row: Uint8Array | null;
 
   #version = 0;
 
@@ -374,7 +389,8 @@ export class CanvasTexture implements MaterialTexture, Disposable {
   #disposed = false;
 
   constructor(source: RasterSource, options: CanvasTextureOptions = {}) {
-    validate(source, options.maximumBytes ?? DEFAULT_RASTER_MAXIMUM_BYTES);
+    const maximumBytes = options.maximumBytes ?? DEFAULT_RASTER_MAXIMUM_BYTES;
+    validate(source, maximumBytes);
     validateTextureSource({
       width: source.width,
       height: source.height,
@@ -382,6 +398,7 @@ export class CanvasTexture implements MaterialTexture, Disposable {
     });
     this.#sampler = { ...options };
     this.#source = source;
+    this.#maximumBytes = maximumBytes;
     this.#width = source.width;
     this.#height = source.height;
     this.#origin = source.origin ?? "bottom-left";
@@ -393,12 +410,12 @@ export class CanvasTexture implements MaterialTexture, Disposable {
     trackRenderDisposable(this, this.id);
   }
 
-  /** Width in texels — constant for this texture's life (§77a). */
+  /** Width in texels — last recorded by construction or {@link CanvasTexture.resize}. */
   get width(): number {
     return this.#width;
   }
 
-  /** Height in texels — constant for this texture's life (§77a). */
+  /** Height in texels — last recorded by construction or {@link CanvasTexture.resize}. */
   get height(): number {
     return this.#height;
   }
@@ -416,10 +433,11 @@ export class CanvasTexture implements MaterialTexture, Disposable {
    * The RGBA8 bytes as last read from the source — row 0 is `v = 0` whatever
    * the source's {@link RasterSource.origin} — or `null` once disposed.
    *
-   * Engine-owned and reused for the texture's life; readable by anyone holding
-   * the texture (the upload path reads it), which is why §77a's display-only
-   * rule is an import rule on packages, not a readability rule on this field —
-   * see the module header.
+ * Engine-owned and reused until {@link CanvasTexture.resize} or
+ * {@link CanvasTexture.dispose}; readable by anyone holding
+ * the texture (the upload path reads it), which is why §77a's display-only
+ * rule is an import rule on packages, not a readability rule on this field —
+ * see the module header.
    */
   get data(): Uint8Array | null {
     return this.#buffer;
@@ -460,6 +478,50 @@ export class CanvasTexture implements MaterialTexture, Disposable {
         bytes += width * height * 4;
       }
     return bytes;
+  }
+
+  /**
+   * Reallocates this texture to the source's current size (§77a).
+   *
+   * Call after the source's `width`/`height` change and before the next
+   * {@link CanvasTexture.update}. The buffer, §83 totals, and dirty region
+   * are updated immediately; {@link CanvasTexture.version} waits for the
+   * next successful `update()` so a backend cache re-uploads only once the
+   * new pixels exist. A no-op when the recorded size already matches.
+   *
+   * @throws FourError `INVALID_APPLICATION_STATE` on a disposed texture
+   * @throws RangeError when the new size fails §85 or the construction-time
+   * §96 `maximumBytes` ceiling
+   */
+  resize(): void {
+    if (this.#buffer === null) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        `CanvasTexture ${this.id} is disposed; resizing a disposed surface ` +
+          "is a lifetime mistake (§83), and a new surface is a new " +
+          "CanvasTexture (§77a).",
+        { context: { texture: this.id } },
+      );
+    }
+    const source = this.#source;
+    validate(source, this.#maximumBytes);
+    validateTextureSource({
+      width: source.width,
+      height: source.height,
+      ...this.#sampler,
+    });
+    if (source.width === this.#width && source.height === this.#height) {
+      return;
+    }
+    const before = this.byteLength;
+    this.#width = source.width;
+    this.#height = source.height;
+    this.#buffer = new Uint8Array(this.#width * this.#height * 4);
+    this.#row =
+      this.#origin === "top-left" ? new Uint8Array(this.#width * 4) : null;
+    noteTexture(0, this.byteLength - before);
+    this.#updates.add(this.#version + 1, null, this.#width, this.#height);
+    this.#stale = true;
   }
 
   /**
@@ -517,8 +579,8 @@ export class CanvasTexture implements MaterialTexture, Disposable {
    *
    * @throws FourError `INVALID_APPLICATION_STATE` on a disposed texture (§83's
    * "disposed resource still in use", made loud), or when the source's size no
-   * longer matches the size this texture was constructed at (§2a's
-   * constant-size rule; see the class doc for the `R-30` gate)
+   * longer matches the size last recorded by construction or
+   * {@link CanvasTexture.resize}
    */
   update(): boolean {
     if (this.#buffer === null) {
@@ -541,12 +603,11 @@ export class CanvasTexture implements MaterialTexture, Disposable {
     if (source.width !== this.#width || source.height !== this.#height) {
       throw new FourError(
         "INVALID_APPLICATION_STATE",
-        `CanvasTexture ${this.id} was constructed ${String(this.#width)}×` +
+        `CanvasTexture ${this.id} was last recorded ${String(this.#width)}×` +
           `${String(this.#height)} but its source now reports ` +
-          `${String(source.width)}×${String(source.height)}; a raster ` +
-          "surface's size is constant for its life (§77a) — construct a new " +
-          "CanvasTexture and dispose this one. In-place resize is gated on " +
-          "§77 change notification (R-30).",
+          `${String(source.width)}×${String(source.height)}; call ` +
+          "CanvasTexture.resize() after changing the source size, then " +
+          "update() (§77a).",
         {
           context: {
             texture: this.id,

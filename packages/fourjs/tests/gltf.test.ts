@@ -17,7 +17,7 @@ import { AnimationMixer } from "@fourjs/animation";
 import { isFourError, resetDevWarnings } from "@fourjs/core";
 import { StandardMaterial } from "@fourjs/materials";
 import { Mesh } from "@fourjs/render";
-import { Bone, Group } from "@fourjs/scene";
+import { Bone, Group, MorphWeights } from "@fourjs/scene";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { instantiateGltf } from "../src/index.js";
@@ -609,5 +609,49 @@ describe("instantiateGltf: animations (§17, RFC 0003)", () => {
     mixer.advance(1);
     expect(instance.nodes[1].transform.position.x).toBe(3);
     expect(instance.nodes[1].transform.scale.x).toBe(3);
+  });
+});
+
+describe("instantiateGltf: one-target morph (RFC 0003 WP-SK.4)", () => {
+  it("builds positions1 and attaches MorphWeights, preferring node weights", async () => {
+    const deltas = new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]);
+    const { bytes, offsets } = pack(TRI_POSITIONS, TRI_INDICES, deltas);
+    const asset = await parse({
+      asset: { version: "2.0" },
+      buffers: [{ byteLength: bytes.byteLength, uri: dataUri(bytes) }],
+      bufferViews: [
+        { buffer: 0, byteOffset: offsets[0], byteLength: 36 },
+        { buffer: 0, byteOffset: offsets[1], byteLength: 6 },
+        { buffer: 0, byteOffset: offsets[2], byteLength: 36 },
+      ],
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 1, componentType: 5123, count: 3, type: "SCALAR" },
+        { bufferView: 2, componentType: 5126, count: 3, type: "VEC3" },
+      ],
+      meshes: [
+        {
+          weights: [0.5],
+          primitives: [
+            {
+              attributes: { POSITION: 0 },
+              indices: 1,
+              targets: [{ POSITION: 2 }],
+            },
+          ],
+        },
+      ],
+      nodes: [{ mesh: 0, weights: [0.25] }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+    });
+    const mesh = instantiateGltf(asset).nodes[0] as Mesh;
+    expect(Array.from(mesh.geometry.positions1 ?? [])).toEqual([
+      0, 1, 0, 1, 1, 0, 0, 2, 0,
+    ]);
+    const weights = mesh.getComponent(MorphWeights);
+    expect(weights).toBeDefined();
+    expect(Array.from(weights!.weights)).toEqual([0.25]);
+    expect(mesh.morphTargetWeights).toBe(weights!.weights);
   });
 });

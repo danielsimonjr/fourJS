@@ -91,7 +91,7 @@
 
 import { Quaternion, Vector3 } from "@fourjs/math";
 
-import { warnAuthorityConflict } from "./authority.js";
+import { runOwnedTransformWrite, warnAuthorityConflict } from "./authority.js";
 import type { Node } from "./node.js";
 import { DEFAULT_SCREEN_ORIGIN, type ScreenOrigin } from "./screen-camera.js";
 
@@ -370,13 +370,15 @@ export class TrackballRig {
       warnAuthorityConflict(node, "manual");
       return false;
     }
-    node.rotation.copy(this.rotation);
-    const offset = rotateZAxis(this.rotation, this.distance, this.#axis);
-    node.position.set(
-      this.target.x + offset.x,
-      this.target.y + offset.y,
-      this.target.z + offset.z,
-    );
+    runOwnedTransformWrite(() => {
+      node.rotation.copy(this.rotation);
+      const offset = rotateZAxis(this.rotation, this.distance, this.#axis);
+      node.position.set(
+        this.target.x + offset.x,
+        this.target.y + offset.y,
+        this.target.z + offset.z,
+      );
+    });
     return true;
   }
 }

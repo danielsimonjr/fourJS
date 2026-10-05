@@ -4,6 +4,9 @@ export type { AuthorityNode, TransformAuthority } from "./authority.js";
 export {
   DEFAULT_TRANSFORM_AUTHORITY,
   TRANSFORM_AUTHORITIES,
+  isOwnedTransformWrite,
+  runOwnedTransformWrite,
+  warnApplicationTransformWrite,
   warnAuthorityConflict,
 } from "./authority.js";
 export type {

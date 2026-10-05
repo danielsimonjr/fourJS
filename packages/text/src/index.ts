@@ -69,6 +69,13 @@ export type {
   TextLayoutOptions,
   TextQuad,
 } from "./text-layout.js";
+export {
+  canBreakAfter,
+  canBreakBefore,
+  lineBreakOpportunity,
+  wrapToWidth,
+} from "./line-break.js";
+export type { LineBreakOpportunity, Wrappable } from "./line-break.js";
 
 export {
   IdentityShapingEngine,

@@ -83,6 +83,7 @@ import {
   PARTICLE_ATTRIBUTE_LOCATIONS,
   PARTICLE_GL,
   POSITION_ATTRIBUTE_LOCATION,
+  POSITION1_ATTRIBUTE_LOCATION,
   ParticleAppearanceProgram,
   ParticleBatchCache,
   ParticleProgram,
@@ -1776,6 +1777,21 @@ describe("UnlitProgram — compilation and linking (§61, §89)", () => {
       "useVertexColors",
     ]);
     expect(program.disposed).toBe(false);
+  });
+
+  it("compiles the one-target morph variant at location 6", () => {
+    const gl = createFakeGl();
+    const program = UnlitProgram.createMorph(gl);
+    const sources = gl.callsOf("shaderSource").map((call) => call.args[1]);
+    expect(String(sources[0])).toContain(
+      `layout(location = ${String(POSITION1_ATTRIBUTE_LOCATION)}) in vec3 position1;`,
+    );
+    expect(
+      gl.callsOf("getUniformLocation").map((call) => call.args[1]),
+    ).toContain("morphWeight0");
+    program.setMorphWeight(0.5);
+    expect(gl.callsOf("uniform1f").map((call) => call.args[1])).toContain(0.5);
+    program.dispose();
   });
 
   it("emits GLSL ES 3.00 sources with the version directive on line 1", () => {

@@ -121,7 +121,7 @@
 import type { Disposable, Unsubscribe } from "@fourjs/core";
 import type { Pickable, ScenePointerEvent } from "@fourjs/input";
 import { Vector2, Vector3 } from "@fourjs/math";
-import { Node, warnAuthorityConflict, type NodeOptions } from "@fourjs/scene";
+import { Node, runOwnedTransformWrite, warnAuthorityConflict, type NodeOptions } from "@fourjs/scene";
 
 /**
  * The authority a layout pass writes a widget's position under (§42):
@@ -1149,7 +1149,9 @@ export abstract class UIWidget extends Node implements Disposable {
     this.#layoutLeft = left;
     this.#layoutTop = top;
     if (this.transformAuthority === UI_LAYOUT_AUTHORITY) {
-      this.transform.position.set(left, -top, this.transform.position.z);
+      runOwnedTransformWrite(() => {
+        this.transform.position.set(left, -top, this.transform.position.z);
+      });
     } else {
       warnAuthorityConflict(this, UI_LAYOUT_AUTHORITY);
     }

@@ -40,21 +40,23 @@ Enforcement lives in the **writing systems**, not in `Node` or `Transform`:
 Two consequences are easy to read the wrong way round, so they are stated
 here rather than left to be discovered:
 
-1. **A direct application write is never refused and never warns**, whoever
-   owns the node. Assign `"physics"` to a node, then write
-   `node.position.set(…)` from your own code, and the write lands — the owning
-   system simply carries on from the value you wrote. Measured from a consumer
-   seat: a `"kinematic"`-owned node at `x = 0.1667` after ten fixed steps,
-   written to `x = 999`, was at `x = 999.0167` one step later, with **zero**
-   warnings. The check runs in the writer, and your code is not one of the
-   writers the engine can see. This is the mirror of the case that _does_
-   warn: a system writing a node the application owns (`"manual"`) is refused
-   and warns, because there the writer is a system.
+1. **A direct application write is never refused.** Assign `"physics"` to a
+   node, then write `node.position.set(…)` from your own code, and the write
+   lands — the owning system simply carries on from the value you wrote.
+   Measured from a consumer seat (cycle 10): a `"kinematic"`-owned node at
+   `x = 0.1667` after ten fixed steps, written to `x = 999`, was at
+   `x = 999.0167` one step later. **In a DEV build the engine now warns once**
+   (`warnApplicationTransformWrite`): the write still applies; production
+   (`__FOUR_DEV__ === false`) stays silent. Set
+   `node.transformAuthority = "manual"` if the application should own the
+   node, or wrap an engine-owned writer with `runOwnedTransformWrite`.
+   Render interpolation (§43) never writes `node.transform` and never warns.
+   The mirror case that still refuses: a **system** writing a node the
+   application owns (`"manual"`) is refused and warns, because there the writer
+   is a system.
 
-   So the rule "one owner per node" is a **contract you keep**, not an
-   invariant the engine can enforce against you. If your application needs to
-   write a node a system owns, do the handover below rather than writing
-   through it.
+   Direct writes still land, so if your application needs to drive a node a
+   system owns, do the handover below rather than writing through it.
 
 2. **Authority is per node and per _local_ transform.** An ancestor's
    transform still composes into a system-owned node's world pose, and no

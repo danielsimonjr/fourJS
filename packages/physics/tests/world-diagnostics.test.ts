@@ -34,6 +34,9 @@ function node(options: {
   position?: Vector3;
 }): Group {
   const group = new Group();
+  if (options.position !== undefined) {
+    group.transform.position.copy(options.position);
+  }
   group.transformAuthority = "physics";
   const type = options.type ?? "dynamic";
   group.addComponent(
@@ -44,9 +47,6 @@ function node(options: {
   group.addComponent(
     new Collider({ shape: options.shape ?? { type: "circle", radius: 0.5 } }),
   );
-  if (options.position !== undefined) {
-    group.transform.position.copy(options.position);
-  }
   return group;
 }
 
