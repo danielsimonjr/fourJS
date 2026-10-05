@@ -699,7 +699,8 @@ export const COLOR_ATTRIBUTE_LOCATION = 3;
  * vertex stages (`gl-skinning.ts`), continuing R-19's numbering, and a public
  * layout commitment: `@fourjs/geometry`'s `BufferGeometry.joints` documents it,
  * and glTF's second influence set (`JOINTS_1`/`WEIGHTS_1`) is the named
- * extension point at the next two locations.
+ * extension point at locations **8 / 9**, past the first morph pair
+ * (spec revision 1.19).
  *
  * The stream is uploaded as **non-normalized `UNSIGNED_SHORT` floats**
  * (`vertexAttribPointer`, not `vertexAttribIPointer`): the shader declares
@@ -716,6 +717,22 @@ export const JOINTS_ATTRIBUTE_LOCATION = 4;
  * index-parallel with {@link JOINTS_ATTRIBUTE_LOCATION}'s stream.
  */
 export const WEIGHTS_ATTRIBUTE_LOCATION = 5;
+
+/**
+ * First morph-target position stream (`POSITION_1`) — `layout(location = 6)`.
+ * Spec revision 1.19: morph target `k` occupies 6+2(k−1) / 7+2(k−1);
+ * `JOINTS_1`/`WEIGHTS_1` are reserved at **8 / 9**.
+ */
+export const POSITION1_ATTRIBUTE_LOCATION = 6;
+
+/** First morph-target normal stream (`NORMAL_1`) — `layout(location = 7)`. */
+export const NORMAL1_ATTRIBUTE_LOCATION = 7;
+
+/** Reserved for glTF `JOINTS_1` — past the first morph pair. */
+export const JOINTS1_ATTRIBUTE_LOCATION = 8;
+
+/** Reserved for glTF `WEIGHTS_1` — past the first morph pair. */
+export const WEIGHTS1_ATTRIBUTE_LOCATION = 9;
 
 /**
  * The texture unit the `map` sampler of the unlit and lit pipelines reads from.
@@ -787,6 +804,27 @@ void main() {
   vUv = uv;
   vColor = vertexColor;
   gl_Position = viewProjection * model * vec4(position, 1.0);
+}
+`;
+
+const MORPH_VERTEX_SHADER_SOURCE = `#version 300 es
+layout(location = 0) in vec3 position;
+layout(location = 2) in vec2 uv;
+layout(location = 3) in vec4 vertexColor;
+layout(location = 6) in vec3 position1;
+
+uniform mat4 viewProjection;
+uniform mat4 model;
+uniform float morphWeight0;
+
+out vec2 vUv;
+out vec4 vColor;
+
+void main() {
+  vUv = uv;
+  vColor = vertexColor;
+  vec3 p = mix(position, position1, morphWeight0);
+  gl_Position = viewProjection * model * vec4(p, 1.0);
 }
 `;
 
@@ -1443,6 +1481,32 @@ void main() {
 }
 `;
 
+const MORPH_LIT_VERTEX_SHADER_SOURCE = `#version 300 es
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 uv;
+layout(location = 6) in vec3 position1;
+layout(location = 7) in vec3 normal1;
+
+uniform mat4 viewProjection;
+uniform mat4 model;
+uniform mat3 normalMatrix;
+uniform float morphWeight0;
+
+out vec3 vNormal;
+out vec3 vWorldPosition;
+out vec2 vUv;
+
+void main() {
+  vec3 p = mix(position, position1, morphWeight0);
+  vec3 n = mix(normal, normal1, morphWeight0);
+  vNormal = normalMatrix * n;
+  vWorldPosition = (model * vec4(p, 1.0)).xyz;
+  vUv = uv;
+  gl_Position = viewProjection * model * vec4(p, 1.0);
+}
+`;
+
 /**
  * The lit fragment stage (§57 `LitMaterial`, §68, §60a): Lambert diffuse under
  * one directional light, plus the scene ambient term.
@@ -1776,6 +1840,10 @@ export class UnlitProgram implements Disposable {
 
   readonly #useVertexColorsLocation: GlUniformLocation;
 
+  readonly #morphWeightLocation: GlUniformLocation | null;
+
+  #morphWeight = 0;
+
   /**
    * CPU mirror of the two feature uniforms, seeded with GL's own initial value
    * for an `int`/`bool` uniform — `0`, i.e. both off. Because the mirror starts
@@ -1826,6 +1894,7 @@ export class UnlitProgram implements Disposable {
     mapLocation: GlUniformLocation,
     useMapLocation: GlUniformLocation,
     useVertexColorsLocation: GlUniformLocation,
+    morphWeightLocation: GlUniformLocation | null = null,
   ) {
     this.#gl = gl;
     this.#program = program;
@@ -1835,6 +1904,7 @@ export class UnlitProgram implements Disposable {
     this.#mapLocation = mapLocation;
     this.#useMapLocation = useMapLocation;
     this.#useVertexColorsLocation = useVertexColorsLocation;
+    this.#morphWeightLocation = morphWeightLocation;
   }
 
   /**
@@ -1876,7 +1946,34 @@ export class UnlitProgram implements Disposable {
     }
   }
 
-  /** Whether {@link UnlitProgram.dispose} has run. */
+  /**
+   * One-target morph variant of {@link UnlitProgram.create} — compiled lazily
+   * on the first geometry that carries `positions1` (RFC 0003 WP-SK.4).
+   */
+  static createMorph(gl: WebglContext): UnlitProgram {
+    const program = createLinkedProgram(
+      gl,
+      "unlit-morph",
+      MORPH_VERTEX_SHADER_SOURCE,
+      FRAGMENT_SHADER_SOURCE,
+    );
+    try {
+      return new UnlitProgram(
+        gl,
+        program,
+        requireUniform(gl, program, "viewProjection", "unlit-morph"),
+        requireUniform(gl, program, "model", "unlit-morph"),
+        requireUniform(gl, program, "color", "unlit-morph"),
+        requireUniform(gl, program, "map", "unlit-morph"),
+        requireUniform(gl, program, "useMap", "unlit-morph"),
+        requireUniform(gl, program, "useVertexColors", "unlit-morph"),
+        requireUniform(gl, program, "morphWeight0", "unlit-morph"),
+      );
+    } catch (error: unknown) {
+      gl.deleteProgram(program);
+      throw error;
+    }
+  }
   get disposed(): boolean {
     return this.#disposed;
   }
@@ -1904,6 +2001,18 @@ export class UnlitProgram implements Disposable {
   setModel(matrix: Matrix4): void {
     matrixScratch.set(matrix.elements);
     this.#gl.uniformMatrix4fv(this.#modelLocation, false, matrixScratch);
+  }
+
+  /**
+   * One-target morph weight in `[0, 1]` — a no-op on the default unlit
+   * program, which has no `morphWeight0` uniform.
+   */
+  setMorphWeight(weight: number): void {
+    if (this.#morphWeightLocation === null || weight === this.#morphWeight) {
+      return;
+    }
+    this.#gl.uniform1f(this.#morphWeightLocation, weight);
+    this.#morphWeight = weight;
   }
 
   /**
@@ -2257,6 +2366,10 @@ export class LitProgram implements Disposable {
 
   readonly #shadow: ShadowUniforms;
 
+  readonly #morphWeightLocation: GlUniformLocation | null;
+
+  #morphWeight = 0;
+
   /** CPU mirror of `useMap`; see `UnlitProgram`'s for the contract. */
   #useMap = false;
 
@@ -2301,6 +2414,7 @@ export class LitProgram implements Disposable {
     punctual: PunctualLightUniforms,
     hemisphere: HemisphereLightUniforms,
     shadow: ShadowUniforms,
+    morphWeightLocation: GlUniformLocation | null = null,
   ) {
     this.#gl = gl;
     this.#program = program;
@@ -2316,6 +2430,7 @@ export class LitProgram implements Disposable {
     this.#punctual = punctual;
     this.#hemisphere = hemisphere;
     this.#shadow = shadow;
+    this.#morphWeightLocation = morphWeightLocation;
   }
 
   /**
@@ -2354,6 +2469,38 @@ export class LitProgram implements Disposable {
     }
   }
 
+  /** One-target morph variant of {@link LitProgram.create}. */
+  static createMorph(gl: WebglContext): LitProgram {
+    const program = createLinkedProgram(
+      gl,
+      "lit-morph",
+      MORPH_LIT_VERTEX_SHADER_SOURCE,
+      LIT_FRAGMENT_SHADER_SOURCE,
+    );
+    try {
+      return new LitProgram(
+        gl,
+        program,
+        requireUniform(gl, program, "viewProjection", "lit-morph"),
+        requireUniform(gl, program, "model", "lit-morph"),
+        requireUniform(gl, program, "normalMatrix", "lit-morph"),
+        requireUniform(gl, program, "color", "lit-morph"),
+        requireUniform(gl, program, "ambientLight", "lit-morph"),
+        requireUniform(gl, program, "lightDirection", "lit-morph"),
+        requireUniform(gl, program, "lightColor", "lit-morph"),
+        requireUniform(gl, program, "map", "lit-morph"),
+        requireUniform(gl, program, "useMap", "lit-morph"),
+        PunctualLightUniforms.resolve(gl, program, "lit-morph"),
+        HemisphereLightUniforms.resolve(gl, program, "lit-morph"),
+        ShadowUniforms.resolve(gl, program, "lit-morph"),
+        requireUniform(gl, program, "morphWeight0", "lit-morph"),
+      );
+    } catch (error: unknown) {
+      gl.deleteProgram(program);
+      throw error;
+    }
+  }
+
   /** Whether {@link LitProgram.dispose} has run. */
   get disposed(): boolean {
     return this.#disposed;
@@ -2383,6 +2530,15 @@ export class LitProgram implements Disposable {
     matrixScratch.set(matrix.elements);
     this.#gl.uniformMatrix4fv(this.#modelLocation, false, matrixScratch);
     uploadNormalMatrix(this.#gl, this.#normalMatrixLocation, matrix);
+  }
+
+  /** One-target morph weight; a no-op on the default lit program. */
+  setMorphWeight(weight: number): void {
+    if (this.#morphWeightLocation === null || weight === this.#morphWeight) {
+      return;
+    }
+    this.#gl.uniform1f(this.#morphWeightLocation, weight);
+    this.#morphWeight = weight;
   }
 
   /**

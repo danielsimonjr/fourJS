@@ -58,6 +58,22 @@ describe("Label", () => {
     expect(label.measuredWidth).toBe(22); // spacing between, never after
   });
 
+  it("wraps through wrapWidth independently of the box maxWidth", () => {
+    const label = new Label({
+      text: "hello world",
+      atlas,
+      size: 12,
+      wrapWidth: 36,
+    });
+    label.measure();
+    expect(label.textLayout?.lineCount).toBe(2);
+    expect(label.measuredWidth).toBe(36);
+    expect(label.measuredHeight).toBe(24);
+    label.wrapWidth = undefined;
+    label.measure();
+    expect(label.textLayout?.lineCount).toBe(1);
+  });
+
   it("reports the baseline a skin needs, scaled with the size", () => {
     const label = new Label({ text: "abc", atlas, size: 12 });
     expect(label.textBaselineTop).toBe(8); // ascent 8 × 12 / lineHeight 12

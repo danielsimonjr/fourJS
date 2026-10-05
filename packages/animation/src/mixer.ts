@@ -81,7 +81,11 @@
 
 import { FourError } from "@fourjs/core";
 import { Quaternion, type Vector3 } from "@fourjs/math";
-import { Node, warnAuthorityConflict } from "@fourjs/scene";
+import {
+  Node,
+  runOwnedTransformWrite,
+  warnAuthorityConflict,
+} from "@fourjs/scene";
 import type { TransformAuthority } from "@fourjs/scene";
 
 import { createBinding, type PropertyBinding } from "./binding.js";
@@ -1099,7 +1103,9 @@ export class AnimationMixer {
         warnAuthorityConflict(target, MIXER_AUTHORITY);
         return;
       }
-      target.transform.rotation.multiply(delta).normalize();
+      runOwnedTransformWrite(() => {
+        target.transform.rotation.multiply(delta).normalize();
+      });
       return;
     }
 
@@ -1133,7 +1139,9 @@ export class AnimationMixer {
       warnAuthorityConflict(target, MIXER_AUTHORITY);
       return;
     }
-    target.transform.position.add(delta);
+    runOwnedTransformWrite(() => {
+      target.transform.position.add(delta);
+    });
   }
 
   /**
@@ -1259,7 +1267,13 @@ export class AnimationMixer {
         this.#allowTransform = false;
       }
     }
-    (this.#clip as AnimationClip).sampleAll(local, this.#sink);
+    if (this.#allowTransform) {
+      runOwnedTransformWrite(() => {
+        (this.#clip as AnimationClip).sampleAll(local, this.#sink);
+      });
+    } else {
+      (this.#clip as AnimationClip).sampleAll(local, this.#sink);
+    }
   }
 
   /** Writes one sampled value through its binding. See `./values.js` on `out`. */

@@ -75,6 +75,7 @@ import { FourError, type Component, type ComponentHost } from "@fourjs/core";
 import { Quaternion, Vector3 } from "@fourjs/math";
 import {
   resolveWorldTransform,
+  runOwnedTransformWrite,
   warnAuthorityConflict,
   type Node,
 } from "@fourjs/scene";
@@ -414,13 +415,15 @@ export class ConstraintSystem implements SimulationSystem {
         warnAuthorityConflict(node, CONSTRAINT_SYSTEM_AUTHORITY);
         continue;
       }
-      orbit?.apply(node);
-      follow?.apply(node, dt);
-      aim?.apply(node, dt);
-      // Additive: the kick is layered on the pose the placement / aim just
-      // wrote. Sampled at `simulationTime` so the noise is a function of the
-      // physics clock, not of the step rate (§33).
-      shake?.apply(node, dt, context.time.simulationTime);
+      runOwnedTransformWrite(() => {
+        orbit?.apply(node);
+        follow?.apply(node, dt);
+        aim?.apply(node, dt);
+        // Additive: the kick is layered on the pose the placement / aim just
+        // wrote. Sampled at `simulationTime` so the noise is a function of the
+        // physics clock, not of the step rate (§33).
+        shake?.apply(node, dt, context.time.simulationTime);
+      });
     }
   }
 

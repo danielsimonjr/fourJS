@@ -52,6 +52,15 @@
  * elements, and a zero-scale column decomposes to the documented identity
  * rotation rather than `NaN`.
  *
+ * ## One-target morphs (RFC 0003 WP-SK.4)
+ *
+ * A primitive that carries `targets[0]` becomes a `BufferGeometry` with
+ * `positions1`/`normals1`. Instantiation attaches a `MorphWeights`
+ * component (one weight) on every mesh that has those streams, using
+ * `nodes[i].weights` when authored else `meshes[i].weights`, else `[0]`.
+ * WebGL mixes the streams; WebGPU skips the draw rather than showing the
+ * bind pose. `weights` animation channels stay refused at parse.
+ *
  * ## Skins and the §62 joint ceiling
  *
  * A skin becomes one `Skeleton` per instantiation (bones are per-instance
@@ -87,7 +96,7 @@ import { BufferGeometry } from "@fourjs/geometry";
 import { StandardMaterial } from "@fourjs/materials";
 import { Matrix4, Quaternion, Vector3 } from "@fourjs/math";
 import { Mesh, Texture } from "@fourjs/render";
-import { Bone, Group, Skeleton, type Node } from "@fourjs/scene";
+import { Bone, Group, MorphWeights, Skeleton, type Node } from "@fourjs/scene";
 
 /**
  * One instantiation of a parsed glTF asset: fresh nodes over shared geometry,
@@ -156,6 +165,8 @@ function resourcesFor(asset: GltfAsset): SharedResources {
           colors: primitive.colors,
           joints: primitive.joints,
           weights: primitive.weights,
+          positions1: primitive.positions1,
+          normals1: primitive.normals1,
           indices: primitive.indices,
           mode: primitive.mode,
         }),
@@ -364,6 +375,19 @@ export function instantiateGltf(asset: GltfAsset): GltfInstance {
       }
     }
     node.name = record.name;
+    const authoredWeights =
+      record.morphWeights ??
+      (record.mesh === null
+        ? undefined
+        : asset.meshes[record.mesh].morphWeights);
+    for (const mesh of meshes) {
+      if (
+        mesh.geometry.positions1 !== undefined ||
+        authoredWeights !== undefined
+      ) {
+        mesh.addComponent(new MorphWeights(authoredWeights?.slice() ?? 1));
+      }
+    }
     if (record.matrix !== null) {
       matrixScratch
         .fromArray(record.matrix)

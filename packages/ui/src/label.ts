@@ -52,9 +52,10 @@ import type { TextLayoutOptions } from "@fourjs/text";
  *
  * ## What a label is not
  *
- * A leaf: it has no layout modes of its own (`Panel` is the container). It does
- * not wrap, align, or ellipsize — `layoutText` breaks only on `\n` at this tier
- * (§56, staged there), so a label's width is its longest line's width.
+ * A leaf: it has no layout modes of its own (`Panel` is the container). It
+ * wraps when {@link Label.wrapWidth} is set — `layoutText`'s UAX #14-lite
+ * measure — and otherwise breaks only on `\n`. Alignment is still a
+ * `layoutText` option on `Text`, not here.
  */
 
 import type { Vector2 } from "@fourjs/math";
@@ -68,7 +69,13 @@ export interface LabelOptions
     UIWidgetOptions,
     Pick<
       TextLayoutOptions,
-      "shaper" | "fontId" | "script" | "language" | "direction" | "features"
+      | "shaper"
+      | "fontId"
+      | "script"
+      | "language"
+      | "direction"
+      | "features"
+      | "wrapWidth"
     > {
   /** {@link Label.text}. Default `""`. */
   text?: string;
@@ -104,7 +111,13 @@ function requireFinite(name: string, value: number): number {
 export class Label extends UIWidget {
   #shaping: Pick<
     TextLayoutOptions,
-    "shaper" | "fontId" | "script" | "language" | "direction" | "features"
+    | "shaper"
+    | "fontId"
+    | "script"
+    | "language"
+    | "direction"
+    | "features"
+    | "wrapWidth"
   >;
   #text = "";
   #atlas: GlyphAtlas | null = null;
@@ -123,6 +136,7 @@ export class Label extends UIWidget {
       language: options.language,
       direction: options.direction,
       features: options.features && Object.freeze({ ...options.features }),
+      wrapWidth: options.wrapWidth,
     };
     if (options.shaper && !options.fontId)
       throw new RangeError("fontId is required with a shaper");
@@ -187,6 +201,20 @@ export class Label extends UIWidget {
     const next = requireFinite("letterSpacing", value);
     if (next === this.#letterSpacing) return;
     this.#letterSpacing = next;
+    this.#layout = undefined;
+  }
+
+  /**
+   * Maximum line width in layout units, or `undefined` for `\n`-only breaks.
+   * Independent of {@link UIWidget.maxWidth}, which is the box-model clamp.
+   */
+  get wrapWidth(): number | undefined {
+    return this.#shaping.wrapWidth;
+  }
+
+  set wrapWidth(value: number | undefined) {
+    if (value === this.#shaping.wrapWidth) return;
+    this.#shaping = { ...this.#shaping, wrapWidth: value };
     this.#layout = undefined;
   }
 

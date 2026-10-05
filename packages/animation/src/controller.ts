@@ -151,7 +151,11 @@
  */
 
 import { FourError } from "@fourjs/core";
-import { Node, warnAuthorityConflict } from "@fourjs/scene";
+import {
+  Node,
+  runOwnedTransformWrite,
+  warnAuthorityConflict,
+} from "@fourjs/scene";
 import type { TransformAuthority } from "@fourjs/scene";
 
 import type { Advanceable } from "./animation-system.js";
@@ -2040,24 +2044,31 @@ export class AnimationController implements Advanceable {
       }
     }
     this.#prepareBlend();
-    const channels = this.#channels;
-    for (let index = 0; index < channels.length; index += 1) {
-      const channel = channels[index];
-      const value = this.#blend(channel, index);
-      channel.evaluated = channel.adapter.copy(value, channel.evaluated);
-      if (
-        this.#parented ||
-        !channel.claim.held ||
-        (channel.isTransform && !allowTransform)
-      ) {
-        continue;
+    const writeChannels = (): void => {
+      const channels = this.#channels;
+      for (let index = 0; index < channels.length; index += 1) {
+        const channel = channels[index];
+        const value = this.#blend(channel, index);
+        channel.evaluated = channel.adapter.copy(value, channel.evaluated);
+        if (
+          this.#parented ||
+          !channel.claim.held ||
+          (channel.isTransform && !allowTransform)
+        ) {
+          continue;
+        }
+        channel.binding.set(value);
+        if (channel.notifyChange) {
+          // A primitive write is a direct field write and bypasses plan D3's
+          // change hook; re-fire it so `Transform.version` still advances.
+          (channel.binding.owner as { onChanged?: () => void }).onChanged?.();
+        }
       }
-      channel.binding.set(value);
-      if (channel.notifyChange) {
-        // A primitive write is a direct field write and bypasses plan D3's
-        // change hook; re-fire it so `Transform.version` still advances.
-        (channel.binding.owner as { onChanged?: () => void }).onChanged?.();
-      }
+    };
+    if (allowTransform) {
+      runOwnedTransformWrite(writeChannels);
+    } else {
+      writeChannels();
     }
   }
 

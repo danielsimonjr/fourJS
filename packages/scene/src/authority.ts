@@ -50,6 +50,13 @@
  * forbids any build-flag import here (the same reason a DEV-gated
  * `new Node()` warn was reverted). The WeakMap is the once-per-pair
  * suppress; production prints the first conflict and then stays quiet.
+ *
+ * Application writes on a system-owned node are a different contract (2026-10-05):
+ * they **land**, and a DEV build warns once. That hook lives on
+ * `Transform.markDirty` and is skipped inside
+ * {@link runOwnedTransformWrite}, which every writing system wraps its owned
+ * pose with. The DEV test is inlined (`typeof __FOUR_DEV__`) so this module
+ * still does not import `DEV`.
  */
 
 /**
@@ -128,9 +135,73 @@ export const TRANSFORM_AUTHORITIES = [
 /**
  * The authority a node has until something claims it: `"manual"`, i.e. owned by
  * application code. A node nobody has claimed is not owned by a *system*, so
- * direct writes from user code are always legal and never warn.
+ * direct writes from user code are always legal. Writes to a *system*-owned
+ * node still land; a DEV build warns once ({@link warnApplicationTransformWrite}).
  */
 export const DEFAULT_TRANSFORM_AUTHORITY: TransformAuthority = "manual";
+
+/**
+ * Depth of {@link runOwnedTransformWrite}. Transform.markDirty consults this
+ * so an owning system's pose write does not look like an application write.
+ */
+let ownedWriteDepth = 0;
+
+/**
+ * True while an owning system is writing a transform it has already checked
+ * against {@link AuthorityNode.transformAuthority}.
+ */
+export function isOwnedTransformWrite(): boolean {
+  return ownedWriteDepth > 0;
+}
+
+/**
+ * Runs `fn` as an owned transform write: {@link Transform.markDirty} will not
+ * emit the application-write warning. Nesting is counted. The write still
+ * lands — this is a warning skip, not a lock.
+ *
+ * Call this **after** the existing `transformAuthority === writer` check, around
+ * the body that actually mutates the transform. Conflicting systems that skip
+ * the write never need it.
+ */
+export function runOwnedTransformWrite<T>(fn: () => T): T {
+  ownedWriteDepth += 1;
+  try {
+    return fn();
+  } finally {
+    ownedWriteDepth -= 1;
+  }
+}
+
+const warnedApplicationWrites = new WeakSet<AuthorityNode>();
+
+/**
+ * Reports that application code wrote a transform owned by a system. The write
+ * **already happened** — this function only reports. Once per node.
+ *
+ * Inlined DEV test: do not import `DEV` into this simulation package.
+ */
+export function warnApplicationTransformWrite(node: AuthorityNode): boolean {
+  if (node.transformAuthority === DEFAULT_TRANSFORM_AUTHORITY) {
+    return false;
+  }
+  if (ownedWriteDepth > 0) {
+    return false;
+  }
+  if (warnedApplicationWrites.has(node)) {
+    return false;
+  }
+  warnedApplicationWrites.add(node);
+  const label = node.name === "" ? node.id : `${node.id} ("${node.name}")`;
+  console.warn(
+    `${DEV_WARNING_PREFIX} Application code wrote the transform of node ` +
+      `${label}, which is owned by "${node.transformAuthority}" authority; ` +
+      "the write was applied (§42 warns in development, it does not lock " +
+      'application writes). Set node.transformAuthority = "manual" if the ' +
+      "application should own it. Further application writes on this node " +
+      "are suppressed.",
+  );
+  return true;
+}
 
 /**
  * Nodes already warned about, per writing authority. `WeakMap` so a node that

@@ -8,6 +8,40 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### Added
+
+- **Specification revision 1.19** records four product packets: in-place
+  `CanvasTexture.resize()` (§77a), `wrapWidth` on `layoutText` / `Text` /
+  `Label` (§56), one-target GPU morph at attribute locations 6/7 with
+  `JOINTS_1`/`WEIGHTS_1` moved to 8/9 (§54), and a bounded JPEG decoder plus
+  JPEG/WebP header probes (§96).
+- `CanvasTexture.resize()` reallocates to the source's current size. The
+  buffer and §83 totals update immediately; `version` waits for the next
+  `update()`. Construction-time `maximumBytes` still caps the new size. A
+  source that changes size without `resize()` is still refused.
+- `layoutText({ wrapWidth })` wraps at UAX #14-lite opportunities on both the
+  identity walk and the HarfBuzz path. Omitted or `Infinity` is bit-identical
+  to the pre-wrapping walk. `Text.wrapWidth` and `Label.wrapWidth` forward it.
+- One-target GPU morph: `BufferGeometry.positions1` / `normals1` at locations
+  6/7; WebGL lazy unlit/lit morph programs mix with `morphWeights[0]`; WebGPU
+  skips those draws rather than showing bind pose. glTF `targets[0]`
+  POSITION/NORMAL load as absolute streams (displacements converted at parse);
+  `meshes.weights` / `nodes.weights` of length 1 attach a `MorphWeights`
+  component. Further targets and `weights` animation channels stay refused.
+- `createBoundedJpegDecoder` mirrors the PNG Wasm heap cap (pin
+  `@jsquash/jpeg@1.6.0`). `probeJpeg` / `probeWebp` / `probeImage` refuse
+  oversize claims before any codec runs.
+- Guides: `docs/guides/geometry-3d-primitives.md`,
+  `docs/guides/development-warnings.md`. Architecture OVERVIEW current status
+  and the R-1 plan header match the tree.
+
+### Changed
+
+- DEV builds warn on application writes to a system-owned transform (§42). The
+  write still lands; production stays silent.
+- `tests/browser/smoothness.spec.ts` mid-step sampling uses the example's
+  pause-after-step protocol. `MINIMUM_MID_STEP_FRAMES` is unchanged.
+
 ### Security
 
 - `brace-expansion` moves from 5.0.9 to 5.0.12 in `bun.lock`. Two HIGH advisories apply to 5.0.9, both

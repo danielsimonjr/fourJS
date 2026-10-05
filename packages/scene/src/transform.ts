@@ -1,5 +1,10 @@
 import { Matrix4, Quaternion, Vector3 } from "@fourjs/math";
 
+import {
+  warnApplicationTransformWrite,
+  type AuthorityNode,
+} from "./authority.js";
+
 /**
  * Local/world transform of a scene node (§7).
  *
@@ -125,6 +130,21 @@ export class Transform {
   #version = 0;
 
   /**
+   * Weak back-pointer to the node that owns this transform, used only for the
+   * DEV application-write warning. Weak so `Node` ↔ `Transform` is not a GC
+   * cycle. Absent on a free-standing `Transform` (tests, pose scratches).
+   */
+  #host: WeakRef<AuthorityNode> | null = null;
+
+  /**
+   * Called from `Node`'s constructor so {@link Transform.markDirty} can name
+   * the owner. Not public API.
+   */
+  attachAuthorityHost(node: AuthorityNode): void {
+    this.#host = new WeakRef(node);
+  }
+
+  /**
    * Value of {@link Transform.version} at the last composition of
    * {@link Transform.localMatrix}. Starts at -1 — never a legal version — so
    * the first {@link Transform.updateLocalMatrix} always composes.
@@ -183,6 +203,14 @@ export class Transform {
    */
   markDirty(): void {
     this.#version += 1;
+    // Inlined DEV: `@fourjs/scene` must not import `DEV`. Production bundles
+    // fold this false and delete the warning path.
+    if (typeof __FOUR_DEV__ !== "undefined" ? __FOUR_DEV__ : true) {
+      const host = this.#host?.deref();
+      if (host !== undefined) {
+        warnApplicationTransformWrite(host);
+      }
+    }
   }
 
   /**

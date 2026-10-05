@@ -10,7 +10,7 @@
 > defects. See [ERRATA.md](ERRATA.md) for the correction log and the old-to-new
 > numbering map.
 
-**Specification revision 1.18 — 2026-09-20**
+**Specification revision 1.19 — 2026-10-05**
 
 | Revision | Date       | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | -------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,6 +33,7 @@
 | 1.16     | 2026-09-11 | Owner requested implementation of all RFCs: accept RFC 0007 path-planning adapters, RFC 0008 optional HarfBuzz WebAssembly shaping, and RFC 0009 display-only GPU readback snapshots. §56 records the shaping-engine decision before implementation; default bitmap layout remains unchanged. Frozen section numbering preserved.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 1.17     | 2026-09-11 | Record-hygiene revision from the RFC audit. **§71** gains the shipped form of RFC 0005 (accepted 2026-08-21, implemented 2026-08-29 / 2026-09-09) which never received a row: `hitTestMode` is `HitTestMode \| null`, `"custom"` deliberately absent, the GPU/pixel tiers are an asynchronous `PickingService`, and `hitTestMode` is a §79 field. **§91**: ESLint → Oxlint (type-aware), the toolchain change that accompanied the TypeScript 7 move after revision 1.14. Frozen §1–120 numbering untouched.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | 1.18     | 2026-09-20 | Correction revision from dogfood cycle 9. **§3.1**'s responsibilities list credited `math` with **curves**, which it has never owned: `packages/math/src` contains no curve type, the path model is `geometry` (§52, `path.ts` / `svg-path.ts`) and the time-sampled path is `motion`'s §13 `Trajectory` (`kinematic-controller.ts` states in source that the codebase has no `Curve` type). The same bullet omitted two surfaces `math` does own and ship: the §87 frustum-cull primitive (`frustum.ts`) and the §60a colour tuple types plus sRGB transfer functions (`color.ts`, hoisted there 2026-08-04 / 2026-08-08). The bullet now names both and says where curves live, so a reader cannot infer a `math` curve type that does not exist. Recorded here rather than in `ERRATA.md` because the statement is simply wrong; `ERRATA.md` tracks the frozen PDF's numbering. The header revision number was lagging at 1.16 while the table already carried 1.17, the same drift revision 1.13 recorded; it is corrected to 1.18 here. Frozen §1–120 numbering untouched.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 1.19     | 2026-10-05 | Product packets from the recommendation pass. **§77a**: `CanvasTexture.resize()` reallocates to the source's current size (construction-time §96 `maximumBytes` still applies); `version` waits for the next `update()`, and a size change without `resize()` is still refused. **§56**: `layoutText` / `Text` / `Label` gain `wrapWidth` (UAX #14-lite opportunities; omitted or `Infinity` is bit-identical to the pre-wrapping walk). **§54**: one-target GPU morph ships on WebGL — `POSITION_1`/`NORMAL_1` at attribute locations **6 / 7**; `JOINTS_1`/`WEIGHTS_1` move to **8 / 9** so an eight-influence skin and a one-target morph can coexist; WebGPU skips morph draws rather than showing bind pose; further targets stay staged. **§96**: JPEG (and WebP header probe) join PNG on the bounded-decoder path — `createBoundedJpegDecoder` pins `@jsquash/jpeg@1.6.0` Wasm with a heap cap before init. Frozen §1–120 numbering untouched.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ---
 
@@ -1917,18 +1918,20 @@ deformation** (bones are ordinary scene nodes — `Bone extends Node`, so §42
 authority, §19 blending, §79 serialization, and animation all apply with no
 new mechanism; `Skeleton` derives the joint-matrix palette on the CPU); the
 **morph-target plumbing** (the `MorphWeights` component, §17's binding form,
-and the weights snapshotted onto the render item — the GPU morph path is
-additional vertex streams and is staged as its own layout decision).
-Staged, deliberately: multiple material groups; hardware instancing; indirect
+and the weights snapshotted onto the render item) **and the one-target GPU
+morph path** (`positions1`/`normals1` at locations 6/7; WebGL mixes with
+`morphWeights[0]`; WebGPU skips the draw rather than showing bind pose).
+Staged, deliberately: a second morph target and beyond; multiple material groups; hardware instancing; indirect
 rendering (WebGPU); dynamic GPU buffer usage; level of detail; impostors and
-billboards; merging and batching tools; CPU skinning; bone textures;
+billboards; merging and batching tools; bone textures;
 dual-quaternion skinning.
 
 Layout commitments (RFC 0003): **four influences per vertex** — `joints` (4
 joint indices, `Uint16Array`) and `weights` (4 floats) on `BufferGeometry`,
 index-aligned with positions, at fixed attribute locations **4 (joints)** and
-**5 (weights)**; a second influence set (`JOINTS_1`/`WEIGHTS_1`) is the named
-extension point at the next two locations. The joint index is the position in
+**5 (weights)**; the first morph target occupies locations **6 (`POSITION_1`)**
+and **7 (`NORMAL_1`)**; a second influence set (`JOINTS_1`/`WEIGHTS_1`) is the
+named extension point at **8 / 9**. The joint index is the position in
 `Skeleton.bones`, and insertion order is the ABI (§33). In a §79 document a
 skeleton is written inline on its mesh as bone **ids** plus the inverse bind
 matrices (intra-file references are by id); weights are the author's contract
@@ -2004,7 +2007,10 @@ Requirements:
   shaping-engine decision. Revision 1.16 accepts RFC 0008: optional HarfBuzz via
   WebAssembly behind a separate entry point and application-supplied wasm/font bytes;
   the default bitmap path stays unchanged. Bidi auto-resolution, vertical layout and
-  font rasterization remain separately staged by that RFC.
+  font rasterization remain separately staged by that RFC. Revision 1.19 adds
+  `wrapWidth` on `layoutText` (and on `Text` / `Label`): a finite positive
+  measure wraps at UAX #14-lite opportunities; omitted or `Infinity` keeps the
+  identity walk bit-identical.
 
 ```ts
 const label = new Four.Text({
@@ -2682,12 +2688,14 @@ that default exists to protect content authored before colour management
 (§60a), which a painted surface cannot have, and a host 2D canvas produces
 sRGB-encoded bytes unambiguously. The reason is recorded at both defaults.
 
-**The constant-size rule.** A raster surface's size is fixed for its life;
-a source that changes size is refused (`INVALID_APPLICATION_STATE`, §89), and
-resizing means constructing a new surface. In-place resize is explicitly gated
-on §77's change notification: a version bump tells a cache to re-read, not a
-dependent to re-validate, and §55 sprite frames validate against a texture's
-size at write time only.
+**The size rule.** A raster surface starts at the source's construction-time
+size. `CanvasTexture.resize()` reallocates to the source's current
+`width`/`height` (the construction-time §96 `maximumBytes` ceiling still
+applies); the buffer and §83 totals update immediately, and `version` waits
+for the next successful `update()` so a backend cache re-uploads only once
+the new pixels exist. A source that changes size without `resize()` is still
+refused (`INVALID_APPLICATION_STATE`, §89). §55 sprite frames validate
+against a texture's size at write time only.
 
 **Determinism (§33–§34): painted pixels are display and content only.**
 Host-rendered raster output is not reproducible across platforms, browsers, or
@@ -3196,6 +3204,13 @@ Requirements:
 - safe shader/plugin boundaries;
 - cancellation and timeouts for expensive decoders;
 - documented content-security-policy behavior.
+
+The strict image decode path that honours `maximumWorkingBytes` is an
+application-pinned Wasm codec whose heap is capped **before** initialization
+(PNG via `createBoundedPngDecoder`; JPEG via `createBoundedJpegDecoder`, pin
+`@jsquash/jpeg@1.6.0`). Native `createImageBitmap` cannot satisfy that cap.
+Header probes (`probePng` / `probeJpeg` / `probeWebp`) refuse oversize claims
+before any codec runs.
 
 **Worked Example and Conventions (§97-§97a)**
 

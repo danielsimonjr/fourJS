@@ -245,7 +245,11 @@ import {
   type FixedUpdateContext,
   type SimulationSystem,
 } from "@fourjs/motion";
-import { warnAuthorityConflict, type Node } from "@fourjs/scene";
+import {
+  runOwnedTransformWrite,
+  warnAuthorityConflict,
+  type Node,
+} from "@fourjs/scene";
 
 import { ALL_COLLISION_GROUPS } from "./queries.js";
 import type { RigidBody } from "./rigid-body.js";
@@ -1408,7 +1412,9 @@ export class SweptCharacterSystem implements SimulationSystem {
         warnAuthorityConflict(node, KINEMATIC_AUTHORITY);
         continue;
       }
-      controller.step(node, dt);
+      runOwnedTransformWrite(() => {
+        controller.step(node, dt);
+      });
     }
   }
 

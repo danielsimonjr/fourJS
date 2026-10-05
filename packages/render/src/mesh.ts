@@ -23,17 +23,18 @@
  *
  * **Ships:** the class itself; skeletal deformation (through the skinned
  * render-item kinds and `@fourjs/render-webgl`'s registered skinning pipeline);
- * the morph-target *plumbing* (component, §17 binding form, weights on the
- * render item). **Staged, deliberately:** the GPU morph path (morph targets
- * are additional vertex streams — a four-target mesh triples the attribute
- * budget, which is its own layout decision); multiple material groups (R-12's
- * follow-up — `material` stays single here as on `Renderable`); hardware
- * instancing (needs an instance-transform attribute; the blocker for §86's
- * 100 000-instance row); indirect rendering (WebGPU); static-versus-dynamic
- * GPU buffer usage (every geometry uploads `STATIC_DRAW` today); level of
- * detail, impostors, billboards, and the merging tools (ordinary packets).
- * CPU skinning is available explicitly through `CpuSkinning` in
- * `@fourjs/geometry`; bone textures and dual-quaternion skinning remain deferred.
+ * the morph-target plumbing (component, §17 binding form, weights on the
+ * render item) **and the one-target GPU morph path** (`positions1`/`normals1`
+ * at attribute locations 6/7; WebGL mixes, WebGPU skips the draw rather than
+ * showing bind pose). **Staged, deliberately:** a second morph target and
+ * beyond; multiple material groups (R-12's follow-up — `material` stays
+ * single here as on `Renderable`); hardware instancing (needs an
+ * instance-transform attribute; the blocker for §86's 100 000-instance row);
+ * indirect rendering (WebGPU); static-versus-dynamic GPU buffer usage (every
+ * geometry uploads `STATIC_DRAW` today); level of detail, impostors,
+ * billboards, and the merging tools (ordinary packets). CPU skinning is
+ * available explicitly through `CpuSkinning` in `@fourjs/geometry`; bone
+ * textures and dual-quaternion skinning remain deferred.
  *
  * ## Two known inaccuracies, entered deliberately (RFC 0003 §6)
  *

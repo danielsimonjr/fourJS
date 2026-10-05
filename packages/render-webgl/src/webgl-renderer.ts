@@ -1521,6 +1521,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
    */
   #skinnedProgramsFailed = false;
 
+  #morphUnlit: UnlitProgram | null = null;
+  #morphLit: LitProgram | null = null;
+  #morphProgramsFailed = false;
+
   /**
    * Whether the skinned caster compile failed on the current context — a
    * separate latch from `#skinnedProgramsFailed`, so a driver that can shade
@@ -1683,6 +1687,9 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#shadowProgramFailed = false;
     this.#skinnedPrograms = null;
     this.#skinnedProgramsFailed = false;
+    this.#morphUnlit = null;
+    this.#morphLit = null;
+    this.#morphProgramsFailed = false;
     this.#skinnedShadowFailed = false;
     // §60's node-program cache (RFC 0001) died with the context too; the
     // next node-material draw re-creates it and recompiles per graph.
@@ -2128,7 +2135,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       // sprites issues exactly the GL sequence it issued before sprites existed.
       program.use();
       let activeKind:
-        RenderItemKind | "particle-trail" | "particle-appearance" = "unlit";
+        | RenderItemKind
+        | "particle-trail"
+        | "particle-appearance"
+        | "unlit-morph"
+        | "lit-morph" = "unlit";
       let particleTrailActive = false;
       // The GL state mirror starts where `#applyFixedState` and GL's own defaults
       // left it; every draw below moves it only where its material asks.
@@ -2210,6 +2221,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         let standardViewUploaded = false;
         let skinnedUnlitViewUploaded = false;
         let skinnedLitViewUploaded = false;
+        let morphUnlitViewUploaded = false;
+        let morphLitViewUploaded = false;
 
         // §64 stages 2–3, per view (R-8, 2026-08-09). The frame's list is built
         // once, above; this derives *this view's* draws from it — §46's layer
@@ -2730,6 +2743,132 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
 
           const record = geometries.acquire(item.geometry);
           if (record === null) {
+            continue;
+          }
+
+          if (
+            item.geometry.positions1 !== undefined &&
+            (item.kind === "unlit" || isLitItem(item))
+          ) {
+            const morph = this.#acquireMorphPrograms(gl);
+            if (morph === null) {
+              continue;
+            }
+            const weight = item.morphWeights?.[0] ?? 0;
+            if (item.kind === "unlit") {
+              const morphUnlit = morph.unlit;
+              if (activeKind !== "unlit-morph") {
+                morphUnlit.use();
+                activeKind = "unlit-morph";
+              }
+              if (!morphUnlitViewUploaded) {
+                morphUnlit.setViewProjection(viewProjection);
+                morphUnlitViewUploaded = true;
+              }
+              const map = mapOf(item.material);
+              const texture =
+                map === null
+                  ? null
+                  : resolveTexture(textures, renderTargets, activeTarget, map);
+              if (texture !== null) {
+                if (!mapUnitActive) {
+                  gl.activeTexture(GL.TEXTURE0 + MAP_TEXTURE_UNIT);
+                  mapUnitActive = true;
+                  boundMapTexture = null;
+                }
+                if (
+                  boundMapTexture !== texture ||
+                  boundMapKind !== activeKind
+                ) {
+                  gl.bindTexture(GL.TEXTURE_2D, texture);
+                  boundMapTexture = texture;
+                  boundMapKind = activeKind;
+                }
+                textureBound = true;
+              }
+              morphUnlit.setFeatures(
+                texture !== null,
+                item.material.vertexColors === true,
+              );
+              applyMaterialState(
+                gl,
+                state,
+                item.material,
+                unlitColorBlends(item.material),
+                item.clip ?? null,
+              );
+              morphUnlit.setMorphWeight(weight);
+              morphUnlit.setModel(item.worldMatrix);
+              morphUnlit.setColor(
+                item.material.color,
+                opacityOf(item.material),
+              );
+            } else {
+              const morphLit = morph.lit;
+              if (activeKind !== "lit-morph") {
+                morphLit.use();
+                activeKind = "lit-morph";
+              }
+              if (!morphLitViewUploaded) {
+                morphLit.setViewProjection(viewProjection);
+                morphLit.setAmbientLight(sceneLights.ambientColor);
+                morphLit.setHemisphereLight(sceneLights);
+                morphLit.setDirectionalLight(
+                  sceneLights.direction,
+                  sceneLights.directionalColor,
+                );
+                morphLit.setPunctualLights(sceneLights);
+                morphLit.setShadow(sceneLights);
+                morphLitViewUploaded = true;
+              }
+              const litMap = mapOf(item.material);
+              const litTexture =
+                litMap === null
+                  ? null
+                  : resolveTexture(
+                      textures,
+                      renderTargets,
+                      activeTarget,
+                      litMap,
+                    );
+              if (litTexture !== null) {
+                if (!mapUnitActive) {
+                  gl.activeTexture(GL.TEXTURE0 + MAP_TEXTURE_UNIT);
+                  mapUnitActive = true;
+                  boundMapTexture = null;
+                }
+                if (
+                  boundMapTexture !== litTexture ||
+                  boundMapKind !== activeKind
+                ) {
+                  gl.bindTexture(GL.TEXTURE_2D, litTexture);
+                  boundMapTexture = litTexture;
+                  boundMapKind = activeKind;
+                }
+                textureBound = true;
+              }
+              morphLit.setFeatures(litTexture !== null);
+              applyMaterialState(
+                gl,
+                state,
+                item.material,
+                item.material.transparent === true,
+                item.clip ?? null,
+              );
+              morphLit.setReceivesShadow(shadowActive && item.receiveShadow);
+              morphLit.setMorphWeight(weight);
+              morphLit.setModel(item.worldMatrix);
+              morphLit.setColor(item.material.color, opacityOf(item.material));
+            }
+            gl.bindVertexArray(record.vertexArray);
+            if (record.indexType === null) {
+              gl.drawArrays(record.mode, 0, record.count);
+            } else {
+              gl.drawElements(record.mode, record.count, record.indexType, 0);
+            }
+            if (statistics !== null) {
+              countDraw(statistics, record.mode, record.count, 1);
+            }
             continue;
           }
 
@@ -3622,6 +3761,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       this.#effectProgram?.dispose();
       this.#shadowProgram?.dispose();
       this.#skinnedPrograms?.dispose();
+      this.#morphUnlit?.dispose();
+      this.#morphLit?.dispose();
       this.#nodePrograms?.dispose();
       this.#geometries?.dispose();
       this.#textures?.dispose();
@@ -3640,6 +3781,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#effectProgram = null;
     this.#shadowProgram = null;
     this.#skinnedPrograms = null;
+    this.#morphUnlit = null;
+    this.#morphLit = null;
     this.#nodePrograms = null;
     // The one `RenderTarget` this renderer created for itself (R-18), so the
     // one it owes a `dispose()` to (§83) — its bytes leave the process-wide
@@ -3984,6 +4127,42 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           "webgl-skinning-compile-failed",
           "§54: the skinning pipeline failed to compile on this context; " +
             `skinned draws are skipped (§61, §89). ${String(error)}`,
+        );
+      }
+      return null;
+    }
+  }
+
+  /**
+   * One-target morph unlit+lit programs, compiled on the first geometry that
+   * carries `positions1` (RFC 0003 WP-SK.4). A compile failure skips morphing
+   * draws for this context (§61), never the frame.
+   */
+  #acquireMorphPrograms(gl: ParticleGlContext): {
+    unlit: UnlitProgram;
+    lit: LitProgram;
+  } | null {
+    if (this.#morphUnlit !== null && this.#morphLit !== null) {
+      return { unlit: this.#morphUnlit, lit: this.#morphLit };
+    }
+    if (this.#morphProgramsFailed) {
+      return null;
+    }
+    try {
+      this.#morphUnlit = UnlitProgram.createMorph(gl);
+      this.#morphLit = LitProgram.createMorph(gl);
+      return { unlit: this.#morphUnlit, lit: this.#morphLit };
+    } catch (error: unknown) {
+      this.#morphProgramsFailed = true;
+      this.#morphUnlit?.dispose();
+      this.#morphLit?.dispose();
+      this.#morphUnlit = null;
+      this.#morphLit = null;
+      if (DEV) {
+        devWarnOnce(
+          "webgl-morph-compile-failed",
+          "§54: the one-target GPU morph pipeline failed to compile on this " +
+            `context; morphing draws are skipped (§61, §89). ${String(error)}`,
         );
       }
       return null;

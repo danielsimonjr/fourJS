@@ -21,7 +21,11 @@
  */
 
 import { FourError } from "@fourjs/core";
-import { Node, warnAuthorityConflict } from "@fourjs/scene";
+import {
+  Node,
+  runOwnedTransformWrite,
+  warnAuthorityConflict,
+} from "@fourjs/scene";
 import type { TransformAuthority } from "@fourjs/scene";
 
 import type { Advanceable } from "./animation-system.js";
@@ -370,17 +374,24 @@ export class AnimationLayerStack implements Advanceable {
         allowTransform = false;
       }
     }
-    const channels = this.#channels;
-    for (let index = 0; index < channels.length; index += 1) {
-      const channel = channels[index];
-      const value = this.#compose(channel);
-      if (!channel.claim.held || (channel.isTransform && !allowTransform)) {
-        continue;
+    const writeChannels = (): void => {
+      const channels = this.#channels;
+      for (let index = 0; index < channels.length; index += 1) {
+        const channel = channels[index];
+        const value = this.#compose(channel);
+        if (!channel.claim.held || (channel.isTransform && !allowTransform)) {
+          continue;
+        }
+        channel.binding.set(value);
+        if (channel.notifyChange) {
+          (channel.binding.owner as { onChanged?: () => void }).onChanged?.();
+        }
       }
-      channel.binding.set(value);
-      if (channel.notifyChange) {
-        (channel.binding.owner as { onChanged?: () => void }).onChanged?.();
-      }
+    };
+    if (allowTransform) {
+      runOwnedTransformWrite(writeChannels);
+    } else {
+      writeChannels();
     }
   }
 

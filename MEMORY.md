@@ -17,7 +17,8 @@ readable; never delete the pointer itself.
   `render-webgpu` left that list 2026-08-21…29 (the R-1 plan; standing-fact wording
   corrected 2026-08-30).
 - `docs/SPECIFICATION.md` is the working reference — the current revision is whatever tops
-  its amendments table (1.15 as of 2026-09-10; do not freeze the number in other files)
+  its amendments table (1.15 as of 2026-09-10; superseded 2026-10-05: tip is **1.19**;
+  do not freeze the number in other files)
   (amendments table at its top; § numbering 1–120 frozen, lettered sections for insertions).
   `docs/archive/four-js-specification.pdf` is the unmodified original, frozen at the pre-1.0
   text, and still contains the old duplicate numbering — translate its references via the map
@@ -4678,3 +4679,46 @@ removes the adapter's imported subpaths and explicit destruction/instantiation
 contracts; restore 0.4.13 pending a deliberate 1.x migration. TypeDoc 0.28.20 supports
 TS6 and the guard requires 6; restore the isolated docs compiler 6.0.3 while the
 root stays TS 7.0.2. These changes are separate from PNG semantics.
+
+### 2026-10-05 — recommendation pass (authority, smoothness, product packets)
+
+Supersedes the standing-fact freeze of the spec revision number at 1.15: the
+working reference is whatever tops `docs/SPECIFICATION.md`'s amendments table
+(now **1.19**).
+
+**Tracker / docs.** Cycle 9 tracker drift vs source closed. Architecture
+OVERVIEW current-status and the R-1 plan header rewritten to match the tree.
+Guides added for the nine 3D geometry generators and the §83/§85 warning
+family.
+
+**§42 DEV application writes.** `runOwnedTransformWrite` still lands the
+write; in `__FOUR_DEV__` a conflict warn fires when the application writes a
+system-owned transform. Production stays silent (`typeof __FOUR_DEV__ !==
+"undefined" ? __FOUR_DEV__ : true` in `markDirty`). Tests that set authority
+then mutate must expect the warn.
+
+**Smoothness.** `tests/browser/smoothness.spec.ts` mid-step sampling uses the
+app pause-after-step protocol (`data-frames` / `__fourPauseAfterStep`).
+`MINIMUM_MID_STEP_FRAMES` is unchanged; no retries.
+
+**RFC 0004.** `CanvasTexture.resize()` reallocates to the source size;
+`version` waits for `update()`; construction-time `maximumBytes` still
+applies. Mid-paint grow without `resize()` still throws.
+
+**RFC 0008 wrapping.** `layoutText({ wrapWidth })` (UAX #14-lite) on identity
+and HarfBuzz paths; omitted/`Infinity` is bit-identical. `Text.wrapWidth` and
+`Label.wrapWidth` (independent of widget `maxWidth`).
+
+**§96 JPEG.** `probeJpeg`/`probeWebp`/`probeImage` plus
+`createBoundedJpegDecoder` (pin `@jsquash/jpeg@1.6.0`, heap cap before init,
+same poison contract as PNG). No real jpeg wasm fixture in-tree; invalid-wasm
+and header-probe tests cover the refusal path.
+
+**RFC 0003 GPU morph.** `positions1`/`normals1` at locations **6 / 7**;
+`JOINTS_1`/`WEIGHTS_1` reserved at **8 / 9**. WebGL lazy morph unlit/lit
+variants mix with `morphWeights[0]`. WebGPU skips + `devWarnOnce`. glTF
+one-target: `targets[0]` POSITION/NORMAL converted from displacements to
+absolute streams; `meshes.weights`/`nodes.weights` length 1; `weights`
+animation channels still refused. Further targets, bone-texture palettes,
+Box2D/soft/Canvas/SVG backends, TypeDoc→TS7, harfbuzzjs>0.4.13, js-yaml≥5,
+repo-wide Prettier, and default-on batching were explicitly not started.

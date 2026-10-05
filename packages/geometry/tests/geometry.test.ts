@@ -564,6 +564,39 @@ describe("BufferGeometry", () => {
     });
   });
 
+  describe("positions1 and normals1 (§54 GPU morph)", () => {
+    it("are optional, held by reference, and bound as extra streams", () => {
+      const positions1 = new Float32Array([0, 1, 0, 1, 1, 0, 0, 2, 0]);
+      const normals1 = new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]);
+      const geometry = new BufferGeometry({
+        positions: triangle(),
+        positions1,
+        normals1,
+      });
+      expect(geometry.positions1).toBe(positions1);
+      expect(geometry.normals1).toBe(normals1);
+      expect(geometry.byteLength).toBe(9 * 4 + 9 * 4 + 9 * 4);
+      const clone = geometry.clone();
+      expect(clone.positions1).not.toBe(positions1);
+      expect(Array.from(clone.positions1 ?? [])).toEqual(
+        Array.from(positions1),
+      );
+      geometry.dispose();
+      expect(geometry.positions1).toBeUndefined();
+      clone.dispose();
+    });
+
+    it("rejects a morph stream that is not index-aligned", () => {
+      expect(
+        () =>
+          new BufferGeometry({
+            positions: triangle(),
+            positions1: new Float32Array([0, 1, 0]),
+          }),
+      ).toThrow(/index-aligned/);
+    });
+  });
+
   describe("bounds", () => {
     it("computes the axis-aligned box of the positions", () => {
       const geometry = new BufferGeometry({

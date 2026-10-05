@@ -100,13 +100,13 @@ import type { TextLayoutOptions } from "@fourjs/text";
  *
  * ## What of §56 ships here
  *
- * Bitmap text, basic Latin layout, explicit `\n` line breaks, baseline metrics
+ * Bitmap text, basic Latin layout, explicit `\n` line breaks, UAX #14-lite
+ * wrapping via {@link Text.wrapWidth}, baseline metrics
  * ({@link Text.layout}), letter spacing, and horizontal alignment. §56's MVP
  * clause allows precisely this ("initial releases may ship bitmap/SDF text with
  * basic Latin-script layout only"). Deferred with their reasons, none of them
- * silently: SDF/MSDF fields (an atlas producer, `glyph-atlas.ts`), wrapping (a
- * word-breaking rule, i.e. UAX #14 and a language), vertical alignment and rich
- * spans, text on paths (§51's arc-length parametrization), `space:
+ * silently: SDF/MSDF fields (an atlas producer, `glyph-atlas.ts`), vertical
+ * alignment and rich spans, text on paths (§51's arc-length parametrization), `space:
  * "billboard" | "screen"` (§55's `billboardMode`, which needs the camera inside
  * the model transform), selection and carets (§73's text input), and the
  * accessible semantic mirror (§75's DOM tier). Shaping, bidi and ligatures are
@@ -164,7 +164,13 @@ export interface TextOptions
     RenderableOptions,
     Pick<
       TextLayoutOptions,
-      "shaper" | "fontId" | "script" | "language" | "direction" | "features"
+      | "shaper"
+      | "fontId"
+      | "script"
+      | "language"
+      | "direction"
+      | "features"
+      | "wrapWidth"
     > {
   /** Initial {@link Text.text}; defaults to `""`, which draws nothing. */
   text?: string;
@@ -288,7 +294,13 @@ function requireAtlasMaterial(
 export class Text extends Renderable<UnlitMaterial> implements Disposable {
   #shaping: Pick<
     TextLayoutOptions,
-    "shaper" | "fontId" | "script" | "language" | "direction" | "features"
+    | "shaper"
+    | "fontId"
+    | "script"
+    | "language"
+    | "direction"
+    | "features"
+    | "wrapWidth"
   >;
   #atlas: GlyphAtlas;
 
@@ -348,6 +360,7 @@ export class Text extends Renderable<UnlitMaterial> implements Disposable {
       language: options.language,
       direction: options.direction,
       features: options.features && Object.freeze({ ...options.features }),
+      wrapWidth: options.wrapWidth,
     };
     if (options.shaper && !options.fontId)
       throw new RangeError("fontId is required with a shaper");
@@ -406,6 +419,22 @@ export class Text extends Renderable<UnlitMaterial> implements Disposable {
 
   set letterSpacing(value: number) {
     this.#letterSpacing = requireFinite(value);
+    this.markDirty();
+  }
+
+  /**
+   * Maximum line width in world units, or `undefined` for `\n`-only breaks.
+   * Forwards {@link TextLayoutOptions.wrapWidth}.
+   */
+  get wrapWidth(): number | undefined {
+    return this.#shaping.wrapWidth;
+  }
+
+  set wrapWidth(value: number | undefined) {
+    if (value === this.#shaping.wrapWidth) {
+      return;
+    }
+    this.#shaping = { ...this.#shaping, wrapWidth: value };
     this.markDirty();
   }
 

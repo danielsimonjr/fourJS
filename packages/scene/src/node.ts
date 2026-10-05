@@ -442,6 +442,7 @@ export abstract class Node
   constructor(options: NodeOptions = {}) {
     super();
     this.id = assignNodeId(options.id);
+    this.transform.attachAuthorityHost(this);
   }
 
   /**
@@ -603,19 +604,12 @@ export abstract class Node
    *
    * ## Transform authority (§42)
    *
-   * This is an ordinary **manual** transform write, identical in every respect
-   * to `node.rotation.setFromAxisAngle(...)`, and like every direct write it
-   * neither checks nor warns about {@link Node.transformAuthority} (decision,
-   * R-36). §42's enforcement is deliberately *writer-side* — a system tests
-   * ownership once per node per step, immediately before it would write (see
-   * `warnAuthorityConflict`) — and `Node.lookAt` is not a system: it is the
-   * application, i.e. the `"manual"` authority itself. Warning here would make
-   * this the only transform write in the engine that self-polices, and it would
-   * fire on the most ordinary setup there is — aiming a `"physics"`-owned body
-   * or a `"kinematic"`-driven turret at its starting pose before the owning
-   * system has stepped. A rig that wants to aim a node *every frame* under a
-   * non-manual authority has the same obligation as any other writer: claim the
-   * authority, or let the owner do the writing.
+   * This is an ordinary **application** transform write: it always lands, the
+   * same as `node.rotation.setFromAxisAngle(...)`. A DEV build warns once if
+   * {@link Node.transformAuthority} is not `"manual"` (`warnApplicationTransformWrite`);
+   * production is silent. The write is never refused. A rig that wants to aim a
+   * node *every frame* under a non-manual authority has the same obligation as
+   * any other writer: claim the authority, or wrap with `runOwnedTransformWrite`.
    *
    * ## Degenerate aims are refused (§85)
    *

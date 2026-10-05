@@ -4,12 +4,15 @@ import {
   DEFAULT_TRANSFORM_AUTHORITY,
   Group,
   TRANSFORM_AUTHORITIES,
+  runOwnedTransformWrite,
+  isOwnedTransformWrite,
   warnAuthorityConflict,
   type TransformAuthority,
 } from "../src/index.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 /** Silences and records `console.warn` for one test. */
@@ -164,5 +167,53 @@ describe("warnAuthorityConflict (§42 development warning)", () => {
     expect(node.transformAuthority).toBe("physics");
     expect(node.transform.version).toBe(version);
     expect(node.transform.position.x).toBe(0);
+  });
+});
+
+describe("application writes on a system-owned transform (§42 DEV)", () => {
+  it("does not warn when the owner is manual", () => {
+    const warn = spyOnWarn();
+    const node = new Group();
+    node.position.set(1, 2, 3);
+    expect(warn).not.toHaveBeenCalled();
+    expect(node.position.x).toBe(1);
+  });
+
+  it("warns once, and still applies the write, when the owner is not manual", () => {
+    const warn = spyOnWarn();
+    const node = new Group();
+    node.transformAuthority = "kinematic";
+    node.position.set(999, 0, 0);
+    expect(node.position.x).toBe(999);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain("the write was applied");
+    node.position.set(1000, 0, 0);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(node.position.x).toBe(1000);
+  });
+
+  it("is silent inside runOwnedTransformWrite", () => {
+    const warn = spyOnWarn();
+    const node = new Group();
+    node.transformAuthority = "kinematic";
+    runOwnedTransformWrite(() => {
+      expect(isOwnedTransformWrite()).toBe(true);
+      node.position.set(4, 5, 6);
+    });
+    expect(isOwnedTransformWrite()).toBe(false);
+    expect(warn).not.toHaveBeenCalled();
+    expect(node.position.x).toBe(4);
+  });
+
+  it("is silent when __FOUR_DEV__ is false", async () => {
+    vi.stubGlobal("__FOUR_DEV__", false);
+    vi.resetModules();
+    const { Group } = await import("../src/group.js");
+    const warn = spyOnWarn();
+    const node = new Group();
+    node.transformAuthority = "physics";
+    node.position.set(7, 8, 9);
+    expect(warn).not.toHaveBeenCalled();
+    expect(node.position.x).toBe(7);
   });
 });

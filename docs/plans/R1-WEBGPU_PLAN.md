@@ -1,7 +1,10 @@
 # R-1 — the WebGPU backend: tiered plan
 
-**Status:** plan only, no implementation. Written 2026-08-21 against branch
-`claude/tools-integration-rji2sr` (tip `aa8a706`).
+**Status:** executed. WP-R1.1–R1.9 landed 2026-08-21…29;
+`@fourjs/render-webgpu` is a shipped backend. This file is the historical
+packet plan, not current implementation status. Written 2026-08-21 against
+branch `claude/tools-integration-rji2sr` (tip `aa8a706`); status line
+corrected 2026-10-05.
 **Scope:** gap `R-1` (§62 second backend), carrying `R-31` (§82 compute / GPU particles) and
 entangled with RFC 0001 (`R-14`).
 **Format:** the house work-packet format of

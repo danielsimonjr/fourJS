@@ -122,7 +122,11 @@
 
 import { FourError, type Component, type ComponentHost } from "@fourjs/core";
 import { Quaternion, Vector3 } from "@fourjs/math";
-import { warnAuthorityConflict, type Node } from "@fourjs/scene";
+import {
+  runOwnedTransformWrite,
+  warnAuthorityConflict,
+  type Node,
+} from "@fourjs/scene";
 
 import {
   PRIORITY_KINEMATICS,
@@ -367,7 +371,9 @@ export class MotionSystem implements SimulationSystem {
         warnAuthorityConflict(node, MOTION_SYSTEM_AUTHORITY);
         continue;
       }
-      this.#advance(node, motion, dt);
+      runOwnedTransformWrite(() => {
+        this.#advance(node, motion, dt);
+      });
     }
   }
 

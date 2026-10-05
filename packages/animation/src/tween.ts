@@ -71,7 +71,11 @@
 
 import { DEV_WARNING_PREFIX, FourError } from "@fourjs/core";
 import type { Quaternion, Vector2, Vector3, Vector4 } from "@fourjs/math";
-import { Node, warnAuthorityConflict } from "@fourjs/scene";
+import {
+  Node,
+  runOwnedTransformWrite,
+  warnAuthorityConflict,
+} from "@fourjs/scene";
 import type { TransformAuthority } from "@fourjs/scene";
 
 import { createBinding, type PropertyBinding } from "./binding.js";
@@ -945,33 +949,40 @@ export class Tween {
     }
 
     const eased = this.#easing(this.#progressAt(this.#localTime));
-    const entries = this.#entries;
-    for (let index = 0; index < entries.length; index += 1) {
-      const entry = entries[index];
-      if (!entry.claim.held || (entry.isTransform && !allowTransform)) {
-        continue;
+    const applyEntries = (): void => {
+      const entries = this.#entries;
+      for (let index = 0; index < entries.length; index += 1) {
+        const entry = entries[index];
+        if (!entry.claim.held || (entry.isTransform && !allowTransform)) {
+          continue;
+        }
+        // Exact endpoints: `values.ts` does not promise `lerp(a, b, 1) === b`,
+        // so the endpoints are assigned rather than interpolated.
+        let value: unknown;
+        if (eased === 0) {
+          value = entry.start;
+        } else if (eased === 1) {
+          value = entry.end;
+        } else {
+          value = entry.adapter.lerp(
+            entry.start,
+            entry.end,
+            eased,
+            entry.scratch,
+          );
+        }
+        entry.binding.set(value);
+        if (entry.notifyChange) {
+          // A primitive write is a direct field write and bypasses plan D3's
+          // change hook; re-fire it so `Transform.version` still advances.
+          (entry.binding.owner as { onChanged?: () => void }).onChanged?.();
+        }
       }
-      // Exact endpoints: `values.ts` does not promise `lerp(a, b, 1) === b`,
-      // so the endpoints are assigned rather than interpolated.
-      let value: unknown;
-      if (eased === 0) {
-        value = entry.start;
-      } else if (eased === 1) {
-        value = entry.end;
-      } else {
-        value = entry.adapter.lerp(
-          entry.start,
-          entry.end,
-          eased,
-          entry.scratch,
-        );
-      }
-      entry.binding.set(value);
-      if (entry.notifyChange) {
-        // A primitive write is a direct field write and bypasses plan D3's
-        // change hook; re-fire it so `Transform.version` still advances.
-        (entry.binding.owner as { onChanged?: () => void }).onChanged?.();
-      }
+    };
+    if (allowTransform) {
+      runOwnedTransformWrite(applyEntries);
+    } else {
+      applyEntries();
     }
   }
 }

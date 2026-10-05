@@ -434,11 +434,11 @@ describe("KinematicSystem drives all three components (§39 step 4, §42)", () =
     registry.register(system);
 
     const idle = new Group();
-    idle.transformAuthority = "physics";
     const idleCharacter = idle.addComponent(
       new CharacterController({ grounded: true }),
     );
     idleCharacter.step(idle.transform, DT); // clear the initial heading write
+    idle.transformAuthority = "physics";
     system.track(idle);
     stepOnce(registry, 1);
     expect(warn).not.toHaveBeenCalled();

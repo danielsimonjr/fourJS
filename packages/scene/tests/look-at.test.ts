@@ -282,7 +282,7 @@ describe("Node.lookAt (§44/§47, R-36)", () => {
     expect(rigged.rotation.y).not.toBeCloseTo(loose.rotation.y, 6);
   });
 
-  it("is an ordinary manual write: no authority warning, whatever the owner", () => {
+  it("warns once in DEV when the owner is not manual, and still writes", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
       for (const authority of ["physics", "kinematic", "animation"] as const) {
@@ -290,8 +290,9 @@ describe("Node.lookAt (§44/§47, R-36)", () => {
         node.transformAuthority = authority;
         node.position.set(0, 0, 3);
         node.lookAt(ORIGIN);
+        expect(node.position.z).toBe(3);
       }
-      expect(warn).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledTimes(3);
     } finally {
       warn.mockRestore();
     }

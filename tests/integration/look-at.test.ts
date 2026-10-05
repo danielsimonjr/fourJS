@@ -22,9 +22,11 @@
  *    aims a camera and a lamp (§68's "the direction a camera looks").
  * 3. **The umbrella exposes it** (§97a): `four.scene.Node` carries both
  *    helpers, which is what an application actually reaches for.
- * 4. **A lookAt-derived pose is ordinary transform state.** It is a `"manual"`
- *    write that a §42 owner then drives without either side warning — `lookAt`
- *    is the application writing, not a system claiming ownership.
+ * 4. **A lookAt-derived pose is ordinary transform state.** `lookAt` is the
+ *    application writing, not a system claiming ownership. On a node whose
+ *    authority is still `"manual"` that write is silent. On a system-owned
+ *    node a DEV build warns once and the write still lands; the owning system
+ *    then drives that pose without a second warning.
  */
 
 import { Vector3 } from "@fourjs/math";
@@ -181,17 +183,16 @@ describe("Node.lookAt through the umbrella barrel (§97a)", () => {
 });
 
 describe("A lookAt pose is an ordinary manual write (§42)", () => {
-  it("aims a system-owned node at its starting pose without warning", () => {
+  it("warns once when lookAt aims a system-owned node, then the owner is silent", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
       const node = new Group();
-      node.transformAuthority = "kinematic";
       node.position.set(0, 0, 5);
-      // Authoring the starting pose of a node a system owns is exactly what a
-      // direct `rotation.setFromAxisAngle` is, and warns exactly as much: §42's
-      // enforcement is writer-side, and `lookAt` is the application writing.
+      node.transformAuthority = "kinematic";
+      // Authoring a pose on a node a system already owns is an application
+      // write: DEV warns once, and the rotation still lands.
       node.lookAt(ORIGIN);
-      expect(warn).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledTimes(1);
 
       const motion = node.addComponent(new MotionComponent());
       motion.linearVelocity.set(1, 0, 0);
@@ -202,24 +203,24 @@ describe("A lookAt pose is an ordinary manual write (§42)", () => {
       };
       system.fixedUpdate(context);
 
-      // The owner drives the node from the pose `lookAt` authored, and neither
-      // the helper nor the system has anything to warn about.
+      // The kinematic owner drives the pose `lookAt` authored and does not
+      // add a conflict warning.
       expect(node.position.x).toBeCloseTo(1 / 60, 12);
       expect(node.getWorldDirection(new Vector3()).z).toBeCloseTo(-1, 12);
-      expect(warn).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledTimes(1);
     } finally {
       warn.mockRestore();
     }
   });
 
-  it("warns exactly once when a system — not lookAt — writes what it owns", () => {
+  it("warns on lookAt, then once more when a non-owner system writes", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
       const node = new Group();
-      node.transformAuthority = "physics";
       node.position.set(0, 0, 5);
+      node.transformAuthority = "physics";
       node.lookAt(ORIGIN);
-      expect(warn).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledTimes(1);
 
       node.addComponent(new MotionComponent());
       const system = new MotionSystem();
@@ -227,7 +228,7 @@ describe("A lookAt pose is an ordinary manual write (§42)", () => {
       system.fixedUpdate({
         time: createTimeState({ fixedDeltaTime: 1 / 60 }),
       });
-      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledTimes(2);
     } finally {
       warn.mockRestore();
     }

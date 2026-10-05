@@ -245,9 +245,11 @@ cluster field on `TextQuad` (additive, default unused) + the wasm
 adapter behind a separate export + one Latin-ligature golden + the
 §96 font-byte limit + A/B bundle proof.
 
-**Deferred:** wrapping / UAX #14; SDF/MSDF; vertical writing; colour
+**Deferred:** SDF/MSDF; vertical writing; colour
 fonts (COLR/CPAL); variable-font axis animation; a §79 font resource;
-`@fourjs/assets` font loader; a 25th package.
+`@fourjs/assets` font loader; a 25th package. Line wrapping (`wrapWidth`,
+UAX #14-lite) shipped 2026-10-05 as a follow-on packet on the identity and
+HarfBuzz layout paths.
 
 ## Alternatives
 

@@ -136,6 +136,7 @@
 import { FourError, type Component, type ComponentHost } from "@fourjs/core";
 import { Quaternion, Vector3 } from "@fourjs/math";
 import {
+  runOwnedTransformWrite,
   warnAuthorityConflict,
   type Node,
   type Transform,
@@ -715,16 +716,18 @@ export class KinematicSystem implements SimulationSystem {
         warnAuthorityConflict(node, KINEMATIC_SYSTEM_AUTHORITY);
         continue;
       }
-      const transform = node.transform;
-      if (characterActive) {
-        character.step(transform, dt);
-      }
-      if (lookActive) {
-        look.step(transform);
-      }
-      if (commandActive) {
-        controller.step(transform, dt);
-      }
+      runOwnedTransformWrite(() => {
+        const transform = node.transform;
+        if (characterActive) {
+          character.step(transform, dt);
+        }
+        if (lookActive) {
+          look.step(transform);
+        }
+        if (commandActive) {
+          controller.step(transform, dt);
+        }
+      });
     }
   }
 

@@ -50,7 +50,12 @@ import {
   RigidBody,
 } from "@fourjs/physics";
 import { Rapier3dAdapter } from "@fourjs/physics-rapier";
-import { Group, PerspectiveCamera, Scene } from "@fourjs/scene";
+import {
+  Group,
+  PerspectiveCamera,
+  Scene,
+  runOwnedTransformWrite,
+} from "@fourjs/scene";
 import * as four from "fourJS";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -148,8 +153,11 @@ describe("§42's constraint authority, end to end", () => {
     const time = createTimeState({ fixedDeltaTime: DT });
 
     for (let step = 1; step <= 30; step += 1) {
-      // Whatever "the solver" did to the body this step.
-      body.position.set(step * 0.1, 0, 0);
+      // The physics owner writing its own node — the stand-in for the solver.
+      // An unwrapped `position.set` is an application write and warns in DEV.
+      runOwnedTransformWrite(() => {
+        body.position.set(step * 0.1, 0, 0);
+      });
       registry.runFixedStep(time);
       camera.updateViewMatrix();
 
@@ -191,8 +199,8 @@ describe("§44 path animation, composed from two nodes", () => {
     // the dolly, at its own height offset, so both authorities write in the
     // same step without ever touching the same transform.
     const camera = new PerspectiveCamera({ aspect: 16 / 9 });
-    camera.transformAuthority = "constraint";
     camera.position.set(0, 3, 0);
+    camera.transformAuthority = "constraint";
     camera.addComponent(new LookAtConstraint({ target: subject }));
 
     dolly.add(camera);

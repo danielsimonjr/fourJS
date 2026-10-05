@@ -13,10 +13,11 @@
  *
  * ## What one entry holds
  *
- * A vertex array object plus the one to seven buffers it references —
+ * A vertex array object plus the one to nine buffers it references —
  * positions, the optional normal stream (§68, 2026-08-04), the optional uv and
  * per-vertex colour streams (§53, R-19, 2026-08-07), the optional joint and
- * weight streams (§54, RFC 0003, 2026-08-28), the optional index
+ * weight streams (§54, RFC 0003, 2026-08-28), the optional first morph-target
+ * position and normal streams (locations 6/7), the optional index
  * buffer — and the
  * three numbers the draw call needs (mode, element count, index type). Binding
  * a VAO restores the whole attribute *and* element-array binding state in one
@@ -70,7 +71,9 @@ import {
   GL,
   JOINTS_ATTRIBUTE_LOCATION,
   NORMAL_ATTRIBUTE_LOCATION,
+  NORMAL1_ATTRIBUTE_LOCATION,
   POSITION_ATTRIBUTE_LOCATION,
+  POSITION1_ATTRIBUTE_LOCATION,
   UV_ATTRIBUTE_LOCATION,
   WEIGHTS_ATTRIBUTE_LOCATION,
   type WebglContext,
@@ -139,6 +142,18 @@ export interface GeometryRecord {
    */
   readonly weightBuffer: GlBuffer | null;
 
+  /**
+   * Buffer backing the optional first morph-target position stream (§54),
+   * or `null`. Bound at `POSITION1_ATTRIBUTE_LOCATION`.
+   */
+  readonly position1Buffer: GlBuffer | null;
+
+  /**
+   * Buffer backing the optional first morph-target normal stream (§54),
+   * or `null`. Bound at `NORMAL1_ATTRIBUTE_LOCATION`.
+   */
+  readonly normal1Buffer: GlBuffer | null;
+
   /** Index buffer, or `null` for a non-indexed geometry. */
   readonly indexBuffer: GlBuffer | null;
 
@@ -166,6 +181,8 @@ const OPTIONAL_ATTRIBUTES = [
   ["colors", "colorBuffer"],
   ["joints", "jointBuffer"],
   ["weights", "weightBuffer"],
+  ["positions1", "position1Buffer"],
+  ["normals1", "normal1Buffer"],
 ] as const;
 
 /** Mutable only while a new record's optional buffers are being allocated. */
@@ -188,7 +205,9 @@ function attributeMask(geometry: CacheableGeometry): number {
     (+!!geometry.colors << 2) |
     (+!!geometry.joints << 3) |
     (+!!geometry.weights << 4) |
-    (+!!geometry.indices << 5)
+    (+!!geometry.positions1 << 5) |
+    (+!!geometry.normals1 << 6) |
+    (+!!geometry.indices << 7)
   );
 }
 
@@ -361,6 +380,8 @@ export class GeometryCache {
       colorBuffer: null,
       jointBuffer: null,
       weightBuffer: null,
+      position1Buffer: null,
+      normal1Buffer: null,
       indexBuffer: null,
       version: geometry.version,
       mode: glMode(geometry.mode),
@@ -467,6 +488,18 @@ export class GeometryCache {
       geometry.weights,
       WEIGHTS_ATTRIBUTE_LOCATION,
       4,
+    );
+    this.#writeAttribute(
+      setup,
+      record.position1Buffer,
+      geometry.positions1,
+      POSITION1_ATTRIBUTE_LOCATION,
+    );
+    this.#writeAttribute(
+      setup,
+      record.normal1Buffer,
+      geometry.normals1,
+      NORMAL1_ATTRIBUTE_LOCATION,
     );
     if (geometry.indices !== undefined) {
       gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, record.indexBuffer);

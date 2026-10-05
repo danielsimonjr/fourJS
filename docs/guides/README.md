@@ -100,6 +100,22 @@ guide said so:
     `registerRenderer` / `resolveRenderer("auto")`, and the measured three-line cost of
     swapping between backends whose surfaces differ.
 
+A seventeenth teaches the nine §53 3D generators that shipped with R-20 and
+had zero guide mentions through cycle 9:
+
+17. **[3D geometry generators](geometry-3d-primitives.md)** — sphere, cylinder,
+    cone, capsule, torus, lathe, extrude, tube, and height-field builders:
+    Y-up revolution axis, analytic normals, `u` around / `v` along, and the
+    §85 refusals.
+
+An eighteenth teaches the §83 / §85 warning family as a whole rather than as
+scattered mentions in the performance guide:
+
+18. **[Development warnings](development-warnings.md)** — the §83 allocation
+    and leak audits, the §85 validation catalogue, when they fire (DEV +
+    opt-in), and the difference between a measurement _window_ and an
+    allocator.
+
 ## Guide coverage, counted
 
 Cycles 8 and 9 both rediscovered the same thing: some shipped surfaces have no guide. Both
@@ -111,9 +127,9 @@ Measured 2026-09-20 with `grep -rl <symbol> docs/guides/`:
 
 | Surface                                                                                                                                                                                               | Guide coverage                                                                                                                                                                                                                                                                         |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The nine 3D geometry generators (`sphereGeometry`, `torusGeometry`, `capsuleGeometry`, `latheGeometry`, `extrudeGeometry`, `coneGeometry`, `cylinderGeometry`, `tubeGeometry`, `heightFieldGeometry`) | **none** — zero guide mentions of any of the nine                                                                                                                                                                                                                                      |
+| The nine 3D geometry generators (`sphereGeometry`, `torusGeometry`, `capsuleGeometry`, `latheGeometry`, `extrudeGeometry`, `coneGeometry`, `cylinderGeometry`, `tubeGeometry`, `heightFieldGeometry`) | **taught** — [3D geometry generators](geometry-3d-primitives.md) (2026-10-05). Was none through cycle 9.                                                                                                                                                                               |
 | `KeyboardState`, `SteeringAgent`, `Scheduler`, `SpatialHash`, `solveTwoBoneIK` (cycle 8)                                                                                                              | **none** — zero guide mentions of any of the five                                                                                                                                                                                                                                      |
-| The §83 / §85 warning family                                                                                                                                                                          | **partial** — `devWarnOnce` and `auditFrameAllocations` appear in [performance-optimization](performance-optimization.md); the family is not taught as a whole                                                                                                                         |
+| The §83 / §85 warning family                                                                                                                                                                          | **taught** — [Development warnings](development-warnings.md) (2026-10-05). `devWarnOnce` and `auditFrameAllocations` also appear in [performance-optimization](performance-optimization.md).                                                                                           |
 | `render-canvas`, `render-svg`                                                                                                                                                                         | **status until 2026-09-20** — named as reserved stubs in [materials-and-render-graph](materials-and-render-graph.md) and [raster-painting](raster-painting.md). Now taught by [custom-renderer-backends](custom-renderer-backends.md), which teaches the seam rather than the packages |
 | `physics-box2d`, `physics-soft`                                                                                                                                                                       | **status only** — named as reserved stubs in [custom-solver-adapters](custom-solver-adapters.md)'s honest-state section. No guide teaches them, because a stub has no API to teach                                                                                                     |
 

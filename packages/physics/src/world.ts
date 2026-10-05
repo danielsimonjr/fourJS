@@ -145,6 +145,7 @@ import {
 } from "@fourjs/motion";
 import {
   PoseTarget,
+  runOwnedTransformWrite,
   warnAuthorityConflict,
   type Node,
   type PoseBuffer,
@@ -3839,10 +3840,14 @@ export class PhysicsWorld {
   #publishBody(registration: BodyRegistration): void {
     const { node, body, handle, type } = registration;
     if (node.transformAuthority === BLENDED_AUTHORITY) {
-      this.#publishBlended(registration);
+      runOwnedTransformWrite(() => {
+        this.#publishBlended(registration);
+      });
     } else if (type === "dynamic") {
       if (node.transformAuthority === PHYSICS_AUTHORITY) {
-        this.#publishSolverPose(registration);
+        runOwnedTransformWrite(() => {
+          this.#publishSolverPose(registration);
+        });
       } else {
         warnAuthorityConflict(node, PHYSICS_AUTHORITY);
       }
