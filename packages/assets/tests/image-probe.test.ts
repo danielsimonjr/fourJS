@@ -79,6 +79,69 @@ describe("image header probes (§96)", () => {
     expect(probePng(jpegSof(1, 1).buffer)).toBeUndefined();
     expect(probeImage(jpegSof(8, 4).buffer)).toEqual({ width: 8, height: 4 });
   });
+
+  it("reads a PNG IHDR and refuses a truncated or mistyped header", () => {
+    const png = new Uint8Array(24);
+    png.set([137, 80, 78, 71, 13, 10, 26, 10], 0);
+    png.set([0, 0, 0, 13, 73, 72, 68, 82], 8);
+    const view = new DataView(png.buffer);
+    view.setUint32(16, 7);
+    view.setUint32(20, 9);
+    expect(probePng(png.buffer)).toEqual({ width: 7, height: 9 });
+    expect(probePng(png.slice(0, 8).buffer)).toBeUndefined();
+    const bad = png.slice();
+    bad[0] = 0;
+    expect(probePng(bad.buffer)).toBeUndefined();
+    const noIhdr = png.slice();
+    noIhdr[12] = 0;
+    expect(probePng(noIhdr.buffer)).toBeUndefined();
+  });
+
+  it("walks JPEG markers that are not a start of frame", () => {
+    expect(
+      probeJpeg(new Uint8Array([0xff, 0xd8, 0xff]).buffer),
+    ).toBeUndefined();
+    const sos = new Uint8Array([0xff, 0xd8, 0xff, 0xda, 0x00, 0x02]);
+    expect(probeJpeg(sos.buffer)).toBeUndefined();
+    const stuffed = new Uint8Array([
+      0xff, 0xd8, 0xff, 0xff, 0xc0, 0x00, 0x11, 0x08, 0x00, 0x02, 0x00, 0x03,
+      0x03, 0x01, 0x22, 0x00, 0x02, 0x11, 0x01, 0x03, 0x11, 0x01,
+    ]);
+    expect(probeJpeg(stuffed.buffer)).toEqual({ width: 3, height: 2 });
+    const rst = new Uint8Array([
+      0xff, 0xd8, 0xff, 0xd9, 0xff, 0xc0, 0x00, 0x11, 0x08, 0x00, 0x01, 0x00,
+      0x01, 0x03, 0x01, 0x22, 0x00, 0x02, 0x11, 0x01, 0x03, 0x11, 0x01,
+    ]);
+    expect(probeJpeg(rst.buffer)).toEqual({ width: 1, height: 1 });
+    expect(
+      probeJpeg(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00]).buffer),
+    ).toBeUndefined();
+    expect(
+      probeJpeg(new Uint8Array([0xff, 0xd8, 0x00, 0x00]).buffer),
+    ).toBeUndefined();
+  });
+
+  it("reads VP8 and VP8L WebP sizes and ignores an unknown chunk", () => {
+    const lossy = new Uint8Array(30);
+    lossy.set([82, 73, 70, 70], 0);
+    lossy.set([87, 69, 66, 80, 86, 80, 56, 32], 8);
+    lossy[26] = 4;
+    lossy[28] = 5;
+    expect(probeWebp(lossy.buffer)).toEqual({ width: 4, height: 5 });
+    const lossless = new Uint8Array(30);
+    lossless.set([82, 73, 70, 70], 0);
+    lossless.set([87, 69, 66, 80, 86, 80, 56, 76], 8);
+    lossless[21] = 1;
+    expect(probeWebp(lossless.buffer)).toEqual({ width: 2, height: 1 });
+    const unknown = lossy.slice();
+    unknown.set([65, 66, 67, 68], 12);
+    expect(probeWebp(unknown.buffer)).toBeUndefined();
+    expect(probeWebp(lossy.slice(0, 10).buffer)).toBeUndefined();
+    expect(probeImage(lossy.buffer)).toEqual({ width: 4, height: 5 });
+    const notRiff = lossy.slice();
+    notRiff[0] = 0;
+    expect(probeWebp(notRiff.buffer)).toBeUndefined();
+  });
 });
 
 describe("createBoundedJpegDecoder", () => {

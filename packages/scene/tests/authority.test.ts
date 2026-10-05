@@ -5,6 +5,7 @@ import {
   Group,
   TRANSFORM_AUTHORITIES,
   runOwnedTransformWrite,
+  isOwnedTransformWrite,
   warnAuthorityConflict,
   type TransformAuthority,
 } from "../src/index.js";
@@ -196,8 +197,10 @@ describe("application writes on a system-owned transform (§42 DEV)", () => {
     const node = new Group();
     node.transformAuthority = "kinematic";
     runOwnedTransformWrite(() => {
+      expect(isOwnedTransformWrite()).toBe(true);
       node.position.set(4, 5, 6);
     });
+    expect(isOwnedTransformWrite()).toBe(false);
     expect(warn).not.toHaveBeenCalled();
     expect(node.position.x).toBe(4);
   });

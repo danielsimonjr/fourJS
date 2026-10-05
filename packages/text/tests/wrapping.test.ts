@@ -83,6 +83,125 @@ describe("layoutText wrapWidth", () => {
     ).toBe(layoutText("hello world", atlas, options).lineCount);
     shaper.dispose();
   });
+
+  it("wraps CJK between characters and skips a carriage return", () => {
+    const layout = layoutText("中文\r字", atlas, { size: 12, wrapWidth: 12 });
+    expect(layout.lineCount).toBeGreaterThan(1);
+  });
+
+  it("centers wrapped lines and treats an empty string as no quads", () => {
+    const wrapped = layoutText("hello world", atlas, {
+      size: 12,
+      wrapWidth: 36,
+      align: "center",
+    });
+    expect(wrapped.lineCount).toBe(2);
+    expect(
+      layoutText("hello world", atlas, {
+        size: 12,
+        wrapWidth: 36,
+        align: "right",
+      }).lineCount,
+    ).toBe(2);
+    expect(layoutText("", atlas, { size: 12, wrapWidth: 10 }).lineCount).toBe(
+      0,
+    );
+    expect(
+      layoutText("ab\n\ncd", atlas, { size: 12, wrapWidth: 100 }).lineCount,
+    ).toBe(3);
+  });
+
+  it("refuses NaN", () => {
+    expect(() =>
+      layoutText("a", atlas, { size: 12, wrapWidth: Number.NaN }),
+    ).toThrow(/wrapWidth/);
+  });
+
+  it("wraps a shaped run, including rtl offsets and right alignment", () => {
+    const shaper = {
+      name: "fake",
+      version: "0",
+      addFont: () => "font",
+      removeFont: () => undefined,
+      dispose: () => undefined,
+      shape: () => [
+        {
+          direction: "rtl" as const,
+          glyphs: [
+            {
+              glyphId: 1,
+              cluster: 0,
+              advanceX: 6000,
+              offsetX: 20,
+              offsetY: 10,
+            },
+            {
+              glyphId: 2,
+              cluster: 1,
+              advanceX: 6000,
+              offsetX: 0,
+              offsetY: 0,
+            },
+          ],
+        },
+      ],
+    };
+    const layout = layoutText("ab", atlas, {
+      size: 12,
+      wrapWidth: 4,
+      align: "right",
+      letterSpacing: 1,
+      shaper,
+      fontId: "font",
+    });
+    expect(layout.lineCount).toBeGreaterThan(0);
+    expect(
+      layoutText("ab", atlas, {
+        size: 12,
+        wrapWidth: 1000,
+        align: "center",
+        shaper,
+        fontId: "font",
+      }).lineCount,
+    ).toBe(1);
+    const emptyShaped = {
+      ...shaper,
+      shape: () => [{ direction: "ltr" as const, glyphs: [] }],
+    };
+    expect(
+      layoutText("\n", atlas, {
+        size: 12,
+        wrapWidth: 10,
+        shaper: emptyShaped,
+        fontId: "font",
+      }).lineCount,
+    ).toBe(2);
+    const missing = {
+      ...shaper,
+      shape: () => [
+        {
+          direction: "ltr" as const,
+          glyphs: [
+            {
+              glyphId: 1,
+              cluster: 99,
+              advanceX: 100,
+              offsetX: 0,
+              offsetY: 0,
+            },
+          ],
+        },
+      ],
+    };
+    expect(
+      layoutText("a", atlas, {
+        size: 12,
+        wrapWidth: 100,
+        shaper: missing,
+        fontId: "font",
+      }).lineCount,
+    ).toBe(1);
+  });
 });
 
 describe("wrapToWidth", () => {
@@ -94,5 +213,24 @@ describe("wrapToWidth", () => {
         0,
       ),
     ).toEqual([[{ advance: 10, breakAfter: false, breakBefore: false }]]);
+  });
+
+  it("returns no lines for an empty list", () => {
+    expect(wrapToWidth([], 10, 1)).toEqual([]);
+  });
+
+  it("breaks before a CJK item and remeasures the leftover with spacing", () => {
+    const a = { advance: 4, breakAfter: true, breakBefore: false };
+    const b = { advance: 4, breakAfter: false, breakBefore: false };
+    const c = { advance: 4, breakAfter: false, breakBefore: true };
+    expect(wrapToWidth([a, b, c], 9, 1)).toEqual([[a, b], [c]]);
+    const keep = { advance: 3, breakAfter: true, breakBefore: false };
+    const mid = { advance: 3, breakAfter: false, breakBefore: false };
+    const tail = { advance: 3, breakAfter: false, breakBefore: false };
+    const next = { advance: 1, breakAfter: false, breakBefore: false };
+    expect(wrapToWidth([keep, mid, tail, next], 9, 1)).toEqual([
+      [keep],
+      [mid, tail, next],
+    ]);
   });
 });

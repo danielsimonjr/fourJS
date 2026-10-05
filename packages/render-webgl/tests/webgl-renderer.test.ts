@@ -832,6 +832,12 @@ class TestGeometry {
   /** Optional joint-weight stream (§53, §54; RFC 0003) — undefined too. */
   weights: Float32Array | undefined;
 
+  /** Optional first morph-target positions (§54). Undefined by default. */
+  positions1: Float32Array | undefined;
+
+  /** Optional first morph-target normals (§54). Undefined by default. */
+  normals1: Float32Array | undefined;
+
   indices: Uint16Array | Uint32Array | undefined;
 
   mode: "triangles" | "lines" = "triangles";
@@ -878,6 +884,8 @@ class TestGeometry {
     this.colors = undefined;
     this.joints = undefined;
     this.weights = undefined;
+    this.positions1 = undefined;
+    this.normals1 = undefined;
     this.indices = undefined;
     this.markDirty();
   }
@@ -1472,6 +1480,61 @@ afterEach(() => {
 
 // ---------------------------------------------------------------------------
 
+describe("WebglRenderer — one-target GPU morph (§54)", () => {
+  function morphTriangle(): TestGeometry {
+    const geometry = triangleGeometry();
+    geometry.positions1 = new Float32Array([0, 1, 0, 1, 1, 0, 0, 2, 0]);
+    geometry.normals1 = new Float32Array(9).fill(0);
+    return geometry;
+  }
+
+  it("compiles morph programs once and draws unlit and lit targets", async () => {
+    const { gl, renderer, camera } = await initialized();
+    const root = createRoot();
+    const unlit = renderable(morphTriangle());
+    Object.assign(unlit, { morphTargetWeights: new Float32Array([0.4]) });
+    const mapped = new TestMaterial();
+    mapped.map = new TestTexture().asTexture;
+    const texturedGeometry = quadGeometry();
+    texturedGeometry.positions1 = new Float32Array(12);
+    const texturedNode = renderable(texturedGeometry, mapped);
+    const litGeometry = morphTriangle();
+    litGeometry.indices = new Uint16Array([0, 1, 2]);
+    const lit = new Renderable(
+      litGeometry.asGeometry,
+      new TestLitMaterial().asMaterial,
+    );
+    root.add(unlit);
+    root.add(texturedNode);
+    root.add(lit);
+    renderer.render(root, [createView(camera)]);
+    expect(
+      gl.callsOf("getUniformLocation").map((call) => call.args[1]),
+    ).toContain("morphWeight0");
+    const weights = gl
+      .callsOf("uniform1f")
+      .map((call) => call.args[1] as number);
+    expect(weights.some((weight) => Math.abs(weight - 0.4) < 1e-6)).toBe(true);
+    expect(gl.countOf("drawArrays")).toBeGreaterThan(0);
+    expect(gl.countOf("drawElements")).toBeGreaterThan(0);
+    const programs = gl.countOf("createProgram");
+    renderer.render(root, [createView(camera)]);
+    expect(gl.countOf("createProgram")).toBe(programs);
+    renderer.dispose();
+  });
+
+  it("skips morph draws after a compile failure and does not retry", async () => {
+    const { gl, renderer, camera } = await initialized({ failProgramAt: 5 });
+    const root = createRoot();
+    const node = renderable(morphTriangle());
+    root.add(node);
+    renderer.render(root, [createView(camera)]);
+    renderer.render(root, [createView(camera)]);
+    expect(gl.countOf("drawArrays")).toBe(0);
+    renderer.dispose();
+  });
+});
+
 describe("WebglRenderer — initialization (§61, §62)", () => {
   it("implements the Renderer interface", async () => {
     const { renderer } = await initialized();
@@ -1791,7 +1854,18 @@ describe("UnlitProgram — compilation and linking (§61, §89)", () => {
     ).toContain("morphWeight0");
     program.setMorphWeight(0.5);
     expect(gl.callsOf("uniform1f").map((call) => call.args[1])).toContain(0.5);
+    program.setMorphWeight(0.5);
     program.dispose();
+  });
+
+  it("uploads a lit morph weight once and ignores the default program", () => {
+    const gl = createFakeGl();
+    const morph = LitProgram.createMorph(gl);
+    morph.setMorphWeight(0.25);
+    morph.setMorphWeight(0.25);
+    expect(gl.callsOf("uniform1f").map((call) => call.args[1])).toEqual([0.25]);
+    LitProgram.create(gl).setMorphWeight(1);
+    morph.dispose();
   });
 
   it("emits GLSL ES 3.00 sources with the version directive on line 1", () => {

@@ -1466,6 +1466,70 @@ describe("mesh primitives", () => {
     expect(Array.from(asset.nodes[0].morphWeights ?? [])).toEqual([0.25]);
   });
 
+  it("adds morph normals onto the base normal and ignores unknown target keys", async () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const normals = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
+    const positionDelta = new Float32Array(9);
+    const normalDelta = new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]);
+    const { bytes, offsets } = pack(
+      positions,
+      TRI_INDICES,
+      positionDelta,
+      normals,
+      normalDelta,
+    );
+    const asset = await load({
+      asset: { version: "2.0" },
+      buffers: [{ byteLength: bytes.byteLength, uri: dataUri(bytes) }],
+      bufferViews: [
+        { buffer: 0, byteOffset: offsets[0], byteLength: 36 },
+        { buffer: 0, byteOffset: offsets[1], byteLength: 6 },
+        { buffer: 0, byteOffset: offsets[2], byteLength: 36 },
+        { buffer: 0, byteOffset: offsets[3], byteLength: 36 },
+        { buffer: 0, byteOffset: offsets[4], byteLength: 36 },
+      ],
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 1, componentType: 5123, count: 3, type: "SCALAR" },
+        { bufferView: 2, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 3, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 4, componentType: 5126, count: 3, type: "VEC3" },
+      ],
+      meshes: [
+        {
+          primitives: [
+            {
+              attributes: { POSITION: 0, NORMAL: 3 },
+              indices: 1,
+              targets: [{ POSITION: 2, NORMAL: 4, COLOR: 0 }],
+            },
+          ],
+        },
+      ],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+    });
+    expect(Array.from(asset.meshes[0].primitives[0].normals1 ?? [])).toEqual([
+      0, 1, 1, 0, 1, 1, 0, 1, 1,
+    ]);
+    expect(asset.ignored).toContain("meshes[0].primitives[0].targets[0].COLOR");
+  });
+
+  it("refuses a morph NORMAL when the primitive has no base normal", async () => {
+    await expectRefusal(
+      load(
+        corrupt(triangleDocument(), (c) => {
+          const meshes = c["meshes"] as {
+            primitives: { targets?: Record<string, number>[] }[];
+          }[];
+          meshes[0].primitives[0].targets = [{ NORMAL: 0 }];
+        }),
+      ),
+      /morph NORMAL requires attributes.NORMAL/,
+    );
+  });
+
   it("refuses a second morph target and a target TANGENT", async () => {
     await expectRefusal(
       load(
