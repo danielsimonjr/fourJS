@@ -217,7 +217,7 @@ describe("bounded JPEG codec ABI (§96)", () => {
       wasmBinary: wasm,
       maximumWorkingBytes: 65536,
     });
-    const pixels = decode(jpeg(2, 1).buffer);
+    const pixels = await decode(jpeg(2, 1).buffer);
     expect(pixels.width).toBe(2);
     expect(pixels.height).toBe(1);
     expect(Array.from(pixels.data)).toEqual([255, 0, 0, 255, 0, 255, 0, 255]);

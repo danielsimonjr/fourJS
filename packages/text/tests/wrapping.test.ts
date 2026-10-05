@@ -7,6 +7,7 @@ import {
   canBreakBefore,
   layoutText,
   wrapToWidth,
+  type ShapingEngine,
 } from "../src/index.js";
 
 const atlas = buildGlyphAtlas();
@@ -118,7 +119,7 @@ describe("layoutText wrapWidth", () => {
   });
 
   it("wraps a shaped run, including rtl offsets and right alignment", () => {
-    const shaper = {
+    const shaper: ShapingEngine = {
       name: "fake",
       version: "0",
       addFont: () => "font",
@@ -126,12 +127,14 @@ describe("layoutText wrapWidth", () => {
       dispose: () => undefined,
       shape: () => [
         {
-          direction: "rtl" as const,
+          script: "Latn",
+          direction: "rtl",
           glyphs: [
             {
               glyphId: 1,
               cluster: 0,
               advanceX: 6000,
+              advanceY: 0,
               offsetX: 20,
               offsetY: 10,
             },
@@ -139,6 +142,7 @@ describe("layoutText wrapWidth", () => {
               glyphId: 2,
               cluster: 1,
               advanceX: 6000,
+              advanceY: 0,
               offsetX: 0,
               offsetY: 0,
             },
@@ -164,9 +168,9 @@ describe("layoutText wrapWidth", () => {
         fontId: "font",
       }).lineCount,
     ).toBe(1);
-    const emptyShaped = {
+    const emptyShaped: ShapingEngine = {
       ...shaper,
-      shape: () => [{ direction: "ltr" as const, glyphs: [] }],
+      shape: () => [{ script: "Latn", direction: "ltr", glyphs: [] }],
     };
     expect(
       layoutText("\n", atlas, {
@@ -176,16 +180,18 @@ describe("layoutText wrapWidth", () => {
         fontId: "font",
       }).lineCount,
     ).toBe(2);
-    const missing = {
+    const missing: ShapingEngine = {
       ...shaper,
       shape: () => [
         {
-          direction: "ltr" as const,
+          script: "Latn",
+          direction: "ltr",
           glyphs: [
             {
               glyphId: 1,
               cluster: 99,
               advanceX: 100,
+              advanceY: 0,
               offsetX: 0,
               offsetY: 0,
             },
