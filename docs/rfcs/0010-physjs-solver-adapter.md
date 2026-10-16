@@ -69,8 +69,9 @@ Gaps against fourJS's contract:
    solver.
 4. **Declare capabilities honestly** from the table above:
    - `dimensions: ["2d", "3d"]`
-   - `jointTypes`: `fixed` and `spring` in both dimensions, `revolute` (2-D, built
-     on PhysJS `spherical`), and `spherical` and `revolute` (3-D, built on `hinge`)
+   - `jointTypes`: `fixed` and `spring` in both dimensions. In 2-D, `revolute`
+     is built on PhysJS `spherical` (the 2-D pin). In 3-D, `spherical` is built on
+     PhysJS `spherical` and `revolute` on PhysJS `hinge`.
    - `ccdModes: ["disabled", "speculative"]`
    - `determinism: "same-runtime"`
    - `snapshots: true`
