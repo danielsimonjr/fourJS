@@ -1,0 +1,40 @@
+name: Doc Gates
+
+# Runs the architecture-docs drift gate.
+# `repo-tools check` reads the documents in docs/Architecture. It re-derives each recorded
+# claim from the source. It exits non-zero when a claim no longer matches.
+#
+# This workflow is separate from ci.yml on purpose. release.yml calls ci.yml, so a step in
+# ci.yml also gates every release. release.yml does not call this workflow.
+# To make the gate release-gating, move the job into ci.yml.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  architecture-docs:
+    name: Architecture docs gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22.22"
+
+      # The tool reads the source files. It needs no install of the workspace.
+      # The version is pinned, so a new release cannot change the verdict.
+      - name: Install repo-tools
+        run: npm install --global @danielsimonjr/repo-tools@2.2.3
+
+      - name: Check the architecture documents
+        run: repo-tools check . --docs=docs/Architecture
