@@ -2,10 +2,10 @@
   "metadata": {
     "name": "fourjs-monorepo",
     "version": "0.0.0",
-    "lastUpdated": "2026-09-20",
-    "totalFiles": 340,
+    "lastUpdated": "2026-10-16",
+    "totalFiles": 343,
     "totalModules": 24,
-    "totalExports": 3434
+    "totalExports": 3469
   },
   "entryPoints": [
     {
@@ -303,7 +303,11 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["Node", "warnAuthorityConflict"]
+            "imports": [
+              "Node",
+              "runOwnedTransformWrite",
+              "warnAuthorityConflict"
+            ]
           },
           {
             "package": "@fourjs/scene",
@@ -994,7 +998,11 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["Node", "warnAuthorityConflict"]
+            "imports": [
+              "Node",
+              "runOwnedTransformWrite",
+              "warnAuthorityConflict"
+            ]
           },
           {
             "package": "@fourjs/scene",
@@ -1054,7 +1062,11 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["Node", "warnAuthorityConflict"]
+            "imports": [
+              "Node",
+              "runOwnedTransformWrite",
+              "warnAuthorityConflict"
+            ]
           },
           {
             "package": "@fourjs/scene",
@@ -1146,7 +1158,11 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["Node", "warnAuthorityConflict"]
+            "imports": [
+              "Node",
+              "runOwnedTransformWrite",
+              "warnAuthorityConflict"
+            ]
           },
           {
             "package": "@fourjs/scene",
@@ -1305,6 +1321,48 @@
         ],
         "functions": ["resolveGlobalFetch"],
         "constants": ["DEFAULT_MAXIMUM_BYTES", "DEFAULT_TIMEOUT_SECONDS"]
+      },
+      "packages/assets/src/bounded-jpeg.ts": {
+        "description": "Application-pinned `squoosh_jpg_bg.wasm` from `@jsquash/jpeg@1.6.0`.",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./image-memory.js",
+            "imports": ["registerBoundedImageDecoder"]
+          },
+          {
+            "file": "./image-probe.js",
+            "imports": ["probeJpeg"]
+          },
+          {
+            "file": "./texture.js",
+            "imports": [
+              "DEFAULT_MAXIMUM_DECODED_BYTES",
+              "DEFAULT_MAXIMUM_EXPANSION_RATIO",
+              "DecodedTexels",
+              "TexelDecodeLike"
+            ]
+          },
+          {
+            "file": "./wasm-memory.js",
+            "imports": ["limitWasmMemory"]
+          },
+          {
+            "file": "./bounded-png.js",
+            "imports": ["DEFAULT_IMAGE_WORKING_BYTES"]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          }
+        ],
+        "exports": ["DEFAULT_IMAGE_WORKING_BYTES", "createBoundedJpegDecoder"],
+        "interfaces": ["BoundedJpegDecoderOptions"],
+        "functions": ["createBoundedJpegDecoder"]
       },
       "packages/assets/src/bounded-png.ts": {
         "description": "Application-pinned `squoosh_png_bg.wasm` from `@jsquash/png@3.1.1`.",
@@ -1486,6 +1544,16 @@
         "exports": ["registerBoundedImageDecoder", "assertImageDecoderMemory"],
         "functions": ["registerBoundedImageDecoder", "assertImageDecoderMemory"]
       },
+      "packages/assets/src/image-probe.ts": {
+        "description": "Header probes for encoded raster formats (§96).",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [],
+        "workspaceDependencies": [],
+        "exports": ["probePng", "probeJpeg", "probeWebp", "probeImage"],
+        "interfaces": ["ImageDimensions"],
+        "functions": ["probePng", "probeJpeg", "probeWebp", "probeImage"]
+      },
       "packages/assets/src/index.ts": {
         "description": "`@fourjs/assets` — the asset system (§76–78).",
         "externalDependencies": [],
@@ -1563,6 +1631,16 @@
               "createBoundedPngDecoder",
               "DEFAULT_IMAGE_WORKING_BYTES"
             ],
+            "reExport": true
+          },
+          {
+            "file": "./bounded-jpeg.js",
+            "imports": ["createBoundedJpegDecoder"],
+            "reExport": true
+          },
+          {
+            "file": "./image-probe.js",
+            "imports": ["probeImage", "probeJpeg", "probePng", "probeWebp"],
             "reExport": true
           },
           {
@@ -1667,6 +1745,18 @@
             "imports": ["BoundedPngDecoderOptions"],
             "reExport": true,
             "typeOnly": true
+          },
+          {
+            "file": "./bounded-jpeg.js",
+            "imports": ["BoundedJpegDecoderOptions"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
+            "file": "./image-probe.js",
+            "imports": ["ImageDimensions"],
+            "reExport": true,
+            "typeOnly": true
           }
         ],
         "workspaceDependencies": [],
@@ -1696,6 +1786,11 @@
           "createGzipLoader",
           "createBoundedPngDecoder",
           "DEFAULT_IMAGE_WORKING_BYTES",
+          "createBoundedJpegDecoder",
+          "probeImage",
+          "probeJpeg",
+          "probePng",
+          "probeWebp",
           "PACKAGE_NAME",
           "RegisteredAssetLoader",
           "AbortHandle",
@@ -1747,7 +1842,9 @@
           "GzipDecodeLike",
           "GzipLoaderOptions",
           "GzipReader",
-          "BoundedPngDecoderOptions"
+          "BoundedPngDecoderOptions",
+          "BoundedJpegDecoderOptions",
+          "ImageDimensions"
         ],
         "reExported": [
           "ASSET_LOADERS",
@@ -1775,6 +1872,11 @@
           "createGzipLoader",
           "createBoundedPngDecoder",
           "DEFAULT_IMAGE_WORKING_BYTES",
+          "createBoundedJpegDecoder",
+          "probeImage",
+          "probeJpeg",
+          "probePng",
+          "probeWebp",
           "RegisteredAssetLoader",
           "AbortHandle",
           "AbortSignalLike",
@@ -1825,7 +1927,9 @@
           "GzipDecodeLike",
           "GzipLoaderOptions",
           "GzipReader",
-          "BoundedPngDecoderOptions"
+          "BoundedPngDecoderOptions",
+          "BoundedJpegDecoderOptions",
+          "ImageDimensions"
         ],
         "constants": ["PACKAGE_NAME"]
       },
@@ -3781,7 +3885,7 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["Bone", "Group", "Skeleton", "Node"]
+            "imports": ["Bone", "Group", "MorphWeights", "Skeleton", "Node"]
           }
         ],
         "exports": ["instantiateGltf"],
@@ -7331,6 +7435,7 @@
             "directory": "packages/scene",
             "imports": [
               "resolveWorldTransform",
+              "runOwnedTransformWrite",
               "warnAuthorityConflict",
               "Node"
             ]
@@ -8200,7 +8305,12 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["warnAuthorityConflict", "Node", "Transform"]
+            "imports": [
+              "runOwnedTransformWrite",
+              "warnAuthorityConflict",
+              "Node",
+              "Transform"
+            ]
           }
         ],
         "exports": [
@@ -8245,7 +8355,11 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["warnAuthorityConflict", "Node"]
+            "imports": [
+              "runOwnedTransformWrite",
+              "warnAuthorityConflict",
+              "Node"
+            ]
           }
         ],
         "exports": ["MotionComponent", "MotionSystem"],
@@ -11506,7 +11620,11 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["warnAuthorityConflict", "Node"]
+            "imports": [
+              "runOwnedTransformWrite",
+              "warnAuthorityConflict",
+              "Node"
+            ]
           }
         ],
         "exports": [
@@ -11910,6 +12028,7 @@
             "directory": "packages/scene",
             "imports": [
               "PoseTarget",
+              "runOwnedTransformWrite",
               "warnAuthorityConflict",
               "Node",
               "PoseBuffer",
@@ -15498,7 +15617,9 @@
               "GL",
               "JOINTS_ATTRIBUTE_LOCATION",
               "NORMAL_ATTRIBUTE_LOCATION",
+              "NORMAL1_ATTRIBUTE_LOCATION",
               "POSITION_ATTRIBUTE_LOCATION",
+              "POSITION1_ATTRIBUTE_LOCATION",
               "UV_ATTRIBUTE_LOCATION",
               "WEIGHTS_ATTRIBUTE_LOCATION",
               "WebglContext"
@@ -15940,6 +16061,10 @@
           "COLOR_ATTRIBUTE_LOCATION",
           "JOINTS_ATTRIBUTE_LOCATION",
           "WEIGHTS_ATTRIBUTE_LOCATION",
+          "POSITION1_ATTRIBUTE_LOCATION",
+          "NORMAL1_ATTRIBUTE_LOCATION",
+          "JOINTS1_ATTRIBUTE_LOCATION",
+          "WEIGHTS1_ATTRIBUTE_LOCATION",
           "MAP_TEXTURE_UNIT",
           "SHADOW_TEXTURE_UNIT",
           "METAL_ROUGHNESS_TEXTURE_UNIT",
@@ -15982,6 +16107,10 @@
           "COLOR_ATTRIBUTE_LOCATION",
           "JOINTS_ATTRIBUTE_LOCATION",
           "WEIGHTS_ATTRIBUTE_LOCATION",
+          "POSITION1_ATTRIBUTE_LOCATION",
+          "NORMAL1_ATTRIBUTE_LOCATION",
+          "JOINTS1_ATTRIBUTE_LOCATION",
+          "WEIGHTS1_ATTRIBUTE_LOCATION",
           "MAP_TEXTURE_UNIT",
           "SHADOW_TEXTURE_UNIT",
           "METAL_ROUGHNESS_TEXTURE_UNIT",
@@ -16407,6 +16536,8 @@
               "EMISSIVE_TEXTURE_UNIT",
               "NORMAL_ATTRIBUTE_LOCATION",
               "POSITION_ATTRIBUTE_LOCATION",
+              "POSITION1_ATTRIBUTE_LOCATION",
+              "NORMAL1_ATTRIBUTE_LOCATION",
               "HEMISPHERE_LIGHT_GLSL",
               "HemisphereLightUniforms",
               "PUNCTUAL_LIGHT_GLSL",
@@ -16695,6 +16826,8 @@
           "EMISSIVE_TEXTURE_UNIT",
           "NORMAL_ATTRIBUTE_LOCATION",
           "POSITION_ATTRIBUTE_LOCATION",
+          "POSITION1_ATTRIBUTE_LOCATION",
+          "NORMAL1_ATTRIBUTE_LOCATION",
           "HEMISPHERE_LIGHT_GLSL",
           "HemisphereLightUniforms",
           "PUNCTUAL_LIGHT_GLSL",
@@ -16822,6 +16955,8 @@
           "EMISSIVE_TEXTURE_UNIT",
           "NORMAL_ATTRIBUTE_LOCATION",
           "POSITION_ATTRIBUTE_LOCATION",
+          "POSITION1_ATTRIBUTE_LOCATION",
+          "NORMAL1_ATTRIBUTE_LOCATION",
           "HEMISPHERE_LIGHT_GLSL",
           "HemisphereLightUniforms",
           "PUNCTUAL_LIGHT_GLSL",
@@ -20157,10 +20292,18 @@
         "exports": [
           "TRANSFORM_AUTHORITIES",
           "DEFAULT_TRANSFORM_AUTHORITY",
+          "isOwnedTransformWrite",
+          "runOwnedTransformWrite",
+          "warnApplicationTransformWrite",
           "warnAuthorityConflict"
         ],
         "interfaces": ["AuthorityNode"],
-        "functions": ["warnAuthorityConflict"],
+        "functions": [
+          "isOwnedTransformWrite",
+          "runOwnedTransformWrite",
+          "warnApplicationTransformWrite",
+          "warnAuthorityConflict"
+        ],
         "constants": ["TRANSFORM_AUTHORITIES", "DEFAULT_TRANSFORM_AUTHORITY"]
       },
       "packages/scene/src/camera.ts": {
@@ -20207,7 +20350,7 @@
         "classes": ["Group"]
       },
       "packages/scene/src/index.ts": {
-        "description": "Package entry point for @fourjs/scene (re-exports 86 symbols)",
+        "description": "Package entry point for @fourjs/scene (re-exports 89 symbols)",
         "externalDependencies": [],
         "nodeDependencies": [],
         "internalDependencies": [
@@ -20216,6 +20359,9 @@
             "imports": [
               "DEFAULT_TRANSFORM_AUTHORITY",
               "TRANSFORM_AUTHORITIES",
+              "isOwnedTransformWrite",
+              "runOwnedTransformWrite",
+              "warnApplicationTransformWrite",
               "warnAuthorityConflict"
             ],
             "reExport": true
@@ -20436,6 +20582,9 @@
         "exports": [
           "DEFAULT_TRANSFORM_AUTHORITY",
           "TRANSFORM_AUTHORITIES",
+          "isOwnedTransformWrite",
+          "runOwnedTransformWrite",
+          "warnApplicationTransformWrite",
           "warnAuthorityConflict",
           "Camera",
           "OrthographicCamera",
@@ -20525,6 +20674,9 @@
         "reExported": [
           "DEFAULT_TRANSFORM_AUTHORITY",
           "TRANSFORM_AUTHORITIES",
+          "isOwnedTransformWrite",
+          "runOwnedTransformWrite",
+          "warnApplicationTransformWrite",
           "warnAuthorityConflict",
           "Camera",
           "OrthographicCamera",
@@ -20961,7 +21113,7 @@
         "internalDependencies": [
           {
             "file": "./authority.js",
-            "imports": ["warnAuthorityConflict"]
+            "imports": ["runOwnedTransformWrite", "warnAuthorityConflict"]
           },
           {
             "file": "./node.js",
@@ -20989,7 +21141,12 @@
         "description": "Local/world transform of a scene node (§7).",
         "externalDependencies": [],
         "nodeDependencies": [],
-        "internalDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./authority.js",
+            "imports": ["warnApplicationTransformWrite", "AuthorityNode"]
+          }
+        ],
         "workspaceDependencies": [
           {
             "package": "@fourjs/math",
@@ -21517,6 +21674,16 @@
             "reExport": true
           },
           {
+            "file": "./line-break.js",
+            "imports": [
+              "canBreakAfter",
+              "canBreakBefore",
+              "lineBreakOpportunity",
+              "wrapToWidth"
+            ],
+            "reExport": true
+          },
+          {
             "file": "./shaping.js",
             "imports": [
               "IdentityShapingEngine",
@@ -21549,6 +21716,12 @@
             "typeOnly": true
           },
           {
+            "file": "./line-break.js",
+            "imports": ["LineBreakOpportunity", "Wrappable"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
             "file": "./shaping.js",
             "imports": [
               "ShapingDirection",
@@ -21570,6 +21743,10 @@
           "glyphToAscii",
           "buildGlyphAtlas",
           "layoutText",
+          "canBreakAfter",
+          "canBreakBefore",
+          "lineBreakOpportunity",
+          "wrapToWidth",
           "IdentityShapingEngine",
           "DEFAULT_MAXIMUM_FONT_BYTES",
           "validateFontBytes",
@@ -21584,6 +21761,8 @@
           "TextLayout",
           "TextLayoutOptions",
           "TextQuad",
+          "LineBreakOpportunity",
+          "Wrappable",
           "ShapingDirection",
           "ShapedGlyph",
           "ShapedRun",
@@ -21598,6 +21777,10 @@
           "glyphToAscii",
           "buildGlyphAtlas",
           "layoutText",
+          "canBreakAfter",
+          "canBreakBefore",
+          "lineBreakOpportunity",
+          "wrapToWidth",
           "IdentityShapingEngine",
           "DEFAULT_MAXIMUM_FONT_BYTES",
           "validateFontBytes",
@@ -21611,6 +21794,8 @@
           "TextLayout",
           "TextLayoutOptions",
           "TextQuad",
+          "LineBreakOpportunity",
+          "Wrappable",
           "ShapingDirection",
           "ShapedGlyph",
           "ShapedRun",
@@ -21618,6 +21803,26 @@
           "ShapingEngine"
         ],
         "constants": ["PACKAGE_NAME"]
+      },
+      "packages/text/src/line-break.ts": {
+        "description": "UAX #14-lite line breaking for {@link layoutText}'s `wrapWidth` packet",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [],
+        "workspaceDependencies": [],
+        "exports": [
+          "lineBreakOpportunity",
+          "canBreakAfter",
+          "canBreakBefore",
+          "wrapToWidth"
+        ],
+        "interfaces": ["Wrappable"],
+        "functions": [
+          "lineBreakOpportunity",
+          "canBreakAfter",
+          "canBreakBefore",
+          "wrapToWidth"
+        ]
       },
       "packages/text/src/shaping.ts": {
         "description": "shaping module",
@@ -21664,6 +21869,15 @@
             "file": "./glyph-atlas.js",
             "imports": ["GlyphAtlas", "GlyphAtlasEntry"],
             "typeOnly": true
+          },
+          {
+            "file": "./line-break.js",
+            "imports": [
+              "canBreakAfter",
+              "canBreakBefore",
+              "wrapToWidth",
+              "Wrappable"
+            ]
           }
         ],
         "workspaceDependencies": [],
@@ -22425,7 +22639,12 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["Node", "warnAuthorityConflict", "NodeOptions"]
+            "imports": [
+              "Node",
+              "runOwnedTransformWrite",
+              "warnAuthorityConflict",
+              "NodeOptions"
+            ]
           }
         ],
         "exports": [
@@ -22533,12 +22752,14 @@
         "name": "Packages/assets",
         "files": [
           "packages/assets/src/asset-manager.ts",
+          "packages/assets/src/bounded-jpeg.ts",
           "packages/assets/src/bounded-png.ts",
           "packages/assets/src/capabilities.ts",
           "packages/assets/src/content-hash.ts",
           "packages/assets/src/gltf.ts",
           "packages/assets/src/gzip.ts",
           "packages/assets/src/image-memory.ts",
+          "packages/assets/src/image-probe.ts",
           "packages/assets/src/index.ts",
           "packages/assets/src/loader-registry.ts",
           "packages/assets/src/loaders.ts",
@@ -22937,6 +23158,7 @@
           "packages/text/src/bitmap-font.ts",
           "packages/text/src/glyph-atlas.ts",
           "packages/text/src/index.ts",
+          "packages/text/src/line-break.ts",
           "packages/text/src/shaping.ts",
           "packages/text/src/text-layout.ts"
         ]
@@ -22965,21 +23187,21 @@
     ]
   },
   "statistics": {
-    "totalTypeScriptFiles": 340,
+    "totalTypeScriptFiles": 343,
     "totalModules": 24,
-    "totalLinesOfCode": 163063,
-    "totalExports": 3434,
+    "totalLinesOfCode": 164674,
+    "totalExports": 3469,
     "totalClasses": 213,
-    "totalInterfaces": 639,
-    "totalFunctions": 568,
-    "totalTypeGuards": 28,
+    "totalInterfaces": 642,
+    "totalFunctions": 580,
+    "totalTypeGuards": 29,
     "totalEnums": 0,
-    "totalConstants": 500,
-    "totalReExports": 2172,
-    "totalTypeOnlyImports": 439,
+    "totalConstants": 504,
+    "totalReExports": 2190,
+    "totalTypeOnlyImports": 442,
     "runtimeCircularDeps": 0,
     "typeOnlyCircularDeps": 8,
     "unusedFilesCount": 0,
-    "unusedExportsCount": 7
+    "unusedExportsCount": 9
   }
 }
