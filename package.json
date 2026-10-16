@@ -32,7 +32,7 @@
     "graph:check": "bun tools/query-dependency-graph/query-dependency-graph.mjs --check-browser-safety",
     "graph:duplicates": "bun tools/create-dependency-graph/check-duplicates.mjs --no-regen",
     "graph:query": "bun tools/query-dependency-graph/query-dependency-graph.mjs --emit",
-    "graph:test": "node --test tools/query-dependency-graph/query-dependency-graph.test.mjs",
+    "graph:test": "node --test tools/query-dependency-graph/query-dependency-graph.test.mjs tools/create-dependency-graph/generated-banner.test.mjs",
     "lint": "bunx oxlint --type-aware",
     "mechanism:build": "bunx vite build examples/mechanism",
     "particles-demo:build": "bunx vite build examples/particles-demo",

@@ -234,6 +234,29 @@ const ROOT_DIR = getProjectRoot();
 const SRC_DIR = join(ROOT_DIR, "src");
 const OUTPUT_DIR = join(ROOT_DIR, "docs", "Architecture");
 
+/**
+ * The line that opts a Markdown report out of `repo-tools check`.
+ *
+ * The checker fails a document that has neither a `## Verification` section nor
+ * this exact line.
+ */
+const NO_VERIFICATION_MARKER = "<!-- repo-map:no-verification -->";
+
+/**
+ * Prefix a generated Markdown report with the opt-out marker and a do-not-edit banner.
+ *
+ * The banner names the command that rewrites the file. The generator writes both,
+ * because a marker added by hand vanishes at the next run.
+ */
+function withGeneratedBanner(body: string, command = "bun run graph"): string {
+  return (
+    `${NO_VERIFICATION_MARKER}\n` +
+    `<!-- GENERATED FILE -- do not edit by hand.\n` +
+    `     Regenerate with \`${command}\`. -->\n\n` +
+    body
+  );
+}
+
 // Read package.json for version and name
 let packageJson: PackageJson = { name: "unknown", version: "0.0.0" };
 try {
@@ -5190,7 +5213,10 @@ async function main(): Promise<void> {
   writeFileSync(join(OUTPUT_DIR, "dependency-graph.yaml"), yamlOutput);
   console.log("Written: docs/Architecture/dependency-graph.yaml");
 
-  writeFileSync(join(OUTPUT_DIR, "DEPENDENCY_GRAPH.md"), markdown);
+  writeFileSync(
+    join(OUTPUT_DIR, "DEPENDENCY_GRAPH.md"),
+    withGeneratedBanner(markdown),
+  );
   console.log("Written: docs/Architecture/DEPENDENCY_GRAPH.md");
 
   // Write compact summary for LLM consumption (CTON-style, ~10KB)
@@ -5283,7 +5309,7 @@ async function main(): Promise<void> {
   );
   writeFileSync(
     join(OUTPUT_DIR, "duplicate-symbols.md"),
-    generateDuplicateSymbolsMarkdown(duplicateReport),
+    withGeneratedBanner(generateDuplicateSymbolsMarkdown(duplicateReport)),
   );
   console.log(
     `Written: docs/Architecture/duplicate-symbols.md ` +
@@ -5309,7 +5335,13 @@ async function main(): Promise<void> {
     const testCoverageJson = generateTestCoverageJson(testCoverage);
 
     // Write test coverage outputs
-    writeFileSync(join(OUTPUT_DIR, "TEST_COVERAGE.md"), testCoverageMarkdown);
+    writeFileSync(
+      join(OUTPUT_DIR, "TEST_COVERAGE.md"),
+      withGeneratedBanner(
+        testCoverageMarkdown,
+        "bun run graph --include-tests",
+      ),
+    );
     console.log("Written: docs/Architecture/TEST_COVERAGE.md");
 
     writeFileSync(
@@ -5504,7 +5536,7 @@ async function main(): Promise<void> {
     (e) => ` — ${e.inFileRefs} in-file ref${e.inFileRefs === 1 ? "" : "s"}`,
   );
 
-  writeFileSync(unusedReportPath, unusedReport);
+  writeFileSync(unusedReportPath, withGeneratedBanner(unusedReport));
   console.log(`\nWritten: ${unusedReportPath}`);
 
   // Complete file census (every tracked .ts in the repo — package src/tests, plus
@@ -5526,7 +5558,7 @@ async function main(): Promise<void> {
     );
     writeFileSync(
       join(OUTPUT_DIR, "FILE_INVENTORY.md"),
-      generateFileInventoryMarkdown(inventory),
+      withGeneratedBanner(generateFileInventoryMarkdown(inventory)),
     );
     console.log(
       `Written: docs/Architecture/FILE_INVENTORY.md (${inventory.totalFiles} files: ` +
@@ -5549,7 +5581,7 @@ async function main(): Promise<void> {
     );
     writeFileSync(
       join(OUTPUT_DIR, "wasm-pairing.md"),
-      generateWasmPairingMarkdown(wasmPairing),
+      withGeneratedBanner(generateWasmPairingMarkdown(wasmPairing)),
     );
     console.log(
       `Written: ${join(OUTPUT_DIR, "wasm-pairing.md")} ` +
@@ -5568,7 +5600,7 @@ async function main(): Promise<void> {
     );
     writeFileSync(
       join(OUTPUT_DIR, "parallel-pairing.md"),
-      generateParallelPairingMarkdown(parallelPairing),
+      withGeneratedBanner(generateParallelPairingMarkdown(parallelPairing)),
     );
     console.log(
       `Written: ${join(OUTPUT_DIR, "parallel-pairing.md")} ` +
@@ -5588,7 +5620,7 @@ async function main(): Promise<void> {
     );
     writeFileSync(
       join(OUTPUT_DIR, "webgpu-pairing.md"),
-      generateWebGPUPairingMarkdown(webgpuPairing),
+      withGeneratedBanner(generateWebGPUPairingMarkdown(webgpuPairing)),
     );
     console.log(
       `Written: ${join(OUTPUT_DIR, "webgpu-pairing.md")} ` +

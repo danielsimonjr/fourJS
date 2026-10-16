@@ -209,3 +209,10 @@ their would-be home in the source:
 - [../SPECIFICATION.md](../SPECIFICATION.md) — the working specification (§1–120 + lettered sections + appendices)
 - [../POSITIONING.md](../POSITIONING.md) — why the project exists
 - [../guides/README.md](../guides/README.md) — the thirteen prose guides (§93)
+
+<!-- repo-map:no-verification -->
+
+## Verification
+
+`repo-tools check` does not check this document, because it states no number that the gate measures.
+The package count in the package map is a hand count. Test and payload counts are not stated here.

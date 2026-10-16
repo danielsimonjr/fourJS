@@ -1,26 +1,30 @@
+<!-- repo-map:no-verification -->
+<!-- GENERATED FILE -- do not edit by hand.
+     Regenerate with `bun run graph`. -->
+
 # Complete File Inventory
 
-**Generated**: 2026-09-20 (by tools/create-dependency-graph)
+**Generated**: 2026-10-16 (by tools/create-dependency-graph)
 
 Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-root cross-package `tests/`, `tools/`, build/test `*.config.ts`, `examples/`, and `docs/` reference sources — tagged with a disposition. A completeness census: no `.ts` may be silently missing. The self-check gate (`verifyFileCensus`) does a MAXIMAL, location-agnostic repo walk (broader than this census’s enumerated discovery) and HARD-FAILS `npm run docs:deps` if any `.ts` on disk is unaccounted, or if any `orphan` exists.
 
 **Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every tracked `.ts` appears below with an explicit disposition.
 
-**Total files**: 888
+**Total files**: 894
 
 ## Disposition counts
 
 | Disposition   |   Count | Meaning                                                                                                      |
 | ------------- | ------: | ------------------------------------------------------------------------------------------------------------ |
-| `reachable`   |     292 | A `src/` file in the module graph, reachable from a root.                                                    |
+| `reachable`   |     295 | A `src/` file in the module graph, reachable from a root.                                                    |
 | `build-entry` |      48 | A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …). |
 | `test-only`   |       4 | A `src/` file not reachable from src roots but imported by a test.                                           |
 | `orphan`      |       0 | A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate).                        |
-| `test`        |     512 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
+| `test`        |     515 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
 | `tool`        |       1 | A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks).                                        |
 | `config`      |      17 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).                                |
 | `example`     |      14 | An `examples/` or `docs/` reference/illustration source.                                                     |
-| **Total**     | **888** |                                                                                                              |
+| **Total**     | **894** |                                                                                                              |
 
 ## Per-area counts
 
@@ -28,8 +32,8 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | ---------- | ----: |
 | `config`   |    17 |
 | `examples` |    14 |
-| `src`      |   344 |
-| `tests`    |   512 |
+| `src`      |   347 |
+| `tests`    |   515 |
 | `tools`    |     1 |
 
 ## Per-package counts
@@ -38,7 +42,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | ------------------------ | ----: |
 | `(root)`                 |   238 |
 | `@fourjs/animation`      |    32 |
-| `@fourjs/assets`         |    28 |
+| `@fourjs/assets`         |    32 |
 | `@fourjs/core`           |    26 |
 | `@fourjs/diagnostics`    |    27 |
 | `@fourjs/geometry`       |    25 |
@@ -58,7 +62,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `@fourjs/render-webgpu`  |    53 |
 | `@fourjs/scene`          |    35 |
 | `@fourjs/serialization`  |    11 |
-| `@fourjs/text`           |    11 |
+| `@fourjs/text`           |    13 |
 | `@fourjs/ui`             |    30 |
 | `fourJS`                 |    53 |
 
@@ -127,12 +131,14 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/animation/tests/values.test.ts`                         | @fourjs/animation      | tests    | test        |
 | `packages/animation/tests/when.test.ts`                           | @fourjs/animation      | tests    | test        |
 | `packages/assets/src/asset-manager.ts`                            | @fourjs/assets         | src      | reachable   |
+| `packages/assets/src/bounded-jpeg.ts`                             | @fourjs/assets         | src      | reachable   |
 | `packages/assets/src/bounded-png.ts`                              | @fourjs/assets         | src      | reachable   |
 | `packages/assets/src/capabilities.ts`                             | @fourjs/assets         | src      | reachable   |
 | `packages/assets/src/content-hash.ts`                             | @fourjs/assets         | src      | reachable   |
 | `packages/assets/src/gltf.ts`                                     | @fourjs/assets         | src      | reachable   |
 | `packages/assets/src/gzip.ts`                                     | @fourjs/assets         | src      | reachable   |
 | `packages/assets/src/image-memory.ts`                             | @fourjs/assets         | src      | reachable   |
+| `packages/assets/src/image-probe.ts`                              | @fourjs/assets         | src      | reachable   |
 | `packages/assets/src/index.ts`                                    | @fourjs/assets         | src      | build-entry |
 | `packages/assets/src/loader-registry.ts`                          | @fourjs/assets         | src      | reachable   |
 | `packages/assets/src/loaders.ts`                                  | @fourjs/assets         | src      | reachable   |
@@ -141,6 +147,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/assets/src/wasm-memory.ts`                              | @fourjs/assets         | src      | reachable   |
 | `packages/assets/tests/a18-remainder.test.ts`                     | @fourjs/assets         | tests    | test        |
 | `packages/assets/tests/asset-manager.test.ts`                     | @fourjs/assets         | tests    | test        |
+| `packages/assets/tests/bounded-jpeg.test.ts`                      | @fourjs/assets         | tests    | test        |
 | `packages/assets/tests/bounded-png.test.ts`                       | @fourjs/assets         | tests    | test        |
 | `packages/assets/tests/cancellation.test.ts`                      | @fourjs/assets         | tests    | test        |
 | `packages/assets/tests/capabilities.test.ts`                      | @fourjs/assets         | tests    | test        |
@@ -148,6 +155,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/assets/tests/gltf.test.ts`                              | @fourjs/assets         | tests    | test        |
 | `packages/assets/tests/gzip.test.ts`                              | @fourjs/assets         | tests    | test        |
 | `packages/assets/tests/image-memory.test.ts`                      | @fourjs/assets         | tests    | test        |
+| `packages/assets/tests/image-probe.test.ts`                       | @fourjs/assets         | tests    | test        |
 | `packages/assets/tests/loaders.test.ts`                           | @fourjs/assets         | tests    | test        |
 | `packages/assets/tests/manifest.test.ts`                          | @fourjs/assets         | tests    | test        |
 | `packages/assets/tests/security.test.ts`                          | @fourjs/assets         | tests    | test        |
@@ -708,12 +716,14 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/text/src/harfbuzz/harfbuzz-shaping-engine.ts`           | @fourjs/text           | src      | test-only   |
 | `packages/text/src/harfbuzz/index.ts`                             | @fourjs/text           | src      | test-only   |
 | `packages/text/src/index.ts`                                      | @fourjs/text           | src      | build-entry |
+| `packages/text/src/line-break.ts`                                 | @fourjs/text           | src      | reachable   |
 | `packages/text/src/shaping.ts`                                    | @fourjs/text           | src      | reachable   |
 | `packages/text/src/text-layout.ts`                                | @fourjs/text           | src      | reachable   |
 | `packages/text/tests/harfbuzz.test.ts`                            | @fourjs/text           | tests    | test        |
 | `packages/text/tests/shaping.test.ts`                             | @fourjs/text           | tests    | test        |
 | `packages/text/tests/smoke.test.ts`                               | @fourjs/text           | tests    | test        |
 | `packages/text/tests/text.test.ts`                                | @fourjs/text           | tests    | test        |
+| `packages/text/tests/wrapping.test.ts`                            | @fourjs/text           | tests    | test        |
 | `packages/ui/src/accessibility.ts`                                | @fourjs/ui             | src      | reachable   |
 | `packages/ui/src/button.ts`                                       | @fourjs/ui             | src      | reachable   |
 | `packages/ui/src/canvas-view.ts`                                  | @fourjs/ui             | src      | reachable   |

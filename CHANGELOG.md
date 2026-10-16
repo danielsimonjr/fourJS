@@ -10,6 +10,13 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- `repo-tools check . --docs=docs/Architecture` exits 0. The generator
+  `tools/create-dependency-graph` now writes the opt-out marker
+  `<!-- repo-map:no-verification -->` and a do-not-edit banner at the top of every
+  Markdown report it produces. `ARCHITECTURE.md` ends with a Verification table
+  (`runtimeCircularDeps` 0, `typeOnlyCircularDeps` 8). The five other hand-written
+  documents hold no number that the gate measures, so each one opts out and says so
+  in a Verification section. `bun run graph:test` covers the banner.
 - **Specification revision 1.19** records four product packets: in-place
   `CanvasTexture.resize()` (§77a), `wrapWidth` on `layoutText` / `Text` /
   `Label` (§56), one-target GPU morph at attribute locations 6/7 with
@@ -37,6 +44,11 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Changed
 
+- `docs/Architecture/` statistics come from the regenerated graph: 343 files, 3,469
+  exports and 8 type-only cycles (the text said 161 files, 1,244 exports and 0
+  cycles). The package file counts and the `COMPONENTS.md` export counts follow.
+  `ARCHITECTURE.md` and `COMPONENTS.md` no longer repeat test counts;
+  `TEST_COVERAGE.md` holds them.
 - DEV builds warn on application writes to a system-owned transform (§42). The
   write still lands; production stays silent.
 - `tests/browser/smoothness.spec.ts` mid-step sampling uses the example's

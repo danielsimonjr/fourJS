@@ -443,3 +443,9 @@ Recorded proof of the whole chain (Phase 10 exit, `MEMORY.md`): record → bit-i
 **Document Version**: Unreleased (post-Phase 11)
 **Last Updated**: 2026-08-05
 **Maintained By**: Daniel Simon Jr.
+
+<!-- repo-map:no-verification -->
+
+## Verification
+
+`repo-tools check` does not check this document. It describes runtime flow and states no number that the gate measures.

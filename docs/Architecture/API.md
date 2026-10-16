@@ -10,8 +10,8 @@ the entry points for each task, gives their contracts and main signatures,
 and links into the prose guides in [`docs/guides/`](../guides/README.md).
 
 Every symbol named here exists in the machine-verified export inventory
-[`package-export-surfaces.json`](package-export-surfaces.json) (generated
-2026-08-05). Section references like "§45" mean
+[`package-export-surfaces.json`](package-export-surfaces.json) (written by
+`bun run graph`). Section references like "§45" mean
 [`docs/SPECIFICATION.md`](../SPECIFICATION.md) numbering.
 
 ---
@@ -728,3 +728,11 @@ _Cross-references: [ARCHITECTURE.md](ARCHITECTURE.md) ·
 [DATAFLOW.md](DATAFLOW.md) · [TEST_COVERAGE.md](TEST_COVERAGE.md) ·
 [guides index](../guides/README.md) · generated API reference: `bun run docs`
 (TypeDoc)._
+
+<!-- repo-map:no-verification -->
+
+## Verification
+
+`repo-tools check` does not check this document, because it states no number that the gate measures.
+`package-export-surfaces.json` lists the public names of each package, and `bun run graph` writes it.
+The gate does not compare this document with that file.

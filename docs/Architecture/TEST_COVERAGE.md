@@ -221,3 +221,10 @@ _Cross-references: [API.md](API.md) · [ARCHITECTURE.md](ARCHITECTURE.md) ·
 [DATAFLOW.md](DATAFLOW.md) · testing strategy §92 in
 [SPECIFICATION.md](../SPECIFICATION.md) · suite layout in
 [`tests/README.md`](../../tests/README.md)._
+
+<!-- repo-map:no-verification -->
+
+## Verification
+
+`repo-tools check` does not check this document. The numbers come from the commands that the first section names.
+The gate does not run those commands. The `--include-tests` option of `bun run graph` writes a different report to this file name.
