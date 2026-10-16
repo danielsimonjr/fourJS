@@ -3,7 +3,7 @@
 **Version**: Unreleased (implementation plan complete — Phases 0–11 closed per `MEMORY.md`; §120 MVP at 43/43 shipped-or-MVP after the 2026-08-04 lighting packet)
 **Last Updated**: 2026-08-05
 
-Companion documents: [ARCHITECTURE.md](./ARCHITECTURE.md) (system design), [OVERVIEW.md](./OVERVIEW.md) (orientation), [DATAFLOW.md](./DATAFLOW.md) (runtime flows), [API.md](./API.md) (API surface), [TEST_COVERAGE.md](./TEST_COVERAGE.md) (test counts). Plain `§N` citations refer to [`docs/SPECIFICATION.md`](../SPECIFICATION.md). Every export named below is verified against [`package-export-surfaces.json`](./package-export-surfaces.json) (generated 2026-08-05); the dependency edges are the frozen §3.1 matrix from [`docs/plans/IMPLEMENTATION_PLAN.md`](../plans/IMPLEMENTATION_PLAN.md).
+Companion documents: [ARCHITECTURE.md](./ARCHITECTURE.md) (system design), [OVERVIEW.md](./OVERVIEW.md) (orientation), [DATAFLOW.md](./DATAFLOW.md) (runtime flows), [API.md](./API.md) (API surface), [TEST_COVERAGE.md](./TEST_COVERAGE.md) (test counts). Plain `§N` citations refer to [`docs/SPECIFICATION.md`](../SPECIFICATION.md). Every export named below is verified against [`package-export-surfaces.json`](./package-export-surfaces.json) (written by `bun run graph`); the dependency edges are the frozen §3.1 matrix from [`docs/plans/IMPLEMENTATION_PLAN.md`](../plans/IMPLEMENTATION_PLAN.md).
 
 ---
 
@@ -48,7 +48,7 @@ fourJS is a Bun workspace of 24 `@fourjs/`-scoped packages (the umbrella is plai
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Total** (from [`FILE_INVENTORY.md`](./FILE_INVENTORY.md), generated 2026-08-05): 335 tracked TypeScript files — 161 `src/`, 158 tests, plus tools/configs/examples. Zero orphans, zero runtime circular dependencies. Repo test counts as of the last recorded exit (`MEMORY.md`, 2026-08-04): 3,077 unit + 174 suite + 38 browser/visual tests; coverage ≥95% in every package; the §86 payload gate stands at 33.28 of 150 kB gzip.
+**Total** (from [`FILE_INVENTORY.md`](./FILE_INVENTORY.md), which `bun run graph` writes): 894 tracked TypeScript files — 347 in package `src/`, 515 tests, 1 in `tools/`, 17 configuration files and 14 examples. Zero orphans. The generator reports 0 runtime circular dependencies and 8 type-only circular dependencies. [`TEST_COVERAGE.md`](./TEST_COVERAGE.md) holds the test counts. Coverage ≥95% in every package; the §86 payload gate stands at 33.28 of 150 kB gzip.
 
 **Implementation status**: 20 of 24 packages are implemented. Four are **reserved stubs** whose barrels export only `PACKAGE_NAME` (each holds a truthful README and a single smoke test): `physics-box2d`, `physics-soft`, `render-canvas`, `render-svg`. `@fourjs/render-webgpu` left that list 2026-08-21…29 (the R-1 plan). Each stub's entry below says what it is reserved for.
 
@@ -123,7 +123,7 @@ Everything in the scene is a `Node` (single inheritance extending `EventEmitter<
 
 **Spec**: §6a, §6b, §83/§85 (errors/disposal), §33 (seeded RNG). **Direct deps**: none (wave 1). **Status**: implemented.
 
-Key exports (19 total):
+Key exports (selected from 78):
 
 - **Component model** — `Component`, `ComponentHost`, `ComponentHostBinding`, `ComponentRegistry`, `ComponentType` (see [above](#the-6a-component-model)).
 - **Eventing (§6b)** — `EventEmitter`, `EventListener`, `Unsubscribe`: the one typed event API nodes and the application share. Re-entrant emission queues-and-defers.
@@ -139,7 +139,7 @@ Key exports (19 total):
 
 **Spec**: §7, §7b. **Direct deps**: none (wave 1). **Status**: implemented.
 
-Key exports (12 total):
+Key exports (selected from 23):
 
 - **Types** — `Vector2`, `Vector3`, `Vector4`, `Quaternion` (shortest-arc slerp, plan D8), `Matrix3`, `Matrix4`, `ColorRGBA`, `DepthRange` (depth-range-parameterized projections, plan D8).
 - **Allocation accounting** — `constructionCount`, `noteConstruction`, `resetConstructionCount`: test instrumentation backing the "steady state allocates nothing" claims elsewhere.
@@ -154,7 +154,7 @@ Key exports (12 total):
 
 **Spec**: §6–8, §42–43, §46–48, §68 (MVP tier), §19 (`PoseTarget`). **Direct deps**: `core`, `math`. **Status**: implemented.
 
-Key exports (33 total):
+Key exports (selected from 90):
 
 - **Hierarchy** — `Node`, `Group`, `Scene`, `NodeType`, `NodeEventMap` (an `interface` so other packages widen it by declaration merging — `@fourjs/input` does), `NodeHierarchyEvent`. `Node.position/rotation/scale` alias getters return the live `Transform` members (§15/§97 idiom).
 - **Transforms** — `Transform` (dirty via math change-hooks + `markDirty`, plan D3), `resolveWorldTransform`, `resolveWorldTransforms`, `WorldTransformStats`. World matrices are version-cached: a frame that moved nothing recomputes nothing.
@@ -174,7 +174,7 @@ Key exports (33 total):
 
 **Spec**: §9–§13, §38–§39, §111. **Direct deps**: `core`, `math`, `scene`. **Status**: implemented.
 
-Key exports (selected from ~110):
+Key exports (selected from 170):
 
 ```typescript
 export class Scheduler {
@@ -219,7 +219,7 @@ export interface SimulationSystem {
 
 **Spec**: §14–§18, §39 step 3, §19 (feeds the blend). **Direct deps**: `core`, `math`, `scene`, `motion`. **Status**: implemented.
 
-Key exports (selected from ~100):
+Key exports (selected from 122):
 
 - **Easing (§15)** — 34 named easing functions (`linear`, `quadraticIn/Out/InOut` … `springIn/Out/InOut`), `EASINGS`, `EASING_NAMES`, `resolveEasing`, plus the pinned constants (`BACK_OVERSHOOT`, `ELASTIC_PERIOD`, `SPRING_DAMPING_RATIO`, …).
 - **Bindings** — `PropertyBinding`, `createBinding`, `claimProperty` / `releaseProperty` (the writer-agnostic last-started-wins claim registry shared by tween and mixer), `ValueAdapter` + `numberAdapter`/`vector2Adapter`/`vector3Adapter`/`vector4Adapter`/`quaternionAdapter` (slerp)/`colorAdapter`/`booleanAdapter`/`discreteAdapter`/`detectAdapter`. Paths resolve once; in-place writes preserve identity so `Transform` change-hooks fire.
@@ -235,7 +235,7 @@ Key exports (selected from ~100):
 
 **Spec**: §19–§34, §37, §39 steps 6+9, §42–43. **Direct deps**: `core`, `math`, `scene`, `motion`. **Status**: implemented.
 
-Key exports (selected from ~190):
+Key exports (selected from 258):
 
 ```typescript
 export class PhysicsWorld {
@@ -268,7 +268,7 @@ export class PhysicsWorld {
 
 **Spec**: §37, §102, §108. **Direct deps**: `physics` (+ `core`, `math` declared directly per WP-5.4-fix1). **Status**: implemented.
 
-Key exports (selected from ~45): `Rapier2dAdapter`, `Rapier3dAdapter`, `RapierBodyAccess`, `initializeRapier2d`/`initializeRapier3d` (async wasm init inside `adapter.initialize()`), and the conversion helpers (`toRapierVector2/3`, `fromRapierVector2/3`, `toRapierRotation3`, `packInteractionGroups`, `resolveCcdMode`, …). Recorded capability facts: adapters own monotonic never-reused ids (§33 checksum order); `collisionstay` is adapter-derived from a touching-pair map; restitution combine forced to Max per Appendix A; `reportsJointReactions` is false (Rapier 0.20.0 has no reaction getters, so breakable joints are refused); motor `maxTorque`/`maxForce` is a force-based gain, not §28's hard cap (recorded deviation).
+Key exports (selected from 44): `Rapier2dAdapter`, `Rapier3dAdapter`, `RapierBodyAccess`, `initializeRapier2d`/`initializeRapier3d` (async wasm init inside `adapter.initialize()`), and the conversion helpers (`toRapierVector2/3`, `fromRapierVector2/3`, `toRapierRotation3`, `packInteractionGroups`, `resolveCcdMode`, …). Recorded capability facts: adapters own monotonic never-reused ids (§33 checksum order); `collisionstay` is adapter-derived from a touching-pair map; restitution combine forced to Max per Appendix A; `reportsJointReactions` is false (Rapier 0.20.0 has no reaction getters, so breakable joints are refused); motor `maxTorque`/`maxForce` is a force-based gain, not §28's hard cap (recorded deviation).
 
 ---
 
@@ -290,7 +290,7 @@ Key exports (selected from ~45): `Rapier2dAdapter`, `Rapier3dAdapter`, `RapierBo
 
 **Spec**: §27, §36, §112 (100k target). **Direct deps**: `core`, `math`, `scene`. **Status**: implemented.
 
-Key exports (selected from ~45): `ParticleSystem` (structurally satisfies motion's `SimulationSystem` — the dependency matrix forbids the edge, so the contract is duck-typed with drift caught by tests), `PRIORITY_PARTICLES` (500), `ParticleEmitter` (bursts, ranges, lifetime ramps; `PARTICLE_DRAWS_PER_SPAWN` fixed at 4 — dropped spawns burn none), `ParticlePool` (swap-remove SoA layout — a deterministic function of history, not insertion-ordered), `ParticleRenderable` (the scene node; implements render's `ParticleDrawable` contract structurally), and the §27 field factories: `uniformGravityField`, `dragField`, `windField`, `radialField` (inverse-square), `vortexField`, `turbulenceField` (bounded hash-noise curl — honestly not divergence-free), `volumeField` with `BoxFieldVolume`/`SphereFieldVolume`.
+Key exports (selected from 65): `ParticleSystem` (structurally satisfies motion's `SimulationSystem` — the dependency matrix forbids the edge, so the contract is duck-typed with drift caught by tests), `PRIORITY_PARTICLES` (500), `ParticleEmitter` (bursts, ranges, lifetime ramps; `PARTICLE_DRAWS_PER_SPAWN` fixed at 4 — dropped spawns burn none), `ParticlePool` (swap-remove SoA layout — a deterministic function of history, not insertion-ordered), `ParticleRenderable` (the scene node; implements render's `ParticleDrawable` contract structurally), and the §27 field factories: `uniformGravityField`, `dragField`, `windField`, `radialField` (inverse-square), `vortexField`, `turbulenceField` (bounded hash-noise curl — honestly not divergence-free), `volumeField` with `BoxFieldVolume`/`SphereFieldVolume`.
 
 ---
 
@@ -302,7 +302,7 @@ Key exports (selected from ~45): `ParticleSystem` (structurally satisfies motion
 
 **Spec**: §50–53 MVP tier, §7a. **Direct deps**: `core`, `math`. **Status**: implemented.
 
-Key exports (12 total): `BufferGeometry`, `GeometryBounds`, `GeometryDrawMode`, `GeometryIndexArray`, `boxGeometry` (24 vertices, per-face normals), `planeGeometry` (+Z normals), `circleGeometry2D` (position-only, unlit tier).
+Key exports (selected from 77): `BufferGeometry`, `GeometryBounds`, `GeometryDrawMode`, `GeometryIndexArray`, `boxGeometry` (24 vertices, per-face normals), `planeGeometry` (+Z normals), `circleGeometry2D` (position-only, unlit tier).
 
 ---
 
@@ -312,7 +312,7 @@ Key exports (12 total): `BufferGeometry`, `GeometryBounds`, `GeometryDrawMode`, 
 
 **Spec**: §57–60 MVP tier, §60a (no color-space conversion, no clamping — the recorded stance). **Direct deps**: `core`, `math`. **Status**: implemented.
 
-Key exports (9 total): `UnlitMaterial` (`kind: "unlit"`), `LitMaterial` (`kind: "lit"`, mirrors `UnlitMaterial` member-for-member; Lambert diffuse under the §68 MVP light — note §57's family list has no LitMaterial; recorded spec-revisit item), `SpriteMaterial` + `SpriteTexture`, `ColorRGBA` (re-export). §59 StandardMaterial/PBR staged.
+Key exports (selected from 60): `UnlitMaterial` (`kind: "unlit"`), `LitMaterial` (`kind: "lit"`, mirrors `UnlitMaterial` member-for-member; Lambert diffuse under the §68 MVP light — note §57's family list has no LitMaterial; recorded spec-revisit item), `SpriteMaterial` + `SpriteTexture`, `ColorRGBA` (re-export). §59 StandardMaterial/PBR staged.
 
 ---
 
@@ -322,7 +322,7 @@ Key exports (9 total): `UnlitMaterial` (`kind: "unlit"`), `LitMaterial` (`kind: 
 
 **Spec**: §61–66 MVP tier, §49, §55, §68, §43. **Direct deps**: `core`, `math`, `scene`, `geometry`, `materials`. **Status**: implemented.
 
-Key exports (selected from ~40):
+Key exports (selected from 275):
 
 - **Interface (§61–62)** — `Renderer`, `RendererBackend`, `RendererCapabilities`, `RendererOptions`, `RendererEventMap`, `NullRenderer` (headless tier), `RenderInterpolation` (`{ poseBuffer, alpha }`).
 - **Render list (§64/§66)** — `buildRenderList`, `buildInterpolatedRenderList` (§43 poses **and** skinned palettes via `Skeleton.update(..., worldOf)` — composed locals, never a lerp of `jointMatrices`), `RenderItem` discriminated by `RenderItemKind` (unlit / lit / sprite / particles / node / skinned-unlit / skinned-lit), sorted by render layer → opaque/transparent → explicit `renderOrder` → scene-graph order (deterministic, §33).
@@ -338,7 +338,7 @@ Key exports (selected from ~40):
 
 **Spec**: §62 (backend 2), §86 (payload budget). **Direct deps**: `core`, `math`, `render`. **Status**: implemented.
 
-Key exports (selected from ~30): `WebglRenderer`, `WebglContext`/`WebglCanvas` (structural seams — no DOM types), `GeometryCache`, `TextureCache`, `ParticleBatchCache`, `UnlitProgram`/`LitProgram`/`SpriteProgram`/`ParticleProgram`, `createLinkedProgram`, `POSITION_ATTRIBUTE_LOCATION` (0), `NORMAL_ATTRIBUTE_LOCATION` (1), `PARTICLE_ATTRIBUTE_LOCATIONS`. Lit shading: `lightColor` premultiplied by intensity CPU-side (black when no light — one shader, no variants); normal matrix computed in the vertex shader; fragment guards zero-length normals (ambient-only, never NaN).
+Key exports (selected from 127): `WebglRenderer`, `WebglContext`/`WebglCanvas` (structural seams — no DOM types), `GeometryCache`, `TextureCache`, `ParticleBatchCache`, `UnlitProgram`/`LitProgram`/`SpriteProgram`/`ParticleProgram`, `createLinkedProgram`, `POSITION_ATTRIBUTE_LOCATION` (0), `NORMAL_ATTRIBUTE_LOCATION` (1), `PARTICLE_ATTRIBUTE_LOCATIONS`. Lit shading: `lightColor` premultiplied by intensity CPU-side (black when no light — one shader, no variants); normal matrix computed in the vertex shader; fragment guards zero-length normals (ambient-only, never NaN).
 
 ---
 
@@ -407,7 +407,7 @@ Key exports: `PointerInput` (NDC normalization with the +Y-up flip, picking, cap
 
 **Spec**: §76–78 MVP tier (§113a). **Direct deps**: `core`. **Status**: implemented (glTF staged — needs §55 textures + non-unlit materials).
 
-Key exports (13 total): `AssetManager`, `AssetLoader`, `textLoader`, `jsonLoader`, `binaryLoader`, `createImageLoader`, `ImageAsset` (disposal wrapper), plus the structural seams `FetchLike`/`FetchResponse`/`ImageBitmapLike`/`ImageDecodeLike`.
+Key exports (selected from 84): `AssetManager`, `AssetLoader`, `textLoader`, `jsonLoader`, `binaryLoader`, `createImageLoader`, `ImageAsset` (disposal wrapper), plus the structural seams `FetchLike`/`FetchResponse`/`ImageBitmapLike`/`ImageDecodeLike`.
 
 ---
 
@@ -417,7 +417,7 @@ Key exports (13 total): `AssetManager`, `AssetLoader`, `textLoader`, `jsonLoader
 
 **Spec**: §56 MVP tier (full shaping staged behind a shaping-engine RFC). **Direct deps**: `core`, `math`, `geometry`. **Status**: implemented.
 
-Key exports (17 total): `BitmapFont`, `createBitmapFont`, `BUILTIN_FONT`, `glyphFor`, `glyphPixel`, `glyphToAscii`, `buildGlyphAtlas`/`GlyphAtlas`, `layoutText`/`TextLayout`/`TextQuad`.
+Key exports (selected from 32): `BitmapFont`, `createBitmapFont`, `BUILTIN_FONT`, `glyphFor`, `glyphPixel`, `glyphToAscii`, `buildGlyphAtlas`/`GlyphAtlas`, `layoutText`/`TextLayout`/`TextQuad`.
 
 ---
 
@@ -427,7 +427,7 @@ Key exports (17 total): `BitmapFont`, `createBitmapFont`, `BUILTIN_FONT`, `glyph
 
 **Spec**: §73–75 MVP tier. **Direct deps**: `core`, `math`, `scene`, `input`, `text`. **Status**: implemented (keyboard traversal + activation landed 2026-08-07; a11y DOM mirror staged — `UI_STAGED`).
 
-Key exports (28 total): `UIWidget` (abstract `Node`), `Panel` + `PanelLayout` (`LayoutType` flex/stack/absolute, `LayoutDirection`, `LayoutAlign`, `LayoutJustify`, `Insets`/`applyInsets`), `Button`, `Label` (measures via `@fourjs/text`), `WidgetSkin` (four optional hooks), `collectPickables` (§71 candidates), `focusedWidget`, `isUIWidget`, `UI_LAYOUT_AUTHORITY` (`"constraint"` — layout writes under §42 constraint authority; a widget under other authority has its position write refused with a warning), events `WidgetActivateEvent` (`uiactivate`), `WidgetStateChangeEvent`, `UIFocusEvent`, `WidgetAccessibility`. Layout is explicit: `root.layout()` runs one measure + one arrange pass.
+Key exports (selected from 67): `UIWidget` (abstract `Node`), `Panel` + `PanelLayout` (`LayoutType` flex/stack/absolute, `LayoutDirection`, `LayoutAlign`, `LayoutJustify`, `Insets`/`applyInsets`), `Button`, `Label` (measures via `@fourjs/text`), `WidgetSkin` (four optional hooks), `collectPickables` (§71 candidates), `focusedWidget`, `isUIWidget`, `UI_LAYOUT_AUTHORITY` (`"constraint"` — layout writes under §42 constraint authority; a widget under other authority has its position write refused with a warning), events `WidgetActivateEvent` (`uiactivate`), `WidgetStateChangeEvent`, `UIFocusEvent`, `WidgetAccessibility`. Layout is explicit: `root.layout()` runs one measure + one arrange pass.
 
 ---
 
@@ -437,7 +437,7 @@ Key exports (28 total): `UIWidget` (abstract `Node`), `Panel` + `PanelLayout` (`
 
 **Spec**: §79–80 (§113a). **Direct deps**: `core`, `math`, `scene`. **Status**: implemented.
 
-Key exports (selected from ~35): `serializeScene`, `instantiateScene`, `instantiateSceneNodes`, `SceneDocument` + `SceneNodeDocument`/`TransformDocument`/`ComponentDocument`, `SCENE_FORMAT_VERSION` (1), `encodeSceneDocument`/`decodeSceneDocument`, `validateSceneDocument` (canonical validation, prototype-pollution-safe), `ComponentSerializer` + `ComponentSerializerRegistry` + `createDefaultComponentSerializers` (`POSE_TARGET_SERIALIZER` ships here — the one component this package can see), `SceneMigration`/`SceneMigrationRegistry`/`migrateSceneDocument`/`runSceneMigrations`, `applyTransformDocument`. Known boundaries (recorded): components with no registered serializer **throw** on save (`unknownComponents: "throw"`, A-15; `"skip"` is opt-in); restored ids can collide with the live counter. Node classes other than `Scene`/`Group` need `registerSceneNodeTypes()` from the umbrella (or an equivalent `nodeTypeOf` / `nodeFactory` pair).
+Key exports (selected from 42): `serializeScene`, `instantiateScene`, `instantiateSceneNodes`, `SceneDocument` + `SceneNodeDocument`/`TransformDocument`/`ComponentDocument`, `SCENE_FORMAT_VERSION` (1), `encodeSceneDocument`/`decodeSceneDocument`, `validateSceneDocument` (canonical validation, prototype-pollution-safe), `ComponentSerializer` + `ComponentSerializerRegistry` + `createDefaultComponentSerializers` (`POSE_TARGET_SERIALIZER` ships here — the one component this package can see), `SceneMigration`/`SceneMigrationRegistry`/`migrateSceneDocument`/`runSceneMigrations`, `applyTransformDocument`. Known boundaries (recorded): components with no registered serializer **throw** on save (`unknownComponents: "throw"`, A-15; `"skip"` is opt-in); restored ids can collide with the live counter. Node classes other than `Scene`/`Group` need `registerSceneNodeTypes()` from the umbrella (or an equivalent `nodeTypeOf` / `nodeFactory` pair).
 
 ---
 
@@ -447,7 +447,7 @@ Key exports (selected from ~35): `serializeScene`, `instantiateScene`, `instanti
 
 **Spec**: §33–34, §41/§84–85 (data side), §113. **Direct deps**: `core`, `math`, `scene`. **Status**: implemented.
 
-Key exports (selected from ~55):
+Key exports (selected from 115):
 
 - **Checksums (§33)** — `Checksum`, `createChecksum`, `hashFloats` (FNV-1a; golden vectors cross-checked in fresh processes).
 - **Replay (§34)** — `ReplayRecorder` (`begin`/`recordInput`/`recordFrame`, `snapshotIntervalSteps`), `ReplayPlayer` (play/pause, `speed` slow motion, `advanceRealtime` with a sub-step clamp, `seekToStep` via nearest snapshot + re-simulation, `verifyChecksum`), `ReplayTarget`/`ReplaySnapshot` (duck-typed `PhysicsWorld` contract), `ReplayRecording` + `encodeReplayRecording`/`decodeReplayRecording` (versioned envelope — a document declares the lowest version that expresses it, canonical base64, `encode(decode(t)) === t`), `assertReplayCompatible`/`isReplayCompatible`, `LATEST_REPLAY_FORMAT_VERSION`/`MINIMUM_REPLAY_FORMAT_VERSION` (2026-08-07; `REPLAY_FORMAT_VERSION` is a deprecated alias).
@@ -496,3 +496,11 @@ Per-file dependency data lives in [`dependency-graph.json`](./dependency-graph.j
 **Document Version**: Unreleased (post-Phase 11)
 **Last Updated**: 2026-08-05
 **Maintained By**: Daniel Simon Jr.
+
+<!-- repo-map:no-verification -->
+
+## Verification
+
+`repo-tools check` does not check this document, because it states no number that the gate measures.
+The export counts in the package headings come from `package-export-surfaces.json`, which `bun run graph` writes.
+The gate does not check them. [`TEST_COVERAGE.md`](./TEST_COVERAGE.md) holds the test counts.
