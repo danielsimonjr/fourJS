@@ -54,6 +54,19 @@ specification; until then, entries are grouped by date under **Unreleased**.
   `minimatch` accepts `^5.0.8`, so 5.0.12 satisfies the range already declared: the change is one line of
   `bun.lock`, with no manifest edit and no `overrides` entry. `bun run docs`, the only consumer, builds
   clean on the new version.
+- `shell-quote` moves from 1.10.0 to 1.11.0 and `source-map-js` from 1.2.1 to 1.2.2 in `bun.lock`. One CRITICAL and
+  one HIGH advisory applied: GHSA-pqg4-j6r4-53mv (`quote()` command injection through a line terminator in a token
+  after a `{ comment }` token, affected range `>=1.8.4 <1.11.0`) and GHSA-68fv-2mgg-jv7q (denial of service of the event
+  loop through indexed source-map section offsets, affected range `>=1.0.0 <1.2.2`). `main` at ee5de9a passed CI on
+  2026-10-05, before these advisories; since then the `Audit dependencies` step of CI failed every pull request, a
+  documentation-only one included. `bun audit --audit-level=high` and `--audit-level=critical` now find no
+  vulnerabilities across 194 packages.
+- Both packages are transitive DEVELOPMENT dependencies, so no published package contains them: `shell-quote` through
+  `@changesets/cli` > `launch-editor`, and `source-map-js` through `vite` > `postcss` and through
+  `@vitest/coverage-v8` > `magicast`. The parents accept `^1.8.4` and `^1.2.1`, so the fixed versions satisfy the declared
+  ranges: the change is two lines of `bun.lock`, with no manifest edit and no `overrides` entry. The lockfile hashes equal
+  the registry hashes. `bun install --frozen-lockfile` makes no change, and `bun run build`, `typecheck:config`, `lint` and
+  `check-spec` pass on the new versions.
 
 ### Fixed
 
