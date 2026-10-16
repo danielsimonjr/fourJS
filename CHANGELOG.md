@@ -10,6 +10,12 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- The workflow `.github/workflows/doc-gates.yml` (job "Architecture docs gate") runs
+  `repo-tools check . --docs=docs/Architecture` on every push and pull request to `main`.
+  The job installs `@danielsimonjr/repo-tools@2.2.3` and nothing else. This workflow is
+  separate from `ci.yml` on purpose. `release.yml` calls `ci.yml`, so a step in `ci.yml`
+  also gates every release. To make the gate release-gating, move the job into `ci.yml`.
+  The actions are pinned by commit SHA.
 - `repo-tools check . --docs=docs/Architecture` exits 0. The generator
   `tools/create-dependency-graph` now writes the opt-out marker
   `<!-- repo-map:no-verification -->` and a do-not-edit banner at the top of every
@@ -3075,7 +3081,7 @@ undefined (reading 'focusTarget')`** — an internal property access naming a pr
   Its rewriter and its own validator disagreed about what a quoted name is:
 
   ```
-  rewriter   /(["'])@four\/([a-z0-9-]+)/     <- [a-z0-9-]+ cannot cross a "/"
+  rewriter   /(["'])@four\/([a-z0-9-]+)\1/     <- [a-z0-9-]+ cannot cross a "/"
   validator  /(["'])@four\//                    <- flags any quote followed by @fourjs/
   ```
 

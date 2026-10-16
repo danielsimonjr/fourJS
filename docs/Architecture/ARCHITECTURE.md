@@ -736,3 +736,6 @@ Regenerate: `bun run graph` · Check: `repo-tools check . --docs=docs/Architectu
 The gate checks only the two cycle counts. The file, export and line counts in Key Statistics
 come from `dependency-graph.json`. The gate does not check them. The gate reads more files than
 the generator reads, so the totals of the two tools differ.
+
+The workflow `.github/workflows/doc-gates.yml` runs the check on every push and pull request to
+`main`.
