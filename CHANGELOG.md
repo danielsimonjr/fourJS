@@ -62,6 +62,23 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Security
 
+- `launch-editor` moves from 2.14.1 to 2.14.2 and `markdown-it` from 14.3.1 to 14.3.3 in `bun.lock`, and `vite` moves
+  from 8.3.0 to 8.3.3 in `package.json` and `bun.lock`. `bun audit` reported 12 advisories before this change (4 high,
+  6 moderate, 2 low) and reports none after it. The four high lines are three distinct advisories, because the first
+  one reaches two copies of the code: GHSA-587h-7wmj-h5pm (the `fs.existsSync()` existence check of `launch-editor`
+  can be bypassed on Windows, affected ranges `<=2.14.1` and, in `vite`, `>=8.3.0 <=8.3.2`), GHSA-gfr2-rv44-r23c
+  (quadratic-time rendering of one multi-line link reference definition in `markdown-it`, affected range
+  `>=14.1.0 <14.3.3`) and GHSA-r7fv-28h4-cvq7 (quadratic complexity in smartquotes with unmatched closing quotes,
+  affected range `<14.3.2`). The step `Audit dependencies (visibility, high and above)` of CI
+  shows them but does not fail (it has `continue-on-error`); only the critical audit gates.
+- All three packages are DEVELOPMENT dependencies, so no published package contains them: `launch-editor` through
+  `@changesets/cli`, `markdown-it` through `@fourjs-tools/docs` > `typedoc`, and `vite` as a direct dependency of
+  the root package. The `vite` pin is exact, so this is the one manifest edit: a patch release inside the same
+  minor version. `vite` 8.3.3 needs `rolldown` 1.2.15 (was 1.2.7) and `@oxc-project/types` 0.155.0 (was
+  0.148.0), so `bun.lock` moves those and the `rolldown` binding packages as well.
+  `bun install --frozen-lockfile` makes no change, and `bun run build`, `typecheck:tests`, `typecheck:config`,
+  `test`, `coverage`, `docs`, `size` and the eleven `vite build` runs of `examples:build` pass on the new
+  versions.
 - `brace-expansion` moves from 5.0.9 to 5.0.12 in `bun.lock`. Two HIGH advisories apply to 5.0.9, both
   denial of service by uncontrolled recursion: GHSA-qhr7-859c-m2p7 (nested brace groups, affected range
   `>=4.0.0 <5.0.11`) and GHSA-6j4f-fj2g-mc7p (`parseCommaParts`, affected range `>=4.0.0 <5.0.10`). The
