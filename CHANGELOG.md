@@ -88,6 +88,15 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Fixed
 
+- **Vitest 5.0.5 stops the temp folder leak and clears two moderate advisories.** `vitest` and
+  `@vitest/coverage-v8` move from 5.0.1 to 5.0.5: the exact pins in `package.json` and the entries in `bun.lock`.
+  Vitest 5.0.0, 5.0.1 and 5.0.2 never remove the root temp folder of a run: each run left one folder, with the
+  transformed modules in its `ssr/` subfolder, in the system temp directory. Measured with a fresh install of each
+  version: two runs of one test file leave two new folders with 5.0.0, 5.0.1 and 5.0.2, and none with 5.0.3, 5.0.4
+  and 5.0.5. `@vitest/mocker` below 5.0.3 also carries GHSA-qxg6-89mg-rqv8 and GHSA-xp26-3454-mjgp (both moderate),
+  and `bun audit` no longer lists them. Both packages are DEVELOPMENT dependencies of the root package, so no
+  published package contains them. `bun run build`, `typecheck:tests`, `typecheck:config`, `test` and `coverage`
+  pass on 5.0.5, with the same 308 test files and 7,917 tests as on 5.0.1.
 - **The Dependabot bun.lock workflow no longer leaves a PR BLOCKED.** GitHub holds the
   `pull_request` runs that the workflow's lockfile push triggers at `action_required`, and a
   `workflow_dispatch` run never reaches the PR's required checks. The workflow now approves the
