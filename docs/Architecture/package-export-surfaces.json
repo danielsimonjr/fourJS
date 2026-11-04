@@ -1254,8 +1254,10 @@
       "toRapierVector3"
     ],
     "packages/physics-soft": [
+      "MAXIMUM_SOFT_BODY_ARRAY_LENGTH",
       "PACKAGE_NAME",
       "PRIORITY_SOFT_BODY",
+      "SOFT_BODY_SERIALIZER",
       "SoftBody",
       "SoftBodySystem"
     ],
