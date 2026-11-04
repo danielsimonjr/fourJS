@@ -4,59 +4,6 @@ Task tracker for four.js. Keep entries short and actionable; move finished items
 (newest first) with the date. Larger context and decisions belong in `MEMORY.md`; released
 changes in `CHANGELOG.md`.
 
-## Dependabot ignore rules to restore when remediation returns
-
-The root Dependabot entry was removed on 2026-10-01 because no updater ecosystem works on a
-Bun-managed root (see `.github/dependabot.yml`). The ignore rules below went with it. They are
-NOT obsolete - they are inert only while nothing proposes updates, and each one must be restored
-with the entry.
-
-- [ ] 🔴 **THREE Dependabot ignore rules must come back with the entry, and two are hard blocks
-      with proof attached.** Restore all three:
-
-      ```yaml
-      - dependency-name: "js-yaml"
-        versions: [">=5"]
-      - dependency-name: "harfbuzzjs"
-        versions: [">0.4.13"]
-      - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
-      ```
-
-      **js-yaml >=5** — BLOCKED by a vendored tool. js-yaml 5 removed its default export and
-      `tools/create-dependency-graph` does `import yaml from 'js-yaml'`, so `bun run graph` dies
-      with "Missing 'default' export" before reading a file. That tool is kept BYTE-IDENTICAL with
-      the copy in llm-wiki (see `.oxlintrc.json` ignorePatterns); changing the import here would
-      guarantee the two copies drift, which is worse than staying on 4. Lift only when both copies
-      move together. (MathTS has the same js-yaml follow-up, from its own root `overrides` floor.)
-
-      **harfbuzzjs >0.4.13** — pinned at EXACTLY the supported ABI for the optional shaping
-      adapter. 1.x removed the explicit Wasm init/disposal APIs (`hb.js` / `hbjs.js`) that
-      `packages/text/src/harfbuzz` uses (#96 merged 2026-09-12, reverted in `d9347f2`; #103
-      re-proposed). Any other version fails `tests/harfbuzz.test.ts` "pins wasm", which asserts
-      the SHA-256 of the 0.4.13 `hb.wasm` (#106 proposed 0.10.3 on 2026-09-15 and failed exactly
-      there). Lift only together with an adapter migration and a new wasm pin.
-
-      **typescript semver-major** — `tools/docs` must stay on TypeScript 6.x until TypeDoc
-      supports 7 (typedoc#3098), but the root dev-dependency group bumped it to 7.0.2 EVERY WEEK
-      (#82, #102, #105, #108, #116), each needing the same revert. An ignore cannot be scoped to
-      one workspace, so a MAJOR-only ignore is the scoped fix in practice: the root is already on
-      7.x and still receives every 7.x minor and patch; only the 6 -> 7 jump in `tools/docs` is
-      held back. Remove when `tools/docs` moves to TypeScript 7.
-
-- [ ] 🟡 **Do NOT re-add these when restoring — they were removed deliberately.** A `typescript`
-      VERSION ignore (it would pin the root compiler, which is deliberately on 7.x; the
-      semver-major entry above is the correct form). An `eslint` ignore (eslint and
-      typescript-eslint are no longer dependencies at all; linting is oxlint). The vitest and
-      `@vitest/coverage-v8` `>=4` ignores (5 is installed and all coverage gates passed
-      2026-09-11). A `@dimforge/rapier{2,3}d-compat` 0.20 ignore on the old behavioural notes —
-      0.20.0 was adopted 2026-09-06 and the goldens now track it.
-
-- [ ] 🟢 **`.github/workflows/dependabot-bun-lock.yml` is now dormant, not broken.** It regenerates
-      `bun.lock` on Dependabot PRs, and with the updater removed there are no such PRs to act on.
-      Leave it in place — it is needed again the moment remediation is restored — but do not read
-      its idle runs as health.
-
 ## 2026-09-12 — §96 image decoder memory
 
 - Implemented `createBoundedPngDecoder`: a pinned PNG Wasm heap capped before
@@ -2718,36 +2665,6 @@ leak + `pointercancel`), `A-15` (unregistered components no longer dropped on sa
 
 ### Flaky gate, caught 2026-09-20 - `smoothness.spec.ts` §106 mid-step frames
 
-- [ ] **`tests/browser/smoothness.spec.ts:869` ("§106: moving primitives render mid-step") failed once
-      and passed on re-run of the SAME commit.** First CI run on `ec60e2e`: received **1** mid-step frame
-      against `MINIMUM_MID_STEP_FRAMES`, 114 other browser tests passing; re-run of the identical commit:
-      green. The commit is provably incapable of causing it - its only source changes are an error-message
-      string in `render/src/renderer-registry.ts`, a message string in `diagnostics`, and a comment in
-      `physics/src/world.ts`; nothing in the interpolation or frame-timing path is touched.
-      **Filed rather than shrugged off, because a test that passes on retry is a defect with a longer fuse:**
-      it either measures something the runner cannot guarantee, or it has a real intermittent behind it, and
-      today nothing distinguishes those two. This suite has been stabilised twice before (both DONE
-      2026-09-06: the virtual-frame parity sampler, and the flaky-gate fix), so this is a RECURRENCE of a
-      known class rather than a first sighting.
-      **To close:** make the assertion measure what the test means - frames the app actually rendered
-      between fixed steps - rather than a count that depends on the runner's scheduling, or record a
-      measured floor with the evidence for it. Do not simply lower the threshold or add a retry: that
-      converts a signal into silence, which is what the two earlier fixes were careful to avoid.
-
-- [ ] **`tests/browser/blending.spec.ts:1036` ("RECOVER: a second click blends the chain back onto
-      its animation") failed once on CI and is green everywhere else — a RECURRENCE of the row closed
-      2026-09-06.** PR #129, head `0913c24` (a commit that changed only `docs/AUDIT-2026-11-OPTIMIZATION.md`):
-      the test's FIRST `clickWorldPoint` never flipped `data-mode` from `animated` to `ragdoll`, 114 other
-      browser tests passing. The sibling DROP test makes the identical click in the same run and passed;
-      the previous head `d236d53` (same packages, same examples build) was fully green on CI; locally the
-      spec passed 16/16 under `--repeat-each 4`. So the click was dropped between `page.mouse.click` and
-      `PointerInput`'s press/release pair on the loaded runner, not a pick or mode-transition defect: the
-      2026-09-06 fix addressed the sweep timing and the sample count, not a lost first click.
-      **To close:** make the first click observable the way the sweep clock was — poll `data-mode`
-      after the click and re-issue the click once if the page provably never saw a press (e.g. expose a
-      `data-presses` counter from the example), so a dropped platform event is told apart from a page
-      that ignored a delivered one. Do not add a blanket retry.
-
 ### Cycle 9 residue (2026-09-19) — filed out of the dogfooding narrative so they are actionable
 
 Each of these was measured during dogfood cycle 9 and then judged **not** a defect, or left
@@ -2823,38 +2740,6 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       **CLOSED 2026-10-05 — already in source.** `world.ts:367-380` now says the wasm-import
       cost is what the registry avoids, then: only `@fourjs/physics-rapier` ships;
       `physics-box2d` and `physics-soft` are reserved stubs, as `COMPATIBILITY.md` records.
-
-- [ ] **Audit the other tools for the quote-only assumption that let the §83 defect ship.**
-      `apply-publish-names.mjs` matched `"` and `'` but not backticks, so a workspace name
-      in a **template literal** — how every runtime message is written — passed both the
-      rewriter and its own residue guard. Fixed there (cycle 9C) with a comment-stripping
-      check measured at 1 true positive / 0 false positives over 344 shipped files. The
-      **class** is what needs the sweep: any other check that inspects emitted code by
-      quote character has the same blind spot. `tools/` is small enough to read in one pass.
-      **Three sites closed 2026-09-20 — the dependency-graph generator, which was the one
-      known holdout.** All three fed the generator's SCORING, which is why they were left:
-      fixing them changes the committed `docs/Architecture/` reports. Now fixed, regenerated
-      and committed. (1) `inFileRefs` counted a name in a JSDoc block or a commented-out call
-      as a live in-file reference, so an export could be moved out of "deletion candidate" by
-      its own doc comment; it now counts over `strippedOfComments`. Measured effect on this
-      tree: exactly one entry moves — `CANVAS_VIEW_NODE_TYPE` **3 → 2** in-file refs, the
-      third being `scene-serializers.ts:1319`, a `//` comment. (2) The delegation scan read a
-      `*Dispatch` name in a comment as a real edge and reported a js-fallback entry as wasm;
-      it now segments `strippedOfComments(src)`. (3) The hand brace-matcher counted `{`/`}`
-      inside strings, template literals and comments, so one such brace ended an object
-      literal early and lost every marker after it; it now counts over
-      `blankedCommentsAndStrings`, an index-preserving blanked copy, so the slice still comes
-      from the real source. **Three inline copies of that matcher existed beside the shared
-      `matchBraceBlock`, each with the same blind spot** — the filing named one; all four are
-      now the one function. (2) and (3) live in analyzers gated on `functions/src/typed` /
-      `src/typed` / `functions/src/wasm`, none of which exists in this repo, so their report
-      effect here is **0 → 0**; they are fixed as a defect class, not for a visible number.
-      · Still open on this row: the read-through of the rest of `tools/`. One candidate found
-      and deliberately NOT changed — `generate-compatibility.mjs`'s `interfaceMembers` ends an
-      interface at the first `\n}` in the `.d.ts` text. `tsc` emits doc-comment lines as
-      ` * …`, so a column-0 `}` inside one has never occurred, and the 4-space member anchor
-      means a truncation could only DROP members (a loud gate failure), never invent one.
-      Recorded so the next pass starts from a read rather than a re-discovery.
 
 - [x] **Guide coverage is absent for five surfaces that have shipped code.** Measured
       2026-09-19 across `docs/guides/`: `render-svg`, `physics-box2d` and `physics-soft`

@@ -32,6 +32,7 @@ import {
   rewriteManifest,
   strippedOfComments,
   BARE_SPECIFIER_RESIDUE,
+  residueProblems,
 } from "./apply-publish-names.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -435,5 +436,37 @@ test("a commented-out lifecycle call cannot satisfy a code check", () => {
     !/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new Application\(/.test(
       strippedOfComments("// const app = new Application({});\napp.step(0);"),
     ),
+  );
+});
+
+test("residueProblems is not blinded by a comment opener inside a string", () => {
+  // A regex stripper would treat `/*` in the glob as a comment opener and
+  // delete everything up to the doc comment's `*\/`, hiding the real residue.
+  const code =
+    'const g = "dist/*";\nconst p = "@fourjs/math";\n/** doc */\nexport {};';
+  assert.equal(residueProblems(code).length, 2);
+  // And `//` inside a string is not a line comment either.
+  assert.equal(
+    residueProblems('const u = "a//b"; const q = "@fourjs/core";').length,
+    2,
+  );
+});
+
+test("residueProblems ignores a quoted name in a comment but flags one in code", () => {
+  // A comment that quotes a name with a glob: the rewriter's closed-quote
+  // pattern skips it, and the old raw-text check failed a clean release on it.
+  assert.deepEqual(
+    residueProblems('/** see "@fourjs/render/*" for the layout */\nexport {};'),
+    [],
+  );
+  assert.deepEqual(
+    residueProblems('// "@fourjs/math" is prose\nexport {};'),
+    [],
+  );
+  // Control: the same quoted text in real code, and a template-literal message.
+  assert.equal(residueProblems('const a = "@fourjs/render/*";').length, 2);
+  assert.equal(
+    residueProblems("throw new Error(`install @fourjs/math`);").length,
+    1,
   );
 });

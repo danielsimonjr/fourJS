@@ -10,7 +10,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 
 **Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every tracked `.ts` appears below with an explicit disposition.
 
-**Total files**: 896
+**Total files**: 900
 
 ## Disposition counts
 
@@ -20,11 +20,11 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `build-entry` |      48 | A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …). |
 | `test-only`   |       4 | A `src/` file not reachable from src roots but imported by a test.                                           |
 | `orphan`      |       0 | A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate).                        |
-| `test`        |     517 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
+| `test`        |     521 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
 | `tool`        |       1 | A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks).                                        |
 | `config`      |      17 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).                                |
 | `example`     |      14 | An `examples/` or `docs/` reference/illustration source.                                                     |
-| **Total**     | **896** |                                                                                                              |
+| **Total**     | **900** |                                                                                                              |
 
 ## Per-area counts
 
@@ -33,7 +33,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `config`   |    17 |
 | `examples` |    14 |
 | `src`      |   347 |
-| `tests`    |   517 |
+| `tests`    |   521 |
 | `tools`    |     1 |
 
 ## Per-package counts
@@ -41,21 +41,21 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | Package                  | Files |
 | ------------------------ | ----: |
 | `(root)`                 |   238 |
-| `@fourjs/animation`      |    32 |
+| `@fourjs/animation`      |    33 |
 | `@fourjs/assets`         |    32 |
 | `@fourjs/core`           |    26 |
 | `@fourjs/diagnostics`    |    27 |
 | `@fourjs/geometry`       |    25 |
-| `@fourjs/input`          |    17 |
+| `@fourjs/input`          |    18 |
 | `@fourjs/materials`      |    26 |
 | `@fourjs/math`           |    18 |
 | `@fourjs/motion`         |    44 |
 | `@fourjs/particles`      |    21 |
 | `@fourjs/physics`        |    59 |
 | `@fourjs/physics-box2d`  |     2 |
-| `@fourjs/physics-rapier` |    22 |
+| `@fourjs/physics-rapier` |    23 |
 | `@fourjs/physics-soft`   |     2 |
-| `@fourjs/render`         |    71 |
+| `@fourjs/render`         |    72 |
 | `@fourjs/render-canvas`  |     2 |
 | `@fourjs/render-svg`     |     2 |
 | `@fourjs/render-webgl`   |    35 |
@@ -122,6 +122,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/animation/tests/easing.test.ts`                         | @fourjs/animation      | tests    | test        |
 | `packages/animation/tests/layer-stack.test.ts`                    | @fourjs/animation      | tests    | test        |
 | `packages/animation/tests/mixer.test.ts`                          | @fourjs/animation      | tests    | test        |
+| `packages/animation/tests/perf-precompute.test.ts`                | @fourjs/animation      | tests    | test        |
 | `packages/animation/tests/pose-target-binding.test.ts`            | @fourjs/animation      | tests    | test        |
 | `packages/animation/tests/root-motion.test.ts`                    | @fourjs/animation      | tests    | test        |
 | `packages/animation/tests/smoke.test.ts`                          | @fourjs/animation      | tests    | test        |
@@ -305,6 +306,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/input/tests/keyboard-state.test.ts`                     | @fourjs/input          | tests    | test        |
 | `packages/input/tests/keyboard.test.ts`                           | @fourjs/input          | tests    | test        |
 | `packages/input/tests/pick-alpha.test.ts`                         | @fourjs/input          | tests    | test        |
+| `packages/input/tests/pick-broadphase.test.ts`                    | @fourjs/input          | tests    | test        |
 | `packages/input/tests/pick-geometry.test.ts`                      | @fourjs/input          | tests    | test        |
 | `packages/input/tests/pick.test.ts`                               | @fourjs/input          | tests    | test        |
 | `packages/input/tests/pointer-type.test.ts`                       | @fourjs/input          | tests    | test        |
@@ -442,6 +444,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/physics-rapier/tests/rapier3d-adapter.test.ts`          | @fourjs/physics-rapier | tests    | test        |
 | `packages/physics-rapier/tests/rapier3d-joints.test.ts`           | @fourjs/physics-rapier | tests    | test        |
 | `packages/physics-rapier/tests/register.test.ts`                  | @fourjs/physics-rapier | tests    | test        |
+| `packages/physics-rapier/tests/sleeping-cache.test.ts`            | @fourjs/physics-rapier | tests    | test        |
 | `packages/physics-rapier/tests/smoke.test.ts`                     | @fourjs/physics-rapier | tests    | test        |
 | `packages/physics-soft/src/index.ts`                              | @fourjs/physics-soft   | src      | build-entry |
 | `packages/physics-soft/tests/smoke.test.ts`                       | @fourjs/physics-soft   | tests    | test        |
@@ -652,6 +655,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/render/tests/read-pixels.test.ts`                       | @fourjs/render         | tests    | test        |
 | `packages/render/tests/render-graph.test.ts`                      | @fourjs/render         | tests    | test        |
 | `packages/render/tests/render-list.test.ts`                       | @fourjs/render         | tests    | test        |
+| `packages/render/tests/render-pose-memo.test.ts`                  | @fourjs/render         | tests    | test        |
 | `packages/render/tests/render-target-bytes.test.ts`               | @fourjs/render         | tests    | test        |
 | `packages/render/tests/render-target.test.ts`                     | @fourjs/render         | tests    | test        |
 | `packages/render/tests/renderer-capabilities-declaration.test.ts` | @fourjs/render         | tests    | test        |

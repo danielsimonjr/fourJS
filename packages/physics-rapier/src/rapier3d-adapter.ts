@@ -660,6 +660,9 @@ interface BodyRecord {
   body: RapierRigidBody3d;
   /** Last observed `isSleeping()`, for §32's sleep/wake transitions. */
   sleeping: boolean;
+  /** H3: `sleepingCached` is trustworthy only while this is true; `record.sleeping` semantics are unchanged. */
+  sleepingCacheValid: boolean;
+  sleepingCached: boolean;
   /** How this body's mass is composed. See `MassMode`. */
   massMode: MassMode;
   /** The §23 `mass`, when one was given. */
@@ -1127,6 +1130,8 @@ export class Rapier3dAdapter
       rapierHandle: body.handle,
       body,
       sleeping: body.isSleeping(),
+      sleepingCacheValid: false,
+      sleepingCached: false,
       massMode,
       explicitMass,
       colliderIds: [],
@@ -1212,7 +1217,7 @@ export class Rapier3dAdapter
     const world = this.#requireWorld();
     const rapier = this.#requireRapier();
     validateColliderDescriptor(desc, ADAPTER_DIMENSION);
-    const bodyRecord = this.#requireBody(desc.body);
+    const bodyRecord = this.#requireBodyMut(desc.body);
 
     const colliderDesc: RapierColliderDesc3d = createRapierColliderDesc3d(
       desc.shape,
@@ -1310,6 +1315,7 @@ export class Rapier3dAdapter
     const record = this.#requireCollider(handle);
     const bodyRecord = this.#bodies.get(record.bodyId);
     world.removeCollider(record.collider, true);
+    this.#invalidateAllSleeping();
     this.#forgetCollider(record);
     if (bodyRecord !== undefined) {
       this.#refreshMassAfterColliderLoss(bodyRecord);
@@ -1344,8 +1350,8 @@ export class Rapier3dAdapter
   createJoint(desc: JointDescriptor): PhysicsJointHandle {
     const world = this.#requireJointWorld();
     validateJointDescriptor(desc, ADAPTER_DIMENSION);
-    const bodyA = this.#requireBody(desc.bodyA);
-    const bodyB = this.#requireBody(desc.bodyB);
+    const bodyA = this.#requireBodyMut(desc.bodyA);
+    const bodyB = this.#requireBodyMut(desc.bodyB);
 
     const data = this.#buildJointData(desc, bodyA, bodyB);
     const joint = world.createImpulseJoint(data, bodyA.body, bodyB.body, true);
@@ -1402,6 +1408,7 @@ export class Rapier3dAdapter
     const world = this.#requireJointWorld();
     const record = this.#requireJoint(handle);
     world.removeImpulseJoint(record.joint, true);
+    this.#invalidateAllSleeping();
     this.#forgetJoint(record);
   }
 
@@ -2011,7 +2018,7 @@ export class Rapier3dAdapter
     rotation: RotationInput,
     wake = true,
   ): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.setTranslation(
       toRapierVector3("position", position, this.#scratchRapierA),
       wake,
@@ -2044,7 +2051,7 @@ export class Rapier3dAdapter
     angular: AngularVelocityInput,
     wake = true,
   ): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.setLinvel(
       toRapierVector3("linearVelocity", linear, this.#scratchRapierA),
       wake,
@@ -2061,7 +2068,7 @@ export class Rapier3dAdapter
 
   /** @inheritDoc */
   applyForce(handle: PhysicsBodyHandle, force: Vector3Input): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.addForce(
       toRapierVector3("force", force, this.#scratchRapierA),
       true,
@@ -2074,7 +2081,7 @@ export class Rapier3dAdapter
     force: Vector3Input,
     worldPoint: Vector3Input,
   ): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.addForceAtPoint(
       toRapierVector3("force", force, this.#scratchRapierA),
       toRapierVector3("worldPoint", worldPoint, this.#scratchRapierB),
@@ -2084,7 +2091,7 @@ export class Rapier3dAdapter
 
   /** @inheritDoc */
   applyTorque(handle: PhysicsBodyHandle, torque: AngularVelocityInput): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.addTorque(
       toRapierAngularVector3(
         torque,
@@ -2097,7 +2104,7 @@ export class Rapier3dAdapter
 
   /** @inheritDoc */
   applyImpulse(handle: PhysicsBodyHandle, impulse: Vector3Input): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.applyImpulse(
       toRapierVector3("impulse", impulse, this.#scratchRapierA),
       true,
@@ -2110,7 +2117,7 @@ export class Rapier3dAdapter
     impulse: Vector3Input,
     worldPoint: Vector3Input,
   ): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.applyImpulseAtPoint(
       toRapierVector3("impulse", impulse, this.#scratchRapierA),
       toRapierVector3("worldPoint", worldPoint, this.#scratchRapierB),
@@ -2123,7 +2130,7 @@ export class Rapier3dAdapter
     handle: PhysicsBodyHandle,
     angularImpulse: AngularVelocityInput,
   ): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.applyTorqueImpulse(
       toRapierAngularVector3(
         angularImpulse,
@@ -2136,7 +2143,7 @@ export class Rapier3dAdapter
 
   /** @inheritDoc */
   resetForces(handle: PhysicsBodyHandle): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.resetForces(false);
     record.body.resetTorques(false);
   }
@@ -2147,7 +2154,7 @@ export class Rapier3dAdapter
     position: Vector3Input,
     rotation?: RotationInput,
   ): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.setNextKinematicTranslation(
       toRapierVector3("position", position, this.#scratchRapierA),
     );
@@ -2173,23 +2180,28 @@ export class Rapier3dAdapter
    * `Rapier2dAdapter.setBodyType` for why `record.sleeping` is left alone.
    */
   setBodyType(handle: PhysicsBodyHandle, type: BodyType, wake = true): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.setBodyType(toRapierBodyType3d(type), wake);
   }
 
   /** @inheritDoc */
   wakeBody(handle: PhysicsBodyHandle): void {
-    this.#requireBody(handle).body.wakeUp();
+    this.#requireBodyMut(handle).body.wakeUp();
   }
 
   /** @inheritDoc */
   sleepBody(handle: PhysicsBodyHandle): void {
-    this.#requireBody(handle).body.sleep();
+    this.#requireBodyMut(handle).body.sleep();
   }
 
   /** @inheritDoc */
   isBodySleeping(handle: PhysicsBodyHandle): boolean {
-    return this.#requireBody(handle).body.isSleeping();
+    const record = this.#requireBody(handle);
+    if (!record.sleepingCacheValid) {
+      record.sleepingCached = record.body.isSleeping();
+      record.sleepingCacheValid = true;
+    }
+    return record.sleepingCached;
   }
 
   /** @inheritDoc */
@@ -2291,7 +2303,7 @@ export class Rapier3dAdapter
     inertiaTensor: Matrix3 | undefined,
     wake = true,
   ): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     const onBody =
       centerOfMass !== undefined ||
       inertiaTensor !== undefined ||
@@ -2363,7 +2375,7 @@ export class Rapier3dAdapter
     linear: number,
     angular: number,
   ): void {
-    const record = this.#requireBody(handle);
+    const record = this.#requireBodyMut(handle);
     record.body.setLinearDamping(linear);
     record.body.setAngularDamping(angular);
   }
@@ -2374,7 +2386,7 @@ export class Rapier3dAdapter
     scale: number,
     wake = true,
   ): void {
-    this.#requireBody(handle).body.setGravityScale(scale, wake);
+    this.#requireBodyMut(handle).body.setGravityScale(scale, wake);
   }
 
   /**
@@ -2612,6 +2624,19 @@ export class Rapier3dAdapter
    * makes a foreign object, a destroyed body, or a handle from another adapter
    * fail loudly instead of corrupting a world.
    */
+  /** `#requireBody` for methods that may change a body's sleep state outside a step (H3). */
+  #requireBodyMut(handle: PhysicsBodyHandle): BodyRecord {
+    const record = this.#requireBody(handle);
+    record.sleepingCacheValid = false;
+    return record;
+  }
+
+  #invalidateAllSleeping(): void {
+    for (const record of this.#bodies.values()) {
+      record.sleepingCacheValid = false;
+    }
+  }
+
   #requireBody(handle: PhysicsBodyHandle): BodyRecord {
     this.#requireWorld();
     const record = handle as unknown as BodyRecord;
@@ -2972,6 +2997,8 @@ export class Rapier3dAdapter
 
     for (const record of this.#bodies.values()) {
       const sleeping = record.body.isSleeping();
+      record.sleepingCached = sleeping;
+      record.sleepingCacheValid = true;
       if (sleeping !== record.sleeping) {
         record.sleeping = sleeping;
         this.#pendingEvents.push({
@@ -3164,6 +3191,8 @@ export class Rapier3dAdapter
         rapierHandle,
         body,
         sleeping,
+        sleepingCacheValid: false,
+        sleepingCached: false,
         massMode,
         explicitMass,
         colliderIds: [],
@@ -3172,6 +3201,7 @@ export class Rapier3dAdapter
       record.rapierHandle = rapierHandle;
       record.body = body;
       record.sleeping = sleeping;
+      record.sleepingCacheValid = false;
       record.massMode = massMode;
       record.explicitMass = explicitMass;
       record.colliderIds.length = 0;
@@ -3279,6 +3309,7 @@ export class Rapier3dAdapter
 
     this.#bodies.clear();
     for (const [id, record] of survivingBodies) {
+      record.sleepingCacheValid = false;
       this.#bodies.set(id, record);
     }
     this.#colliders.clear();

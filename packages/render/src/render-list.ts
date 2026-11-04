@@ -1067,6 +1067,15 @@ function nodeOnLayer(nodeLayers: LayerMask, mask: LayerMask): boolean {
  * threaded render path that never calls user code.
  */
 const ancestorChain: Node[] = [];
+/** Per-node composed render-pose world matrix, valid while `serial` matches. */
+interface PoseMemo {
+  serial: number;
+  matrix: Matrix4;
+}
+/** Weak, so removed nodes are not retained; entries are reused across builds. */
+const poseMemo = new WeakMap<Node, PoseMemo>();
+/** Incremented at the start of every interpolated build; never cleared. */
+let buildSerial = 0;
 const scratchLocal = new Matrix4();
 const scratchPosition = new Vector3();
 const scratchRotation = new Quaternion();
@@ -1099,14 +1108,11 @@ const particleBoundMax = new Vector3();
  * L(n) = compose(lerp(prev, cur, alpha), slerp(prev, cur, alpha), scale, pivot)
  * ```
  *
- * Cost is **O(depth) per item**, since each node re-walks its own ancestor
- * chain; a depth-`d` subtree of `n` nodes costs `O(n · d)` rather than the
- * `O(n)` the ordinary resolver achieves by composing top-down as it descends.
- * That is a deliberate simplification: the interpolated path composes into
- * per-item scratch matrices instead of into the scene, so it has nowhere to
- * cache a parent result, and a depth-keyed matrix stack is an optimization for
- * the packet that finds it necessary. Scene depths in the MVP are single
- * digits.
+ * Each ancestor is composed **at most once per build**: a per-build memo
+ * (node to composed matrix, keyed by a build serial so nothing is cleared and
+ * a stale entry from an earlier build or alpha is never reused) makes a
+ * subtree of `n` nodes cost `O(n)`. Entries are allocated once per node and
+ * reused, so steady-state builds allocate nothing.
  *
  * **Nothing in the scene is written.** §43 is explicit that the render
  * transform must not feed back into simulation state, and §42 would make any
@@ -1123,11 +1129,21 @@ function composeRenderPoseMatrix(
   alpha: number,
   out: Matrix4,
 ): void {
-  ancestorChain.length = 0;
-  for (let n: Node | null = node; n !== null; n = n.parent) {
-    ancestorChain.push(n);
+  // Walk up until a node already composed in *this* build (or the root).
+  let top: PoseMemo | null = null;
+  let hit: Node | null = node;
+  while (hit !== null) {
+    const entry = poseMemo.get(hit);
+    if (entry !== undefined && entry.serial === buildSerial) {
+      top = entry;
+      break;
+    }
+    ancestorChain.push(hit);
+    hit = hit.parent;
   }
 
+  // Compose downward, memoising each ancestor so it is composed once per build.
+  let parentMatrix: Matrix4 | null = top === null ? null : top.matrix;
   for (let i = ancestorChain.length - 1; i >= 0; i -= 1) {
     const current = ancestorChain[i];
     const transform = current.transform;
@@ -1148,15 +1164,24 @@ function composeRenderPoseMatrix(
       local = transform.localMatrix;
     }
 
-    if (i === ancestorChain.length - 1) {
-      out.copy(local);
-    } else {
-      out.multiply(local);
+    let entry = poseMemo.get(current);
+    if (entry === undefined) {
+      entry = { serial: 0, matrix: new Matrix4() };
+      poseMemo.set(current, entry);
     }
+    entry.serial = buildSerial;
+    if (parentMatrix === null) {
+      entry.matrix.copy(local);
+    } else {
+      entry.matrix.copy(parentMatrix).multiply(local);
+    }
+    parentMatrix = entry.matrix;
   }
 
   // Do not keep the walked nodes reachable between builds.
   ancestorChain.length = 0;
+
+  out.copy((poseMemo.get(node) as PoseMemo).matrix);
 }
 
 /**
@@ -1989,6 +2014,7 @@ export function buildInterpolatedRenderList(
   if (DEV) assertLayerMask(layerMask, "buildInterpolatedRenderList(layerMask)");
   const pool = poolFor(out);
   pool.clips.begin();
+  buildSerial += 1;
   const sortTracker: SortTracker = {
     permute: false,
     seen: false,

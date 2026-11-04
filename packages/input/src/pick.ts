@@ -143,8 +143,70 @@ const rayDirection = new Vector3();
 const localOrigin = new Vector3();
 const localDirection = new Vector3();
 
-/** Inverse world matrix of the candidate under test. */
-const inverseWorld = new Matrix4();
+/**
+ * Per-node inverse-world cache (M4). Keyed by the node, validated by
+ * `transform.worldVersion` — the public counter `resolveWorldTransform`
+ * bumps on every recompute — so a static pickable inverts exactly once.
+ * Weak: a dropped node takes its entry with it.
+ */
+interface InverseEntry {
+  version: number;
+  readonly inverse: Matrix4;
+}
+const inverseCache = new WeakMap<Node, InverseEntry>();
+
+/**
+ * World-space broad phase: does the infinite line through the ray come within
+ * the bounding sphere of the world-transformed box? Returns `false` only when
+ * the box provably cannot be hit.
+ *
+ * Conservativeness. Let the box have centre `c` and half-extents `h`; every
+ * local point is `c + sum(s_i h_i e_i)` with `|s_i| <= 1`. For an affine world
+ * matrix `M` with columns `a_i`, the world point is `M c + sum(s_i h_i a_i)`,
+ * so by the triangle inequality its distance from `M c` is at most
+ * `r = sum(h_i |a_i|)`. The whole transformed box lies inside the sphere
+ * (`M c`, `r`) for ANY affine `M` (rotation, non-uniform scale, shear). A ray
+ * that hits the box passes through that sphere, hence its supporting line is
+ * within `r` of the centre. We test the line (not the half-line) and inflate
+ * `r^2` by a relative 1e-9 plus an absolute epsilon for rounding, so no true
+ * hit is rejected. NaN comparisons are false, so non-finite inputs fall
+ * through to the exact test. Non-affine matrices skip the broad phase.
+ */
+function passesBroadPhase(
+  e: Float64Array,
+  min: Vector3,
+  max: Vector3,
+  ox: number,
+  oy: number,
+  oz: number,
+  dx: number,
+  dy: number,
+  dz: number,
+): boolean {
+  if (e[3] !== 0 || e[7] !== 0 || e[11] !== 0 || e[15] !== 1) {
+    return true;
+  }
+  const cx = (min.x + max.x) * 0.5;
+  const cy = (min.y + max.y) * 0.5;
+  const cz = (min.z + max.z) * 0.5;
+  const hx = (max.x - min.x) * 0.5;
+  const hy = (max.y - min.y) * 0.5;
+  const hz = (max.z - min.z) * 0.5;
+  const wx = e[0] * cx + e[4] * cy + e[8] * cz + e[12] - ox;
+  const wy = e[1] * cx + e[5] * cy + e[9] * cz + e[13] - oy;
+  const wz = e[2] * cx + e[6] * cy + e[10] * cz + e[14] - oz;
+  const r =
+    hx * Math.sqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]) +
+    hy * Math.sqrt(e[4] * e[4] + e[5] * e[5] + e[6] * e[6]) +
+    hz * Math.sqrt(e[8] * e[8] + e[9] * e[9] + e[10] * e[10]);
+  const dd = dx * dx + dy * dy + dz * dz;
+  // |w x d|^2 / |d|^2 == |w|^2 - (w.d)^2 / |d|^2, computed via the cross product (no cancellation).
+  const crx = wy * dz - wz * dy;
+  const cry = wz * dx - wx * dz;
+  const crz = wx * dy - wy * dx;
+  const distSq = (crx * crx + cry * cry + crz * crz) / dd;
+  return !(distSq > r * r * (1 + 1e-9) + 1e-300);
+}
 
 /**
  * Slab test of the ray `origin + t · direction` against the axis-aligned box
@@ -818,7 +880,33 @@ export function pick(
       if (world.determinant() === 0) {
         continue;
       }
-      inverseWorld.copy(world).invert();
+      // World-space broad phase before the inverse (M4); see passesBroadPhase.
+      if (
+        !passesBroadPhase(
+          world.elements,
+          min,
+          max,
+          rayOrigin.x,
+          rayOrigin.y,
+          rayOrigin.z,
+          rayDirection.x,
+          rayDirection.y,
+          rayDirection.z,
+        )
+      ) {
+        continue;
+      }
+      const version = pickable.node.transform.worldVersion;
+      let entry = inverseCache.get(pickable.node);
+      if (entry === undefined) {
+        entry = { version: -1, inverse: new Matrix4() };
+        inverseCache.set(pickable.node, entry);
+      }
+      if (entry.version !== version) {
+        entry.inverse.copy(world).invert();
+        entry.version = version;
+      }
+      const inverseWorld = entry.inverse;
 
       localOrigin.copy(rayOrigin).applyMatrix4(inverseWorld);
       localDirection.copy(rayDirection).transformDirection(inverseWorld);

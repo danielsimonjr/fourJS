@@ -10,6 +10,38 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **Program wave 1 (2026-11-04) — the decision-free backlog**, following the
+  optimization audit: the seven optimizations it deferred, the two browser-flake rows, the
+  `tools/` quote-only read-through, and the Dependabot restoration.
+  - `.github/dependabot.yml` has its `bun` ecosystem entry back with the three recorded ignore
+    rules (`js-yaml >=5`, `harfbuzzjs >0.4.13`, `typescript` semver-major): upstream
+    dependabot-core#16485 (merged 2026-10-06) reads `bun.lock` lockfileVersion 2. The first
+    scheduled run is the test.
+  - Browser gates measure page-published events: `first-2d-scene` reports `data-mid-frames`
+    and the smoothness spec asserts every page-reported mid-step frame is drawn mid-step;
+    `blending` reports `data-presses` and the spec re-issues a click only when the page
+    provably never received the press. No threshold lowered, no retries.
+
+### Changed
+
+- Per-step and per-frame work removed (all outputs bit-identical, verified by oracle tests):
+  `buildInterpolatedRenderList` composes each ancestor once per build; `CpuSkinning.update`
+  returns early on an unchanged palette; `pick()` rejects by a conservative world-space
+  sphere and caches each node's inverse by `worldVersion` before the per-pickable ray test;
+  `AnimationTrack` precomputes cubic tangents and checks the last span before binary search;
+  `AnimationController` scans one per-state transition bucket; the Rapier adapters answer
+  `isBodySleeping` from the flag `#collectEvents` already read, invalidated by every body
+  mutator. (Skipping `resetForces` on force-free steps was implemented and reverted: Rapier
+  records the reset in its serialized body state, so the §34 replay golden's snapshot digest
+  changed although dynamics did not.)
+
+### Fixed
+
+- `tools/apply-publish-names.mjs`: the staged quoted-name residue check read raw text and
+  failed a clean release on a JSDoc comment that merely quoted a package name; it now reads
+  comment-stripped code like the line scan. The rest of `tools/` was read through for the
+  same class and found sound (or reading canonical `tsc` output).
+
 - **2026-11-04 optimization and completion audit** (`docs/AUDIT-2026-11-OPTIMIZATION.md`):
   a four-model pass over all 24 packages. The verified findings landed in the same PR:
   - `@fourjs/math` fills the §7b API gaps: `Vector2`/`Vector3` `distanceTo`,

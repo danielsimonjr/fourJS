@@ -116,3 +116,59 @@ describe("CPU skinning", () => {
     expect(Array.from(skin.geometry.positions)).toEqual([1, 2, 3]);
   });
 });
+
+describe("CPU skinning skip-when-unchanged", () => {
+  it("returns early for an identical palette without bumping version", () => {
+    const skin = new CpuSkinning(source());
+    const out = skin.update(palette());
+    const version = out.version;
+    out.positions[0] = 99; // sentinel: a re-skin would overwrite it
+    expect(skin.update(palette())).toBe(out);
+    expect(out.version).toBe(version);
+    expect(out.positions[0]).toBe(99);
+  });
+
+  it("re-skins when one palette element changes", () => {
+    const skin = new CpuSkinning(source());
+    const out = skin.update(palette());
+    const version = out.version;
+    const pose = palette();
+    pose[31] = 1;
+    pose[29] = 9;
+    skin.update(pose);
+    expect(out.version).toBeGreaterThan(version);
+    expect(out.positions[1]).not.toBe(8);
+  });
+
+  it("re-skins when the source is marked dirty (bind data edit)", () => {
+    const bind = source();
+    const skin = new CpuSkinning(bind);
+    const out = skin.update(palette());
+    const version = out.version;
+    bind.positions[0] = 5;
+    bind.markDirty();
+    skin.update(palette());
+    expect(out.version).toBeGreaterThan(version);
+    expect(out.positions[0]).toBe(8);
+  });
+
+  it("re-skins when a consumer edited the output and marked it dirty", () => {
+    const skin = new CpuSkinning(source());
+    const out = skin.update(palette());
+    const skinned = out.positions[0];
+    out.positions[0] = 123;
+    out.markDirty();
+    skin.update(palette());
+    expect(out.positions[0]).toBe(skinned);
+  });
+
+  it("re-skins when the palette length changes", () => {
+    const skin = new CpuSkinning(source());
+    const out = skin.update(palette());
+    const version = out.version;
+    const longer = new Float32Array(48);
+    longer.set(palette());
+    skin.update(longer);
+    expect(out.version).toBeGreaterThan(version);
+  });
+});

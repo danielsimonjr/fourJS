@@ -740,6 +740,12 @@ function syncStatus(): void {
   status.dataset["dropped"] = app.time.droppedTime.toFixed(6);
   status.dataset["substeps"] = String(app.scheduler.fixedStepsLastFrame);
   status.dataset["frames"] = String(appFrames);
+  // The page's own accounting of interpolation: rendered frames whose alpha
+  // lay strictly between two fixed-step states (0.2..0.8), so a gate need not
+  // infer it from how often its own sampler happened to land mid-step.
+  const alpha = app.time.interpolationAlpha;
+  if (appFrames > 0 && alpha >= 0.2 && alpha <= 0.8) midStepFrames += 1;
+  status.dataset["midFrames"] = String(midStepFrames);
 }
 
 // --- the frame loop ---------------------------------------------------------
@@ -759,6 +765,7 @@ function syncStatus(): void {
 // (WP-3.7-fix1, caught by the WP-3.8 browser gate).
 let last: number | null = null;
 let appFrames = 0;
+let midStepFrames = 0;
 
 function frame(now: number): void {
   if (last !== null) {

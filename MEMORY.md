@@ -4768,3 +4768,45 @@ stale between steps by design), H5 render-list ancestor memo, M2
 animation caches. Rejected: math test-instrumentation exports (§7b/§83),
 double determinant in pick (required by `Matrix4.invert`'s silent no-op),
 per-frame `Object.keys().sort()` sites (setup/validation scale).
+
+### 2026-11-04 — program wave 1 (decision-free backlog)
+
+Owner instruction: tackle every open TODO row, RFC residue, deferred
+optimization, reserved stub and RFC 0010, merging each wave after CI. The
+sequenced program (10 waves) is the planner's PROGRAM.md; waves 1-6 need no
+owner input; the gated decisions and the choices made are recorded below as
+they land.
+
+**Dependabot.** The revisit condition recorded in `dependabot.yml` is met:
+dependabot-core#16485 (merged 2026-10-06) bundles Bun 1.4.2 and reads
+lockfileVersion 0-3. The `bun` entry is restored with the three ignores; its
+first scheduled run is the test. If hosted Dependabot still reports
+"Unsupported bun.lock", wait; do not pin Bun back.
+
+**Force resets stay unconditional.** Skipping `resetForces` on steps with no
+applied force (audit M2) was implemented, reviewed and then REVERTED: Rapier's
+`resetForces` touches the body's modified flags, which its `takeSnapshot`
+serializes, so `tests/determinism/phase10-replay.test.ts` saw a different
+snapshot digest with identical dynamics. A per-step solver call that is part
+of the serialized state is not an optimization target unless the §34 golden is
+deliberately re-recorded with a format-version bump. The force-path proof
+still holds (every force goes through the command buffer; impulses are
+one-shot) and is recorded here for the next attempt.
+
+**`capturePoseTargets` stays universal.** Narrowing it to `"blended"` nodes
+was tried and reverted: `world-blend.test.ts` pins that a `PoseTarget` on any
+authority is captured, and components fire no attach hook the world could
+track. Not an optimization to retry without a contract change.
+
+**Rapier sleep cache.** `BodyRecord.sleepingCached/Valid` is separate from
+`record.sleeping` (whose between-step staleness ten tests pin). Every body
+mutator, `createCollider/Joint`, `removeCollider/Joint` (all bodies) and
+restore invalidate it.
+
+**Render-pose memo.** Module-level `WeakMap<Node, {serial, matrix}>` keyed
+by a global build serial; bones and the mesh walk share it. Keying by serial
+is what makes alternating alphas safe.
+
+**Flake rows.** Both browser gates now assert on page-published counters
+(`data-mid-frames`, `data-presses`); the only re-issue is a click the page
+provably never received. Blanket retries remain forbidden.

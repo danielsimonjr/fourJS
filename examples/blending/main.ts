@@ -1029,6 +1029,18 @@ let pickables: readonly Pickable[] = [];
 // as the page does (§83).
 new PointerInput(canvas, { camera, pickables: () => pickables });
 
+// Counts every pointerdown the canvas receives, so a gate can tell a platform
+// event that never arrived from one the page received and ignored.
+let presses = 0;
+canvas.addEventListener(
+  "pointerdown",
+  () => {
+    presses += 1;
+    status.dataset["presses"] = String(presses);
+  },
+  { capture: true },
+);
+
 // --- the frame loop ----------------------------------------------------------
 
 /** The scene, once `main` has built it. `null` until then. */

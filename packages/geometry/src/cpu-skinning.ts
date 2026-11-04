@@ -13,6 +13,14 @@ import { BufferGeometry } from "./buffer-geometry.js";
  * are accumulated in ascending index order using JavaScript arithmetic, then
  * rounded to Float32 on output. This is not a GPU readback and does not modify
  * simulation transforms. Weights are used as authored, never normalized.
+ *
+ * **Skip when unchanged:** a copy of the last palette and the source geometry
+ * `version` are kept; an `update` with an identical palette (element-wise,
+ * early exit) and unchanged source version returns the output untouched, so
+ * its version is not bumped and renderers skip re-upload. Bind matrices are
+ * folded into the palette (`Skeleton.jointMatrices`), so a bind change shows
+ * up as a palette difference. Edits to the source or to the output must
+ * `markDirty()` to be seen.
  */
 export class CpuSkinning {
   readonly geometry: BufferGeometry;
@@ -20,6 +28,13 @@ export class CpuSkinning {
   readonly #source: BufferGeometry;
 
   readonly #matrix = new Float64Array(16);
+
+  #lastPalette: Float32Array | null = null;
+
+  #lastSourceVersion = -1;
+
+  /** `output.version` after the last re-skin; a consumer edit to the output bumps it. */
+  #lastOutputVersion = -1;
 
   constructor(source: BufferGeometry) {
     if (source.joints === undefined || source.weights === undefined) {
@@ -62,6 +77,24 @@ export class CpuSkinning {
         throw new TypeError(
           "CPU skinning influence is outside the palette or nonfinite.",
         );
+      }
+    }
+    const last = this.#lastPalette;
+    if (
+      last !== null &&
+      last.length === palette.length &&
+      this.#lastSourceVersion === source.version &&
+      this.#lastOutputVersion === output.version
+    ) {
+      let same = true;
+      for (let i = 0; i < palette.length; i += 1) {
+        if (last[i] !== palette[i]) {
+          same = false;
+          break;
+        }
+      }
+      if (same) {
+        return output;
       }
     }
     const m = this.#matrix;
@@ -116,7 +149,13 @@ export class CpuSkinning {
         outNormals[p + 2] = tz * scale;
       }
     }
+    if (last === null || last.length !== palette.length) {
+      this.#lastPalette = new Float32Array(palette.length);
+    }
+    (this.#lastPalette as Float32Array).set(palette);
+    this.#lastSourceVersion = source.version;
     output.markDirty();
+    this.#lastOutputVersion = output.version;
     return output;
   }
 
