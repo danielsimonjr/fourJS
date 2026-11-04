@@ -2771,38 +2771,6 @@ gets read as history and never actioned. None is urgent; none blocks anything.
       cost is what the registry avoids, then: only `@fourjs/physics-rapier` ships;
       `physics-box2d` and `physics-soft` are reserved stubs, as `COMPATIBILITY.md` records.
 
-- [ ] **Audit the other tools for the quote-only assumption that let the §83 defect ship.**
-      `apply-publish-names.mjs` matched `"` and `'` but not backticks, so a workspace name
-      in a **template literal** — how every runtime message is written — passed both the
-      rewriter and its own residue guard. Fixed there (cycle 9C) with a comment-stripping
-      check measured at 1 true positive / 0 false positives over 344 shipped files. The
-      **class** is what needs the sweep: any other check that inspects emitted code by
-      quote character has the same blind spot. `tools/` is small enough to read in one pass.
-      **Three sites closed 2026-09-20 — the dependency-graph generator, which was the one
-      known holdout.** All three fed the generator's SCORING, which is why they were left:
-      fixing them changes the committed `docs/Architecture/` reports. Now fixed, regenerated
-      and committed. (1) `inFileRefs` counted a name in a JSDoc block or a commented-out call
-      as a live in-file reference, so an export could be moved out of "deletion candidate" by
-      its own doc comment; it now counts over `strippedOfComments`. Measured effect on this
-      tree: exactly one entry moves — `CANVAS_VIEW_NODE_TYPE` **3 → 2** in-file refs, the
-      third being `scene-serializers.ts:1319`, a `//` comment. (2) The delegation scan read a
-      `*Dispatch` name in a comment as a real edge and reported a js-fallback entry as wasm;
-      it now segments `strippedOfComments(src)`. (3) The hand brace-matcher counted `{`/`}`
-      inside strings, template literals and comments, so one such brace ended an object
-      literal early and lost every marker after it; it now counts over
-      `blankedCommentsAndStrings`, an index-preserving blanked copy, so the slice still comes
-      from the real source. **Three inline copies of that matcher existed beside the shared
-      `matchBraceBlock`, each with the same blind spot** — the filing named one; all four are
-      now the one function. (2) and (3) live in analyzers gated on `functions/src/typed` /
-      `src/typed` / `functions/src/wasm`, none of which exists in this repo, so their report
-      effect here is **0 → 0**; they are fixed as a defect class, not for a visible number.
-      · Still open on this row: the read-through of the rest of `tools/`. One candidate found
-      and deliberately NOT changed — `generate-compatibility.mjs`'s `interfaceMembers` ends an
-      interface at the first `\n}` in the `.d.ts` text. `tsc` emits doc-comment lines as
-      ` * …`, so a column-0 `}` inside one has never occurred, and the 4-space member anchor
-      means a truncation could only DROP members (a loud gate failure), never invent one.
-      Recorded so the next pass starts from a read rather than a re-discovery.
-
 - [x] **Guide coverage is absent for five surfaces that have shipped code.** Measured
       2026-09-19 across `docs/guides/`: `render-svg`, `physics-box2d` and `physics-soft`
       have **zero** guide files; the geometry generators and the §83/§85 warning family have
