@@ -139,7 +139,11 @@ import {
   resolveStandardPipelineFactory,
   type StandardPipeline,
 } from "./gl-standard-registry.js";
-import { TextureCache, type CacheableTexture } from "./gl-texture.js";
+import {
+  TextureCache,
+  queryCompressedFormats,
+  type CacheableTexture,
+} from "./gl-texture.js";
 
 /**
  * The subtree root {@link WebglRenderer.render} draws, and the viewports it
@@ -1109,10 +1113,16 @@ function readCapabilities(gl: ParticleGlContext): RendererCapabilities {
   const maxTextureSize = gl.getParameter(GL.MAX_TEXTURE_SIZE);
   let maxAnisotropy: number | undefined;
   let timestampQueries: boolean | undefined;
+  let compressed: readonly string[] | undefined;
   return Object.freeze({
     backend: "webgl2",
     maxTextureSize: typeof maxTextureSize === "number" ? maxTextureSize : 0,
     ...WEBGL_STATIC_CAPABILITIES,
+    // R-30c: lazy extension probe, so `initialize` issues the same transcript.
+    get textureFormats(): readonly string[] {
+      compressed ??= Object.freeze(queryCompressedFormats(gl));
+      return Object.freeze(["rgba8", ...compressed]);
+    },
     get maxAnisotropy(): number {
       maxAnisotropy ??= queryMaxAnisotropy(gl);
       return maxAnisotropy;
@@ -2068,6 +2078,9 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       // one walk serves them together and a scene with neither still pays only
       // this comparison.
       let hasLitItems = false;
+      // §60 + §68 (RFC 0001 addendum): a node material reading the `"lights"`
+      // family wants the frame's lights collected too.
+      let hasNodeLights = false;
       for (const item of items) {
         if (
           item.kind === "lit" ||
@@ -2077,8 +2090,14 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           hasLitItems = true;
           break;
         }
+        if (
+          item.kind === "node" &&
+          item.material.reflection.lights.length > 0
+        ) {
+          hasNodeLights = true;
+        }
       }
-      if (hasLitItems) {
+      if (hasLitItems || hasNodeLights) {
         collectSceneLights(root, sceneLights, unionViewLayerMask(views));
       }
 
@@ -2590,6 +2609,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             if (nodeProgram.viewStamp !== nodeViewStamp) {
               nodeProgram.setViewProjection(viewProjection);
               nodeProgram.setTime(this.renderTime);
+              if (nodeProgram.usesLights) {
+                const eye = view.camera.transform.worldMatrix.elements;
+                nodeProgram.setLights(sceneLights, eye[12], eye[13], eye[14]);
+              }
               nodeProgram.viewStamp = nodeViewStamp;
             }
             for (let unit = 0; unit < samplers.length; unit += 1) {

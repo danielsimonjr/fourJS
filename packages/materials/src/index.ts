@@ -27,7 +27,12 @@ export type {
   ShaderGraphAnalysis,
   ShaderNode,
   ShaderNodeId,
+  ShaderLightArrayMember,
+  ShaderLightMember,
+  ShaderLightScalarMember,
   ShaderReflection,
+  ShaderStorageElementType,
+  ShaderStorageReflection,
   ShaderTextureReflection,
   ShaderUnaryOp,
   ShaderUniformReflection,
@@ -35,13 +40,23 @@ export type {
 } from "./shader-graph.js";
 export {
   MAX_SHADER_GRAPH_NODES,
+  MAX_SHADER_GRAPH_DEFINES,
+  MAX_SHADER_GRAPH_STORAGE,
   MAX_SHADER_GRAPH_TEXTURES,
+  MAX_SHADER_STORAGE_COUNT,
   SHADER_ATTRIBUTE_TYPES,
+  SHADER_LIGHT_ARRAY_TYPES,
+  SHADER_LIGHT_SCALAR_TYPES,
+  SHADER_LIGHT_SLOTS,
   SHADER_VALUE_COMPONENTS,
   analyzeShaderGraph,
   forEachShaderNodeReference,
   freezeShaderGraph,
+  resolveShaderSelect,
+  shaderDefineKey,
+  specializeShaderGraph,
 } from "./shader-graph.js";
+export { ShaderStorageBuffer } from "./shader-storage.js";
 export type {
   SpriteMaterialOptions,
   SpriteTexture,

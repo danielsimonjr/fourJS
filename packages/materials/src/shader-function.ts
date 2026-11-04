@@ -181,6 +181,29 @@ export class ShaderFunction {
             values[node.t],
           );
           break;
+        case "storage":
+          values[index] = builder.storage(
+            node.name,
+            node.type,
+            node.count,
+            values[node.index],
+          );
+          break;
+        case "select":
+          // Defines are caller-owned: the function's own `defines` are not
+          // copied, so the receiving builder's set decides the branch.
+          values[index] = builder.select(
+            node.define,
+            values[node.then],
+            values[node.otherwise],
+          );
+          break;
+        case "light":
+          values[index] = builder.light(
+            node.member,
+            node.index === undefined ? undefined : values[node.index],
+          );
+          break;
       }
     }
     const expression = values[result!];

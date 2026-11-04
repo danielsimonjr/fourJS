@@ -143,6 +143,23 @@ export type WgpuCacheableTexture = NonNullable<
   Extract<RenderItem, { kind: "unlit" }>["material"]["map"]
 >;
 
+/** Engine compressed format -> WebGPU device feature that enables it (R-30c). */
+export const COMPRESSED_FORMAT_FEATURES: Readonly<Record<string, string>> =
+  Object.freeze({
+    "bc7-rgba-unorm": "texture-compression-bc",
+    "etc2-rgba8unorm": "texture-compression-etc2",
+    "astc-4x4-unorm": "texture-compression-astc",
+  });
+
+/** The engine names this device can upload, from its feature set (§62). */
+export function supportedCompressedFormats(
+  features: { has(name: string): boolean } | undefined,
+): readonly string[] {
+  return Object.entries(COMPRESSED_FORMAT_FEATURES)
+    .filter(([, feature]) => features?.has(feature) === true)
+    .map(([format]) => format);
+}
+
 /** Bytes per texel of the two formats this tier allocates (§60a). */
 const BYTES_PER_TEXEL = 4;
 
@@ -821,14 +838,36 @@ export class WgpuTextureCache {
     const dimension = texture.dimension ?? "2d";
     const volume = dimension === "3d";
     const layers = dimension === "cube" ? 6 : (texture.depth ?? 1);
+    const srgb = (texture.colorSpace ?? "linear") === "srgb";
+    // R-30c: a block-compressed 2D texture uploads its levels as authored. A
+    // device without the matching feature allocates zero-filled storage
+    // instead (transparent black) rather than throwing inside `render`.
+    const carried = texture as typeof texture & {
+      readonly format?: string;
+      readonly levels?: readonly Uint8Array[] | null;
+    };
+    const compressedLevels =
+      carried.format !== undefined &&
+      carried.format !== "rgba8unorm" &&
+      carried.levels != null &&
+      this.#device.features?.has(
+        COMPRESSED_FORMAT_FEATURES[carried.format] ?? "",
+      ) === true
+        ? carried.levels
+        : null;
     const format =
-      (texture.colorSpace ?? "linear") === "srgb"
-        ? "rgba8unorm-srgb"
-        : "rgba8unorm";
+      compressedLevels === null
+        ? srgb
+          ? "rgba8unorm-srgb"
+          : "rgba8unorm"
+        : `${carried.format!}${srgb ? "-srgb" : ""}`;
     const data = texture.data;
-    const levels = mipmaps
-      ? mipLevelCount(width, height, volume ? layers : 1)
-      : 1;
+    const levels =
+      compressedLevels !== null
+        ? compressedLevels.length
+        : mipmaps
+          ? mipLevelCount(width, height, volume ? layers : 1)
+          : 1;
     // A 2D / cube / array chain is *drawn*, so its texture must be attachable
     // and readable; a volume's chain is filtered on the CPU (a volume cannot
     // be a 2D blit source), and a one-level texture is neither.
@@ -845,7 +884,18 @@ export class WgpuTextureCache {
       ...(levels > 1 ? { mipLevelCount: levels } : {}),
     });
 
-    if (data !== null) {
+    if (compressedLevels !== null) {
+      compressedLevels.forEach((bytes, mip) => {
+        const blocksWide = Math.ceil(Math.max(1, width >> mip) / 4);
+        const blocksHigh = Math.ceil(Math.max(1, height >> mip) / 4);
+        device.queue.writeTexture(
+          { texture: handle, mipLevel: mip },
+          bytes,
+          { offset: 0, bytesPerRow: blocksWide * 16, rowsPerImage: blocksHigh },
+          [blocksWide * 4, blocksHigh * 4],
+        );
+      });
+    } else if (data !== null) {
       device.queue.writeTexture(
         { texture: handle },
         data,
@@ -920,7 +970,10 @@ export class WgpuTextureCache {
       dimension,
       depth: dimension === "2d" ? 1 : layers,
       levels,
-      byteLength: textureByteLength(width, height, mipmaps, layers, volume),
+      byteLength:
+        compressedLevels === null
+          ? textureByteLength(width, height, mipmaps, layers, volume)
+          : compressedLevels.reduce((sum, bytes) => sum + bytes.length, 0),
     };
   }
 

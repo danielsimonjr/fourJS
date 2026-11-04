@@ -529,12 +529,47 @@ export class TextureCache {
       return null;
     }
 
-    const mipmaps = texture.mipmaps === true && gl.generateMipmap !== undefined;
+    const carried = texture as typeof texture & {
+      readonly format?: string;
+      readonly levels?: readonly Uint8Array[] | null;
+    };
+    const compressedEntry =
+      target === GL.TEXTURE_2D &&
+      carried.format !== undefined &&
+      carried.levels != null
+        ? COMPRESSED_GL[carried.format]
+        : undefined;
+    const compressedLevels =
+      compressedEntry !== undefined &&
+      queryCompressedFormats(gl).includes(carried.format!)
+        ? carried.levels!
+        : null;
+    // A compressed chain is authored, never generated.
+    const mipmaps =
+      compressedLevels === null
+        ? texture.mipmaps === true && gl.generateMipmap !== undefined
+        : compressedLevels.length > 1;
 
     gl.bindTexture(target, handle);
     const internal =
       (texture.colorSpace ?? "linear") === "srgb" ? GL.SRGB8_ALPHA8 : GL.RGBA8;
-    if (target === GL.TEXTURE_2D) {
+    if (compressedLevels !== null) {
+      const code =
+        compressedEntry!.gl[
+          (texture.colorSpace ?? "linear") === "srgb" ? 1 : 0
+        ];
+      compressedLevels.forEach((bytes, level) => {
+        (gl as CompressedUpload).compressedTexImage2D?.(
+          GL.TEXTURE_2D,
+          level,
+          code,
+          Math.max(1, texture.width >> level),
+          Math.max(1, texture.height >> level),
+          0,
+          bytes,
+        );
+      });
+    } else if (target === GL.TEXTURE_2D) {
       gl.texImage2D(
         GL.TEXTURE_2D,
         0,
@@ -581,7 +616,7 @@ export class TextureCache {
     // R-30: the arguments are the texture's own, defaulting to the pair this
     // module hard-coded before 2026-08-13 — the same four calls in the same
     // order with the same enums for every texture that names neither.
-    if (mipmaps) {
+    if (mipmaps && compressedLevels === null) {
       // R-30b: before the sampler state, because the chain has to exist by the
       // time a mip-choosing min filter is written — and because `generateMipmap`
       // reads the level-0 image this call just uploaded.
@@ -607,6 +642,60 @@ export class TextureCache {
 
     return { texture: handle, version: texture.version, target };
   }
+}
+
+/** GL internal formats of the compressed engine formats: [linear, sRGB] (R-30c). */
+const COMPRESSED_GL: Readonly<
+  Record<
+    string,
+    { readonly extension: string; readonly gl: readonly [number, number] }
+  >
+> = Object.freeze({
+  "bc7-rgba-unorm": {
+    extension: "EXT_texture_compression_bptc",
+    gl: [0x8e8c, 0x8e8d],
+  },
+  "etc2-rgba8unorm": {
+    extension: "WEBGL_compressed_texture_etc",
+    gl: [0x9278, 0x9279],
+  },
+  "astc-4x4-unorm": {
+    extension: "WEBGL_compressed_texture_astc",
+    gl: [0x93b0, 0x93d0],
+  },
+});
+
+/** `compressedTexImage2D` is optional on the context double, like `texImage3D`. */
+interface CompressedUpload {
+  compressedTexImage2D?(
+    target: number,
+    level: number,
+    internalFormat: number,
+    width: number,
+    height: number,
+    border: number,
+    data: ArrayBufferView,
+  ): void;
+}
+
+/**
+ * Engine names of the compressed formats this context can upload, probed by
+ * enabling the WEBGL_compressed_texture_* / EXT_texture_compression_bptc
+ * extensions (R-30c). Lazy: nothing is queried until a caller asks.
+ */
+export function queryCompressedFormats(gl: WebglContext): readonly string[] {
+  if (
+    (gl as CompressedUpload).compressedTexImage2D === undefined ||
+    gl.getExtension === undefined
+  ) {
+    return [];
+  }
+  return Object.entries(COMPRESSED_GL)
+    .filter(([, entry]) => {
+      const extension = gl.getExtension?.(entry.extension);
+      return extension !== undefined && extension !== null;
+    })
+    .map(([name]) => name);
 }
 
 /** Storage and sampler identity; a metadata edit requires a full upload. */

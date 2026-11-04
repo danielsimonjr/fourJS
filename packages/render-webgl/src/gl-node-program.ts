@@ -58,6 +58,11 @@ import { DEV, FourError, devWarnOnce, type Disposable } from "@fourjs/core";
 import type { Matrix4 } from "@fourjs/math";
 import {
   analyzeShaderGraph,
+  resolveShaderSelect,
+  SHADER_LIGHT_ARRAY_TYPES,
+  SHADER_LIGHT_SLOTS,
+  type SceneLights,
+  type ShaderLightMember,
   createShaderSourceMap,
   type ShaderSourceMap,
   type ShaderAttributeName,
@@ -103,6 +108,8 @@ export interface EmittedNodeShader {
   readonly uniforms: readonly ShaderUniformReflection[];
   /** Reachable sampler names, reflection order (§33). */
   readonly textures: readonly string[];
+  /** The §68 light-block members the fragment stage reads, reflection order. */
+  readonly lights: readonly ShaderLightMember[];
 }
 
 /** How each attribute is declared in the vertex stage (R-19's four slots). */
@@ -203,6 +210,7 @@ function nodeExpression(
   node: ShaderNode,
   stage: "vertex" | "fragment",
   uniformBlock: boolean,
+  defines: Readonly<Record<string, boolean>> | undefined,
 ): string {
   switch (node.kind) {
     case "constant":
@@ -249,11 +257,57 @@ function nodeExpression(
         ? `${node.op}(${left}, ${right})`
         : `(${left} ${operator} ${right})`;
     }
-    default:
-      // "mix" — the union's last member; a `default` keeps the switch total
-      // under `noImplicitReturns` without an unreachable extra arm.
+    case "mix":
       return `mix(n${String(node.a)}, n${String(node.b)}, n${String(node.t)})`;
+    case "select":
+      // The dead branch was never marked reachable, so it has no local.
+      return `n${String(resolveShaderSelect(node, defines))}`;
+    case "storage":
+      // Unreachable through `emitShaderGraphGlsl`, which refuses storage
+      // first; kept so the switch is total over the closed union.
+      throw new RangeError(STORAGE_REFUSAL);
+    default:
+      // "light" — the union's last member. Scalar members read their
+      // uniform; array members clamp the float index into the slot range.
+      return node.index === undefined
+        ? LIGHT_UNIFORM_NAMES[node.member]
+        : `${LIGHT_UNIFORM_NAMES[node.member]}[clamp(int(n${String(node.index)}), 0, ${String(SHADER_LIGHT_SLOTS - 1)})]`;
   }
+}
+
+/** §82's WebGL answer: GLSL ES 3.00 has no storage buffers (capability absent). */
+const STORAGE_REFUSAL =
+  "§82: storage-buffer nodes need WebGPU; WebGL 2 has no storage buffers, " +
+  "so this graph is not emitted on this backend.";
+
+/** The fragment uniform each `"light"` member reads (§68). */
+const LIGHT_UNIFORM_NAMES: Readonly<Record<ShaderLightMember, string>> = {
+  ambient: "l_ambient",
+  directionalDirection: "l_direction",
+  directionalColor: "l_color",
+  cameraPosition: "l_camera",
+  punctualCount: "l_count",
+  punctualPosition: "l_positions",
+  punctualColor: "l_colors",
+  punctualDirection: "l_directions",
+  punctualParams: "l_params",
+};
+
+/** GLSL declarations for the light members a graph reads, reflection order. */
+function emitLightDeclarations(members: readonly ShaderLightMember[]): string {
+  let out = "";
+  for (const member of members) {
+    const name = LIGHT_UNIFORM_NAMES[member];
+    if (member === "punctualCount") {
+      out += `uniform float ${name};\n`;
+    } else if (Object.hasOwn(SHADER_LIGHT_ARRAY_TYPES, member)) {
+      const type = member === "punctualParams" ? "vec4" : "vec3";
+      out += `uniform ${type} ${name}[${String(SHADER_LIGHT_SLOTS)}];\n`;
+    } else {
+      out += `uniform vec3 ${name};\n`;
+    }
+  }
+  return out;
 }
 
 /** One `T nK = expr;` line per reachable node, in array order (§33). */
@@ -272,6 +326,7 @@ function emitLocals(
       graph.nodes[index],
       stage,
       graph.uniformTransport === "std140",
+      graph.defines,
     );
     out += `  ${analysis.nodeTypes[index]} n${String(index)} = ${expression};\n`;
   }
@@ -349,6 +404,9 @@ function attributesUsed(
  */
 export function emitShaderGraphGlsl(graph: ShaderGraph): EmittedNodeShader {
   const analysis = analyzeShaderGraph(graph);
+  if (analysis.reflection.storage.length > 0) {
+    throw new RangeError(STORAGE_REFUSAL);
+  }
   const usesTime = graph.nodes.some(
     (node, index) =>
       node.kind === "time" &&
@@ -385,6 +443,7 @@ export function emitShaderGraphGlsl(graph: ShaderGraph): EmittedNodeShader {
       usesTime,
       uniforms: analysis.reflection.uniforms,
       textures,
+      lights: [],
     };
   }
 
@@ -434,6 +493,7 @@ export function emitShaderGraphGlsl(graph: ShaderGraph): EmittedNodeShader {
   fragment += "uniform float opacity;\n";
   fragment += emitTimeDeclaration(graph, analysis.colorReachable);
   fragment += emitUniformDeclarations(graph, analysis.colorReachable);
+  fragment += emitLightDeclarations(analysis.reflection.lights);
   fragment += textures.map((name) => `uniform sampler2D s_${name};\n`).join("");
   fragment += "\nout vec4 fragColor;\n\nvoid main() {\n";
   fragment += emitLocals(graph, analysis, analysis.colorReachable, "fragment");
@@ -455,6 +515,7 @@ export function emitShaderGraphGlsl(graph: ShaderGraph): EmittedNodeShader {
     usesTime,
     uniforms: analysis.reflection.uniforms,
     textures,
+    lights: analysis.reflection.lights,
   };
 }
 
@@ -463,6 +524,11 @@ const vec3Scratch = new Float32Array(3);
 const vec4Scratch = new Float32Array(4);
 
 /** One uniform's resolved binding. */
+interface LightBinding {
+  readonly member: ShaderLightMember;
+  readonly location: GlUniformLocation;
+}
+
 interface UniformBinding {
   readonly name: string;
   readonly type: ShaderValueType;
@@ -480,6 +546,11 @@ export class GlNodeProgram implements NodeMaterialProgram, Disposable {
   readonly textures: readonly string[];
 
   readonly unitBase: number;
+
+  /** Whether the graph reads the §68 light block (the renderer then calls {@link setLights}). */
+  readonly usesLights: boolean;
+
+  readonly #lightBindings: readonly LightBinding[];
 
   readonly #gl: WebglContext;
 
@@ -565,6 +636,16 @@ export class GlNodeProgram implements NodeMaterialProgram, Disposable {
       this.#samplerLocations = emitted.textures.map((name) =>
         requireUniform(gl, program, `s_${name}`, "node-material"),
       );
+      this.#lightBindings = emitted.lights.map((member) => ({
+        member,
+        location: requireUniform(
+          gl,
+          program,
+          LIGHT_UNIFORM_NAMES[member],
+          "node-material",
+        ),
+      }));
+      this.usesLights = this.#lightBindings.length > 0;
       this.#block =
         emitted.uniformBlock === true
           ? new GlNodeUniformBlock(gl, program, emitted.uniforms)
@@ -619,6 +700,54 @@ export class GlNodeProgram implements NodeMaterialProgram, Disposable {
     }
     matrixScratch.set(matrix.elements);
     this.#gl.uniformMatrix4fv(this.#modelLocation, false, matrixScratch);
+  }
+
+  setLights(
+    lights: SceneLights,
+    eyeX: number,
+    eyeY: number,
+    eyeZ: number,
+  ): void {
+    const gl = this.#gl;
+    for (const { member, location } of this.#lightBindings) {
+      switch (member) {
+        case "ambient":
+          vec3Scratch.set(lights.ambientColor);
+          gl.uniform3fv(location, vec3Scratch);
+          break;
+        case "directionalDirection":
+          vec3Scratch[0] = lights.direction.x;
+          vec3Scratch[1] = lights.direction.y;
+          vec3Scratch[2] = lights.direction.z;
+          gl.uniform3fv(location, vec3Scratch);
+          break;
+        case "directionalColor":
+          vec3Scratch.set(lights.directionalColor);
+          gl.uniform3fv(location, vec3Scratch);
+          break;
+        case "cameraPosition":
+          vec3Scratch[0] = eyeX;
+          vec3Scratch[1] = eyeY;
+          vec3Scratch[2] = eyeZ;
+          gl.uniform3fv(location, vec3Scratch);
+          break;
+        case "punctualCount":
+          gl.uniform1f(location, lights.punctualCount);
+          break;
+        case "punctualPosition":
+          gl.uniform3fv(location, lights.punctualPositions);
+          break;
+        case "punctualColor":
+          gl.uniform3fv(location, lights.punctualColors);
+          break;
+        case "punctualDirection":
+          gl.uniform3fv(location, lights.punctualDirections);
+          break;
+        default:
+          // "punctualParams" — the union's last member.
+          gl.uniform4fv(location, lights.punctualParams);
+      }
+    }
   }
 
   setTime(seconds: number): void {

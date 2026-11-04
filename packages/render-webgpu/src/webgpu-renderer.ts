@@ -254,7 +254,11 @@ import {
   frameWantsStencil,
   stencilDescriptor,
 } from "./wgpu-stencil.js";
-import { WgpuTextureCache, type WgpuCacheableTexture } from "./wgpu-texture.js";
+import {
+  WgpuTextureCache,
+  supportedCompressedFormats,
+  type WgpuCacheableTexture,
+} from "./wgpu-texture.js";
 // The registry slot only, deliberately (the GL backend's node seam, restated):
 // a value import of `wgpu-node-program.ts` would link the WGSL emitter and the
 // pipeline store into every bundle that carries this renderer, whether the
@@ -537,7 +541,12 @@ function readCapabilities(device: GpuDevice): RendererCapabilities {
   return Object.freeze({
     backend: "webgpu",
     maxTextureSize: limit("maxTextureDimension2D"),
-    textureFormats: Object.freeze(["rgba8"]),
+    // R-30c: the compressed engine formats this device can upload follow
+    // "rgba8", from its texture-compression-* features.
+    textureFormats: Object.freeze([
+      "rgba8",
+      ...supportedCompressedFormats(features),
+    ]),
     multisampling: true,
     // WebGPU *devices* can render to `rgba16float`; this **backend** cannot
     // yet, because `RenderTargetFormat` is the single-member union `"rgba8"`
@@ -925,6 +934,10 @@ export class WebgpuRenderer implements Renderer {
     stencilReference: 0,
     activeTarget: null,
     statistics: null,
+    lights: null,
+    eyeX: 0,
+    eyeY: 0,
+    eyeZ: 0,
   };
 
   /**
@@ -1377,8 +1390,15 @@ export class WebgpuRenderer implements Renderer {
     // are frame state, like the render list; the eye is the per-view half,
     // packed per view below.
     let hasLitItems = false;
+    // §68 via §60: a node material whose graph reads the `"lights"` family
+    // wants the frame's lights collected without joining the shaded families'
+    // block (the node block carries its own copy).
+    let hasNodeLights = false;
     let skinnedCount = 0;
     for (const item of items) {
+      if (item.kind === "node" && item.material.reflection.lights.length > 0) {
+        hasNodeLights = true;
+      }
       if (
         item.kind === "lit" ||
         item.kind === "standard" ||
@@ -1390,8 +1410,10 @@ export class WebgpuRenderer implements Renderer {
         skinnedCount += 1;
       }
     }
-    if (hasLitItems) {
+    if (hasLitItems || hasNodeLights) {
       collectSceneLights(root, sceneLights, unionViewLayerMask(views));
+    }
+    if (hasLitItems) {
       // Sized before recording, like the draw uniforms below: one block per
       // view at most, and growth mid-pass would orphan the bound group.
       this.#growLights(device, views.length);
@@ -1609,6 +1631,7 @@ export class WebgpuRenderer implements Renderer {
       this.#viewProjection
         .copy(camera.projectionMatrix)
         .multiply(camera.viewMatrix);
+      const viewEye = camera.transform.worldMatrix.elements;
 
       // §68 (WP-R1.5): this view's light block — the frame's lights plus the
       // per-view eye, read straight out of the camera's world matrix
@@ -1846,6 +1869,10 @@ export class WebgpuRenderer implements Renderer {
           state.stencilReference = stencilReference;
           state.activeTarget = activeTarget;
           state.statistics = statistics;
+          state.lights = hasNodeLights ? sceneLights : null;
+          state.eyeX = viewEye[12];
+          state.eyeY = viewEye[13];
+          state.eyeZ = viewEye[14];
           stencilReference = nodeFrame.draw(pass, item, state);
           continue;
         }

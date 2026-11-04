@@ -144,20 +144,30 @@ export type {
   ShaderGraph,
   ShaderGraphAnalysis,
   ShaderNode,
+  ShaderLightArrayMember,
+  ShaderLightMember,
+  ShaderLightScalarMember,
   ShaderNodeId,
   ShaderReflection,
+  ShaderStorageElementType,
+  ShaderStorageReflection,
   ShaderTextureReflection,
   ShaderUnaryOp,
   ShaderUniformReflection,
   ShaderValueType,
 } from "@fourjs/materials";
+export type { ShaderStorageBuffer } from "@fourjs/materials";
 export {
   MAX_SHADER_GRAPH_NODES,
+  MAX_SHADER_GRAPH_STORAGE,
   MAX_SHADER_GRAPH_TEXTURES,
   SHADER_ATTRIBUTE_TYPES,
+  SHADER_LIGHT_ARRAY_TYPES,
+  SHADER_LIGHT_SLOTS,
   SHADER_VALUE_COMPONENTS,
   analyzeShaderGraph,
   forEachShaderNodeReference,
+  resolveShaderSelect,
 } from "@fourjs/materials";
 export type {
   AddPassOptions,
@@ -330,7 +340,13 @@ export type {
   TextureSource,
   TextureWrap,
 } from "./texture.js";
-export { Texture } from "./texture.js";
+export {
+  COMPRESSED_BLOCK_BYTES,
+  COMPRESSED_TEXTURE_FORMATS,
+  Texture,
+  compressedLevelBytes,
+} from "./texture.js";
+export type { TextureFormat } from "./texture.js";
 export type { ViewRenderListOptions } from "./view-list.js";
 export { buildViewRenderList, sortRenderListByDepth } from "./view-list.js";
 

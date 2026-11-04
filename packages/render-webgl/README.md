@@ -32,3 +32,7 @@ layout mask keeps compatibility checks cheap.
 This reduces handle churn and attribute setup, not upload bandwidth or draw
 count. See [`geometry-updates.mjs`](../../benchmarks/geometry-updates.mjs) for the
 counting benchmark and its explicit CPU/GPU measurement boundary.
+
+## Compressed textures (R-30c)
+
+WebGL: block-compressed 2D textures (`format` + `levels`) upload via `compressedTexImage2D` when the matching `EXT_texture_compression_bptc` / `WEBGL_compressed_texture_etc` / `_astc` extension exists; `capabilities.textureFormats` lists them. Without it the texture allocates zero-filled RGBA8; transcode to the `rgba8unorm` fallback instead.

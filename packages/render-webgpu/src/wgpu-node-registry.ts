@@ -42,6 +42,7 @@ import type {
   NodeRenderItem,
   RenderItem,
   RenderStatistics,
+  SceneLights,
 } from "@fourjs/render";
 
 import type {
@@ -103,6 +104,15 @@ export interface WgpuNodeFrameState {
   activeTarget: WgpuCacheableRenderTarget | null;
   /** §84's counters, or `null` to count nothing. */
   statistics: RenderStatistics | null;
+  /**
+   * The frame's collected §68 lights, read by graphs using the `"lights"`
+   * family; `null` when the renderer collected none (the members read zero).
+   */
+  lights: SceneLights | null;
+  /** The current view's eye position (world space), for `cameraPosition`. */
+  eyeX: number;
+  eyeY: number;
+  eyeZ: number;
 }
 
 /**

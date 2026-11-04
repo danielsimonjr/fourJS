@@ -41,7 +41,7 @@
  */
 
 import type { Matrix4 } from "@fourjs/math";
-import type { NodeRenderItem, ShaderGraph } from "@fourjs/render";
+import type { NodeRenderItem, SceneLights, ShaderGraph } from "@fourjs/render";
 
 import type { WebglContext } from "./gl-program.js";
 
@@ -91,6 +91,21 @@ export interface NodeMaterialProgram {
    * effect draw shares the frame with neither).
    */
   readonly unitBase: number;
+
+  /**
+   * Whether the graph reads the §68 light block (`"light"` nodes). The
+   * renderer then collects the frame's lights and calls {@link setLights}
+   * once per view.
+   */
+  readonly usesLights: boolean;
+
+  /** Uploads the frame's lights and the view's eye (once per view). */
+  setLights(
+    lights: SceneLights,
+    eyeX: number,
+    eyeY: number,
+    eyeZ: number,
+  ): void;
 
   /** Makes this the current program (and uploads sampler units, once). */
   use(): void;
