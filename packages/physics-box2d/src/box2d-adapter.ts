@@ -22,6 +22,12 @@
  * - Box2D 2.4 has no capsule: a capsule collider is a rectangle plus two
  *   circles (three fixtures, one collider handle), which is exact for
  *   geometry and mass. Pair events are aggregated per *collider* pair.
+ * - A capsule's box and end circles overlap, so they get unequal density
+ *   scales (see `fixtureDensity`) that make mass AND inertia exactly the
+ *   analytic stadium's, not the double-counted uniform-density sum.
+ * - `_emitPair` / `_buildContacts` allocate per pair per step while
+ *   `collisionstay` interest is on: the same documented hand-over contract the
+ *   Rapier adapters have (not refactored here).
  * - Polygons are limited by Box2D to 8 vertices (`b2_maxPolygonVertices`).
  * - Restitution combines by `max` (Appendix A, Box2D's own rule). Friction
  *   combines by `sqrt(a*b)` in Box2D, not Appendix A's average; this is a
@@ -239,7 +245,7 @@ interface JointRecord {
 interface PairRecord {
   readonly a: ColliderRecord;
   readonly b: ColliderRecord;
-  readonly trigger: boolean;
+  trigger: boolean;
   /** Touching Box2D contacts between the two colliders (capsules have several). */
   readonly contacts: Set<b2Contact>;
 }
@@ -418,6 +424,47 @@ function circleShape(
 /**
  * 2D §37 adapter over `@box2d/core`. See the module header for scope.
  */
+/**
+ * Per-fixture density for a collider whose shapes are `shapes`. A capsule is a
+ * box plus two full end circles that overlap it, so uniform density would
+ * overcount mass (+28%). The box and the circles get two scales solving, for
+ * unit density, the analytic capsule mass pi r^2 + 4 r h AND its inertia about
+ * the centroid (the circles' inner halves sit nearer the centre than the
+ * outer halves they stand in for, so a plain half density misses inertia).
+ */
+function fixtureDensity(
+  density: number,
+  index: number,
+  shapes: readonly b2Shape[],
+): number {
+  if (shapes.length !== 3) {
+    return density;
+  }
+  const c1 = shapes[1] as b2CircleShape;
+  const c2 = shapes[2] as b2CircleShape;
+  const r = c1.m_radius;
+  const h = Math.abs(c1.m_p.y - c2.m_p.y) / 2;
+  const box = 4 * r * h;
+  const boxInertia = (box * (r * r + h * h)) / 3;
+  const discs = 2 * Math.PI * r * r;
+  const discInertia = Math.PI * r * r * (r * r + 2 * h * h);
+  const mass = box + Math.PI * r * r;
+  const inertia =
+    boxInertia +
+    Math.PI * r * r * (r * r * 0.5 + h * h) +
+    (8 * r * r * r * h) / 3;
+  const det = box * discInertia - discs * boxInertia;
+  let boxScale = (mass * discInertia - discs * inertia) / det;
+  let discScale = (box * inertia - boxInertia * mass) / det;
+  if (boxScale < 0 || discScale < 0) {
+    // Stubby capsule (h < ~0.8 r): no non-negative pair fits both targets, so
+    // the discs carry the whole (exact) mass and the box none.
+    boxScale = 0;
+    discScale = mass / discs;
+  }
+  return density * (index === 0 ? boxScale : discScale);
+}
+
 export class Box2dAdapter
   implements
     PhysicsSolverAdapter,
@@ -593,12 +640,12 @@ export class Box2dAdapter
       desc.restitution ?? desc.material?.restitution ?? DEFAULT_RESTITUTION;
     const density = resolveDensity(desc.density, desc.material);
 
-    const fixtures = shapes.map((shape) =>
+    const fixtures = shapes.map((shape, index) =>
       bodyRecord.body.CreateFixture({
         shape,
         friction,
         restitution,
-        density,
+        density: fixtureDensity(density, index, shapes),
         isSensor: sensor,
         filter: { categoryBits: groups, maskBits: mask },
       }),
@@ -1733,13 +1780,19 @@ export class Box2dAdapter
     density: number | undefined,
   ): void {
     const record = this.#requireCollider(handle);
-    for (const fixture of record.fixtures) {
+    record.fixtures.forEach((fixture, index) => {
       fixture.SetFriction(friction);
       fixture.SetRestitution(restitution);
       if (density !== undefined) {
-        fixture.SetDensity(density);
+        fixture.SetDensity(
+          fixtureDensity(
+            density,
+            index,
+            record.fixtures.map((f) => f.GetShape()),
+          ),
+        );
       }
-    }
+    });
     if (density !== undefined) {
       const body = this.#bodies.get(record.bodyId) as BodyRecord;
       this.#applyAuthoredMass(body, true);
@@ -1760,6 +1813,19 @@ export class Box2dAdapter
         maskBits: collisionMask,
         groupIndex: 0,
       });
+    }
+    if (record.sensor !== sensor) {
+      // A live pair keeps the family it began with, and Box2D re-flags no
+      // begin for a contact that merely changed sensor state: end each live
+      // pair in the OLD family and begin it again in the NEW one.
+      for (const pair of this.#activePairs.values()) {
+        if (pair.a === record || pair.b === record) {
+          this.#emitPair(pair, "end");
+          (record as { sensor: boolean }).sensor = sensor;
+          pair.trigger = pair.a.sensor || pair.b.sensor;
+          this.#emitPair(pair, "start");
+        }
+      }
     }
     (record as { sensor: boolean }).sensor = sensor;
   }
@@ -2418,6 +2484,13 @@ export class Box2dAdapter
         this.#activePairs.set(key, pair);
         this.#started.push(pair);
         this.#startedKeys.add(key);
+      } else if (pair.contacts.size === 0 && this.#stoppedKeys.has(key)) {
+        // Box2D can end one contact of a pair and begin another within the
+        // same `Step` (bounce / re-touch). The pair is then continuous: cancel
+        // the pending end so it is neither emitted nor dropped while a live
+        // contact remains (found by the W8.4 conformance suite).
+        this.#stopped.splice(this.#stopped.indexOf(pair), 1);
+        this.#stoppedKeys.delete(key);
       }
       pair.contacts.add(contact);
     };
