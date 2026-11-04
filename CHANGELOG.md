@@ -10,6 +10,10 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **`@fourjs/physics-soft` ships (2026-11-04, wave 10, RFC 0011)**: `SoftBody` rope, cloth and
+  pressure bodies on a CPU position-based-dynamics solver, `SoftBodySystem` (priority 610),
+  one-way raycast coupling to a `PhysicsWorld`, and float64 snapshot/checksum for replay.
+  Spec §35a/§113b; `examples/soft-body` and a browser gate; `docs/guides/soft-bodies.md`.
 - **`@fourjs/render-canvas` and `@fourjs/render-svg` are real backends (2026-11-04, wave 3)**:
   `Canvas2dRenderer` / `registerCanvasRenderer()` (flat CPU-projected polygons, sprites via
   `drawImage`, RFC 0004 feedback refusal) and `SvgRenderer` / `registerSvgRenderer()` (retained

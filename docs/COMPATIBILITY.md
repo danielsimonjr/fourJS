@@ -28,7 +28,7 @@ releases that have not happened; the format and API versions in sections 3–4
 exist today and are the ones a document on disk has to match.
 
 **Decision 2026-09-06 — publish the reserved stubs as real 0.x packages.** The
-two reserved directories (`physics-box2d`, `physics-soft`) already exist, build, and export `PACKAGE_NAME`; the umbrella
+two reserved directories (`physics-box2d`, `physics-soft`) already existed, built, and exported `PACKAGE_NAME` (`physics-soft` has since shipped, 2026-11-04); the umbrella
 depends on them and re-exports each as a subpath, so Changesets cannot
 `ignore` them without also skipping `four` (see `.changeset/README.md`).
 Dropping the subpaths would break §98; optional peers would push the
@@ -260,8 +260,8 @@ hands `Application` a constructed instance carries no registry at all.
 ## 3. Physics solver adapters (§37, §102)
 
 §102 defines the solver package set as `@fourjs/physics-rapier` and
-`@fourjs/physics-box2d`; `@fourjs/physics-soft` is §35's soft-body package on the
-same seam. The table below is generated from the adapters' own
+`@fourjs/physics-box2d`; `@fourjs/physics-soft` is §35's soft-body package, which is
+not a §37 adapter (ERRATA E-3) and has no column. The table below is generated from the adapters' own
 `PhysicsCapabilities` records, read off constructed instances before
 `initialize`, plus the two structural access seams
 (`SolverBodyAccess`, `SolverJointAccess`) probed member by member against
@@ -299,7 +299,9 @@ same seam. The table below is generated from the adapters' own
 Solver packages that declare no adapter:
 
 - `@fourjs/physics-box2d` — reserved stub (§102): the package builds and exports `PACKAGE_NAME` only.
-- `@fourjs/physics-soft` — reserved stub (§102): the package builds and exports `PACKAGE_NAME` only.
+
+Not a solver adapter: `@fourjs/physics-soft` ships §35 soft bodies (rope, cloth, pressure) as a
+fixed-step `SoftBodySystem`; it declares no §37 capabilities and has no column above.
 
 <!-- END GENERATED: solver-adapters -->
 
