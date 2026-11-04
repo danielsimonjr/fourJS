@@ -55,7 +55,7 @@ import {
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { strippedOfComments } from "./strip-comments.mjs";
+import { blankedComments, strippedOfComments } from "./strip-comments.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = join(HERE, "..");
@@ -275,7 +275,10 @@ export function rewriteCode(text) {
  * @returns {string[]} One message per offence.
  */
 export function residueProblems(text) {
-  const code = strippedOfComments(text);
+  // String-aware: a `/*` inside a string literal must not swallow the code
+  // after it (which `strippedOfComments`'s regexes would), or a quoted
+  // workspace name following it goes unreported.
+  const code = blankedComments(text);
   const found = [];
   if (/(["'])@fourjs\//.test(code)) {
     found.push('a quoted "@fourjs/" name survives in the staged file');

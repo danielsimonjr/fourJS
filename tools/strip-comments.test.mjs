@@ -3,7 +3,7 @@
  *
  * `strippedOfComments` is already exercised through
  * `apply-publish-names.test.mjs`, which is where it was born. These cover
- * `blankedCommentsAndStrings`, added for the dependency-graph generator's hand
+ * `blankedComments, blankedCommentsAndStrings`, added for the dependency-graph generator's hand
  * brace-matcher, and the three quote-and-comment blind spots in that generator
  * that cycle 9 left filed: a JSDoc mention counted as a live reference, a name
  * in a comment counted as a delegation edge, and a brace inside a string
@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  blankedComments,
   blankedCommentsAndStrings,
   strippedOfComments,
 } from "./strip-comments.mjs";
@@ -112,4 +113,17 @@ test("a name in a comment is not a delegation edge", () => {
 
   // GREEN.
   assert.ok(!strippedOfComments(body).includes("besselOrderDispatch"));
+});
+
+test("blankedComments blanks comments but keeps string and template bodies", () => {
+  const src =
+    'const a = "x/*y"; /* c */ const b = `t//u`; // tail\nconst c = 1;';
+  const out = blankedComments(src);
+  assert.equal(out.length, src.length);
+  assert.equal(out.indexOf("x/*y"), src.indexOf("x/*y"));
+  assert.equal(out.indexOf("t//u"), src.indexOf("t//u"));
+  const block = src.indexOf("/* c */");
+  assert.equal(out.slice(block, block + 7).trim(), "");
+  assert.equal(out.includes("tail"), false);
+  assert.equal(out.indexOf("const c"), src.indexOf("const c"));
 });

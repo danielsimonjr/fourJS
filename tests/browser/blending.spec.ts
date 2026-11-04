@@ -826,10 +826,15 @@ async function clickWorldPoint(
     );
   if (!seen) {
     await page.mouse.click(x, y);
-    await expect(
-      status,
-      "the page never received a pointerdown, even after one re-issued click",
-    ).toHaveAttribute("data-presses", String(before + 1));
+    // Greater-than, not an exact count: the first press may still land after
+    // the poll gave up, in which case two presses arrive and the mode toggles
+    // twice — the caller's mode assertion then reports that, not this guard.
+    await expect
+      .poll(pressesNow, {
+        message:
+          "the page never received a pointerdown, even after one re-issued click",
+      })
+      .toBeGreaterThan(before);
   }
 }
 

@@ -67,10 +67,39 @@ export function strippedOfComments(text) {
  * @returns {string} Same length as `text`; comment and string bodies blanked.
  */
 export function blankedCommentsAndStrings(text) {
+  return scanBlanking(text, true);
+}
+
+/**
+ * The same text with every comment body replaced by spaces, offset for
+ * offset, and every string and template-literal body left intact.
+ *
+ * {@link strippedOfComments} is a pair of regexes that cannot tell a `/*`
+ * inside a string from a comment opener, so a string such as `"dist/*"`
+ * swallowed everything up to the next real `*\/` — including a quoted
+ * workspace name a residue check had to see (review finding, 2026-11-04).
+ * This is the scanner behind {@link blankedCommentsAndStrings} with string
+ * blanking switched off, so a check that asks "is this quoted name in code"
+ * sees the name and not the comment that merely mentions it.
+ *
+ * @param {string} text Source or emitted code.
+ * @returns {string} Same length as `text`; comment bodies blanked.
+ */
+export function blankedComments(text) {
+  return scanBlanking(text, false);
+}
+
+/**
+ * @param {string} text
+ * @param {boolean} blankStrings Whether string and template bodies are blanked too.
+ * @returns {string}
+ */
+function scanBlanking(text, blankStrings) {
   const out = Array.from(text);
   const blank = (index) => {
     if (out[index] !== "\n") out[index] = " ";
   };
+  const blankBody = blankStrings ? blank : () => {};
   // Each entry is a template literal we are inside; the number counts the
   // `{` depth of the `${ … }` expression currently open within it, or -1 when
   // no expression is open. That is what makes `` `${ {a:1} }` `` work.
@@ -96,16 +125,16 @@ export function blankedCommentsAndStrings(text) {
     if (!inTemplateBody && (c === "'" || c === '"')) {
       index += 1; // Keep the opening quote in place.
       while (index < text.length && text[index] !== c) {
-        if (text[index] === "\\") blank(index++);
-        if (index < text.length) blank(index++);
+        if (text[index] === "\\") blankBody(index++);
+        if (index < text.length) blankBody(index++);
       }
       index += 1; // Keep the closing quote in place.
       continue;
     }
     if (inTemplateBody) {
       if (c === "\\") {
-        blank(index);
-        blank(index + 1);
+        blankBody(index);
+        blankBody(index + 1);
         index += 2;
         continue;
       }
@@ -119,7 +148,7 @@ export function blankedCommentsAndStrings(text) {
         index += 1;
         continue;
       }
-      blank(index++);
+      blankBody(index++);
       continue;
     }
     if (c === "`") {
