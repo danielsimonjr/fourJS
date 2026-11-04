@@ -41,7 +41,7 @@
   },
   {
     "path": "examples/soft-body/dist/assets/*.js",
-    "limit": "41.5 kB",
+    "limit": "46 kB",
     "gzip": true
   }
 ]

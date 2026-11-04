@@ -4901,7 +4901,8 @@ like consecutive unlit items; lit meshes do not batch yet (R-22). Evidence:
   not an optional mode, which is the distinction the 2026-11-04 batching decision drew (batching
   stays opt-in because it is a mode most scenes never use). The 2026-09-13 budgets were measured
   size plus headroom; the new ones keep roughly the same headroom over the measured
-  45.1 / 47.0 / 54.8 kB. Nothing else moved.
+  45.1 / 47.0 / 54.8 kB. The soft-body example (wave 10, merged the same day) grew by the same
+  delta and moved 41.5 → 46 kB over its measured 43.8 kB. Nothing else moved.
 
 ## 2026-11-04 — wave 9: RFC 0010 PhysJS adapter
 
