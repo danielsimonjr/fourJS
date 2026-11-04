@@ -98,7 +98,15 @@ describe("registration", () => {
     expect(adapter.name).toBe("box2d");
     expect(adapter.capabilities).toBe(BOX2D_CAPABILITIES);
     expect(BOX2D_CAPABILITIES.dimensions).toEqual(["2d"]);
-    expect(BOX2D_CAPABILITIES.jointTypes).toEqual([]);
+    expect(BOX2D_CAPABILITIES.jointTypes).toEqual([
+      "fixed",
+      "spring",
+      "revolute",
+      "prismatic",
+      "rope",
+    ]);
+    expect(BOX2D_CAPABILITIES.tuning.jointMotorEffortCap).toBe(true);
+    expect(BOX2D_CAPABILITIES.tuning.rollingFriction).toBe(false);
     expect(BOX2D_CAPABILITIES.snapshots).toBe(false);
     expect(Object.values(BOX2D_CAPABILITIES.queries)).toEqual([
       false,
@@ -588,11 +596,9 @@ describe("events", () => {
 });
 
 describe("not-yet-implemented surfaces", () => {
-  it("throws NOT_IMPLEMENTED for joints, queries and snapshots", () => {
+  it("throws NOT_IMPLEMENTED for queries and snapshots", () => {
     const adapter = make();
     const calls: (() => unknown)[] = [
-      () => adapter.createJoint({} as never),
-      () => adapter.destroyJoint({} as never),
       () => adapter.raycast({} as never),
       () => adapter.shapeCast({} as never),
       () => adapter.overlap({} as never),

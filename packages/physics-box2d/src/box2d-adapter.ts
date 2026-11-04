@@ -34,14 +34,28 @@ import {
   b2BodyType,
   b2CircleShape,
   b2ContactListener,
+  b2DistanceJointDef,
+  b2_maxFloat,
   b2PolygonShape,
+  b2PrismaticJointDef,
+  b2RevoluteJointDef,
   b2Vec2,
+  b2WeldJointDef,
   b2World,
   b2WorldManifold,
 } from "@box2d/core";
-import type { b2Body, b2Contact, b2Fixture, b2Shape } from "@box2d/core";
+import type {
+  b2Body,
+  b2Contact,
+  b2Fixture,
+  b2Joint,
+  b2PrismaticJoint,
+  b2RevoluteJoint,
+  b2Shape,
+} from "@box2d/core";
 import { FourError } from "@fourjs/core";
 import { Quaternion, Vector3 } from "@fourjs/math";
+import type { Matrix3 } from "@fourjs/math";
 import {
   ALL_COLLISION_GROUPS,
   DEFAULT_FRICTION,
@@ -54,6 +68,7 @@ import {
   resolveRotation,
   resolveSleepingConfig,
   validateColliderDescriptor,
+  validateJointDescriptor,
   validatePhysicsWorldOptions,
   validateRigidBodyDescriptor,
 } from "@fourjs/physics";
@@ -82,7 +97,11 @@ import type {
   RotationInput,
   ShapeCastHit,
   ShapeCastQuery,
+  ShippedJointType,
   SolverBodyAccess,
+  SolverBodyTuningAccess,
+  SolverJointAccess,
+  SolverJointMotor,
   Vector3Input,
 } from "@fourjs/physics";
 
@@ -103,17 +122,26 @@ const POSITION_ITERATIONS = 3;
 /**
  * What this adapter can do, declared honestly for the W8.1 state.
  *
- * - `jointTypes: []` / `queries` all `false` / `snapshots: false`: later packets.
+ * - `jointTypes`: the five 2D shipped types (W8.2). `queries` all `false` /
+ *   `snapshots: false`: later packets.
  * - `ccdModes`: Box2D's continuous collision is TOI-based; `"swept"` maps to
  *   `b2Body.SetBullet`. There is no speculative mode.
- * - `tuning.jointMotorEffortCap` is `false` **today only because there are no
- *   joints**. Box2D's `maxMotorTorque` / `maxMotorForce` are real hard caps (the
- *   recorded reason this adapter exists, TODO "reserved stub" row); W8.2 flips
- *   it to `true` when revolute/prismatic joints land.
+ * - `tuning.jointMotorEffortCap` is `true`: Box2D's `maxMotorTorque` /
+ *   `maxMotorForce` are real hard caps — the impulse is clamped to
+ *   `maxEffort * dt` inside the solver (the recorded reason this adapter
+ *   exists). Rolling / spinning friction and sleep thresholds stay `false`.
  */
+const BOX2D_JOINT_TYPES = [
+  "fixed",
+  "spring",
+  "revolute",
+  "prismatic",
+  "rope",
+] as const satisfies readonly ShippedJointType[];
+
 export const BOX2D_CAPABILITIES: PhysicsCapabilities = Object.freeze({
   dimensions: Object.freeze(["2d"] as const),
-  jointTypes: Object.freeze<string[]>([]),
+  jointTypes: Object.freeze<string[]>([...BOX2D_JOINT_TYPES]),
   ccdModes: Object.freeze<CCDMode[]>(["disabled", "swept"]),
   determinism: "same-runtime",
   snapshots: false,
@@ -127,7 +155,7 @@ export const BOX2D_CAPABILITIES: PhysicsCapabilities = Object.freeze({
     rollingFriction: false,
     spinningFriction: false,
     sleepThresholds: false,
-    jointMotorEffortCap: false,
+    jointMotorEffortCap: true,
   }),
 });
 
@@ -138,7 +166,11 @@ interface BodyRecord {
   alive: boolean;
   sleeping: boolean;
   /** Authored mass (§23), re-applied after each collider is added. */
-  readonly authoredMass: number | undefined;
+  authoredMass: number | undefined;
+  /** Authored body-local centre of mass, if any (`setBodyMassProperties`). */
+  authoredCenter: [number, number] | undefined;
+  /** Authored rotational inertia about the centre of mass, if any. */
+  authoredInertia: number | undefined;
   readonly colliders: ColliderRecord[];
   /** Pending `"kinematic-position"` target: x, y, angle. */
   target: [number, number, number] | undefined;
@@ -149,6 +181,34 @@ interface ColliderRecord {
   readonly bodyId: number;
   readonly fixtures: b2Fixture[];
   readonly sensor: boolean;
+  alive: boolean;
+}
+
+/** Everything needed to (re)build a joint: Box2D joints are immutable in shape. */
+interface JointConfig {
+  anchorA: [number, number];
+  anchorB: [number, number];
+  collide: boolean;
+  /** Prismatic axis in bodyA's frame (unit). */
+  axis: [number, number];
+  /** `-1` for a revolute joint authored about `-Z`; mirrors limits and motor. */
+  sign: 1 | -1;
+  referenceAngle: number;
+  limits: { min: number; max: number } | undefined;
+  motor: SolverJointMotor | undefined;
+  maxLength: number;
+  restLength: number;
+  stiffness: number;
+  damping: number;
+}
+
+interface JointRecord {
+  readonly id: number;
+  readonly type: ShippedJointType;
+  readonly bodyA: BodyRecord;
+  readonly bodyB: BodyRecord;
+  readonly config: JointConfig;
+  joint: b2Joint;
   alive: boolean;
 }
 
@@ -233,7 +293,13 @@ function circleShape(
 /**
  * 2D §37 adapter over `@box2d/core`. See the module header for scope.
  */
-export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
+export class Box2dAdapter
+  implements
+    PhysicsSolverAdapter,
+    SolverBodyAccess,
+    SolverBodyTuningAccess,
+    SolverJointAccess
+{
   readonly name: string = ADAPTER_NAME;
 
   readonly capabilities: PhysicsCapabilities = BOX2D_CAPABILITIES;
@@ -247,6 +313,7 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
   #disposed = false;
   #nextBodyId = 1;
   #nextColliderId = 1;
+  #nextJointId = 1;
   #sleepingEnabled = true;
   #velocityIterations = DEFAULT_VELOCITY_ITERATIONS;
   #stayEvents = true;
@@ -255,6 +322,7 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
 
   readonly #bodies = new Map<number, BodyRecord>();
   readonly #colliders = new Map<number, ColliderRecord>();
+  readonly #joints = new Map<number, JointRecord>();
   readonly #recordByFixture = new Map<b2Fixture, ColliderRecord>();
   readonly #activePairs = new Map<number, PairRecord>();
   readonly #startedKeys = new Set<number>();
@@ -264,6 +332,7 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
   readonly #scratchVector3 = new Vector3();
   readonly #scratchQuaternion = new Quaternion();
   readonly #worldManifold = new b2WorldManifold();
+  readonly #scratchB2 = new b2Vec2();
 
   initialize(options: PhysicsWorldOptions): void {
     this.#assertNotDisposed();
@@ -354,6 +423,8 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
       alive: true,
       sleeping: false,
       authoredMass: desc.mass,
+      authoredCenter: undefined,
+      authoredInertia: undefined,
       colliders: [],
       target: undefined,
     };
@@ -366,6 +437,13 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
     const record = this.#requireBody(handle);
     for (const collider of record.colliders) {
       this.#dropCollider(collider);
+    }
+    for (const joint of [...this.#joints.values()]) {
+      if (joint.bodyA === record || joint.bodyB === record) {
+        // Box2D destroys attached joints with the body; mirror it in the registry.
+        joint.alive = false;
+        this.#joints.delete(joint.id);
+      }
     }
     this.#suppressContactEvents = true;
     this.#requireWorld().DestroyBody(record.body);
@@ -430,14 +508,116 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
     this.#applyAuthoredMass(body);
   }
 
+  /**
+   * Builds a §28 joint. Anchors are body-local (the engine converts world to
+   * local once, in `PhysicsWorld.addJoint`).
+   *
+   * | engine     | Box2D                                                      |
+   * | ---------- | ---------------------------------------------------------- |
+   * | `fixed`    | `b2WeldJoint` (rigid), reference angle = `angleB - angleA` |
+   * | `revolute` | `b2RevoluteJoint`, reference angle 0 (limits are the       |
+   * |            | absolute relative angle, as in the Rapier adapters)        |
+   * | `prismatic`| `b2PrismaticJoint`, axis in bodyA's frame, reference angle |
+   * |            | = `angleB - angleA`                                        |
+   * | `rope`     | `b2DistanceJoint`, no spring, `[slop, maxLength]`          |
+   * | `spring`   | `b2DistanceJoint` with stiffness (N/m) and damping (N s/m) |
+   *
+   * A revolute joint about `-Z` mirrors its limits and motor rate. Contacts
+   * between the joined bodies are off unless `collisionEnabled` (§28).
+   */
   createJoint(desc: JointDescriptor): PhysicsJointHandle {
-    void desc;
-    throw notImplemented("createJoint");
+    this.#requireWorld();
+    validateJointDescriptor(desc, "2d");
+    const bodyA = this.#requireBody(desc.bodyA);
+    const bodyB = this.#requireBody(desc.bodyB);
+    const config: JointConfig = {
+      anchorA: this.#anchorOf("anchorA", desc.anchorA),
+      anchorB: this.#anchorOf("anchorB", desc.anchorB),
+      collide: desc.collisionEnabled ?? false,
+      axis: [1, 0],
+      sign: 1,
+      referenceAngle: 0,
+      limits: undefined,
+      motor: undefined,
+      maxLength: 0,
+      restLength: 0,
+      stiffness: 0,
+      damping: 0,
+    };
+    switch (desc.type) {
+      case "fixed":
+        config.referenceAngle = bodyB.body.GetAngle() - bodyA.body.GetAngle();
+        break;
+      case "revolute":
+        config.sign = revoluteSign(desc.axis);
+        config.limits = desc.limits && { ...desc.limits };
+        config.motor = desc.motor && {
+          enabled: desc.motor.enabled !== false,
+          targetVelocity: desc.motor.targetVelocity,
+          maxEffort: desc.motor.maxTorque,
+        };
+        break;
+      case "prismatic": {
+        checkVector2("axis", desc.axis);
+        const length = Math.hypot(desc.axis.x, desc.axis.y);
+        if (length === 0) {
+          throw new FourError(
+            ADAPTER_ERROR_CODE,
+            "axis must be a non-zero direction in the XY plane (§21, §28, §85).",
+            { context: { field: "axis" } },
+          );
+        }
+        config.axis = [desc.axis.x / length, desc.axis.y / length];
+        config.referenceAngle = bodyB.body.GetAngle() - bodyA.body.GetAngle();
+        config.limits = desc.limits && { ...desc.limits };
+        config.motor = desc.motor && {
+          enabled: desc.motor.enabled !== false,
+          targetVelocity: desc.motor.targetVelocity,
+          maxEffort: desc.motor.maxForce,
+        };
+        break;
+      }
+      case "rope":
+        config.maxLength = desc.maxLength;
+        break;
+      case "spring":
+        config.restLength = desc.restLength;
+        config.stiffness = desc.stiffness;
+        config.damping = desc.damping ?? 0;
+        break;
+      default:
+        throw new FourError(
+          ADAPTER_ERROR_CODE,
+          `Box2dAdapter builds ${BOX2D_JOINT_TYPES.join(", ")} joints and not ${JSON.stringify((desc as JointDescriptor).type)} (§21, §28).`,
+          {
+            context: {
+              adapter: ADAPTER_NAME,
+              jointType: (desc as JointDescriptor).type,
+            },
+          },
+        );
+    }
+    const record: JointRecord = {
+      id: this.#nextJointId,
+      type: desc.type,
+      bodyA,
+      bodyB,
+      config,
+      joint: undefined as unknown as b2Joint,
+      alive: true,
+    };
+    record.joint = this.#buildJoint(record);
+    this.#nextJointId += 1;
+    this.#joints.set(record.id, record);
+    return record as unknown as PhysicsJointHandle;
   }
 
+  /** Destroys a joint and wakes both bodies, as Box2D does. The handle is stale afterwards. */
   destroyJoint(handle: PhysicsJointHandle): void {
-    void handle;
-    throw notImplemented("destroyJoint");
+    const record = this.#requireJoint(handle);
+    this.#requireWorld().DestroyJoint(record.joint);
+    record.alive = false;
+    this.#joints.delete(record.id);
   }
 
   step(delta: number): void {
@@ -543,6 +723,10 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
       record.alive = false;
     }
     this.#bodies.clear();
+    for (const record of this.#joints.values()) {
+      record.alive = false;
+    }
+    this.#joints.clear();
     this.#colliders.clear();
     this.#recordByFixture.clear();
     this.#activePairs.clear();
@@ -746,7 +930,331 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
     }
   }
 
+  // ---------------------------------------------------------------- SolverBodyTuningAccess
+
+  /**
+   * Replaces the §23 mass triple. `centerOfMass` is body-local; the tensor's Z
+   * diagonal entry (`elements[8]`) is the rotational inertia about the centre of
+   * mass. Omitted centre / tensor are derived from the colliders, scaled to the
+   * new mass (the same rule `createBody` applies to an authored mass).
+   */
+  setBodyMassProperties(
+    handle: PhysicsBodyHandle,
+    mass: number,
+    centerOfMass: Vector3 | undefined,
+    inertiaTensor: Matrix3 | undefined,
+    wake = true,
+  ): void {
+    const record = this.#requireBody(handle);
+    record.authoredMass = mass;
+    record.authoredCenter =
+      centerOfMass === undefined ? undefined : [centerOfMass.x, centerOfMass.y];
+    record.authoredInertia = inertiaTensor?.elements[8];
+    this.#applyAuthoredMass(record);
+    if (wake) {
+      record.body.SetAwake(true);
+    }
+  }
+
+  setBodyDamping(
+    handle: PhysicsBodyHandle,
+    linear: number,
+    angular: number,
+  ): void {
+    const { body } = this.#requireBody(handle);
+    body.SetLinearDamping(linear);
+    body.SetAngularDamping(angular);
+  }
+
+  setBodyGravityScale(
+    handle: PhysicsBodyHandle,
+    scale: number,
+    wake = true,
+  ): void {
+    const { body } = this.#requireBody(handle);
+    body.SetGravityScale(scale);
+    if (wake) {
+      body.SetAwake(true);
+    }
+  }
+
+  setBodyCcdMode(
+    handle: PhysicsBodyHandle,
+    mode: CCDMode,
+    predictionDistance?: number,
+  ): void {
+    void predictionDistance;
+    if (mode === "speculative") {
+      throw notImplemented('ccdMode "speculative"');
+    }
+    this.#requireBody(handle).body.SetBullet(mode === "swept");
+  }
+
+  setColliderMaterial(
+    handle: PhysicsColliderHandle,
+    friction: number,
+    restitution: number,
+    density: number | undefined,
+  ): void {
+    const record = this.#requireCollider(handle);
+    for (const fixture of record.fixtures) {
+      fixture.SetFriction(friction);
+      fixture.SetRestitution(restitution);
+      if (density !== undefined) {
+        fixture.SetDensity(density);
+      }
+    }
+    if (density !== undefined) {
+      const body = this.#bodies.get(record.bodyId) as BodyRecord;
+      this.#applyAuthoredMass(body, true);
+    }
+  }
+
+  setColliderFilter(
+    handle: PhysicsColliderHandle,
+    sensor: boolean,
+    collisionGroups: number,
+    collisionMask: number,
+  ): void {
+    const record = this.#requireCollider(handle);
+    for (const fixture of record.fixtures) {
+      fixture.SetSensor(sensor);
+      fixture.SetFilterData({
+        categoryBits: collisionGroups,
+        maskBits: collisionMask,
+        groupIndex: 0,
+      });
+    }
+    (record as { sensor: boolean }).sensor = sensor;
+  }
+
+  // ---------------------------------------------------------------- SolverJointAccess
+
+  /** Box2D reports the accumulated constraint impulse of the last step. */
+  readonly reportsJointReactions = true;
+
+  /**
+   * The impulse (N s, N m s) the joint applied during the last `step`, in world
+   * space: `GetReactionForce(1)` / `GetReactionTorque(1)`, since Box2D defines
+   * force = `inv_dt * impulse`.
+   */
+  getJointReaction(
+    handle: PhysicsJointHandle,
+    outLinear: Vector3,
+    outAngular: Vector3,
+  ): void {
+    const { joint } = this.#requireJoint(handle);
+    const f = joint.GetReactionForce(1, this.#scratchB2);
+    outLinear.set(f.x, f.y, 0);
+    outAngular.set(0, 0, joint.GetReactionTorque(1));
+  }
+
+  /**
+   * Re-limits a revolute (radians) or prismatic (metres) joint. A `-Z` revolute
+   * joint's range is mirrored to `[-max, -min]`. Other types have no limited
+   * degree of freedom and throw.
+   */
+  setJointLimits(handle: PhysicsJointHandle, min: number, max: number): void {
+    const record = this.#requireJoint(handle);
+    this.#requireDrivenType(record, "limits");
+    record.config.limits = { min, max };
+    this.#applyLimits(record);
+    this.#wakeJointBodies(record);
+  }
+
+  /**
+   * Re-configures a revolute / prismatic velocity motor. `maxEffort` becomes
+   * Box2D's `maxMotorTorque` / `maxMotorForce`, a **hard cap** (the solver
+   * clamps the accumulated motor impulse to `maxEffort * dt`), unlike the
+   * Rapier gain. A `-Z` revolute joint negates the target rate.
+   */
+  setJointMotor(handle: PhysicsJointHandle, motor: SolverJointMotor): void {
+    const record = this.#requireJoint(handle);
+    this.#requireDrivenType(record, "motor");
+    record.config.motor = { ...motor };
+    this.#applyMotor(record);
+    this.#wakeJointBodies(record);
+  }
+
+  /**
+   * Box2D fixes `collideConnected` at creation, so the joint is rebuilt in place
+   * (same handle and id; accumulated warm-start impulses are dropped).
+   */
+  setJointCollisionEnabled(handle: PhysicsJointHandle, enabled: boolean): void {
+    const record = this.#requireJoint(handle);
+    record.config.collide = enabled;
+    this.#rebuildJoint(record);
+  }
+
+  /** Body-local anchors; rebuilt in place like {@link Box2dAdapter.setJointCollisionEnabled}. */
+  setJointAnchors(
+    handle: PhysicsJointHandle,
+    anchorA: Vector3,
+    anchorB: Vector3,
+  ): void {
+    const record = this.#requireJoint(handle);
+    record.config.anchorA = this.#anchorOf("anchorA", anchorA);
+    record.config.anchorB = this.#anchorOf("anchorB", anchorB);
+    this.#rebuildJoint(record);
+  }
+
+  getJointId(handle: PhysicsJointHandle): number {
+    return this.#requireJoint(handle).id;
+  }
+
+  forEachJoint(visit: (handle: PhysicsJointHandle, id: number) => void): void {
+    this.#requireWorld();
+    for (const record of [...this.#joints.values()]) {
+      visit(record as unknown as PhysicsJointHandle, record.id);
+    }
+  }
+
   // ---------------------------------------------------------------- internals
+
+  #anchorOf(field: string, anchor: Vector3Input | undefined): [number, number] {
+    if (anchor === undefined) {
+      return [0, 0];
+    }
+    checkVector2(field, anchor);
+    return [anchor.x, anchor.y];
+  }
+
+  #requireDrivenType(record: JointRecord, what: "limits" | "motor"): void {
+    if (record.type !== "revolute" && record.type !== "prismatic") {
+      throw new FourError(
+        ADAPTER_ERROR_CODE,
+        `A ${record.type} joint has no ${what === "limits" ? "limited" : "motorised"} degree of freedom; only revolute and prismatic joints take ${what} (§28).`,
+        { context: { adapter: ADAPTER_NAME, jointType: record.type } },
+      );
+    }
+  }
+
+  #wakeJointBodies(record: JointRecord): void {
+    record.bodyA.body.SetAwake(true);
+    record.bodyB.body.SetAwake(true);
+  }
+
+  #applyLimits(record: JointRecord): void {
+    const { limits, sign } = record.config;
+    const joint = record.joint as b2RevoluteJoint | b2PrismaticJoint;
+    if (limits === undefined) {
+      joint.EnableLimit(false);
+      return;
+    }
+    const lower = sign === 1 ? limits.min : -limits.max;
+    const upper = sign === 1 ? limits.max : -limits.min;
+    joint.SetLimits(lower, upper);
+    joint.EnableLimit(true);
+  }
+
+  #applyMotor(record: JointRecord): void {
+    const { motor, sign } = record.config;
+    if (motor === undefined) {
+      return;
+    }
+    const joint = record.joint;
+    if (record.type === "revolute") {
+      const revolute = joint as b2RevoluteJoint;
+      revolute.SetMaxMotorTorque(motor.maxEffort);
+      revolute.SetMotorSpeed(sign * motor.targetVelocity);
+      revolute.EnableMotor(motor.enabled);
+    } else {
+      const prismatic = joint as b2PrismaticJoint;
+      prismatic.SetMaxMotorForce(motor.maxEffort);
+      prismatic.SetMotorSpeed(motor.targetVelocity);
+      prismatic.EnableMotor(motor.enabled);
+    }
+  }
+
+  /** Creates the Box2D joint for `record.config` and applies limits and motor. */
+  #buildJoint(record: JointRecord): b2Joint {
+    const world = this.#requireWorld();
+    const { config, bodyA, bodyB } = record;
+    let joint: b2Joint;
+    switch (record.type) {
+      case "fixed": {
+        const def = new b2WeldJointDef();
+        def.bodyA = bodyA.body;
+        def.bodyB = bodyB.body;
+        def.collideConnected = config.collide;
+        def.localAnchorA.Set(...config.anchorA);
+        def.localAnchorB.Set(...config.anchorB);
+        def.referenceAngle = config.referenceAngle;
+        joint = world.CreateJoint(def);
+        break;
+      }
+      case "revolute": {
+        const def = new b2RevoluteJointDef();
+        def.bodyA = bodyA.body;
+        def.bodyB = bodyB.body;
+        def.collideConnected = config.collide;
+        def.localAnchorA.Set(...config.anchorA);
+        def.localAnchorB.Set(...config.anchorB);
+        joint = world.CreateJoint(def);
+        break;
+      }
+      case "prismatic": {
+        const def = new b2PrismaticJointDef();
+        def.bodyA = bodyA.body;
+        def.bodyB = bodyB.body;
+        def.collideConnected = config.collide;
+        def.localAnchorA.Set(...config.anchorA);
+        def.localAnchorB.Set(...config.anchorB);
+        def.localAxisA.Set(...config.axis);
+        def.referenceAngle = config.referenceAngle;
+        joint = world.CreateJoint(def);
+        break;
+      }
+      default: {
+        // rope (unsprung, limited to [slop, maxLength]) and spring (rest length
+        // with stiffness and damping, effectively unbounded either side).
+        const def = new b2DistanceJointDef();
+        def.bodyA = bodyA.body;
+        def.bodyB = bodyB.body;
+        def.collideConnected = config.collide;
+        def.localAnchorA.Set(...config.anchorA);
+        def.localAnchorB.Set(...config.anchorB);
+        if (record.type === "rope") {
+          def.length = config.maxLength;
+          def.minLength = 0;
+          def.maxLength = config.maxLength;
+        } else {
+          def.length = config.restLength;
+          def.minLength = 0;
+          def.maxLength = b2_maxFloat;
+          def.stiffness = config.stiffness;
+          def.damping = config.damping;
+        }
+        joint = world.CreateJoint(def);
+      }
+    }
+    record.joint = joint;
+    if (record.type === "revolute" || record.type === "prismatic") {
+      this.#applyLimits(record);
+      this.#applyMotor(record);
+    }
+    return joint;
+  }
+
+  #rebuildJoint(record: JointRecord): void {
+    this.#requireWorld().DestroyJoint(record.joint);
+    this.#buildJoint(record);
+  }
+
+  #requireJoint(handle: PhysicsJointHandle): JointRecord {
+    this.#requireWorld();
+    const record = handle as unknown as JointRecord;
+    if (!record.alive || this.#joints.get(record.id) !== record) {
+      rejectStalePhysicsHandle(
+        "joint",
+        String(record.id),
+        "Joint handle is not valid for this Box2dAdapter: it was destroyed (or its body was), or it was minted by another adapter (§37).",
+        ADAPTER_ERROR_CODE,
+        { adapter: ADAPTER_NAME },
+      );
+    }
+    return record;
+  }
 
   #angleOf(rotation: RotationInput): number {
     if (typeof rotation === "number") {
@@ -811,9 +1319,12 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
    * Re-applies §23's authored mass after the collider set or body type changed.
    * Inertia is scaled by the same ratio so the body stays physically plausible.
    */
-  #applyAuthoredMass(record: BodyRecord): void {
+  #applyAuthoredMass(record: BodyRecord, force = false): void {
     const { body, authoredMass } = record;
     if (authoredMass === undefined || record.type !== "dynamic") {
+      if (force) {
+        body.ResetMassData();
+      }
       return;
     }
     body.ResetMassData();
@@ -822,11 +1333,16 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
       return;
     }
     const scale = authoredMass / mass;
-    body.SetMassData({
-      mass: authoredMass,
-      center: body.GetLocalCenter().Clone(),
-      I: body.GetInertia() * scale,
-    });
+    const center = record.authoredCenter
+      ? new b2Vec2(record.authoredCenter[0], record.authoredCenter[1])
+      : body.GetLocalCenter().Clone();
+    // Box2D's `I` is about the body origin (parallel-axis shifted).
+    const inertia =
+      record.authoredInertia === undefined
+        ? body.GetInertia() * scale
+        : record.authoredInertia +
+          authoredMass * (center.x * center.x + center.y * center.y);
+    body.SetMassData({ mass: authoredMass, center, I: inertia });
   }
 
   /** Forgets a collider in every registry (its Box2D fixtures are destroyed by the caller). */
@@ -1086,6 +1602,22 @@ export class Box2dAdapter implements PhysicsSolverAdapter, SolverBodyAccess {
     }
     return record;
   }
+}
+
+/** `+Z` (or omitted) is `1`; `-Z` is `-1`; anything off the Z axis is rejected (§21). */
+function revoluteSign(axis: Vector3Input | undefined): 1 | -1 {
+  if (axis === undefined) {
+    return 1;
+  }
+  const z = "z" in axis ? axis.z : 0;
+  if (axis.x !== 0 || axis.y !== 0 || z === 0 || !Number.isFinite(z)) {
+    throw new FourError(
+      ADAPTER_ERROR_CODE,
+      `A "2d" world rotates about +Z only, so a revolute joint's axis must be along ±Z; got (${String(axis.x)}, ${String(axis.y)}, ${String(z)}) (§21, §28).`,
+      { context: { field: "axis" } },
+    );
+  }
+  return z > 0 ? 1 : -1;
 }
 
 function toB2Type(type: BodyType): b2BodyType {
