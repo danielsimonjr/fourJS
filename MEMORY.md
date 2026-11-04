@@ -4864,3 +4864,31 @@ like consecutive unlit items; lit meshes do not batch yet (R-22). Evidence:
   problem no longer applies to `render-canvas`/`render-svg`, since they are real 0.x packages
   the umbrella legitimately depends on and re-exports; it remains only for the two physics stubs.
 - `registrationAdvice` in `render` now names `registerCanvasRenderer()` / `registerSvgRenderer()`.
+
+## 2026-11-04 — program wave 5 (render residues)
+
+- **Light slots:** `MAX_DIRECTIONAL_LIGHTS` = 4 ahead of the 8 punctual slots (`MAX_LIGHT_SLOTS`
+  = 11). The WebGPU light block is 784 bytes at a 1024-byte stride; the one-light path writes
+  the same bytes as before. Light layers are unioned per frame (`unionViewLayerMask`), never
+  per draw, so a light that no view can see costs nothing.
+- **Texture dimensions:** `TextureSource.dimension` `"cube"` / `"2d-array"` / `"3d"` with
+  `depth`; cube faces are six slices in +X −X +Y −Y +Z −Z order. §77 residue now: compressed
+  containers only.
+- **Staging rings (§65):** WebGPU dynamic geometry goes through `wgpu-staging.ts` (ring of
+  mapped staging buffers, one slot per frame in flight); WebGL orphans with `bufferData`
+  before `bufferSubData`. No pixel change by construction; a geometry with extra morph targets
+  never joins the ring.
+- **R-22 instanced shaded:** `RenderBatcher.nextInstanced` groups consecutive lit/standard
+  items (same geometry, material, kind, clip, scissor, layers, receiveShadow) and packs
+  model (16) + normal matrix (9) per instance. WebGL rewrites the vertex stage at string
+  level (divisor-1 attributes at 8–14, `drawElementsInstanced`, VAO state restored, link
+  failure → per-item draws). WebGPU uses a step-mode-instance buffer pool reset per frame
+  (`|ins:y` pipeline key); it has **no real-GPU pixel gate** because the batching browser
+  fixture is not backend-parametrised — open item. Locations 8–14 cannot collide with morph
+  or joints because `nextInstanced` refuses morph items and skinned items take their own arm.
+- **Four morph targets:** target k at locations 6/7, 10/11, 12/13, 14/15; joints/weights
+  keep 8/9. Blend is `p + Σ wᵢ(pᵢ − p)` for 2–4 targets and the old `mix` for one target, so
+  one-target output is byte-identical. WebGPU appends `morphWeights: vec4` at draw-block
+  offset 192 / standard-block offset 224 inside the 256-byte stride. glTF `weights`
+  animation channels stay refused: the loader's tracks are node-indexed while `MorphWeights`
+  lives on the mesh node, so wiring belongs to the instantiation tier (`fourjs/src/gltf.ts`).
