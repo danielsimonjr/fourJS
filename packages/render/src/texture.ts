@@ -168,6 +168,42 @@ export type TextureDimension = "2d" | "cube" | "array" | "3d";
  */
 export type TextureMapRole = "color" | "data";
 
+/**
+ * Texel formats a {@link TextureSource} can hold (§77, R-30c compressed
+ * containers). `"rgba8unorm"` is the default tightly packed RGBA8 `data`; the
+ * rest are block-compressed (WebGPU names), 4x4 blocks of 16 bytes each,
+ * carried as per-level byte arrays in {@link TextureSource.levels}. A closed
+ * set: a backend reports which it can upload through
+ * `RendererCapabilities.compressedTextureFormats`.
+ */
+export type TextureFormat =
+  "rgba8unorm" | "bc7-rgba-unorm" | "etc2-rgba8unorm" | "astc-4x4-unorm";
+
+/** The block-compressed members of {@link TextureFormat}. */
+export const COMPRESSED_TEXTURE_FORMATS: readonly TextureFormat[] =
+  Object.freeze(["bc7-rgba-unorm", "etc2-rgba8unorm", "astc-4x4-unorm"]);
+
+const TEXTURE_FORMATS: readonly TextureFormat[] = [
+  "rgba8unorm",
+  ...COMPRESSED_TEXTURE_FORMATS,
+];
+
+/** Bytes of one 4x4 block in every supported compressed format. */
+export const COMPRESSED_BLOCK_BYTES = 16;
+
+/**
+ * Bytes of one mip level of a block-compressed 2D image: whole 4x4 blocks,
+ * `ceil(w/4) * ceil(h/4) * 16`.
+ */
+export function compressedLevelBytes(width: number, height: number): number {
+  return Math.ceil(width / 4) * Math.ceil(height / 4) * COMPRESSED_BLOCK_BYTES;
+}
+
+/** Level `index`'s width/height: halved per level, never below 1. */
+function levelExtent(base: number, index: number): number {
+  return Math.max(1, base >> index);
+}
+
 /** The legal {@link TextureDimension} values, in the §85 message's order. */
 const DIMENSIONS: readonly TextureDimension[] = ["2d", "cube", "array", "3d"];
 
@@ -248,6 +284,21 @@ export interface TextureSource {
    * `"cube"` is always 6 (omit, or pass 6); `"2d"` is always 1 (omit, or pass 1).
    */
   readonly depth?: number;
+
+  /**
+   * Texel format. Defaults to `"rgba8unorm"` (`data`). A compressed format
+   * (R-30c) is 2D only, needs `levels` (and no `data`), `width`/`height`
+   * multiples of 4 (WebGPU's block rule), and no `mipmaps` flag: the chain is
+   * whatever `levels` holds. `colorSpace: "srgb"` selects the sRGB variant.
+   */
+  readonly format?: TextureFormat;
+
+  /**
+   * Compressed mip chain, level 0 first; level `i` is exactly
+   * {@link compressedLevelBytes} of its halved extent. Only with a compressed
+   * {@link TextureSource.format}. Held by reference, like `data`.
+   */
+  readonly levels?: readonly Uint8Array[];
 
   /**
    * Tightly packed RGBA8 texels — four bytes per texel, exactly
@@ -567,10 +618,61 @@ function layerCount(source: TextureSource): number {
   return depth;
 }
 
+/** §85 checks for a block-compressed source (R-30c). */
+function validateCompressed(source: TextureSource): void {
+  const format = source.format!;
+  if ((source.dimension ?? "2d") !== "2d" || source.depth !== undefined) {
+    throw new RangeError(
+      `Compressed ${format} textures are 2D only (R-30c, §77, §85).`,
+    );
+  }
+  if (source.data !== undefined || source.mipmaps === true) {
+    throw new RangeError(
+      `A compressed ${format} texture carries \`levels\`, not \`data\` or ` +
+        "`mipmaps` (R-30c, §77, §85).",
+    );
+  }
+  if (source.width % 4 !== 0 || source.height % 4 !== 0) {
+    throw new RangeError(
+      `Compressed ${format} textures need width and height multiples of 4; ` +
+        `got ${String(source.width)}×${String(source.height)} (§85).`,
+    );
+  }
+  const levels = source.levels;
+  if (levels === undefined || levels.length < 1) {
+    throw new RangeError(
+      `A compressed ${format} texture needs at least one level (§85).`,
+    );
+  }
+  const maxLevels =
+    Math.floor(Math.log2(Math.max(source.width, source.height))) + 1;
+  if (levels.length > maxLevels) {
+    throw new RangeError(
+      `A ${String(source.width)}×${String(source.height)} texture has at most ` +
+        `${String(maxLevels)} levels; got ${String(levels.length)} (§85).`,
+    );
+  }
+  levels.forEach((level, index) => {
+    const expected = compressedLevelBytes(
+      levelExtent(source.width, index),
+      levelExtent(source.height, index),
+    );
+    if (level.length !== expected) {
+      throw new RangeError(
+        `Compressed level ${String(index)} needs ${String(expected)} bytes; ` +
+          `got ${String(level.length)} (§85).`,
+      );
+    }
+  });
+}
+
 /** Runs the §85 checks for one source. Throws on the first violation. */
 export function validateTextureSource(source: TextureSource): void {
   if (source.dimension !== undefined) {
     validateEnum(source.dimension, DIMENSIONS, "dimension");
+  }
+  if (source.format !== undefined) {
+    validateEnum(source.format, TEXTURE_FORMATS, "format");
   }
   if (source.colorSpace !== undefined) {
     validateColorSpace(source.colorSpace, "Texture");
@@ -589,7 +691,11 @@ export function validateTextureSource(source: TextureSource): void {
   }
   if (source.minFilter !== undefined) {
     validateEnum(source.minFilter, MIN_FILTERS, "minFilter");
-    if (usesMipLevels(source.minFilter) && source.mipmaps !== true) {
+    if (
+      usesMipLevels(source.minFilter) &&
+      source.mipmaps !== true &&
+      (source.levels?.length ?? 0) < 2
+    ) {
       // GL leaves such a texture incomplete and samples it as opaque black —
       // a silent, whole-surface failure, which is precisely the class §85 says
       // to refuse rather than to substitute around (R-30b).
@@ -618,6 +724,18 @@ export function validateTextureSource(source: TextureSource): void {
           `${String(value)} (§85).`,
       );
     }
+  }
+
+  const compressed =
+    source.format !== undefined && source.format !== "rgba8unorm";
+  if (!compressed && source.levels !== undefined) {
+    throw new RangeError(
+      "Texture levels belong to a compressed format; set `format` (R-30c, §77).",
+    );
+  }
+  if (compressed) {
+    validateCompressed(source);
+    return;
   }
 
   const layers = layerCount(source);
@@ -752,6 +870,16 @@ export class Texture implements Disposable, SpriteTexture {
     return this.#source.dimension ?? "2d";
   }
 
+  /** Texel format; `"rgba8unorm"` when the source names none (R-30c). */
+  get format(): TextureFormat {
+    return this.#source.format ?? "rgba8unorm";
+  }
+
+  /** Compressed mip levels, or `null` for an RGBA8 texture (R-30c). */
+  get levels(): readonly Uint8Array[] | null {
+    return this.#source.levels ?? null;
+  }
+
   /**
    * Layers, faces or slices: 1 for 2D, 6 for a cube, the authored `depth` for
    * an array or volume.
@@ -827,7 +955,9 @@ export class Texture implements Disposable, SpriteTexture {
    * {@link Texture.markDirty} (or a new {@link Texture.source}).
    */
   get mipmaps(): boolean {
-    return this.#source.mipmaps === true;
+    return (
+      this.#source.mipmaps === true || (this.#source.levels?.length ?? 0) > 1
+    );
   }
 
   /**
@@ -927,6 +1057,12 @@ export class Texture implements Disposable, SpriteTexture {
   get byteLength(): number {
     if (this.#disposed) {
       return 0;
+    }
+    const levels = this.#source.levels;
+    if (levels !== undefined) {
+      let total = 0;
+      for (const level of levels) total += level.length;
+      return total;
     }
     return textureChainBytes(
       this.#source.width,

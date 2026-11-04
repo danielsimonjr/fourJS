@@ -164,7 +164,7 @@ function fullSurfaceBlock(): number[] {
  * emitted `vertexStreams` demand), and reads the centre texel back.
  */
 const SURFACE_SCRIPT = `async (options) => {
-  const { size, shader, blockBytes, blockFloats, streams, texel } = options;
+  const { size, shader, blockBytes, blockFloats, streams, texel, storage } = options;
   if (navigator.gpu === undefined) return { adapter: false };
   const adapter = await navigator.gpu.requestAdapter();
   if (adapter === null) return { adapter: false };
@@ -231,6 +231,29 @@ const SURFACE_SCRIPT = `async (options) => {
         { binding: 1, resource: sampler },
       ],
     }));
+  }
+
+  if (storage !== undefined && storage.length > 0) {
+    // RFC 0001 addendum (§82): one read-only storage buffer per reflected
+    // buffer, bound at consecutive bindings of the group after the textures'.
+    const storageLayout = device.createBindGroupLayout({
+      entries: storage.map((_, binding) => ({
+        binding,
+        visibility: GPUShaderStage.FRAGMENT,
+        buffer: { type: "read-only-storage" },
+      })),
+    });
+    const storageEntries = storage.map((values, binding) => {
+      const data = new Float32Array(values);
+      const buffer = device.createBuffer({
+        size: data.byteLength,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      });
+      device.queue.writeBuffer(buffer, 0, data);
+      return { binding, resource: { buffer } };
+    });
+    groups.push(storageLayout);
+    bindGroups.push(device.createBindGroup({ layout: storageLayout, entries: storageEntries }));
   }
 
   // A quad from two triangles at z = 0, covering most of clip space.
@@ -549,6 +572,61 @@ test.describe("§60 node materials on a real WebGPU adapter (WP-R1.9)", () => {
     expect(fullResult.centre[1]).toBe(255);
     expect(fullResult.centre[2]).toBe(0);
     expect(fullResult.centre[3]).toBe(255);
+  });
+
+  test("a storage-buffer node and a lights-family read compile and rasterise (RFC 0001 addendum)", async ({
+    page,
+  }) => {
+    await page.goto(`http://localhost:${String(PORT)}/`);
+
+    // §82: element 2 of a vec4 storage buffer is the fragment colour.
+    const storageGraph: ShaderGraph = {
+      domain: "surface",
+      nodes: [
+        { kind: "constant", type: "float", value: [2] },
+        { kind: "storage", name: "pal", type: "vec4", count: 4, index: 0 },
+      ],
+      color: 1,
+    };
+    const storage = emitShaderGraphWgsl(storageGraph);
+    expect(storage.storageGroup).toBe(1);
+    const storageResult = await inPage<SurfaceResult>(page, SURFACE_SCRIPT, {
+      size: SIZE,
+      shader: storage.code,
+      blockBytes: storage.blockBytes,
+      blockFloats: fullSurfaceBlock().slice(0, storage.blockBytes / 4),
+      streams: pageStreams(storage),
+      texel: null,
+      storage: [[1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1]],
+    });
+    test.skip(!storageResult.adapter, SKIP);
+    expect(storageResult.error).toBeNull();
+    expect(storageResult.centre).toEqual([0, 0, 255, 255]);
+
+    // §68: the ambient member rides the node block's tail.
+    const lightsGraph: ShaderGraph = {
+      domain: "surface",
+      nodes: [
+        { kind: "light", member: "ambient" },
+        { kind: "constant", type: "float", value: [1] },
+        { kind: "compose", type: "vec4", parts: [0, 1] },
+      ],
+      color: 2,
+    };
+    const lights = emitShaderGraphWgsl(lightsGraph);
+    const block = new Array<number>(lights.blockBytes / 4).fill(0);
+    block.splice(0, 36, ...fullSurfaceBlock().slice(0, 36));
+    block[lights.lightsByteOffset / 4 + 1] = 1; // ambient = (0, 1, 0)
+    const lightsResult = await inPage<SurfaceResult>(page, SURFACE_SCRIPT, {
+      size: SIZE,
+      shader: lights.code,
+      blockBytes: lights.blockBytes,
+      blockFloats: block,
+      streams: pageStreams(lights),
+      texel: null,
+    });
+    expect(lightsResult.error).toBeNull();
+    expect(lightsResult.centre).toEqual([0, 255, 0, 255]);
   });
 
   test("the three screen module shapes compile; a graph copy is the identity", async ({

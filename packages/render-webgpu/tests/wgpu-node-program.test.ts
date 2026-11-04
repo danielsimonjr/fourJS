@@ -19,9 +19,14 @@ import {
   Renderable,
   RenderTarget,
   createRenderStatistics,
+  MAX_LIGHT_SLOTS,
+  SHADER_LIGHT_SLOTS,
+  analyzeShaderGraph,
+  createSceneLights,
   type RenderItem,
   type Renderer,
   type ShaderGraph,
+  type ShaderReflection,
   type UnlitRenderItem,
 } from "@fourjs/render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -32,6 +37,8 @@ import {
   type RecordingGpu,
 } from "../../../tests/integration/helpers/recording-gpu.js";
 import {
+  LIGHT_UNIFORM_BYTES,
+  LIGHT_UNIFORM_FLOATS,
   NODE_SCREEN_BLOCK_BASE_BYTES,
   NODE_SURFACE_BLOCK_BASE_BYTES,
   WebgpuRenderer,
@@ -310,6 +317,17 @@ class TestNodeMaterial {
     return (this.textures.get(name) as TestTexture | undefined) ?? null;
   }
 
+  readonly storage = new Map<string, unknown>();
+
+  getStorage(name: string): unknown {
+    return this.storage.get(name) ?? null;
+  }
+
+  /** What `NodeMaterial` derives at construction. */
+  get reflection(): ShaderReflection {
+    return analyzeShaderGraph(this.graph).reflection;
+  }
+
   get asMaterial(): WgpuNodeItemMaterial {
     return this as unknown as WgpuNodeItemMaterial;
   }
@@ -510,6 +528,10 @@ function frameState(
     stencilReference: 0,
     activeTarget: null,
     statistics: null,
+    lights: null,
+    eyeX: 0,
+    eyeY: 0,
+    eyeZ: 0,
     ...overrides,
   };
 }
@@ -1637,4 +1659,283 @@ it("contains rejected WebGPU diagnostic requests without an unhandled rejection"
     "device lost",
   );
   store.dispose();
+});
+
+// ---------------------------------------------------------------------------
+// RFC 0001 addendum (accepted 2026-11-04): storage, defines, lights.
+// ---------------------------------------------------------------------------
+
+function storageGraph(withTexture = false): ShaderGraph {
+  return {
+    domain: "surface",
+    nodes: [
+      { kind: "time" },
+      { kind: "storage", name: "pal", type: "vec4", count: 8, index: 0 },
+      { kind: "storage", name: "w", type: "vec2", count: 3, index: 0 },
+      { kind: "storage", name: "k", type: "float", count: 1, index: 0 },
+      { kind: "compose", type: "vec4", parts: [2, 3, 3] },
+      { kind: "binary", op: "add", left: 1, right: 4 },
+      ...(withTexture
+        ? ([
+            { kind: "attribute", name: "uv" },
+            { kind: "texture", name: "map", uv: 6 },
+            { kind: "binary", op: "add", left: 5, right: 7 },
+          ] as const)
+        : []),
+    ],
+    color: withTexture ? 8 : 5,
+  };
+}
+
+function lightGraph(): ShaderGraph {
+  return {
+    domain: "surface",
+    nodes: [
+      { kind: "light", member: "ambient" },
+      { kind: "light", member: "directionalDirection" },
+      { kind: "light", member: "directionalColor" },
+      { kind: "light", member: "cameraPosition" },
+      { kind: "light", member: "punctualCount" },
+      { kind: "time" },
+      { kind: "light", member: "punctualPosition", index: 5 },
+      { kind: "light", member: "punctualColor", index: 5 },
+      { kind: "light", member: "punctualDirection", index: 5 },
+      { kind: "light", member: "punctualParams", index: 5 },
+      { kind: "binary", op: "add", left: 0, right: 1 },
+      { kind: "binary", op: "add", left: 10, right: 2 },
+      { kind: "binary", op: "add", left: 11, right: 3 },
+      { kind: "binary", op: "add", left: 12, right: 6 },
+      { kind: "binary", op: "add", left: 13, right: 7 },
+      { kind: "binary", op: "add", left: 14, right: 8 },
+      { kind: "compose", type: "vec4", parts: [15, 4] },
+      { kind: "binary", op: "add", left: 16, right: 9 },
+    ],
+    color: 17,
+  };
+}
+
+class TestStorage {
+  version = 1;
+
+  disposed = false;
+
+  readonly data: Float32Array;
+
+  constructor(
+    readonly type: string,
+    readonly count: number,
+  ) {
+    this.data = new Float32Array(count * 4);
+    this.data[0] = 7;
+  }
+}
+
+describe("storage nodes in the WGSL store (§82)", () => {
+  it("emits read-only storage declarations behind the textures", () => {
+    const bare = emitShaderGraphWgsl(storageGraph());
+    expect(bare.storageGroup).toBe(1);
+    expect(bare.code).toContain(
+      "@group(1) @binding(0) var<storage, read> st_pal : array<vec4<f32>>;",
+    );
+    expect(bare.code).toContain("st_w : array<vec2<f32>>;");
+    expect(bare.code).toContain("st_k : array<f32>;");
+    expect(bare.code).toContain("st_pal[min(u32(max(n0, 0.0)), 7u)]");
+    expect(bare.storage.map((b) => b.name)).toEqual(["pal", "w", "k"]);
+    const textured = emitShaderGraphWgsl(storageGraph(true));
+    expect(textured.storageGroup).toBe(2);
+    expect(textured.code).toContain("@group(2) @binding(0) var<storage, read>");
+    expect(emitShaderGraphWgsl(colorGraph()).storageGroup).toBeNull();
+  });
+
+  it("allocates, uploads on version change, caches the group and releases", () => {
+    const { gpu, store, pass } = createStore();
+    const material = new TestNodeMaterial(storageGraph());
+    const buffers = {
+      pal: new TestStorage("vec4", 8),
+      w: new TestStorage("vec2", 3),
+      k: new TestStorage("float", 1),
+    };
+    for (const [name, buffer] of Object.entries(buffers)) {
+      material.storage.set(name, buffer);
+    }
+    const item = nodeItem(triangle(), material);
+    expect(store.beginFrame([item], 1)).toBe(true);
+    gpu.reset();
+    store.draw(pass, item as never, frameState());
+    const created = gpu
+      .callsOf("device.createBuffer")
+      .filter((call) =>
+        String((call.args[0] as { label?: string }).label).startsWith(
+          "fourJS:node-storage",
+        ),
+      );
+    expect(created).toHaveLength(3);
+    expect(gpu.countOf("device.createBindGroup")).toBe(2);
+    const binds = gpu.callsOf("pass.setBindGroup").map((c) => c.args[0]);
+    expect(binds).toEqual([0, 1]);
+    // Same versions: no re-upload, no new group.
+    gpu.reset();
+    store.draw(pass, item as never, frameState());
+    expect(gpu.countOf("device.createBindGroup")).toBe(0);
+    const uploadsBefore = gpu.countOf("queue.writeBuffer");
+    buffers.pal.version += 1;
+    store.draw(pass, item as never, frameState());
+    expect(gpu.countOf("queue.writeBuffer")).toBe(uploadsBefore + 1);
+    // Disposed: the draw is skipped and the GPU copy released.
+    buffers.k.disposed = true;
+    gpu.reset();
+    store.draw(pass, item as never, frameState());
+    expect(gpu.countOf("pass.draw")).toBe(0);
+    expect(gpu.countOf("buffer.destroy")).toBe(1);
+    store.dispose();
+    expect(gpu.countOf("buffer.destroy")).toBeGreaterThan(1);
+  });
+
+  it("skips an unbound buffer with one warning", () => {
+    const { gpu, store, pass } = createStore();
+    const material = new TestNodeMaterial(storageGraph());
+    const item = nodeItem(triangle(), material);
+    store.beginFrame([item], 1);
+    gpu.reset();
+    store.draw(pass, item as never, frameState());
+    store.draw(pass, item as never, frameState());
+    expect(gpu.countOf("pass.draw")).toBe(0);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("rebuilds the group when a buffer is rebound, and survives device loss", () => {
+    const { gpu, store, pass } = createStore();
+    const graph = storageGraph();
+    const material = new TestNodeMaterial(graph);
+    const set = (a: TestStorage) => {
+      material.storage.set("pal", a);
+      material.storage.set("w", new TestStorage("vec2", 3));
+      material.storage.set("k", new TestStorage("float", 1));
+    };
+    const first = new TestStorage("vec4", 8);
+    set(first);
+    const item = nodeItem(triangle(), material);
+    store.beginFrame([item], 1);
+    store.draw(pass, item as never, frameState());
+    gpu.reset();
+    material.storage.set("pal", new TestStorage("vec4", 8));
+    store.draw(pass, item as never, frameState());
+    expect(gpu.countOf("device.createBindGroup")).toBe(1);
+    store.forget();
+  });
+});
+
+describe("defines in the WGSL store", () => {
+  it("omits the dead branch and shares a program across equal source", () => {
+    const base: ShaderGraph = {
+      domain: "surface",
+      nodes: [
+        { kind: "constant", type: "vec4", value: [1, 0, 0, 1] },
+        { kind: "constant", type: "vec4", value: [0, 0, 1, 1] },
+        { kind: "select", define: "A", then: 0, otherwise: 1 },
+        { kind: "select", define: "B", then: 0, otherwise: 1 },
+      ],
+      color: 2,
+    };
+    const on = { ...base, defines: { A: true, B: true } };
+    const onToo = { ...base, defines: { A: true, B: false } };
+    const off = { ...base, defines: { A: false } };
+    const emittedOn = emitShaderGraphWgsl(on);
+    expect(emittedOn.code).toContain(
+      "let n0 : vec4<f32> = vec4<f32>(1.0, 0.0, 0.0, 1.0)",
+    );
+    expect(emittedOn.code).not.toContain("vec4<f32>(0.0, 0.0, 1.0, 1.0)");
+    expect(emittedOn.code).toContain("let n2 : vec4<f32> = n0;");
+    expect(emitShaderGraphWgsl(off).code).not.toContain(
+      "vec4<f32>(1.0, 0.0, 0.0, 1.0)",
+    );
+    const { gpu, store } = createStore();
+    const items = [on, onToo, off].map((g) =>
+      nodeItem(triangle(), new TestNodeMaterial(g)),
+    );
+    store.beginFrame(items, 1);
+    expect(store.programCount).toBe(2);
+    expect(gpu.countOf("device.createShaderModule")).toBe(2);
+  });
+});
+
+describe("lights in the WGSL store (§68)", () => {
+  it("pins the slot count to the renderer's block", () => {
+    expect(SHADER_LIGHT_SLOTS).toBe(MAX_LIGHT_SLOTS);
+  });
+
+  it("emits the nested light block and clamped array reads", () => {
+    const emitted = emitShaderGraphWgsl(lightGraph());
+    expect(emitted.usesLights).toBe(true);
+    expect(emitted.lightsByteOffset).toBe(NODE_SURFACE_BLOCK_BASE_BYTES);
+    expect(emitted.blockBytes).toBe(
+      NODE_SURFACE_BLOCK_BASE_BYTES + LIGHT_UNIFORM_BYTES,
+    );
+    expect(emitted.code).toContain("struct NodeLights {");
+    expect(emitted.code).toContain("  lights : NodeLights,");
+    expect(emitted.code).toContain("node.lights.ambientColor.xyz");
+    expect(emitted.code).toContain("node.lights.counts.x");
+    expect(emitted.code).toContain(
+      `node.lights.punctualPosition[clamp(i32(n5), 0, ${String(MAX_LIGHT_SLOTS - 1)})].xyz`,
+    );
+    expect(emitted.code).toContain(
+      `node.lights.punctualParams[clamp(i32(n5), 0, ${String(MAX_LIGHT_SLOTS - 1)})];`,
+    );
+    const plain = emitShaderGraphWgsl(colorGraph());
+    expect(plain.usesLights).toBe(false);
+    expect(plain.lightsByteOffset).toBe(-1);
+    expect(plain.code).not.toContain("NodeLights");
+  });
+
+  it("packs the frame's lights into the block tail, zeros without", () => {
+    const { gpu, store, pass } = createStore();
+    const item = nodeItem(triangle(), new TestNodeMaterial(lightGraph()));
+    store.beginFrame([item], 1);
+    const lights = createSceneLights();
+    lights.ambientColor[0] = 0.25;
+    lights.ambientColor[1] = 0.5;
+    lights.ambientColor[2] = 0.75;
+    lights.punctualCount = 2;
+    lights.punctualPositions[3] = 4;
+    store.draw(
+      pass,
+      item as never,
+      frameState({ lights, eyeX: 1, eyeY: 2, eyeZ: 3 }),
+    );
+    store.endFrame();
+    const tail = lastUpload(gpu).slice(36);
+    expect(tail.slice(0, 3)).toEqual([0.25, 0.5, 0.75]);
+    expect(tail.slice(12, 15)).toEqual([1, 2, 3]); // cameraPosition
+    expect(tail[16]).toBe(2); // counts.x
+    expect(tail[20 + 4]).toBe(4); // punctualPosition[1].x
+    // No lights collected: the tail is zero, not stale.
+    store.beginFrame([item], 1);
+    store.draw(pass, item as never, frameState({ lights: null }));
+    store.endFrame();
+    expect(
+      lastUpload(gpu)
+        .slice(36, 36 + LIGHT_UNIFORM_FLOATS)
+        .every((v) => v === 0),
+    ).toBe(true);
+  });
+
+  it("collects the frame's lights when a node material reads them", async () => {
+    registerWebgpuNodeMaterialPipeline();
+    const { gpu, renderer } = await initialized();
+    const material = new TestNodeMaterial(lightGraph());
+    const scene = nodeRenderable(triangle(), material);
+    (scene as unknown as { ambientLight: number[] }).ambientLight = [
+      0.25, 0.5, 0.75,
+    ];
+    const camera = new TestCamera();
+    camera.transform.worldMatrix.elements[12] = 5;
+    camera.transform.worldMatrix.elements[13] = 6;
+    camera.transform.worldMatrix.elements[14] = 7;
+    renderer.render(scene, [createView({ camera: camera.asCamera })]);
+    const uploads = gpu.callsOf("queue.writeBuffer");
+    const block = uploads[uploads.length - 1].args[2] as number[];
+    expect(block.slice(36, 39)).toEqual([0.25, 0.5, 0.75]);
+    expect(block.slice(48, 51)).toEqual([5, 6, 7]);
+    renderer.dispose();
+  });
 });

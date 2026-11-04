@@ -134,6 +134,26 @@ export type { BoundedWebpDecoderOptions } from "./bounded-webp.js";
 export { createBoundedAvifDecoder } from "./bounded-avif.js";
 export type { BoundedAvifDecoderOptions } from "./bounded-avif.js";
 export {
+  BASIS_TARGET_CODES,
+  createBoundedBasisTranscoder,
+} from "./bounded-basis.js";
+export type {
+  BasisTextureFormat,
+  BasisTextureSource,
+  BasisTranscodeRequest,
+  BasisTranscoder,
+  BoundedBasisTranscoderOptions,
+} from "./bounded-basis.js";
+export { KTX2_HEADER_BYTES, KTX2_IDENTIFIER, parseKtx2 } from "./ktx2.js";
+export type {
+  Ktx2BasisCodec,
+  Ktx2Dfd,
+  Ktx2Info,
+  Ktx2Level,
+  Ktx2ParseOptions,
+  Ktx2Supercompression,
+} from "./ktx2.js";
+export {
   probeAvif,
   probeImage,
   probeJpeg,

@@ -99,6 +99,11 @@ import {
   SHADER_VALUE_COMPONENTS,
   analyzeShaderGraph,
   createShaderSourceMap,
+  resolveShaderSelect,
+  SHADER_LIGHT_ARRAY_TYPES,
+  MAX_LIGHT_SLOTS,
+  type ShaderStorageReflection,
+  type ShaderStorageBuffer,
   type ShaderSourceMap,
   isRenderTargetTexture,
   type GraphEffect,
@@ -146,6 +151,13 @@ import type {
   WgpuCacheableRenderTarget,
   WgpuRenderTargetCache,
 } from "./wgpu-render-target.js";
+import {
+  LIGHT_UNIFORM_BYTES,
+  LIGHT_UNIFORM_FLOATS,
+  LIGHT_UNIFORM_MEMBERS_WGSL,
+  LIGHT_UNIFORM_STRIDE_FLOATS,
+  writeLightUniforms,
+} from "./wgpu-lights.js";
 import { applyStencilReference, stencilDescriptor } from "./wgpu-stencil.js";
 import {
   COLOR_BUFFER_LAYOUT,
@@ -209,6 +221,18 @@ export interface EmittedWgslNodeShader {
    * triangle comes from the vertex index).
    */
   readonly vertexStreams: readonly ShaderAttributeName[];
+  /** Storage buffers read (§82), reflection order; bound as read-only storage. */
+  readonly storage: readonly ShaderStorageReflection[];
+  /** The bind group the storage buffers occupy (`@binding(i)`), or `null`. */
+  readonly storageGroup: number | null;
+  /**
+   * Whether the graph reads the §68 light block. The block then ends with the
+   * renderer's own `LightUniforms` member layout ({@link LIGHT_UNIFORM_BYTES}
+   * bytes, packed by `writeLightUniforms`) at {@link lightsByteOffset}.
+   */
+  readonly usesLights: boolean;
+  /** Byte offset of the light tail inside the block, or `-1`. */
+  readonly lightsByteOffset: number;
   /** `vec4` lanes the material uniforms occupy (after the fixed prefix). */
   readonly uniformSlots: number;
   /** Bytes of the uniform block, or `0` for a block-less screen program. */
@@ -308,7 +332,26 @@ interface EmissionContext {
   readonly domain: ShaderDomain;
   /** The expression §9 render time reads back from. */
   readonly timeExpression: string;
+  /** The graph's compile-time defines (select resolution). */
+  readonly defines: Readonly<Record<string, boolean>> | undefined;
 }
+
+/** Light-block WGSL member and swizzle per scalar `"light"` member. */
+const LIGHT_SCALAR_READS: Readonly<Record<string, string>> = {
+  ambient: "node.lights.ambientColor.xyz",
+  directionalDirection: "node.lights.lightDirection.xyz",
+  directionalColor: "node.lights.lightColor.xyz",
+  cameraPosition: "node.lights.cameraPosition.xyz",
+  punctualCount: "node.lights.counts.x",
+};
+
+/** Light-block WGSL array member per array `"light"` member. */
+const LIGHT_ARRAY_MEMBERS: Readonly<Record<string, string>> = {
+  punctualPosition: "punctualPosition",
+  punctualColor: "punctualColor",
+  punctualDirection: "punctualDirection",
+  punctualParams: "punctualParams",
+};
 
 /** The expression reading uniform lane(s) back at the IR type. */
 function uniformReadExpression(type: ShaderValueType, slot: number): string {
@@ -427,10 +470,32 @@ function nodeExpression(
           )
         : `(${left} ${operator} ${right})`;
     }
-    default:
-      // "mix" — the union's last member; a `default` keeps the switch total
-      // under `noImplicitReturns` without an unreachable extra arm.
+    case "mix":
       return `mix(n${String(node.a)}, n${String(node.b)}, n${String(node.t)})`;
+    case "select":
+      // The dead branch was never marked reachable, so it has no local.
+      return `n${String(resolveShaderSelect(node, context.defines))}`;
+    case "storage":
+      return (
+        `st_${node.name}[min(u32(max(n${String(node.index)}, 0.0)), ` +
+        `${String(node.count - 1)}u)]`
+      );
+    default: {
+      // "light" — the union's last member. Array members clamp their float
+      // index into the block's slot range; the block is all-vec4, so a vec3
+      // member reads `.xyz` and `punctualParams` reads the whole lane.
+      if (node.index === undefined) {
+        return LIGHT_SCALAR_READS[node.member];
+      }
+      const lane =
+        `node.lights.${LIGHT_ARRAY_MEMBERS[node.member]}[clamp(i32(n` +
+        `${String(node.index)}), 0, ${String(MAX_LIGHT_SLOTS - 1)})]`;
+      return SHADER_LIGHT_ARRAY_TYPES[
+        node.member as keyof typeof SHADER_LIGHT_ARRAY_TYPES
+      ] === "vec4"
+        ? lane
+        : `${lane}.xyz`;
+    }
   }
 }
 
@@ -498,6 +563,21 @@ function emitTextureDeclarations(
   return out;
 }
 
+/** The read-only storage declarations at `group`, reflection order (§82, §33). */
+function emitStorageDeclarations(
+  storage: readonly ShaderStorageReflection[],
+  group: number,
+): string {
+  let out = "";
+  for (let index = 0; index < storage.length; index += 1) {
+    const element = WGSL_TYPES[storage[index].type];
+    out +=
+      `@group(${String(group)}) @binding(${String(index)}) ` +
+      `var<storage, read> st_${storage[index].name} : array<${element}>;\n`;
+  }
+  return out;
+}
+
 /**
  * Emits the WGSL module for `graph` — both stages plus the binding metadata
  * the store builds layouts and pipelines from.
@@ -522,26 +602,54 @@ export function emitShaderGraphWgsl(graph: ShaderGraph): EmittedWgslNodeShader {
     return emitScreen(graph, analysis, usesTime, textures, slots, total);
   }
 
-  const blockBytes = NODE_SURFACE_BLOCK_BASE_BYTES + total * 16;
+  const usesLights = analysis.reflection.lights.length > 0;
+  const lightsByteOffset = usesLights
+    ? NODE_SURFACE_BLOCK_BASE_BYTES + total * 16
+    : -1;
+  const blockBytes =
+    NODE_SURFACE_BLOCK_BASE_BYTES +
+    total * 16 +
+    (usesLights ? LIGHT_UNIFORM_BYTES : 0);
   const context: EmissionContext = {
     types: analysis.nodeTypes,
     uniformSlots: slots,
     domain: "surface",
     timeExpression: "node.params.y",
+    defines: graph.defines,
   };
+  const storage = analysis.reflection.storage;
 
   // The block: prefix members plus the uniform lanes (module header).
-  let code = "struct NodeUniforms {\n";
+  let code = "";
+  if (usesLights) {
+    // The renderer's own light-block members (`wgpu-lights.ts`), nested at the
+    // block's tail — no extra bind group, one layout, one packer.
+    code += `struct NodeLights {\n${LIGHT_UNIFORM_MEMBERS_WGSL}\n};\n\n`;
+  }
+  code += "struct NodeUniforms {\n";
   code += "  viewProjection : mat4x4<f32>,\n";
   code += "  model : mat4x4<f32>,\n";
   code += "  params : vec4<f32>,\n";
   if (total > 0) {
     code += `  u : array<vec4<f32>, ${String(total)}>,\n`;
   }
+  if (usesLights) {
+    code += "  lights : NodeLights,\n";
+  }
   code += "};\n\n";
   code += `@group(${String(NODE_SURFACE_BLOCK_GROUP)}) @binding(0) var<uniform> node : NodeUniforms;\n`;
   if (textures.length > 0) {
     code += `\n${emitTextureDeclarations(textures, NODE_SURFACE_TEXTURE_GROUP)}`;
+  }
+  // §82: read-only storage buffers, one group after the textures'.
+  const storageGroup =
+    storage.length === 0
+      ? null
+      : textures.length > 0
+        ? NODE_SURFACE_TEXTURE_GROUP + 1
+        : NODE_SURFACE_TEXTURE_GROUP;
+  if (storageGroup !== null) {
+    code += `\n${emitStorageDeclarations(storage, storageGroup)}`;
   }
 
   // The vertex stage declares the union of what either subgraph reads (plus
@@ -596,6 +704,10 @@ export function emitShaderGraphWgsl(graph: ShaderGraph): EmittedWgslNodeShader {
     uniforms: analysis.reflection.uniforms,
     textures,
     vertexStreams,
+    storage,
+    storageGroup,
+    usesLights,
+    lightsByteOffset,
     uniformSlots: total,
     blockBytes,
     blockGroup: NODE_SURFACE_BLOCK_GROUP,
@@ -621,6 +733,7 @@ function emitScreen(
     uniformSlots: slots,
     domain: "screen",
     timeExpression: "node.params.x",
+    defines: graph.defines,
   };
   const usesUv = attributesUsed(graph, analysis.colorReachable).length > 0;
 
@@ -669,6 +782,10 @@ function emitScreen(
     uniforms: analysis.reflection.uniforms,
     textures,
     vertexStreams: [],
+    storage: [],
+    storageGroup: null,
+    usesLights: false,
+    lightsByteOffset: -1,
     uniformSlots: total,
     blockBytes,
     blockGroup,
@@ -691,6 +808,24 @@ const NODE_STRIDE_ALIGNMENT = 256;
  * cache's sampler is shared for its life).
  */
 const pairScratch: object[] = [];
+
+/** Scratch the light block is packed into before its prefix is copied. */
+const lightScratch = new Float32Array(LIGHT_UNIFORM_STRIDE_FLOATS);
+
+/** Scratch for storage-group resolution (at most `MAX_SHADER_GRAPH_STORAGE`). */
+const storageScratch: GpuBuffer[] = [];
+
+/** One uploaded storage buffer (§82): the GPU copy and the version it holds. */
+interface StorageRecord {
+  readonly gpu: GpuBuffer;
+  version: number;
+}
+
+/** One material's cached storage bind group and the GPU buffers it spans. */
+interface NodeStorageGroup {
+  readonly buffers: GpuBuffer[];
+  readonly group: GpuBindGroup;
+}
 
 /** One material's (or effect's) cached texture bind group. */
 interface NodeTextureGroup {
@@ -772,6 +907,15 @@ export class WgpuNodePipelineStore
 
   /** Texture-group layouts by pair count. */
   readonly #textureLayouts = new Map<number, GpuBindGroupLayout>();
+
+  /** Storage-group layouts by buffer count (§82). */
+  readonly #storageLayouts = new Map<number, GpuBindGroupLayout>();
+
+  /** GPU copies of storage buffers, keyed by the application's buffer. */
+  readonly #storageBuffers = new Map<ShaderStorageBuffer, StorageRecord>();
+
+  /** Cached storage bind groups per material. */
+  readonly #storageGroups = new WeakMap<object, NodeStorageGroup>();
 
   /** Cached texture bind groups per material / per graph effect. */
   readonly #textureGroups = new WeakMap<object, NodeTextureGroup>();
@@ -884,6 +1028,23 @@ export class WgpuNodePipelineStore
       }
     }
 
+    // 1b. Storage buffers (§82) — resolved and uploaded before anything is
+    // recorded; an unbound or disposed buffer skips the draw.
+    let storageGroup: GpuBindGroup | null = null;
+    if (record.emitted.storage.length > 0) {
+      storageGroup = this.#materialStorageGroup(material, record);
+      if (storageGroup === null) {
+        if (DEV) {
+          devWarnOnce(
+            `webgpu-node-storage:${material.id}`,
+            `§82: node material "${material.id}" reads a storage buffer ` +
+              "that is unbound or disposed; its draws are skipped.",
+          );
+        }
+        return frame.stencilReference;
+      }
+    }
+
     // 2. Geometry — the shared cache's record, with the normal stream asked
     // for exactly when the graph reads it (the shaded arm's rule).
     const needsNormals = record.emitted.vertexStreams.includes("normal");
@@ -957,6 +1118,27 @@ export class WgpuNodePipelineStore
     for (let index = lane; index < base + record.strideBytes / 4; index += 1) {
       staging[index] = 0;
     }
+    if (record.emitted.usesLights) {
+      // §68's block, packed by the renderer's own packer into scratch, whose
+      // prefix (the `LightUniforms` members) is the node block's tail.
+      const lights = frame.lights;
+      const tail = base + record.emitted.lightsByteOffset / 4;
+      if (lights === null) {
+        staging.fill(0, tail, tail + LIGHT_UNIFORM_FLOATS);
+      } else {
+        writeLightUniforms(
+          lightScratch,
+          0,
+          lights,
+          frame.eyeX,
+          frame.eyeY,
+          frame.eyeZ,
+        );
+        for (let index = 0; index < LIGHT_UNIFORM_FLOATS; index += 1) {
+          staging[tail + index] = lightScratch[index];
+        }
+      }
+    }
 
     // 5. Record the draw.
     pass.setPipeline(pipeline);
@@ -967,6 +1149,9 @@ export class WgpuNodePipelineStore
     );
     if (textureGroup !== null) {
       pass.setBindGroup(NODE_SURFACE_TEXTURE_GROUP, textureGroup);
+    }
+    if (storageGroup !== null) {
+      pass.setBindGroup(record.emitted.storageGroup!, storageGroup);
     }
     let reference = frame.stencilReference;
     if (stencilRecord !== undefined) {
@@ -1093,6 +1278,8 @@ export class WgpuNodePipelineStore
     this.#bySource.clear();
     this.#blockLayouts.clear();
     this.#textureLayouts.clear();
+    this.#storageLayouts.clear();
+    this.#storageBuffers.clear();
     this.#buffer = null;
     this.#staging = new Float32Array(0);
     this.#capacityBytes = 0;
@@ -1109,6 +1296,9 @@ export class WgpuNodePipelineStore
       record.screenBuffer?.destroy();
     }
     this.#buffer?.destroy();
+    for (const stored of this.#storageBuffers.values()) {
+      stored.gpu.destroy();
+    }
     this.forget();
   }
 
@@ -1173,6 +1363,9 @@ export class WgpuNodePipelineStore
       if (emitted.textureGroup !== null) {
         groups.push(this.#textureLayout(emitted.textures.length));
       }
+      if (emitted.storageGroup !== null) {
+        groups.push(this.#storageLayout(emitted.storage.length));
+      }
     } else {
       if (emitted.textureGroup !== null) {
         groups.push(this.#textureLayout(emitted.textures.length));
@@ -1233,6 +1426,100 @@ export class WgpuNodePipelineStore
     });
     this.#blockLayouts.set(key, layout);
     return layout;
+  }
+
+  /** The read-only storage layout for one buffer count (§82). */
+  #storageLayout(count: number): GpuBindGroupLayout {
+    const existing = this.#storageLayouts.get(count);
+    if (existing !== undefined) {
+      return existing;
+    }
+    const entries = [];
+    for (let index = 0; index < count; index += 1) {
+      entries.push({
+        binding: index,
+        visibility: GPU_SHADER_STAGE.FRAGMENT,
+        buffer: { type: "read-only-storage" as const },
+      });
+    }
+    const layout = this.#host.device.createBindGroupLayout({
+      label: `fourJS:node-storage:${String(count)}`,
+      entries,
+    });
+    this.#storageLayouts.set(count, layout);
+    return layout;
+  }
+
+  /**
+   * Resolves every storage buffer the program reads to its GPU copy —
+   * allocating on first sight and re-uploading when the buffer's version
+   * moved — and returns the material's bind group, or `null` when a buffer is
+   * unbound or disposed (a disposed buffer's GPU copy is released here).
+   */
+  #materialStorageGroup(
+    material: WgpuNodeItemMaterial,
+    record: NodeProgramRecord,
+  ): GpuBindGroup | null {
+    const device = this.#host.device;
+    const names = record.emitted.storage;
+    for (let index = 0; index < names.length; index += 1) {
+      const bound = material.getStorage(names[index].name);
+      if (bound === null) {
+        return null;
+      }
+      let stored = this.#storageBuffers.get(bound);
+      if (bound.disposed) {
+        stored?.gpu.destroy();
+        this.#storageBuffers.delete(bound);
+        return null;
+      }
+      if (stored === undefined) {
+        stored = {
+          gpu: device.createBuffer({
+            label: `fourJS:node-storage:${names[index].name}`,
+            size: bound.data.byteLength,
+            usage: GPU_BUFFER_USAGE.STORAGE | GPU_BUFFER_USAGE.COPY_DST,
+          }),
+          version: 0,
+        };
+        this.#storageBuffers.set(bound, stored);
+      }
+      if (stored.version !== bound.version) {
+        device.queue.writeBuffer(stored.gpu, 0, bound.data);
+        stored.version = bound.version;
+      }
+      storageScratch[index] = stored.gpu;
+    }
+    const cached = this.#storageGroups.get(material);
+    if (cached !== undefined && cached.buffers.length === names.length) {
+      let same = true;
+      for (let index = 0; index < names.length; index += 1) {
+        if (cached.buffers[index] !== storageScratch[index]) {
+          same = false;
+          break;
+        }
+      }
+      if (same) {
+        return cached.group;
+      }
+    }
+    const entries: GpuBindGroupEntry[] = [];
+    for (let index = 0; index < names.length; index += 1) {
+      entries.push({
+        binding: index,
+        resource: { buffer: storageScratch[index] },
+      });
+    }
+    const group = device.createBindGroup({
+      label: "fourJS:node-storage",
+      layout: this.#storageLayout(names.length),
+      entries,
+    });
+    this.#storageGroups.set(material, {
+      buffers: storageScratch.slice(0, names.length),
+      group,
+    });
+    return group;
   }
 
   /** The texture-group layout for one pair count — pairs at (2i, 2i + 1). */

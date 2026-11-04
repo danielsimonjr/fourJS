@@ -50,6 +50,7 @@ import {
   Renderable,
   Sprite,
   createRenderStatistics,
+  analyzeShaderGraph,
   createSceneLights,
   particleQuadGeometry,
   resetRenderStatistics,
@@ -57,6 +58,7 @@ import {
   type GraphEffect,
   type RenderBatch,
   type ShaderGraph,
+  type ShaderReflection,
   type RenderStatistics,
   type LitRenderItem,
   type ParticleRenderItem,
@@ -1706,6 +1708,8 @@ describe("WebglRenderer — initialization (§61, §62)", () => {
     expect(Object.hasOwn(capabilities, "timestampQueries")).toBe(true);
     expect(capabilities.multisampling).toBe(true);
     expect(capabilities.shaderPrecision).toBe("highp");
+    expect(capabilities.textureFormats).toEqual(["rgba8"]);
+    // R-30c: a context with no compressed-texture entry points reports none.
     expect(capabilities.textureFormats).toEqual(["rgba8"]);
     expect(capabilities.compressedTextureFormats).toEqual([]);
     // maxAnisotropy is a getter: unread, so initialize's transcript is
@@ -12366,6 +12370,22 @@ class TestNodeMaterial {
     return this.textures.get(name) ?? null;
   }
 
+  /** What `NodeMaterial` derives at construction. */
+  get reflection(): ShaderReflection {
+    try {
+      return analyzeShaderGraph(this.graph).reflection;
+    } catch {
+      // A deliberately malformed graph: a real NodeMaterial could not exist.
+      return {
+        uniforms: [],
+        textures: [],
+        attributes: [],
+        storage: [],
+        lights: [],
+      };
+    }
+  }
+
   get asMaterial(): NodeItemMaterial {
     return this as unknown as NodeItemMaterial;
   }
@@ -14527,3 +14547,98 @@ describe("WebglRenderer - R-22 instanced shaded runs", () => {
     expect(gl.countOf("deleteBuffer")).toBeGreaterThanOrEqual(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// RFC 0001 addendum (accepted 2026-11-04): storage refusal, defines, lights.
+// ---------------------------------------------------------------------------
+
+describe("WebglRenderer — node-material addendum (storage, defines, lights)", () => {
+  beforeEach(() => {
+    resetDevWarnings();
+    clearRegisteredNodeMaterialPipeline();
+  });
+
+  function lightsNodeGraph(): ShaderGraph {
+    return {
+      domain: "surface",
+      nodes: [
+        { kind: "light", member: "ambient" },
+        { kind: "light", member: "directionalDirection" },
+        { kind: "light", member: "directionalColor" },
+        { kind: "light", member: "cameraPosition" },
+        { kind: "light", member: "punctualCount" },
+        { kind: "constant", type: "float", value: [1.9] },
+        { kind: "light", member: "punctualPosition", index: 5 },
+        { kind: "light", member: "punctualColor", index: 5 },
+        { kind: "light", member: "punctualDirection", index: 5 },
+        { kind: "light", member: "punctualParams", index: 5 },
+        { kind: "binary", op: "add", left: 0, right: 1 },
+        { kind: "binary", op: "add", left: 10, right: 2 },
+        { kind: "binary", op: "add", left: 11, right: 3 },
+        { kind: "binary", op: "add", left: 12, right: 6 },
+        { kind: "binary", op: "add", left: 13, right: 7 },
+        { kind: "binary", op: "add", left: 14, right: 8 },
+        { kind: "compose", type: "vec4", parts: [15, 4] },
+        { kind: "binary", op: "add", left: 16, right: 9 },
+      ],
+      color: 17,
+    };
+  }
+
+  it("refuses a storage graph (capability absent) with one warning", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      registerNodeMaterialPipeline();
+      const { renderer, gl, camera } = await initialized();
+      const root = createRoot();
+      const storage: ShaderGraph = {
+        domain: "surface",
+        nodes: [
+          { kind: "constant", type: "float", value: [0] },
+          { kind: "storage", name: "pal", type: "vec4", count: 4, index: 0 },
+        ],
+        color: 1,
+      };
+      root.add(nodeRenderable(new TestNodeMaterial(storage)));
+      gl.reset();
+      renderer.render(root, [createView(camera)]);
+      renderer.render(root, [createView(camera)]);
+      expect(gl.countOf("drawArrays")).toBe(0);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0][0])).toContain("storage");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("declares, clamps and uploads the light block once per view", async () => {
+    registerNodeMaterialPipeline();
+    const { renderer, gl, camera } = await initialized();
+    const root = new AmbientRoot([0.25, 0.5, 0.75]);
+    root.add(nodeRenderable(new TestNodeMaterial(lightsNodeGraph())));
+    root.add(nodeRenderable(new TestNodeMaterial(lightsNodeGraph())));
+    camera.transform.worldMatrix.elements[12] = 5;
+    camera.transform.worldMatrix.elements[13] = 6;
+    camera.transform.worldMatrix.elements[14] = 7;
+    gl.reset();
+    renderer.render(root, [createView(camera)]);
+    const uniforms = lightProgramUniforms(gl);
+    expect(uploadsAt(gl, uniforms.get("l_ambient"))).toEqual([
+      [0.25, 0.5, 0.75],
+    ]);
+    expect(uploadsAt(gl, uniforms.get("l_camera"))).toEqual([[5, 6, 7]]);
+    expect(uploadsAt(gl, uniforms.get("l_count"))).toEqual([0]);
+    expect(uploadsAt(gl, uniforms.get("l_positions"))).toHaveLength(1);
+    expect(uploadsAt(gl, uniforms.get("l_params"))).toHaveLength(1);
+    expect(gl.countOf("drawArrays")).toBe(2);
+  });
+});
+
+function lightProgramUniforms(gl: FakeGl): Map<string, object> {
+  for (const perProgram of gl.uniformsByProgram.values()) {
+    if (perProgram.has("l_ambient")) {
+      return perProgram;
+    }
+  }
+  throw new Error("the light-reading node program never resolved its uniforms");
+}

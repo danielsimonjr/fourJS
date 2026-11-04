@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 363
+  totalFiles: 366
   totalModules: 25
-  totalExports: 3662
+  totalExports: 3729
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -670,12 +670,25 @@ modules:
         - file: ./shader-graph.js
           imports:
             - MAX_SHADER_GRAPH_NODES
+            - MAX_SHADER_GRAPH_DEFINES
+            - MAX_SHADER_GRAPH_STORAGE
             - MAX_SHADER_GRAPH_TEXTURES
+            - MAX_SHADER_STORAGE_COUNT
             - SHADER_ATTRIBUTE_TYPES
+            - SHADER_LIGHT_ARRAY_TYPES
+            - SHADER_LIGHT_SCALAR_TYPES
+            - SHADER_LIGHT_SLOTS
             - SHADER_VALUE_COMPONENTS
             - analyzeShaderGraph
             - forEachShaderNodeReference
             - freezeShaderGraph
+            - resolveShaderSelect
+            - shaderDefineKey
+            - specializeShaderGraph
+          reExport: true
+        - file: ./shader-storage.js
+          imports:
+            - ShaderStorageBuffer
           reExport: true
         - file: ./sprite-material.js
           imports:
@@ -745,7 +758,12 @@ modules:
             - ShaderGraphAnalysis
             - ShaderNode
             - ShaderNodeId
+            - ShaderLightArrayMember
+            - ShaderLightMember
+            - ShaderLightScalarMember
             - ShaderReflection
+            - ShaderStorageElementType
+            - ShaderStorageReflection
             - ShaderTextureReflection
             - ShaderUnaryOp
             - ShaderUniformReflection
@@ -808,12 +826,22 @@ modules:
         - ShaderGraphBuilder
         - ShaderGraphOutput
         - MAX_SHADER_GRAPH_NODES
+        - MAX_SHADER_GRAPH_DEFINES
+        - MAX_SHADER_GRAPH_STORAGE
         - MAX_SHADER_GRAPH_TEXTURES
+        - MAX_SHADER_STORAGE_COUNT
         - SHADER_ATTRIBUTE_TYPES
+        - SHADER_LIGHT_ARRAY_TYPES
+        - SHADER_LIGHT_SCALAR_TYPES
+        - SHADER_LIGHT_SLOTS
         - SHADER_VALUE_COMPONENTS
         - analyzeShaderGraph
         - forEachShaderNodeReference
         - freezeShaderGraph
+        - resolveShaderSelect
+        - shaderDefineKey
+        - specializeShaderGraph
+        - ShaderStorageBuffer
         - SpriteMaterial
         - MAX_STENCIL_VALUE
         - StencilState
@@ -837,7 +865,12 @@ modules:
         - ShaderGraphAnalysis
         - ShaderNode
         - ShaderNodeId
+        - ShaderLightArrayMember
+        - ShaderLightMember
+        - ShaderLightScalarMember
         - ShaderReflection
+        - ShaderStorageElementType
+        - ShaderStorageReflection
         - ShaderTextureReflection
         - ShaderUnaryOp
         - ShaderUniformReflection
@@ -869,12 +902,22 @@ modules:
         - ShaderGraphBuilder
         - ShaderGraphOutput
         - MAX_SHADER_GRAPH_NODES
+        - MAX_SHADER_GRAPH_DEFINES
+        - MAX_SHADER_GRAPH_STORAGE
         - MAX_SHADER_GRAPH_TEXTURES
+        - MAX_SHADER_STORAGE_COUNT
         - SHADER_ATTRIBUTE_TYPES
+        - SHADER_LIGHT_ARRAY_TYPES
+        - SHADER_LIGHT_SCALAR_TYPES
+        - SHADER_LIGHT_SLOTS
         - SHADER_VALUE_COMPONENTS
         - analyzeShaderGraph
         - forEachShaderNodeReference
         - freezeShaderGraph
+        - resolveShaderSelect
+        - shaderDefineKey
+        - specializeShaderGraph
+        - ShaderStorageBuffer
         - SpriteMaterial
         - MAX_STENCIL_VALUE
         - StencilState
@@ -897,7 +940,12 @@ modules:
         - ShaderGraphAnalysis
         - ShaderNode
         - ShaderNodeId
+        - ShaderLightArrayMember
+        - ShaderLightMember
+        - ShaderLightScalarMember
         - ShaderReflection
+        - ShaderStorageElementType
+        - ShaderStorageReflection
         - ShaderTextureReflection
         - ShaderUnaryOp
         - ShaderUniformReflection
@@ -1099,8 +1147,10 @@ modules:
             - ShaderBinaryOp
             - ShaderDomain
             - ShaderGraph
+            - ShaderLightMember
             - ShaderNode
             - ShaderNodeId
+            - ShaderStorageElementType
             - ShaderUnaryOp
             - ShaderValueType
         - file: ./node-material.js
@@ -1139,6 +1189,10 @@ modules:
             - ShaderGraph
             - ShaderReflection
             - ShaderValueType
+        - file: ./shader-storage.js
+          imports:
+            - ShaderStorageBuffer
+          typeOnly: true
         - file: ./texture.js
           imports:
             - MaterialTexture
@@ -1185,26 +1239,45 @@ modules:
       exports:
         - MAX_SHADER_GRAPH_NODES
         - MAX_SHADER_GRAPH_TEXTURES
+        - MAX_SHADER_GRAPH_STORAGE
+        - MAX_SHADER_STORAGE_COUNT
+        - MAX_SHADER_GRAPH_DEFINES
+        - SHADER_LIGHT_SLOTS
+        - SHADER_LIGHT_SCALAR_TYPES
+        - SHADER_LIGHT_ARRAY_TYPES
         - SHADER_VALUE_COMPONENTS
         - SHADER_ATTRIBUTE_TYPES
         - forEachShaderNodeReference
         - analyzeShaderGraph
         - analyzeShaderNodeType
+        - resolveShaderSelect
+        - shaderDefineKey
+        - specializeShaderGraph
         - freezeShaderGraph
       interfaces:
         - ShaderGraph
         - ShaderUniformReflection
         - ShaderTextureReflection
         - ShaderReflection
+        - ShaderStorageReflection
         - ShaderGraphAnalysis
       functions:
         - forEachShaderNodeReference
         - analyzeShaderGraph
         - analyzeShaderNodeType
+        - resolveShaderSelect
+        - shaderDefineKey
+        - specializeShaderGraph
         - freezeShaderGraph
       constants:
         - MAX_SHADER_GRAPH_NODES
         - MAX_SHADER_GRAPH_TEXTURES
+        - MAX_SHADER_GRAPH_STORAGE
+        - MAX_SHADER_STORAGE_COUNT
+        - MAX_SHADER_GRAPH_DEFINES
+        - SHADER_LIGHT_SLOTS
+        - SHADER_LIGHT_SCALAR_TYPES
+        - SHADER_LIGHT_ARRAY_TYPES
         - SHADER_VALUE_COMPONENTS
         - SHADER_ATTRIBUTE_TYPES
     packages/materials/src/material.ts:
@@ -1251,6 +1324,21 @@ modules:
         - liveMaterialCount
         - trackMaterialDisposable
         - releaseMaterialDisposable
+    packages/materials/src/shader-storage.ts:
+      description: CPU-side data for a read-only storage buffer a node-material graph reads
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./shader-graph.js
+          imports:
+            - MAX_SHADER_STORAGE_COUNT
+            - SHADER_VALUE_COMPONENTS
+            - ShaderStorageElementType
+      workspaceDependencies: []
+      exports:
+        - ShaderStorageBuffer
+      classes:
+        - ShaderStorageBuffer
     packages/materials/src/lit-material.ts:
       description: "`LitMaterial` (§57, §68, §120) — one RGBA color that responds to lights."
       externalDependencies: []
@@ -3912,6 +4000,17 @@ modules:
           imports:
             - createBoundedAvifDecoder
           reExport: true
+        - file: ./bounded-basis.js
+          imports:
+            - BASIS_TARGET_CODES
+            - createBoundedBasisTranscoder
+          reExport: true
+        - file: ./ktx2.js
+          imports:
+            - KTX2_HEADER_BYTES
+            - KTX2_IDENTIFIER
+            - parseKtx2
+          reExport: true
         - file: ./image-probe.js
           imports:
             - probeAvif
@@ -4022,6 +4121,25 @@ modules:
             - BoundedAvifDecoderOptions
           reExport: true
           typeOnly: true
+        - file: ./bounded-basis.js
+          imports:
+            - BasisTextureFormat
+            - BasisTextureSource
+            - BasisTranscodeRequest
+            - BasisTranscoder
+            - BoundedBasisTranscoderOptions
+          reExport: true
+          typeOnly: true
+        - file: ./ktx2.js
+          imports:
+            - Ktx2BasisCodec
+            - Ktx2Dfd
+            - Ktx2Info
+            - Ktx2Level
+            - Ktx2ParseOptions
+            - Ktx2Supercompression
+          reExport: true
+          typeOnly: true
         - file: ./image-probe.js
           imports:
             - ImageDimensions
@@ -4057,6 +4175,11 @@ modules:
         - createBoundedJpegDecoder
         - createBoundedWebpDecoder
         - createBoundedAvifDecoder
+        - BASIS_TARGET_CODES
+        - createBoundedBasisTranscoder
+        - KTX2_HEADER_BYTES
+        - KTX2_IDENTIFIER
+        - parseKtx2
         - probeAvif
         - probeImage
         - probeJpeg
@@ -4117,6 +4240,17 @@ modules:
         - BoundedJpegDecoderOptions
         - BoundedWebpDecoderOptions
         - BoundedAvifDecoderOptions
+        - BasisTextureFormat
+        - BasisTextureSource
+        - BasisTranscodeRequest
+        - BasisTranscoder
+        - BoundedBasisTranscoderOptions
+        - Ktx2BasisCodec
+        - Ktx2Dfd
+        - Ktx2Info
+        - Ktx2Level
+        - Ktx2ParseOptions
+        - Ktx2Supercompression
         - ImageDimensions
       reExported:
         - ASSET_LOADERS
@@ -4147,6 +4281,11 @@ modules:
         - createBoundedJpegDecoder
         - createBoundedWebpDecoder
         - createBoundedAvifDecoder
+        - BASIS_TARGET_CODES
+        - createBoundedBasisTranscoder
+        - KTX2_HEADER_BYTES
+        - KTX2_IDENTIFIER
+        - parseKtx2
         - probeAvif
         - probeImage
         - probeJpeg
@@ -4206,6 +4345,17 @@ modules:
         - BoundedJpegDecoderOptions
         - BoundedWebpDecoderOptions
         - BoundedAvifDecoderOptions
+        - BasisTextureFormat
+        - BasisTextureSource
+        - BasisTranscodeRequest
+        - BasisTranscoder
+        - BoundedBasisTranscoderOptions
+        - Ktx2BasisCodec
+        - Ktx2Dfd
+        - Ktx2Info
+        - Ktx2Level
+        - Ktx2ParseOptions
+        - Ktx2Supercompression
         - ImageDimensions
       constants:
         - PACKAGE_NAME
@@ -4419,6 +4569,33 @@ modules:
         - GzipLoaderOptions
       functions:
         - createGzipLoader
+    packages/assets/src/ktx2.ts:
+      description: Bounded KTX2 container parser (§77, §96; R-30c). Reads the header, level
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./bounded-png.js
+          imports:
+            - DEFAULT_IMAGE_WORKING_BYTES
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+      exports:
+        - KTX2_IDENTIFIER
+        - KTX2_HEADER_BYTES
+        - parseKtx2
+      interfaces:
+        - Ktx2Level
+        - Ktx2Dfd
+        - Ktx2Info
+        - Ktx2ParseOptions
+      functions:
+        - parseKtx2
+      constants:
+        - KTX2_IDENTIFIER
+        - KTX2_HEADER_BYTES
     packages/assets/src/bounded-raw-codec.ts:
       description: "Raw C-style ABI required of the pinned binary (no JS glue, no imports):"
       externalDependencies: []
@@ -4483,6 +4660,49 @@ modules:
         - DEFAULT_IMAGE_WORKING_BYTES
       functions:
         - createBoundedWebpDecoder
+    packages/assets/src/bounded-basis.ts:
+      description: Bounded Basis Universal transcoder (§77, §96; R-30c). Mirrors the wave-4
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./bounded-png.js
+          imports:
+            - DEFAULT_IMAGE_WORKING_BYTES
+        - file: ./image-memory.js
+          imports:
+            - registerBoundedImageDecoder
+        - file: ./ktx2.js
+          imports:
+            - parseKtx2
+        - file: ./texture.js
+          imports:
+            - DEFAULT_MAXIMUM_DECODED_BYTES
+        - file: ./wasm-memory.js
+          imports:
+            - limitWasmMemory
+        - file: ./bounded-png.js
+          imports:
+            - DEFAULT_IMAGE_WORKING_BYTES
+          reExport: true
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+      exports:
+        - DEFAULT_IMAGE_WORKING_BYTES
+        - BASIS_TARGET_CODES
+        - createBoundedBasisTranscoder
+      reExported:
+        - DEFAULT_IMAGE_WORKING_BYTES
+      interfaces:
+        - BoundedBasisTranscoderOptions
+        - BasisTranscodeRequest
+        - BasisTextureSource
+      functions:
+        - createBoundedBasisTranscoder
+      constants:
+        - BASIS_TARGET_CODES
     packages/assets/src/wasm-memory.ts:
       description: Copies a single-memory Wasm32 codec and caps its declared linear memory.
       externalDependencies: []
@@ -6413,6 +6633,7 @@ modules:
           directory: packages/render
           imports:
             - NodeRenderItem
+            - SceneLights
             - ShaderGraph
       exports:
         - NODE_SURFACE_TEXTURE_UNIT_BASE
@@ -6577,6 +6798,11 @@ modules:
           directory: packages/render
           imports:
             - analyzeShaderGraph
+            - resolveShaderSelect
+            - SHADER_LIGHT_ARRAY_TYPES
+            - SHADER_LIGHT_SLOTS
+            - SceneLights
+            - ShaderLightMember
             - createShaderSourceMap
             - ShaderSourceMap
             - ShaderAttributeName
@@ -6770,6 +6996,7 @@ modules:
         - file: ./gl-texture.js
           imports:
             - TextureCache
+            - queryCompressedFormats
             - CacheableTexture
       workspaceDependencies:
         - package: "@fourjs/core"
@@ -6984,7 +7211,9 @@ modules:
         - package: "@fourjs/core"
           directory: packages/core
           imports:
+            - DEV
             - FourError
+            - devWarnOnce
         - package: "@fourjs/render"
           directory: packages/render
           imports:
@@ -6994,11 +7223,14 @@ modules:
           imports:
             - warnDisposedInUse
       exports:
+        - queryCompressedFormats
         - TextureCache
       classes:
         - TextureCache
       interfaces:
         - TextureRecord
+      functions:
+        - queryCompressedFormats
     packages/render-webgl/src/gl-node-uniform-block.ts:
       description: Opt-in std140 transport. Scalars and vectors occupy one vec4 lane; matrices
       externalDependencies: []
@@ -10448,7 +10680,10 @@ modules:
           reExport: true
         - file: ./texture.js
           imports:
+            - COMPRESSED_BLOCK_BYTES
+            - COMPRESSED_TEXTURE_FORMATS
             - Texture
+            - compressedLevelBytes
           reExport: true
         - file: ./view-list.js
           imports:
@@ -10691,6 +10926,11 @@ modules:
             - TextureWrap
           reExport: true
           typeOnly: true
+        - file: ./texture.js
+          imports:
+            - TextureFormat
+          reExport: true
+          typeOnly: true
         - file: ./view-list.js
           imports:
             - ViewRenderListOptions
@@ -10713,11 +10953,15 @@ modules:
           directory: packages/materials
           imports:
             - MAX_SHADER_GRAPH_NODES
+            - MAX_SHADER_GRAPH_STORAGE
             - MAX_SHADER_GRAPH_TEXTURES
             - SHADER_ATTRIBUTE_TYPES
+            - SHADER_LIGHT_ARRAY_TYPES
+            - SHADER_LIGHT_SLOTS
             - SHADER_VALUE_COMPONENTS
             - analyzeShaderGraph
             - forEachShaderNodeReference
+            - resolveShaderSelect
         - package: "@fourjs/materials"
           directory: packages/materials
           imports:
@@ -10731,12 +10975,21 @@ modules:
             - ShaderGraph
             - ShaderGraphAnalysis
             - ShaderNode
+            - ShaderLightArrayMember
+            - ShaderLightMember
+            - ShaderLightScalarMember
             - ShaderNodeId
             - ShaderReflection
+            - ShaderStorageElementType
+            - ShaderStorageReflection
             - ShaderTextureReflection
             - ShaderUnaryOp
             - ShaderUniformReflection
             - ShaderValueType
+        - package: "@fourjs/materials"
+          directory: packages/materials
+          imports:
+            - ShaderStorageBuffer
         - package: "@fourjs/materials"
           directory: packages/materials
           imports:
@@ -10799,11 +11052,15 @@ modules:
         - isUnlitItem
         - viewLayerMask
         - MAX_SHADER_GRAPH_NODES
+        - MAX_SHADER_GRAPH_STORAGE
         - MAX_SHADER_GRAPH_TEXTURES
         - SHADER_ATTRIBUTE_TYPES
+        - SHADER_LIGHT_ARRAY_TYPES
+        - SHADER_LIGHT_SLOTS
         - SHADER_VALUE_COMPONENTS
         - analyzeShaderGraph
         - forEachShaderNodeReference
+        - resolveShaderSelect
         - RenderGraph
         - CanvasTexture
         - supportsReadPixels
@@ -10866,7 +11123,10 @@ modules:
         - registerShapePaints
         - Sprite
         - groupSpritesByTexture
+        - COMPRESSED_BLOCK_BYTES
+        - COMPRESSED_TEXTURE_FORMATS
         - Texture
+        - compressedLevelBytes
         - buildViewRenderList
         - sortRenderListByDepth
         - GpuReadbackSource
@@ -10928,12 +11188,18 @@ modules:
         - ShaderGraph
         - ShaderGraphAnalysis
         - ShaderNode
+        - ShaderLightArrayMember
+        - ShaderLightMember
+        - ShaderLightScalarMember
         - ShaderNodeId
         - ShaderReflection
+        - ShaderStorageElementType
+        - ShaderStorageReflection
         - ShaderTextureReflection
         - ShaderUnaryOp
         - ShaderUniformReflection
         - ShaderValueType
+        - ShaderStorageBuffer
         - AddPassOptions
         - CustomRenderPass
         - RenderGraphIssue
@@ -11018,6 +11284,7 @@ modules:
         - TextureMinFilter
         - TextureSource
         - TextureWrap
+        - TextureFormat
         - ViewRenderListOptions
         - GpuReadbackSourceOptions
         - ShaderSourceLocation
@@ -11082,11 +11349,15 @@ modules:
         - isUnlitItem
         - viewLayerMask
         - MAX_SHADER_GRAPH_NODES
+        - MAX_SHADER_GRAPH_STORAGE
         - MAX_SHADER_GRAPH_TEXTURES
         - SHADER_ATTRIBUTE_TYPES
+        - SHADER_LIGHT_ARRAY_TYPES
+        - SHADER_LIGHT_SLOTS
         - SHADER_VALUE_COMPONENTS
         - analyzeShaderGraph
         - forEachShaderNodeReference
+        - resolveShaderSelect
         - RenderGraph
         - CanvasTexture
         - supportsReadPixels
@@ -11149,7 +11420,10 @@ modules:
         - registerShapePaints
         - Sprite
         - groupSpritesByTexture
+        - COMPRESSED_BLOCK_BYTES
+        - COMPRESSED_TEXTURE_FORMATS
         - Texture
+        - compressedLevelBytes
         - buildViewRenderList
         - sortRenderListByDepth
         - GpuReadbackSource
@@ -11210,12 +11484,18 @@ modules:
         - ShaderGraph
         - ShaderGraphAnalysis
         - ShaderNode
+        - ShaderLightArrayMember
+        - ShaderLightMember
+        - ShaderLightScalarMember
         - ShaderNodeId
         - ShaderReflection
+        - ShaderStorageElementType
+        - ShaderStorageReflection
         - ShaderTextureReflection
         - ShaderUnaryOp
         - ShaderUniformReflection
         - ShaderValueType
+        - ShaderStorageBuffer
         - AddPassOptions
         - CustomRenderPass
         - RenderGraphIssue
@@ -11300,6 +11580,7 @@ modules:
         - TextureMinFilter
         - TextureSource
         - TextureWrap
+        - TextureFormat
         - ViewRenderListOptions
         - GpuReadbackSourceOptions
         - ShaderSourceLocation
@@ -11361,6 +11642,9 @@ modules:
             - ColorSpace
             - Rectangle2
       exports:
+        - COMPRESSED_TEXTURE_FORMATS
+        - COMPRESSED_BLOCK_BYTES
+        - compressedLevelBytes
         - textureChainBytes
         - validateTextureSource
         - Texture
@@ -11369,8 +11653,12 @@ modules:
       interfaces:
         - TextureSource
       functions:
+        - compressedLevelBytes
         - textureChainBytes
         - validateTextureSource
+      constants:
+        - COMPRESSED_TEXTURE_FORMATS
+        - COMPRESSED_BLOCK_BYTES
     packages/render/src/render-target-bytes.ts:
       description: Per-texel byte accounting for {@link RenderTarget} attachments (§83, §84).
       externalDependencies: []
@@ -14252,6 +14540,13 @@ modules:
             - WgpuCacheableRenderTarget
             - WgpuRenderTargetCache
           typeOnly: true
+        - file: ./wgpu-lights.js
+          imports:
+            - LIGHT_UNIFORM_BYTES
+            - LIGHT_UNIFORM_FLOATS
+            - LIGHT_UNIFORM_MEMBERS_WGSL
+            - LIGHT_UNIFORM_STRIDE_FLOATS
+            - writeLightUniforms
         - file: ./wgpu-stencil.js
           imports:
             - applyStencilReference
@@ -14277,6 +14572,11 @@ modules:
             - SHADER_VALUE_COMPONENTS
             - analyzeShaderGraph
             - createShaderSourceMap
+            - resolveShaderSelect
+            - SHADER_LIGHT_ARRAY_TYPES
+            - MAX_LIGHT_SLOTS
+            - ShaderStorageReflection
+            - ShaderStorageBuffer
             - ShaderSourceMap
             - isRenderTargetTexture
             - GraphEffect
@@ -14560,7 +14860,9 @@ modules:
         - package: "@fourjs/core"
           directory: packages/core
           imports:
+            - DEV
             - FourError
+            - devWarnOnce
         - package: "@fourjs/render"
           directory: packages/render
           imports:
@@ -14570,7 +14872,9 @@ modules:
           imports:
             - warnDisposedInUse
       exports:
+        - COMPRESSED_FORMAT_FEATURES
         - MIPMAP_SHADER_SOURCE
+        - supportedCompressedFormats
         - mipLevelCount
         - textureByteLength
         - downsampleVolume
@@ -14582,11 +14886,13 @@ modules:
         - ResolvedSamplerState
         - WgpuTextureRecord
       functions:
+        - supportedCompressedFormats
         - mipLevelCount
         - textureByteLength
         - downsampleVolume
         - samplerKey
       constants:
+        - COMPRESSED_FORMAT_FEATURES
         - MIPMAP_SHADER_SOURCE
     packages/render-webgpu/src/wgpu-unlit.ts:
       description: The unlit pipeline in hand-written WGSL (§64, §120's MVP tier), plus the
@@ -15186,6 +15492,7 @@ modules:
             - NodeRenderItem
             - RenderItem
             - RenderStatistics
+            - SceneLights
       exports:
         - setWebgpuNodeMaterialPipelineFactory
         - resolveWebgpuNodeMaterialPipelineFactory
@@ -15648,6 +15955,7 @@ modules:
         - file: ./wgpu-texture.js
           imports:
             - WgpuTextureCache
+            - supportedCompressedFormats
             - WgpuCacheableTexture
         - file: ./wgpu-node-registry.js
           imports:
@@ -21598,6 +21906,7 @@ dependencyGraph:
         - packages/materials/src/shader-graph.ts
         - packages/materials/src/material.ts
         - packages/materials/src/resource-memory.ts
+        - packages/materials/src/shader-storage.ts
         - packages/materials/src/lit-material.ts
     - name: Packages/ui
       files:
@@ -21682,8 +21991,10 @@ dependencyGraph:
         - packages/assets/src/content-hash.ts
         - packages/assets/src/bounded-png.ts
         - packages/assets/src/gzip.ts
+        - packages/assets/src/ktx2.ts
         - packages/assets/src/bounded-raw-codec.ts
         - packages/assets/src/bounded-webp.ts
+        - packages/assets/src/bounded-basis.ts
         - packages/assets/src/wasm-memory.ts
         - packages/assets/src/bounded-jpeg.ts
         - packages/assets/src/bounded-avif.ts
@@ -21983,19 +22294,19 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 363
+  totalTypeScriptFiles: 366
   totalModules: 25
-  totalLinesOfCode: 177457
-  totalExports: 3662
-  totalClasses: 225
-  totalInterfaces: 673
-  totalFunctions: 626
+  totalLinesOfCode: 179438
+  totalExports: 3729
+  totalClasses: 226
+  totalInterfaces: 681
+  totalFunctions: 634
   totalTypeGuards: 34
   totalEnums: 0
-  totalConstants: 548
-  totalReExports: 2284
-  totalTypeOnlyImports: 456
+  totalConstants: 560
+  totalReExports: 2330
+  totalTypeOnlyImports: 460
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10
   unusedFilesCount: 0
-  unusedExportsCount: 19
+  unusedExportsCount: 20

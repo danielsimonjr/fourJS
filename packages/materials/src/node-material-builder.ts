@@ -29,8 +29,10 @@ import {
   type ShaderBinaryOp,
   type ShaderDomain,
   type ShaderGraph,
+  type ShaderLightMember,
   type ShaderNode,
   type ShaderNodeId,
+  type ShaderStorageElementType,
   type ShaderUnaryOp,
   type ShaderValueType,
 } from "./shader-graph.js";
@@ -236,6 +238,8 @@ export class ShaderGraphBuilder {
   readonly #nodes: ShaderNode[] = [];
   #uniformBlock = false;
 
+  readonly #defines: Record<string, boolean> = {};
+
   /** Auto-named textures created so far — `texture0`, `texture1`, …. */
   #textureCount = 0;
 
@@ -280,6 +284,9 @@ export class ShaderGraphBuilder {
       domain: this.domain,
       ...(this.#uniformBlock ? { uniformTransport: "std140" as const } : {}),
       nodes: [...this.#nodes],
+      ...(Object.keys(this.#defines).length === 0
+        ? {}
+        : { defines: this.#sortedDefines() }),
       color: color.nodeId,
       ...(offset === null ? {} : { positionOffset: offset.nodeId }),
     };
@@ -379,6 +386,63 @@ export class ShaderGraphBuilder {
     return this.push({ kind: "time" });
   }
 
+  /**
+   * Sets the named compile-time boolean that {@link select} nodes read
+   * (RFC 0001 addendum). Undeclared defines read as `false`.
+   */
+  define(name: string, value = true): this {
+    this.#defines[name] = value;
+    return this;
+  }
+
+  /**
+   * A compile-time conditional: `then` when define `name` is true, else
+   * `otherwise`. The dead branch is not emitted and binds nothing.
+   */
+  select(
+    name: string,
+    then: ShaderOperand,
+    otherwise: ShaderOperand,
+  ): ShaderExpression {
+    const a = this.expression(then);
+    const b = this.expression(otherwise);
+    return this.push({
+      kind: "select",
+      define: name,
+      then: a.nodeId,
+      otherwise: b.nodeId,
+    });
+  }
+
+  /** Reads element `index` (a float) of a read-only storage buffer (§82). */
+  storage(
+    name: string,
+    type: ShaderStorageElementType,
+    count: number,
+    index: ShaderOperand,
+  ): ShaderExpression {
+    return this.push({
+      kind: "storage",
+      name,
+      type,
+      count,
+      index: this.expression(index).nodeId,
+    });
+  }
+
+  /**
+   * A member of the renderer's light block (§68). Array members
+   * (`punctualPosition`, `punctualColor`, `punctualDirection`,
+   * `punctualParams`) take an `index`.
+   */
+  light(member: ShaderLightMember, index?: ShaderOperand): ShaderExpression {
+    return this.push(
+      index === undefined
+        ? { kind: "light", member }
+        : { kind: "light", member, index: this.expression(index).nodeId },
+    );
+  }
+
   /** `sin(x)` — the builder-level spelling §60's example uses. */
   sin(x: ShaderOperand): ShaderExpression {
     return this.expression(x).sin();
@@ -461,6 +525,14 @@ export class ShaderGraphBuilder {
   protected push(node: ShaderNode): ShaderExpression {
     this.#nodes.push(node);
     return new ShaderExpression(this, this.#nodes.length - 1);
+  }
+
+  #sortedDefines(): Record<string, boolean> {
+    const sorted: Record<string, boolean> = {};
+    for (const name of Object.keys(this.#defines).sort()) {
+      sorted[name] = this.#defines[name];
+    }
+    return sorted;
   }
 
   #compose(

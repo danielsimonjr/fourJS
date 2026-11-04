@@ -1,8 +1,9 @@
 # RFC 0001 implementation addendum: safe shader composition
 
 Date: 2026-09-11. Implements additional slices of the owner's request to finish
-the RFCs. This records implementation choices; it does not assert that the
-remaining storage-buffer and scene-light contracts have shipped.
+the RFCs. This records implementation choices; the storage-buffer, scene-light and
+conditional-specialization contracts shipped later and are recorded in
+"Acceptance (2026-11-04)" below.
 
 ## Decision and compatibility
 
@@ -32,7 +33,7 @@ sorted keys and explicit selection. Each variant has its own complete graph and
 reflection; inactive alternatives do not reserve resources. Existing backend
 structural-source caches share equivalent variants and separate distinct ones.
 This finite family is not an IR-level Boolean define/specialization system;
-such conditional expressions and their additional cache key remain future work.
+that arrived 2026-11-04 (see "Acceptance").
 
 GLSL and WGSL emission results now expose frozen per-node source maps. Locations
 are one-based generated lines/columns and identify the original graph node and
@@ -84,3 +85,51 @@ stays unchanged without opt-in transport.
 
 Storage-buffer bindings for graph shaders, automatic scene-light uniforms, and
 IR-level conditional specialization are not implemented by this addendum.
+
+## Acceptance (2026-11-04)
+
+Decision D4: this addendum is accepted for the three items it had left open.
+Each ships with the contract below; no raw GLSL/WGSL enters at any point, so the
+RFC's trust boundary is unchanged, and `ShaderVariantSet` is untouched.
+
+1. **Storage-buffer node (§82).** `ShaderNode` gains `{ kind: "storage", name,
+type: "float" | "vec2" | "vec4", count, index }`: element `index` (a float
+   node, truncated and clamped to `[0, count - 1]`) of a read-only buffer.
+   Validation matches the other resource nodes: identifier name (no `__`, at
+   most 64 chars), element type, integer `count` in `[1, 65536]`, earlier float
+   index, one name one shape, at most `MAX_SHADER_GRAPH_STORAGE = 4` buffers,
+   `"surface"` domain and fragment stage only (a storage node reachable from
+   `positionOffset` is refused). `ShaderReflection.storage` lists
+   `{ name, type, count }` for live nodes. `NodeMaterial.setStorage()` binds a
+   `ShaderStorageBuffer` of equal type and at least `count` elements. WGSL emits
+   `var<storage, read> st_<name> : array<T>` in the group after the textures
+   (binding = reflection order); the store allocates `STORAGE | COPY_DST`
+   buffers, re-uploads on `version` change and releases disposed ones. WebGL 2
+   has no storage buffers and no texture-backed seam exists, so the GLSL emitter
+   refuses the graph (capability absent: latched, one warning, no draw). The
+   node-kind union is closed-widened; `ShaderGraph` stays plain JSON, and the
+   unit tests round-trip it through `JSON`. (No `NodeMaterial` serializer exists
+   in `scene-serializers.ts`, so no §79 document change was needed.)
+2. **IR-level conditional variants.** `ShaderNode` gains `{ kind: "select",
+define, then, otherwise }` and `ShaderGraph` gains `defines?: Record<string,
+boolean>` (at most 32; an absent define is `false`). Reachability follows the
+   live branch only, so the dead branch is not emitted and reserves no uniform,
+   sampler or buffer; both branches are still type-checked. The structural cache
+   key includes the sorted define set (`shaderDefineKey`);
+   `specializeShaderGraph(graph, overrides)` memoises one frozen graph per key
+   (overrides must name a define some `select` reads). Backends keep keying
+   programs on emitted source, so two define sets producing identical source
+   share one compiled program (tested in both backends).
+3. **Automatic lighting-aware inputs.** `ShaderNode` gains `{ kind: "light",
+member, index? }` with members `ambient`, `directionalDirection`,
+   `directionalColor`, `cameraPosition`, `punctualCount` (scalars) and
+   `punctualPosition`, `punctualColor`, `punctualDirection`, `punctualParams`
+   (array members, float index clamped to `SHADER_LIGHT_SLOTS - 1 = 10`, equal
+   to `MAX_LIGHT_SLOTS`). Values are those of `SceneLights`. Use in the vertex
+   stage or the `"screen"` domain is refused. WebGPU appends the renderer's own
+   `LightUniforms` member layout (`LIGHT_UNIFORM_BYTES`, packed by
+   `writeLightUniforms`) to the node block rather than adding a bind group;
+   WebGL declares `l_*` uniforms and uploads them once per view. Lights are
+   collected only when a rendered node material reads a member; the eye is the
+   view camera's world translation. Packing reuses scratch buffers (no per-frame
+   allocation).

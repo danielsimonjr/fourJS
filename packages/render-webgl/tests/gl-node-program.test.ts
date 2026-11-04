@@ -12,7 +12,7 @@
 
 import { resetDevWarnings } from "@fourjs/core";
 import { Matrix4 } from "@fourjs/math";
-import type { ShaderGraph } from "@fourjs/render";
+import { MAX_LIGHT_SLOTS, type ShaderGraph } from "@fourjs/render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -794,5 +794,91 @@ describe("node std140 transport and provenance", () => {
       caught = error;
     }
     expect(caught).toHaveProperty("context.sourceMap", emitted.sourceMap);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// RFC 0001 addendum (accepted 2026-11-04): defines, lights, storage refusal.
+// ---------------------------------------------------------------------------
+
+describe("emitShaderGraphGlsl — addendum nodes", () => {
+  const base: ShaderGraph = {
+    domain: "surface",
+    nodes: [
+      { kind: "constant", type: "vec4", value: [1, 0, 0, 1] },
+      { kind: "constant", type: "vec4", value: [0, 0, 1, 1] },
+      { kind: "select", define: "A", then: 0, otherwise: 1 },
+      { kind: "select", define: "B", then: 0, otherwise: 1 },
+    ],
+    color: 2,
+  };
+
+  it("emits only the live branch and shares a program across equal source", () => {
+    const on = { ...base, defines: { A: true, B: true } };
+    const onToo = { ...base, defines: { A: true, B: false } };
+    const off = { ...base, defines: { A: false } };
+    const emitted = emitShaderGraphGlsl(on);
+    expect(emitted.fragment).toContain("vec4 n0 = vec4(1.0, 0.0, 0.0, 1.0);");
+    expect(emitted.fragment).not.toContain("vec4(0.0, 0.0, 1.0, 1.0)");
+    expect(emitted.fragment).toContain("vec4 n2 = n0;");
+    expect(emitShaderGraphGlsl(off).fragment).toContain("vec4 n2 = n1;");
+    const cache = new GlNodeProgramCache(createFakeGl());
+    const a = cache.acquire(on);
+    expect(cache.acquire(onToo)).toBe(a);
+    expect(cache.acquire(off)).not.toBe(a);
+    expect(cache.programCount).toBe(2);
+  });
+
+  it("declares and clamps the light family", () => {
+    const graph: ShaderGraph = {
+      domain: "surface",
+      nodes: [
+        { kind: "light", member: "ambient" },
+        { kind: "light", member: "directionalDirection" },
+        { kind: "light", member: "directionalColor" },
+        { kind: "light", member: "cameraPosition" },
+        { kind: "light", member: "punctualCount" },
+        { kind: "constant", type: "float", value: [1.9] },
+        { kind: "light", member: "punctualPosition", index: 5 },
+        { kind: "light", member: "punctualColor", index: 5 },
+        { kind: "light", member: "punctualDirection", index: 5 },
+        { kind: "light", member: "punctualParams", index: 5 },
+        { kind: "binary", op: "add", left: 0, right: 1 },
+        { kind: "binary", op: "add", left: 10, right: 2 },
+        { kind: "binary", op: "add", left: 11, right: 3 },
+        { kind: "binary", op: "add", left: 12, right: 6 },
+        { kind: "binary", op: "add", left: 13, right: 7 },
+        { kind: "binary", op: "add", left: 14, right: 8 },
+        { kind: "compose", type: "vec4", parts: [15, 4] },
+        { kind: "binary", op: "add", left: 16, right: 9 },
+      ],
+      color: 17,
+    };
+    const emitted = emitShaderGraphGlsl(graph);
+    expect(emitted.lights).toHaveLength(9);
+    expect(emitted.fragment).toContain("uniform vec3 l_ambient;");
+    expect(emitted.fragment).toContain("uniform float l_count;");
+    expect(emitted.fragment).toContain(
+      `uniform vec3 l_positions[${String(MAX_LIGHT_SLOTS)}];`,
+    );
+    expect(emitted.fragment).toContain(
+      `uniform vec4 l_params[${String(MAX_LIGHT_SLOTS)}];`,
+    );
+    expect(emitted.fragment).toContain(
+      `l_colors[clamp(int(n5), 0, ${String(MAX_LIGHT_SLOTS - 1)})]`,
+    );
+    expect(emitShaderGraphGlsl(base).lights).toEqual([]);
+  });
+
+  it("refuses storage nodes (WebGL 2 has no storage buffers)", () => {
+    const graph: ShaderGraph = {
+      domain: "surface",
+      nodes: [
+        { kind: "constant", type: "float", value: [0] },
+        { kind: "storage", name: "pal", type: "vec4", count: 4, index: 0 },
+      ],
+      color: 1,
+    };
+    expect(() => emitShaderGraphGlsl(graph)).toThrow(/storage buffers/);
   });
 });

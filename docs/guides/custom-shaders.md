@@ -192,16 +192,43 @@ set visible to `RenderGraph.validate()` — a `GraphEffect` pass does **not**
 emit the `"opaque"` issue a `CustomRenderPass` does, because the graph can see
 inside it. `"screen"` graphs must omit `positionOffset` (no vertices to move).
 
-## Unlit at this tier, stated rather than softened
+## Reading scene lights: the `"lights"` family
 
-A node material does not see §68's directional light, the punctual lights, or
-the scene ambient term — RFC 0001 §6 records this as the MVP's sharpest
-limitation. It is enough for §70 effects, procedural colour, exact §58
-gradients, UV animation and screen-space work; it is not the PBR path. For lit
-surfaces use `LitMaterial` or `StandardMaterial`. R-17's light-uniform
-contract exists (`PunctualLightUniforms`, WebGPU `LIGHT_UNIFORM_*`); node
-emitters still do not consume it. Lighting-aware graphs remain RFC 0001
-residue, not a missing-contract blocker.
+A `"surface"` graph reads the §68 light set through `builder.light(member)`;
+the renderer binds it, the graph declares no uniform. Scalar members:
+`ambient`, `directionalDirection`, `directionalColor`, `cameraPosition` (all
+`vec3`) and `punctualCount` (`float`). Array members take a float index,
+clamped into `SHADER_LIGHT_SLOTS - 1 = 10`: `punctualPosition`,
+`punctualColor`, `punctualDirection` (`vec3`) and `punctualParams` (`vec4`:
+range, cos outer, cone scale, spot flag; `w > 1.5` marks an extra directional).
+Values are exactly what `SceneLights` and the WebGPU `LIGHT_UNIFORM_*` block
+carry, so a node material computes its own shading from them. Lights are
+fragment-stage only (reading one under `positionOffset` is refused) and are
+refused in the `"screen"` domain. A material that reads no light member
+collects nothing and pays nothing.
+
+## Storage buffers (§82, WebGPU only)
+
+`builder.storage(name, "float" | "vec2" | "vec4", count, index)` reads one
+element of a read-only storage buffer; the index is a float node, truncated
+and clamped to `[0, count - 1]`, so a read never leaves the allocation. Bind
+data with `material.setStorage(name, new ShaderStorageBuffer(type, count))`,
+write `buffer.data` in place and call `markUpdated()` to re-upload. At most
+`MAX_SHADER_GRAPH_STORAGE = 4` buffers of at most 65,536 elements; fragment
+stage and `"surface"` domain only. WebGL 2 has no storage buffers: the GLSL
+emitter refuses such a graph (one development warning, draws skipped, never an
+approximation). An unbound or disposed buffer skips the draw.
+
+## Compile-time defines and `select`
+
+`builder.define("FANCY")` sets a named boolean and `builder.select("FANCY",
+a, b)` picks `a` when it is true, else `b`. Resolution happens at compile time:
+the dead branch is never emitted and its uniforms, samplers and buffers are
+not reflected. `specializeShaderGraph(graph, { FANCY: false })` returns a
+frozen, memoised graph for one define set (the sorted define set is the cache
+key), so a thousand materials with the same set share one object. Two
+define sets whose emitted source is identical share one compiled program. This
+is in addition to `ShaderVariantSet`, which stays the finite-alternatives tool.
 
 ## Reusable functions, variants, and diagnostics
 
@@ -219,7 +246,7 @@ The closed operator set remains enforced at runtime as well as in TypeScript.
 `new ShaderVariantSet({ warm: warmGraph, cool: coolGraph }).select("warm")`
 selects a frozen graph alternative. Equivalent emitted sources share a backend
 program; different alternatives retain independent reflection and resources.
-This is a finite variant family, not an IR-level conditional/define facility.
+This is a finite variant family; for per-define specialisation inside one graph see the previous section.
 
 Both emitters expose `sourceMap`: one-based line/column locations, graph node IDs,
 and stages. GLSL maps are separated into `vertex` and `fragment`; WGSL has one
@@ -241,10 +268,8 @@ measurement command, limits, and screen-effect upload behavior.
 
 ## What stays deferred
 
-- Storage-buffer resources for graph shaders (§82, WebGPU).
-- Lighting-aware graphs: scene lights are not automatically bound.
-- IR-level Boolean conditionals and define specialization; finite named
-  alternatives are available through `ShaderVariantSet`.
+- Texture-backed storage fallbacks on WebGL, vertex-stage storage and light
+  reads, and writable (read-write) storage buffers.
 - Per-renderable uniform overrides: a shared material still shares values.
 
 ## Cross-references

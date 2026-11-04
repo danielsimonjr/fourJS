@@ -16,8 +16,9 @@
  * term (RFC 0001 §6, the MVP's sharpest limitation): enough for §70 effects,
  * procedural colour, exact §58 gradients, UV animation and screen-space work
  * — not enough for R-13's PBR path. R-17's light-uniform contract landed
- * 2026-08-09; node emitters still do not bind it. Lighting-aware graphs
- * remain RFC 0001 residue.
+ * 2026-08-09; graphs read it through the `"light"` node family (RFC 0001
+ * addendum, accepted 2026-11-04): the renderer binds the members, the graph
+ * declares no uniform.
  *
  * ## Uniform ownership is per material (RFC 0001 Q3, decided)
  *
@@ -45,6 +46,7 @@ import {
   type ShaderReflection,
   type ShaderValueType,
 } from "./shader-graph.js";
+import type { ShaderStorageBuffer } from "./shader-storage.js";
 import type { MaterialTexture } from "./texture.js";
 
 /**
@@ -108,6 +110,9 @@ export class NodeMaterial extends Material {
   /** Texture bindings, keyed by name; every reflected sampler has an entry. */
   readonly #textures = new Map<string, MaterialTexture | null>();
 
+  /** Storage bindings (§82), keyed by name; every reflected buffer has an entry. */
+  readonly #storage = new Map<string, ShaderStorageBuffer | null>();
+
   /**
    * Validates `graph` (§85, at setup — the one place a bad graph may throw;
    * a backend never validates inside a frame, §61), freezes it, and seeds
@@ -132,6 +137,9 @@ export class NodeMaterial extends Material {
     }
     for (const texture of analysis.reflection.textures) {
       this.#textures.set(texture.name, null);
+    }
+    for (const buffer of analysis.reflection.storage) {
+      this.#storage.set(buffer.name, null);
     }
     if (options.uniforms !== undefined) {
       // Sorted for §33: seeding order must not depend on a record's key order.
@@ -220,6 +228,46 @@ export class NodeMaterial extends Material {
     }
     this.#textures.set(name, texture);
     return this;
+  }
+
+  /**
+   * Binds storage buffer `name` (§82), or unbinds it with `null`. The buffer's
+   * element type must equal the node's and hold at least the node's `count`
+   * elements, so a clamped read can never leave the allocation. A draw whose
+   * graph reads a name bound to `null` or to a disposed buffer is skipped.
+   */
+  setStorage(name: string, buffer: ShaderStorageBuffer | null): this {
+    if (!this.#storage.has(name)) {
+      throw new RangeError(
+        `NodeMaterial has no storage buffer ${JSON.stringify(name)}; the ` +
+          "graph reads (reachably) only: " +
+          `${this.reflection.storage.map((b) => b.name).join(", ") || "none"} ` +
+          "(§82, §85).",
+      );
+    }
+    if (buffer !== null) {
+      const declared = this.reflection.storage.find((b) => b.name === name)!;
+      if (buffer.type !== declared.type || buffer.count < declared.count) {
+        throw new RangeError(
+          `NodeMaterial storage ${JSON.stringify(name)} needs at least ` +
+            `${String(declared.count)} ${declared.type} elements; got ` +
+            `${String(buffer.count)} ${buffer.type} (§82, §85).`,
+        );
+      }
+    }
+    this.#storage.set(name, buffer);
+    return this;
+  }
+
+  /** The buffer bound to `name`, or `null` — the backend's per-draw read. */
+  getStorage(name: string): ShaderStorageBuffer | null {
+    const value = this.#storage.get(name);
+    if (value === undefined) {
+      throw new RangeError(
+        `NodeMaterial has no storage buffer ${JSON.stringify(name)} (§82, §85).`,
+      );
+    }
+    return value;
   }
 
   /**

@@ -12,9 +12,9 @@
 - **Dormant files** (runtime code on disk, unreachable from any entry/build root): 4
   - **Orphaned (reachable from nothing — delete/wire candidates)**: 0
   - **Test-only (exercised by a test, ships nothing)**: 4
-- **Potentially unused exports**: 19
+- **Potentially unused exports**: 20
   - **Unreferenced anywhere (deletion candidates)**: 2
-  - **Referenced in-module (type contracts / helpers backing live exports)**: 17
+  - **Referenced in-module (type contracts / helpers backing live exports)**: 18
 
 ## Dormant Files — Orphaned (delete/wire candidates)
 
@@ -96,6 +96,10 @@ interfaces typing live guards and per-package API completeness, not rot.
 ### `packages/render/src/texture.ts`
 
 - `textureChainBytes` (function) — 1 in-file ref
+
+### `packages/render-webgpu/src/wgpu-texture.ts`
+
+- `COMPRESSED_FORMAT_FEATURES` (constant) — 3 in-file refs
 
 ### `packages/render-webgpu/src/wgpu-unlit.ts`
 
