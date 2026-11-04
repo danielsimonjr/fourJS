@@ -867,7 +867,7 @@ function requireMorphSources(): MorphVertexSources {
     throw new FourError(
       "SHADER_COMPILATION_FAILED",
       "The 2..4-target morph programs are not registered; call " +
-        "registerGlMorphTargets() from @fourjs/render-webgl first.",
+        "registerGlMorphTargets() (exported beside WebglRenderer) first.",
     );
   }
   return sources;

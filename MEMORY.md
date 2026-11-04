@@ -5073,3 +5073,8 @@ componentType (0 f32, 1 u8, 2 u16, 3 u32), byteLength}`; output = attribute stre
   float render targets), the standing dogfooding row, first npm publication (owner step), the
   lazy WebGL shader-family split (W11.5, in flight), and `"texture"`-skinned rigs over 48
   joints in the shadow caster / picking passes.
+- **Gate gotcha (2026-11-04):** CI's "Check release-name mapping and export preservation" step runs
+  `bun run publish-names:test`, which is NOT in the local mirror list used by the program's gate
+  chains; it flags any workspace `@fourjs/…` name that survives in emitted code outside a comment,
+  including one embedded mid-string in a runtime message (W11.5's morph-targets error). Keep package
+  names out of runtime strings; name the export instead. Added to the local gate list from here on.
