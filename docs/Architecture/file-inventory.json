@@ -1,12 +1,12 @@
 {
   "generated": "2026-11-04",
-  "totalFiles": 915,
+  "totalFiles": 920,
   "byDisposition": {
-    "reachable": 300,
-    "build-entry": 48,
+    "reachable": 302,
+    "build-entry": 50,
     "test-only": 4,
     "orphan": 0,
-    "test": 529,
+    "test": 530,
     "tool": 1,
     "config": 18,
     "example": 15
@@ -14,8 +14,8 @@
   "byArea": {
     "examples": 15,
     "config": 18,
-    "src": 352,
-    "tests": 529,
+    "src": 356,
+    "tests": 530,
     "tools": 1
   },
   "byPackage": {
@@ -24,7 +24,7 @@
     "@fourjs/assets": 32,
     "@fourjs/core": 26,
     "@fourjs/diagnostics": 27,
-    "fourJS": 53,
+    "fourJS": 54,
     "@fourjs/geometry": 25,
     "@fourjs/input": 18,
     "@fourjs/materials": 26,
@@ -32,6 +32,7 @@
     "@fourjs/motion": 44,
     "@fourjs/particles": 21,
     "@fourjs/physics-box2d": 2,
+    "@fourjs/physics-physjs": 4,
     "@fourjs/physics-rapier": 23,
     "@fourjs/physics-soft": 2,
     "@fourjs/physics": 59,
@@ -1157,7 +1158,7 @@
       "package": "fourJS",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 155
+      "loc": 156
     },
     {
       "file": "packages/fourjs/src/input.ts",
@@ -1210,6 +1211,13 @@
     },
     {
       "file": "packages/fourjs/src/physics-box2d.ts",
+      "package": "fourJS",
+      "area": "src",
+      "disposition": "build-entry",
+      "loc": 2
+    },
+    {
+      "file": "packages/fourjs/src/physics-physjs.ts",
       "package": "fourJS",
       "area": "src",
       "disposition": "build-entry",
@@ -1346,7 +1354,7 @@
       "package": "fourJS",
       "area": "tests",
       "disposition": "test",
-      "loc": 52
+      "loc": 53
     },
     {
       "file": "packages/fourjs/tests/clip-serialization.test.ts",
@@ -1444,7 +1452,7 @@
       "package": "fourJS",
       "area": "tests",
       "disposition": "test",
-      "loc": 54
+      "loc": 56
     },
     {
       "file": "packages/fourjs/tests/text-node.test.ts",
@@ -2532,6 +2540,34 @@
       "loc": 10
     },
     {
+      "file": "packages/physics-physjs/src/index.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "src",
+      "disposition": "build-entry",
+      "loc": 21
+    },
+    {
+      "file": "packages/physics-physjs/src/physjs-adapter.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 296
+    },
+    {
+      "file": "packages/physics-physjs/src/register.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 49
+    },
+    {
+      "file": "packages/physics-physjs/tests/physjs.test.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 215
+    },
+    {
       "file": "packages/physics-rapier/src/ccd.ts",
       "package": "@fourjs/physics-rapier",
       "area": "src",
@@ -3005,7 +3041,7 @@
       "package": "@fourjs/physics",
       "area": "tests",
       "disposition": "test",
-      "loc": 461
+      "loc": 471
     },
     {
       "file": "packages/physics/tests/stale-handle.test.ts",
@@ -4951,7 +4987,7 @@
       "package": "(root)",
       "area": "config",
       "disposition": "config",
-      "loc": 507
+      "loc": 523
     },
     {
       "file": "tests/browser/animation.spec.ts",
@@ -5931,7 +5967,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 405
+      "loc": 413
     },
     {
       "file": "tests/integration/examples-build-coverage.test.ts",
@@ -6155,7 +6191,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 177
+      "loc": 181
     },
     {
       "file": "tests/integration/render-batching.test.ts",

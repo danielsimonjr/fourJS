@@ -1,8 +1,8 @@
 # RFC 0010: PhysJS solver adapter (`@fourjs/physics-physjs`)
 
-- **Status:** proposed (awaiting the owner)
+- **Status:** accepted 2026-11-04 (owner decision delegated to the program lead)
 - **Date:** 2026-10-16
-- **Owner decision:** pending
+- **Owner decision:** accepted
 - **Spec sections affected:** 20, 21, 24, 28, 30, 31, 33, 34, 37, 90, 98
 
 ## Context

@@ -100,6 +100,13 @@
           "reason": "fourJS: per-package identity constant — every @fourjs/* package's src/index.ts exports its own PACKAGE_NAME string, the direct analog of MathTS's per-package VERSION entries above. Legitimately independent by construction; consolidating would invert the layering (everything would have to import one package for its own name). 2026-08-04 gate wiring."
         },
         {
+          "file": "packages/physics-physjs/src/index.ts",
+          "package": "@fourjs/physics-physjs",
+          "public": true,
+          "tag": "ALLOWLISTED",
+          "reason": "fourJS: per-package identity constant — every @fourjs/* package's src/index.ts exports its own PACKAGE_NAME string, the direct analog of MathTS's per-package VERSION entries above. Legitimately independent by construction; consolidating would invert the layering (everything would have to import one package for its own name). 2026-08-04 gate wiring."
+        },
+        {
           "file": "packages/physics-rapier/src/index.ts",
           "package": "@fourjs/physics-rapier",
           "public": true,

@@ -70,6 +70,7 @@
     "@fourjs/particles": "workspace:*",
     "@fourjs/physics": "workspace:*",
     "@fourjs/physics-box2d": "workspace:*",
+    "@fourjs/physics-physjs": "workspace:*",
     "@fourjs/physics-rapier": "workspace:*",
     "@fourjs/physics-soft": "workspace:*",
     "@fourjs/render": "workspace:*",

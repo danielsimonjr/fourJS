@@ -23,6 +23,7 @@ export * as ui from "@fourjs/ui";
 export * as physicsRapier from "@fourjs/physics-rapier";
 export * as physicsBox2d from "@fourjs/physics-box2d";
 export * as physicsSoft from "@fourjs/physics-soft";
+export * as physicsPhysjs from "@fourjs/physics-physjs";
 
 export type {
   ApplicationEventMap,

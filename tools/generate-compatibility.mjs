@@ -157,14 +157,15 @@ for (const dir of solverPackageDirs) {
   const module = await import(pathToFileURL(barrel).href);
   const exportNames = Object.keys(module).sort();
 
-  // Adapter *classes* only: the name must end in "Adapter" AND start with an
+  // Adapter *classes* only: the name must end in "Adapter" (or "Adapter2D"/
+  // "Adapter3D", RFC 0010) AND start with an
   // upper-case letter. The second check exists because 191ee41 (the §37 solver
   // registry) added the factory `createRapierAdapter(options)`, which ends in
   // "Adapter" but is not a constructor — `new createRapierAdapter()` threw and
   // turned this gate red (found by the §118 flagship packet, 2026-08-07).
   const adapterExports = exportNames.filter(
     (name) =>
-      name.endsWith("Adapter") &&
+      /Adapter(2D|3D)?$/.test(name) &&
       name[0] === name[0].toUpperCase() &&
       typeof module[name] === "function",
   );
@@ -201,6 +202,15 @@ for (const dir of solverPackageDirs) {
       Object.keys(dependencies)
         .sort()
         .find((dependency) => dependency.includes(String(instance.name))) ??
+      // `physjs2d` → `@danielsimonjr/physjs`: one engine, one dependency for
+      // both dimensions (RFC 0010), so fall back to the dimension-free stem.
+      Object.keys(dependencies)
+        .sort()
+        .find(
+          (dependency) =>
+            !dependency.startsWith("@fourjs/") &&
+            dependency.includes(String(instance.name).replace(/[23]d$/, "")),
+        ) ??
       null;
     adapters.push({
       exportName,

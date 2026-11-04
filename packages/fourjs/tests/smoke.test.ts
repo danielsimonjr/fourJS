@@ -23,6 +23,7 @@ import { PACKAGE_NAME as uiName } from "@fourjs/ui";
 import { PACKAGE_NAME as physicsRapierName } from "@fourjs/physics-rapier";
 import { PACKAGE_NAME as physicsBox2dName } from "@fourjs/physics-box2d";
 import { PACKAGE_NAME as physicsSoftName } from "@fourjs/physics-soft";
+import { PACKAGE_NAME as physicsPhysjsName } from "@fourjs/physics-physjs";
 
 describe("four", () => {
   it("resolves the package name of every workspace package", () => {
@@ -49,5 +50,6 @@ describe("four", () => {
     expect(physicsRapierName).toBe("@fourjs/physics-rapier");
     expect(physicsBox2dName).toBe("@fourjs/physics-box2d");
     expect(physicsSoftName).toBe("@fourjs/physics-soft");
+    expect(physicsPhysjsName).toBe("@fourjs/physics-physjs");
   });
 });
