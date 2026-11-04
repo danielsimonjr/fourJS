@@ -4,8 +4,8 @@
     "version": "0.0.0",
     "lastUpdated": "2026-11-04",
     "totalFiles": 352,
-    "totalModules": 25,
-    "totalExports": 3524
+    "totalModules": 24,
+    "totalExports": 3558
   },
   "entryPoints": [
     {
@@ -92,11 +92,6 @@
       "file": "packages/render-webgpu/src/index.ts",
       "type": "main",
       "description": "`@fourjs/render-webgpu` — the WebGPU backend (§62 backend 1)."
-    },
-    {
-      "file": "packages/physics-physjs/src/index.ts",
-      "type": "main",
-      "description": "`@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102)."
     },
     {
       "file": "packages/render-canvas/src/index.ts",
@@ -3939,9 +3934,21 @@
         "nodeDependencies": [],
         "internalDependencies": [],
         "workspaceDependencies": [],
-        "exports": ["probePng", "probeJpeg", "probeWebp", "probeImage"],
+        "exports": [
+          "probePng",
+          "probeJpeg",
+          "probeWebp",
+          "probeAvif",
+          "probeImage"
+        ],
         "interfaces": ["ImageDimensions"],
-        "functions": ["probePng", "probeJpeg", "probeWebp", "probeImage"]
+        "functions": [
+          "probePng",
+          "probeJpeg",
+          "probeWebp",
+          "probeAvif",
+          "probeImage"
+        ]
       },
       "packages/assets/src/gltf.ts": {
         "description": "The §78 glTF 2.0 loader — the **parse tier** (A-19's last half, 2026-08-29).",
@@ -4130,8 +4137,24 @@
             "reExport": true
           },
           {
+            "file": "./bounded-webp.js",
+            "imports": ["createBoundedWebpDecoder"],
+            "reExport": true
+          },
+          {
+            "file": "./bounded-avif.js",
+            "imports": ["createBoundedAvifDecoder"],
+            "reExport": true
+          },
+          {
             "file": "./image-probe.js",
-            "imports": ["probeImage", "probeJpeg", "probePng", "probeWebp"],
+            "imports": [
+              "probeAvif",
+              "probeImage",
+              "probeJpeg",
+              "probePng",
+              "probeWebp"
+            ],
             "reExport": true
           },
           {
@@ -4244,6 +4267,18 @@
             "typeOnly": true
           },
           {
+            "file": "./bounded-webp.js",
+            "imports": ["BoundedWebpDecoderOptions"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
+            "file": "./bounded-avif.js",
+            "imports": ["BoundedAvifDecoderOptions"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
             "file": "./image-probe.js",
             "imports": ["ImageDimensions"],
             "reExport": true,
@@ -4278,6 +4313,9 @@
           "createBoundedPngDecoder",
           "DEFAULT_IMAGE_WORKING_BYTES",
           "createBoundedJpegDecoder",
+          "createBoundedWebpDecoder",
+          "createBoundedAvifDecoder",
+          "probeAvif",
           "probeImage",
           "probeJpeg",
           "probePng",
@@ -4335,6 +4373,8 @@
           "GzipReader",
           "BoundedPngDecoderOptions",
           "BoundedJpegDecoderOptions",
+          "BoundedWebpDecoderOptions",
+          "BoundedAvifDecoderOptions",
           "ImageDimensions"
         ],
         "reExported": [
@@ -4364,6 +4404,9 @@
           "createBoundedPngDecoder",
           "DEFAULT_IMAGE_WORKING_BYTES",
           "createBoundedJpegDecoder",
+          "createBoundedWebpDecoder",
+          "createBoundedAvifDecoder",
+          "probeAvif",
           "probeImage",
           "probeJpeg",
           "probePng",
@@ -4420,6 +4463,8 @@
           "GzipReader",
           "BoundedPngDecoderOptions",
           "BoundedJpegDecoderOptions",
+          "BoundedWebpDecoderOptions",
+          "BoundedAvifDecoderOptions",
           "ImageDimensions"
         ],
         "constants": ["PACKAGE_NAME"]
@@ -4654,6 +4699,78 @@
         "interfaces": ["GzipReader", "GzipLoaderOptions"],
         "functions": ["createGzipLoader"]
       },
+      "packages/assets/src/bounded-raw-codec.ts": {
+        "description": "Raw C-style ABI required of the pinned binary (no JS glue, no imports):",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./image-memory.js",
+            "imports": ["registerBoundedImageDecoder"]
+          },
+          {
+            "file": "./image-probe.js",
+            "imports": ["ImageDimensions"],
+            "typeOnly": true
+          },
+          {
+            "file": "./texture.js",
+            "imports": [
+              "DEFAULT_MAXIMUM_DECODED_BYTES",
+              "DEFAULT_MAXIMUM_EXPANSION_RATIO",
+              "DecodedTexels",
+              "TexelDecodeLike"
+            ]
+          },
+          {
+            "file": "./wasm-memory.js",
+            "imports": ["limitWasmMemory"]
+          },
+          {
+            "file": "./bounded-png.js",
+            "imports": ["DEFAULT_IMAGE_WORKING_BYTES"]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          }
+        ],
+        "exports": ["createBoundedRawDecoder"],
+        "interfaces": ["BoundedRawCodecOptions", "RawCodecSpec"],
+        "functions": ["createBoundedRawDecoder"]
+      },
+      "packages/assets/src/bounded-webp.ts": {
+        "description": "Bounded WebP → RGBA8 decoder (§96). Mirrors {@link createBoundedJpegDecoder}:",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./bounded-raw-codec.js",
+            "imports": ["createBoundedRawDecoder", "BoundedRawCodecOptions"]
+          },
+          {
+            "file": "./image-probe.js",
+            "imports": ["probeWebp"]
+          },
+          {
+            "file": "./texture.js",
+            "imports": ["TexelDecodeLike"],
+            "typeOnly": true
+          },
+          {
+            "file": "./bounded-png.js",
+            "imports": ["DEFAULT_IMAGE_WORKING_BYTES"],
+            "reExport": true
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": ["DEFAULT_IMAGE_WORKING_BYTES", "createBoundedWebpDecoder"],
+        "reExported": ["DEFAULT_IMAGE_WORKING_BYTES"],
+        "functions": ["createBoundedWebpDecoder"]
+      },
       "packages/assets/src/wasm-memory.ts": {
         "description": "Copies a single-memory Wasm32 codec and caps its declared linear memory.",
         "externalDependencies": [],
@@ -4710,6 +4827,35 @@
         "exports": ["DEFAULT_IMAGE_WORKING_BYTES", "createBoundedJpegDecoder"],
         "interfaces": ["BoundedJpegDecoderOptions"],
         "functions": ["createBoundedJpegDecoder"]
+      },
+      "packages/assets/src/bounded-avif.ts": {
+        "description": "Bounded AVIF → RGBA8 decoder (§96). Mirrors {@link createBoundedJpegDecoder}:",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./bounded-raw-codec.js",
+            "imports": ["createBoundedRawDecoder", "BoundedRawCodecOptions"]
+          },
+          {
+            "file": "./image-probe.js",
+            "imports": ["probeAvif"]
+          },
+          {
+            "file": "./texture.js",
+            "imports": ["TexelDecodeLike"],
+            "typeOnly": true
+          },
+          {
+            "file": "./bounded-png.js",
+            "imports": ["DEFAULT_IMAGE_WORKING_BYTES"],
+            "reExport": true
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": ["DEFAULT_IMAGE_WORKING_BYTES", "createBoundedAvifDecoder"],
+        "reExported": ["DEFAULT_IMAGE_WORKING_BYTES"],
+        "functions": ["createBoundedAvifDecoder"]
       },
       "packages/assets/src/loaders.ts": {
         "description": "The built-in loaders (§76) — text, JSON, binary, image.",
@@ -13930,9 +14076,20 @@
               "MAP_BIND_GROUP_INDEX",
               "MAP_SAMPLER_BINDING",
               "MAP_TEXTURE_BINDING",
+              "SURFACE_EMISSIVE_BINDING",
+              "SURFACE_MR_BINDING",
+              "SURFACE_NORMAL_BINDING",
+              "SURFACE_OCCLUSION_BINDING",
+              "SURFACE_SAMPLER_BINDING",
               "createDrawBindGroupLayout",
+              "createSurfaceBindGroupLayout",
               "createTextureBindGroupLayout"
             ],
+            "reExport": true
+          },
+          {
+            "file": "./wgpu-surface-group.js",
+            "imports": ["WgpuSurfaceGroupCache"],
             "reExport": true
           },
           {
@@ -13990,7 +14147,14 @@
               "CLEAR_VERTEX_COUNT",
               "COLOR_BUFFER_LAYOUT",
               "COLOR_SHADER_LOCATION",
+              "DRAW_MORPH_WEIGHT_OFFSET",
               "FRAGMENT_ENTRY_POINT",
+              "MORPH_DRAW_UNIFORM_WGSL",
+              "MORPH_WEIGHT_WGSL",
+              "NORMAL1_BUFFER_LAYOUT",
+              "NORMAL1_SHADER_LOCATION",
+              "POSITION1_BUFFER_LAYOUT",
+              "POSITION1_SHADER_LOCATION",
               "POSITION_BUFFER_LAYOUT",
               "POSITION_SHADER_LOCATION",
               "UV_BUFFER_LAYOUT",
@@ -13998,7 +14162,8 @@
               "VERTEX_ENTRY_POINT",
               "unlitShaderSource",
               "unlitVertexBufferLayouts",
-              "unlitFragmentStageWgsl"
+              "unlitFragmentStageWgsl",
+              "WgpuMorph"
             ],
             "reExport": true
           },
@@ -14166,6 +14331,9 @@
           {
             "file": "./wgpu-standard.js",
             "imports": [
+              "MORPH_STANDARD_UNIFORM_WGSL",
+              "NO_SURFACE_MAPS",
+              "SURFACE_DEFAULT_TEXELS",
               "STANDARD_BASE_COLOR_OFFSET",
               "STANDARD_EMISSIVE_OFFSET",
               "STANDARD_MODEL_OFFSET",
@@ -14307,6 +14475,12 @@
             "typeOnly": true
           },
           {
+            "file": "./wgpu-surface-group.js",
+            "imports": ["SurfaceSources"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
             "file": "./wgpu-geometry.js",
             "imports": ["CacheableGeometry", "WgpuGeometryRecord"],
             "reExport": true,
@@ -14387,6 +14561,12 @@
             "typeOnly": true
           },
           {
+            "file": "./wgpu-standard.js",
+            "imports": ["SurfaceMaps"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
             "file": "./wgpu-node-registry.js",
             "imports": [
               "WgpuNodeFrameState",
@@ -14447,8 +14627,15 @@
           "MAP_BIND_GROUP_INDEX",
           "MAP_SAMPLER_BINDING",
           "MAP_TEXTURE_BINDING",
+          "SURFACE_EMISSIVE_BINDING",
+          "SURFACE_MR_BINDING",
+          "SURFACE_NORMAL_BINDING",
+          "SURFACE_OCCLUSION_BINDING",
+          "SURFACE_SAMPLER_BINDING",
           "createDrawBindGroupLayout",
+          "createSurfaceBindGroupLayout",
           "createTextureBindGroupLayout",
+          "WgpuSurfaceGroupCache",
           "WgpuGeometryCache",
           "blendStateFor",
           "pipelineKey",
@@ -14473,7 +14660,14 @@
           "CLEAR_VERTEX_COUNT",
           "COLOR_BUFFER_LAYOUT",
           "COLOR_SHADER_LOCATION",
+          "DRAW_MORPH_WEIGHT_OFFSET",
           "FRAGMENT_ENTRY_POINT",
+          "MORPH_DRAW_UNIFORM_WGSL",
+          "MORPH_WEIGHT_WGSL",
+          "NORMAL1_BUFFER_LAYOUT",
+          "NORMAL1_SHADER_LOCATION",
+          "POSITION1_BUFFER_LAYOUT",
+          "POSITION1_SHADER_LOCATION",
           "POSITION_BUFFER_LAYOUT",
           "POSITION_SHADER_LOCATION",
           "UV_BUFFER_LAYOUT",
@@ -14482,6 +14676,7 @@
           "unlitShaderSource",
           "unlitVertexBufferLayouts",
           "unlitFragmentStageWgsl",
+          "WgpuMorph",
           "LIGHTS_BIND_GROUP_INDEX",
           "LIGHT_AMBIENT_OFFSET",
           "LIGHT_CAMERA_OFFSET",
@@ -14583,6 +14778,9 @@
           "applyStencilReference",
           "frameWantsStencil",
           "stencilDescriptor",
+          "MORPH_STANDARD_UNIFORM_WGSL",
+          "NO_SURFACE_MAPS",
+          "SURFACE_DEFAULT_TEXELS",
           "STANDARD_BASE_COLOR_OFFSET",
           "STANDARD_EMISSIVE_OFFSET",
           "STANDARD_MODEL_OFFSET",
@@ -14678,6 +14876,7 @@
           "GpuTextureViewDescriptor",
           "GpuVertexBufferLayout",
           "WebgpuCanvas",
+          "SurfaceSources",
           "CacheableGeometry",
           "WgpuGeometryRecord",
           "WgpuBatchStream",
@@ -14699,6 +14898,7 @@
           "WgpuParticleRecord",
           "WgpuParticleSimulationOptions",
           "WgpuStencilSource",
+          "SurfaceMaps",
           "WgpuNodeFrameState",
           "WgpuNodeItemMaterial",
           "WgpuNodeMaterialPipelineFactory",
@@ -14736,8 +14936,15 @@
           "MAP_BIND_GROUP_INDEX",
           "MAP_SAMPLER_BINDING",
           "MAP_TEXTURE_BINDING",
+          "SURFACE_EMISSIVE_BINDING",
+          "SURFACE_MR_BINDING",
+          "SURFACE_NORMAL_BINDING",
+          "SURFACE_OCCLUSION_BINDING",
+          "SURFACE_SAMPLER_BINDING",
           "createDrawBindGroupLayout",
+          "createSurfaceBindGroupLayout",
           "createTextureBindGroupLayout",
+          "WgpuSurfaceGroupCache",
           "WgpuGeometryCache",
           "blendStateFor",
           "pipelineKey",
@@ -14762,7 +14969,14 @@
           "CLEAR_VERTEX_COUNT",
           "COLOR_BUFFER_LAYOUT",
           "COLOR_SHADER_LOCATION",
+          "DRAW_MORPH_WEIGHT_OFFSET",
           "FRAGMENT_ENTRY_POINT",
+          "MORPH_DRAW_UNIFORM_WGSL",
+          "MORPH_WEIGHT_WGSL",
+          "NORMAL1_BUFFER_LAYOUT",
+          "NORMAL1_SHADER_LOCATION",
+          "POSITION1_BUFFER_LAYOUT",
+          "POSITION1_SHADER_LOCATION",
           "POSITION_BUFFER_LAYOUT",
           "POSITION_SHADER_LOCATION",
           "UV_BUFFER_LAYOUT",
@@ -14771,6 +14985,7 @@
           "unlitShaderSource",
           "unlitVertexBufferLayouts",
           "unlitFragmentStageWgsl",
+          "WgpuMorph",
           "LIGHTS_BIND_GROUP_INDEX",
           "LIGHT_AMBIENT_OFFSET",
           "LIGHT_CAMERA_OFFSET",
@@ -14872,6 +15087,9 @@
           "applyStencilReference",
           "frameWantsStencil",
           "stencilDescriptor",
+          "MORPH_STANDARD_UNIFORM_WGSL",
+          "NO_SURFACE_MAPS",
+          "SURFACE_DEFAULT_TEXELS",
           "STANDARD_BASE_COLOR_OFFSET",
           "STANDARD_EMISSIVE_OFFSET",
           "STANDARD_MODEL_OFFSET",
@@ -14966,6 +15184,7 @@
           "GpuTextureViewDescriptor",
           "GpuVertexBufferLayout",
           "WebgpuCanvas",
+          "SurfaceSources",
           "CacheableGeometry",
           "WgpuGeometryRecord",
           "WgpuBatchStream",
@@ -14987,6 +15206,7 @@
           "WgpuParticleRecord",
           "WgpuParticleSimulationOptions",
           "WgpuStencilSource",
+          "SurfaceMaps",
           "WgpuNodeFrameState",
           "WgpuNodeItemMaterial",
           "WgpuNodeMaterialPipelineFactory",
@@ -15028,12 +15248,19 @@
           "MAP_TEXTURE_BINDING",
           "MAP_SAMPLER_BINDING",
           "MAP_BINDING_WGSL",
+          "SURFACE_MR_BINDING",
+          "SURFACE_SAMPLER_BINDING",
+          "SURFACE_NORMAL_BINDING",
+          "SURFACE_OCCLUSION_BINDING",
+          "SURFACE_EMISSIVE_BINDING",
           "createDrawBindGroupLayout",
-          "createTextureBindGroupLayout"
+          "createTextureBindGroupLayout",
+          "createSurfaceBindGroupLayout"
         ],
         "functions": [
           "createDrawBindGroupLayout",
-          "createTextureBindGroupLayout"
+          "createTextureBindGroupLayout",
+          "createSurfaceBindGroupLayout"
         ],
         "constants": [
           "DRAW_VIEW_PROJECTION_OFFSET",
@@ -15046,7 +15273,12 @@
           "MAP_BIND_GROUP_INDEX",
           "MAP_TEXTURE_BINDING",
           "MAP_SAMPLER_BINDING",
-          "MAP_BINDING_WGSL"
+          "MAP_BINDING_WGSL",
+          "SURFACE_MR_BINDING",
+          "SURFACE_SAMPLER_BINDING",
+          "SURFACE_NORMAL_BINDING",
+          "SURFACE_OCCLUSION_BINDING",
+          "SURFACE_EMISSIVE_BINDING"
         ]
       },
       "packages/render-webgpu/src/wgpu-skinning.ts": {
@@ -15624,7 +15856,11 @@
         "internalDependencies": [
           {
             "file": "./wgpu-bindings.js",
-            "imports": ["DRAW_UNIFORM_WGSL", "MAP_BINDING_WGSL"]
+            "imports": [
+              "DRAW_NORMAL_OFFSET",
+              "DRAW_UNIFORM_WGSL",
+              "MAP_BINDING_WGSL"
+            ]
           },
           {
             "file": "./webgpu-device.js",
@@ -15640,6 +15876,13 @@
           "COLOR_BUFFER_LAYOUT",
           "UV_SHADER_LOCATION",
           "UV_BUFFER_LAYOUT",
+          "POSITION1_SHADER_LOCATION",
+          "NORMAL1_SHADER_LOCATION",
+          "POSITION1_BUFFER_LAYOUT",
+          "NORMAL1_BUFFER_LAYOUT",
+          "DRAW_MORPH_WEIGHT_OFFSET",
+          "MORPH_DRAW_UNIFORM_WGSL",
+          "MORPH_WEIGHT_WGSL",
           "VERTEX_ENTRY_POINT",
           "FRAGMENT_ENTRY_POINT",
           "CLEAR_VERTEX_COUNT",
@@ -15660,6 +15903,13 @@
           "COLOR_BUFFER_LAYOUT",
           "UV_SHADER_LOCATION",
           "UV_BUFFER_LAYOUT",
+          "POSITION1_SHADER_LOCATION",
+          "NORMAL1_SHADER_LOCATION",
+          "POSITION1_BUFFER_LAYOUT",
+          "NORMAL1_BUFFER_LAYOUT",
+          "DRAW_MORPH_WEIGHT_OFFSET",
+          "MORPH_DRAW_UNIFORM_WGSL",
+          "MORPH_WEIGHT_WGSL",
           "VERTEX_ENTRY_POINT",
           "FRAGMENT_ENTRY_POINT",
           "CLEAR_VERTEX_COUNT",
@@ -15905,6 +16155,11 @@
             "typeOnly": true
           },
           {
+            "file": "./wgpu-unlit.js",
+            "imports": ["WgpuMorph"],
+            "typeOnly": true
+          },
+          {
             "file": "./wgpu-stencil.js",
             "imports": [
               "STENCIL_ALL_BITS",
@@ -15999,6 +16254,63 @@
           "PARTICLE_APPEARANCE_SHADER_SOURCE",
           "PARTICLE_SHADER_SOURCE"
         ]
+      },
+      "packages/render-webgpu/src/wgpu-surface-group.ts": {
+        "description": "The standard family's surface bind groups (WP-W4.2): the five-entry group of",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./webgpu-device.js",
+            "imports": [
+              "GPU_TEXTURE_USAGE",
+              "GpuBindGroup",
+              "GpuBindGroupLayout",
+              "GpuDevice",
+              "GpuSampler",
+              "GpuTexture",
+              "GpuTextureView"
+            ]
+          },
+          {
+            "file": "./wgpu-bindings.js",
+            "imports": [
+              "SURFACE_EMISSIVE_BINDING",
+              "SURFACE_MR_BINDING",
+              "SURFACE_NORMAL_BINDING",
+              "SURFACE_OCCLUSION_BINDING",
+              "SURFACE_SAMPLER_BINDING"
+            ]
+          },
+          {
+            "file": "./wgpu-standard.js",
+            "imports": ["SURFACE_DEFAULT_TEXELS"]
+          },
+          {
+            "file": "./wgpu-render-target.js",
+            "imports": ["WgpuRenderTargetCache"],
+            "typeOnly": true
+          },
+          {
+            "file": "./wgpu-texture.js",
+            "imports": [
+              "WgpuCacheableTexture",
+              "WgpuTextureCache",
+              "WgpuTextureRecord"
+            ],
+            "typeOnly": true
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/render",
+            "directory": "packages/render",
+            "imports": ["isRenderTargetTexture", "RenderTarget"]
+          }
+        ],
+        "exports": ["WgpuSurfaceGroupCache"],
+        "classes": ["WgpuSurfaceGroupCache"],
+        "interfaces": ["SurfaceSources"]
       },
       "packages/render-webgpu/src/wgpu-particle-simulation.ts": {
         "description": "`WgpuParticleSimulation` — the device side of §36's `simulation: \"gpu\"`",
@@ -16253,6 +16565,16 @@
         "nodeDependencies": [],
         "internalDependencies": [
           {
+            "file": "./wgpu-bindings.js",
+            "imports": [
+              "SURFACE_EMISSIVE_BINDING",
+              "SURFACE_MR_BINDING",
+              "SURFACE_NORMAL_BINDING",
+              "SURFACE_OCCLUSION_BINDING",
+              "SURFACE_SAMPLER_BINDING"
+            ]
+          },
+          {
             "file": "./webgpu-device.js",
             "imports": ["GPU_SHADER_STAGE", "GpuBindGroupLayout", "GpuDevice"]
           },
@@ -16278,11 +16600,13 @@
           },
           {
             "file": "./wgpu-unlit.js",
-            "imports": ["FRAGMENT_ENTRY_POINT"]
+            "imports": ["FRAGMENT_ENTRY_POINT", "WgpuMorph"]
           }
         ],
         "workspaceDependencies": [],
         "exports": [
+          "NO_SURFACE_MAPS",
+          "SURFACE_DEFAULT_TEXELS",
           "STANDARD_VIEW_PROJECTION_OFFSET",
           "STANDARD_MODEL_OFFSET",
           "STANDARD_BASE_COLOR_OFFSET",
@@ -16291,11 +16615,20 @@
           "STANDARD_SURFACE_OFFSET",
           "STANDARD_UNIFORM_BYTES",
           "STANDARD_UNIFORM_WGSL",
+          "MORPH_STANDARD_UNIFORM_WGSL",
+          "surfaceBindingWgsl",
           "createStandardBindGroupLayout",
           "standardShaderSource"
         ],
-        "functions": ["createStandardBindGroupLayout", "standardShaderSource"],
+        "interfaces": ["SurfaceMaps"],
+        "functions": [
+          "surfaceBindingWgsl",
+          "createStandardBindGroupLayout",
+          "standardShaderSource"
+        ],
         "constants": [
+          "NO_SURFACE_MAPS",
+          "SURFACE_DEFAULT_TEXELS",
           "STANDARD_VIEW_PROJECTION_OFFSET",
           "STANDARD_MODEL_OFFSET",
           "STANDARD_BASE_COLOR_OFFSET",
@@ -16303,7 +16636,8 @@
           "STANDARD_EMISSIVE_OFFSET",
           "STANDARD_SURFACE_OFFSET",
           "STANDARD_UNIFORM_BYTES",
-          "STANDARD_UNIFORM_WGSL"
+          "STANDARD_UNIFORM_WGSL",
+          "MORPH_STANDARD_UNIFORM_WGSL"
         ]
       },
       "packages/render-webgpu/src/wgpu-sprite.ts": {
@@ -16441,7 +16775,11 @@
           },
           {
             "file": "./wgpu-standard.js",
-            "imports": ["standardShaderSource"]
+            "imports": [
+              "NO_SURFACE_MAPS",
+              "standardShaderSource",
+              "SurfaceMaps"
+            ]
           },
           {
             "file": "./wgpu-unlit.js",
@@ -16452,7 +16790,8 @@
               "UV_BUFFER_LAYOUT",
               "VERTEX_ENTRY_POINT",
               "unlitShaderSource",
-              "unlitVertexBufferLayouts"
+              "unlitVertexBufferLayouts",
+              "WgpuMorph"
             ]
           }
         ],
@@ -16508,11 +16847,18 @@
             "file": "./wgpu-unlit.js",
             "imports": [
               "FRAGMENT_ENTRY_POINT",
+              "MORPH_DRAW_UNIFORM_WGSL",
+              "MORPH_WEIGHT_WGSL",
+              "NORMAL1_BUFFER_LAYOUT",
+              "NORMAL1_SHADER_LOCATION",
+              "POSITION1_BUFFER_LAYOUT",
+              "POSITION1_SHADER_LOCATION",
               "POSITION_BUFFER_LAYOUT",
               "POSITION_SHADER_LOCATION",
               "UV_BUFFER_LAYOUT",
               "UV_SHADER_LOCATION",
-              "VERTEX_ENTRY_POINT"
+              "VERTEX_ENTRY_POINT",
+              "WgpuMorph"
             ]
           }
         ],
@@ -16573,7 +16919,8 @@
               "DRAW_UNIFORM_BYTES",
               "DRAW_VIEW_PROJECTION_OFFSET",
               "MAP_BIND_GROUP_INDEX",
-              "createDrawBindGroupLayout"
+              "createDrawBindGroupLayout",
+              "createSurfaceBindGroupLayout"
             ]
           },
           {
@@ -16722,8 +17069,12 @@
             ]
           },
           {
+            "file": "./wgpu-surface-group.js",
+            "imports": ["WgpuSurfaceGroupCache", "SurfaceSources"]
+          },
+          {
             "file": "./wgpu-unlit.js",
-            "imports": ["CLEAR_VERTEX_COUNT"]
+            "imports": ["CLEAR_VERTEX_COUNT", "DRAW_MORPH_WEIGHT_OFFSET"]
           }
         ],
         "workspaceDependencies": [
@@ -16776,145 +17127,6 @@
         "exports": ["hostGpu", "WebgpuRenderer"],
         "classes": ["WebgpuRenderer"],
         "functions": ["hostGpu"]
-      }
-    },
-    "packages/physics-physjs": {
-      "packages/physics-physjs/src/index.ts": {
-        "description": "`@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102).",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [
-          {
-            "file": "./physjs-adapter.js",
-            "imports": [
-              "PHYSJS_CAPABILITIES",
-              "PHYSJS_VERSION",
-              "PhysJSAdapter2D",
-              "PhysJSAdapter3D"
-            ],
-            "reExport": true
-          },
-          {
-            "file": "./register.js",
-            "imports": [
-              "createPhysJSAdapter",
-              "isPhysJSSupported",
-              "registerPhysJSSolver"
-            ],
-            "reExport": true
-          }
-        ],
-        "workspaceDependencies": [],
-        "exports": [
-          "PHYSJS_CAPABILITIES",
-          "PHYSJS_VERSION",
-          "PhysJSAdapter2D",
-          "PhysJSAdapter3D",
-          "createPhysJSAdapter",
-          "isPhysJSSupported",
-          "registerPhysJSSolver",
-          "PACKAGE_NAME"
-        ],
-        "reExported": [
-          "PHYSJS_CAPABILITIES",
-          "PHYSJS_VERSION",
-          "PhysJSAdapter2D",
-          "PhysJSAdapter3D",
-          "createPhysJSAdapter",
-          "isPhysJSSupported",
-          "registerPhysJSSolver"
-        ],
-        "constants": ["PACKAGE_NAME"]
-      },
-      "packages/physics-physjs/src/physjs-adapter.ts": {
-        "description": "The PhysJS solver adapters (RFC 0010, §37, §102) — skeleton.",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [],
-        "workspaceDependencies": [
-          {
-            "package": "@fourjs/core",
-            "directory": "packages/core",
-            "imports": ["FourError"]
-          },
-          {
-            "package": "@fourjs/math",
-            "directory": "packages/math",
-            "imports": ["Quaternion", "Vector3"]
-          },
-          {
-            "package": "@fourjs/physics",
-            "directory": "packages/physics",
-            "imports": [
-              "AngularVelocityInput",
-              "BodyType",
-              "CCDMode",
-              "ColliderDescriptor",
-              "JointDescriptor",
-              "OverlapHit",
-              "OverlapQuery",
-              "PhysicsBodyHandle",
-              "PhysicsCapabilities",
-              "PhysicsColliderHandle",
-              "PhysicsDimension",
-              "PhysicsEvent",
-              "PhysicsJointHandle",
-              "PhysicsWorldAdapter",
-              "PhysicsWorldOptions",
-              "PointHit",
-              "PointQuery",
-              "RaycastHit",
-              "RaycastQuery",
-              "RigidBodyDescriptor",
-              "RotationInput",
-              "ShapeCastHit",
-              "ShapeCastQuery",
-              "ShippedJointType",
-              "Vector3Input"
-            ]
-          }
-        ],
-        "exports": [
-          "PHYSJS_VERSION",
-          "PHYSJS_CAPABILITIES",
-          "PhysJSAdapter2D",
-          "PhysJSAdapter3D"
-        ],
-        "classes": ["PhysJSAdapter2D", "PhysJSAdapter3D"],
-        "constants": ["PHYSJS_VERSION", "PHYSJS_CAPABILITIES"]
-      },
-      "packages/physics-physjs/src/register.ts": {
-        "description": "This package's opt-in to §37's solver registry (RFC 0010, decision 3).",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [
-          {
-            "file": "./physjs-adapter.js",
-            "imports": ["PhysJSAdapter2D", "PhysJSAdapter3D"]
-          }
-        ],
-        "workspaceDependencies": [
-          {
-            "package": "@fourjs/physics",
-            "directory": "packages/physics",
-            "imports": [
-              "registerSolver",
-              "PhysicsWorldAdapter",
-              "PhysicsWorldOptions",
-              "SolverRegistry"
-            ]
-          }
-        ],
-        "exports": [
-          "isPhysJSSupported",
-          "createPhysJSAdapter",
-          "registerPhysJSSolver"
-        ],
-        "functions": [
-          "isPhysJSSupported",
-          "createPhysJSAdapter",
-          "registerPhysJSSolver"
-        ]
       }
     },
     "packages/render-canvas": {
@@ -21333,21 +21545,6 @@
       }
     },
     "packages/fourjs": {
-      "packages/fourjs/src/physics-physjs.ts": {
-        "description": "physics-physjs module",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [],
-        "workspaceDependencies": [
-          {
-            "package": "@fourjs/physics-physjs",
-            "directory": "packages/physics-physjs",
-            "imports": ["*"]
-          }
-        ],
-        "exports": [],
-        "reExported": ["* from @fourjs/physics-physjs"]
-      },
       "packages/fourjs/src/physics-box2d.ts": {
         "description": "physics-box2d module",
         "externalDependencies": [],
@@ -23333,8 +23530,11 @@
           "packages/assets/src/content-hash.ts",
           "packages/assets/src/bounded-png.ts",
           "packages/assets/src/gzip.ts",
+          "packages/assets/src/bounded-raw-codec.ts",
+          "packages/assets/src/bounded-webp.ts",
           "packages/assets/src/wasm-memory.ts",
           "packages/assets/src/bounded-jpeg.ts",
+          "packages/assets/src/bounded-avif.ts",
           "packages/assets/src/loaders.ts"
         ]
       },
@@ -23508,6 +23708,7 @@
           "packages/render-webgpu/src/wgpu-lights.ts",
           "packages/render-webgpu/src/wgpu-pipeline-memo.ts",
           "packages/render-webgpu/src/wgpu-particles.ts",
+          "packages/render-webgpu/src/wgpu-surface-group.ts",
           "packages/render-webgpu/src/wgpu-particle-simulation.ts",
           "packages/render-webgpu/src/wgpu-compute.ts",
           "packages/render-webgpu/src/register.ts",
@@ -23519,14 +23720,6 @@
           "packages/render-webgpu/src/wgpu-pipeline-cache.ts",
           "packages/render-webgpu/src/wgpu-lit.ts",
           "packages/render-webgpu/src/webgpu-renderer.ts"
-        ]
-      },
-      {
-        "name": "Packages/physics-physjs",
-        "files": [
-          "packages/physics-physjs/src/index.ts",
-          "packages/physics-physjs/src/physjs-adapter.ts",
-          "packages/physics-physjs/src/register.ts"
         ]
       },
       {
@@ -23625,7 +23818,6 @@
       {
         "name": "Packages/fourjs",
         "files": [
-          "packages/fourjs/src/physics-physjs.ts",
           "packages/fourjs/src/physics-box2d.ts",
           "packages/fourjs/src/gltf.ts",
           "packages/fourjs/src/application.ts",
@@ -23677,20 +23869,20 @@
   },
   "statistics": {
     "totalTypeScriptFiles": 352,
-    "totalModules": 25,
-    "totalLinesOfCode": 167277,
-    "totalExports": 3524,
-    "totalClasses": 217,
-    "totalInterfaces": 652,
-    "totalFunctions": 595,
-    "totalTypeGuards": 33,
+    "totalModules": 24,
+    "totalLinesOfCode": 168168,
+    "totalExports": 3558,
+    "totalClasses": 216,
+    "totalInterfaces": 656,
+    "totalFunctions": 598,
+    "totalTypeGuards": 32,
     "totalEnums": 0,
-    "totalConstants": 508,
-    "totalReExports": 2223,
-    "totalTypeOnlyImports": 446,
+    "totalConstants": 520,
+    "totalReExports": 2242,
+    "totalTypeOnlyImports": 456,
     "runtimeCircularDeps": 0,
     "typeOnlyCircularDeps": 10,
     "unusedFilesCount": 0,
-    "unusedExportsCount": 9
+    "unusedExportsCount": 10
   }
 }

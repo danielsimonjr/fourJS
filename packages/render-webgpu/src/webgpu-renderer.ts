@@ -164,6 +164,7 @@ import {
   DRAW_VIEW_PROJECTION_OFFSET,
   MAP_BIND_GROUP_INDEX,
   createDrawBindGroupLayout,
+  createSurfaceBindGroupLayout,
 } from "./wgpu-bindings.js";
 // **`import type` only**, deliberately (R-9's seam, restated for this
 // backend): a value import here would link §65's uploader — and the planner
@@ -276,7 +277,11 @@ import {
   type SkinningPipelineHost,
   type WgpuSkinnedDrawDescriptor,
 } from "./wgpu-skinning-registry.js";
-import { CLEAR_VERTEX_COUNT } from "./wgpu-unlit.js";
+import {
+  WgpuSurfaceGroupCache,
+  type SurfaceSources,
+} from "./wgpu-surface-group.js";
+import { CLEAR_VERTEX_COUNT, DRAW_MORPH_WEIGHT_OFFSET } from "./wgpu-unlit.js";
 
 /** Error code for use-after-dispose, mirroring the other two backends (§83, §89). */
 const LIFECYCLE_ERROR_CODE = "INVALID_APPLICATION_STATE";
@@ -603,6 +608,21 @@ function resolveFrameTexture(
   return renderTargets.sample(source);
 }
 
+/**
+ * StandardMaterial's normal / occlusion / emissive map, or `null` — read
+ * structurally like {@link metalRoughnessMapOf} (lit items have no such field).
+ */
+function surfaceMapOf(
+  material: object,
+  field: "normalMap" | "occlusionMap" | "emissiveMap",
+): WgpuCacheableTexture | null {
+  return (
+    (material as Record<string, WgpuCacheableTexture | null | undefined>)[
+      field
+    ] ?? null
+  );
+}
+
 function metalRoughnessMapOf(material: {
   metalRoughnessMap?: WgpuCacheableTexture | null;
 }): WgpuCacheableTexture | null {
@@ -714,6 +734,12 @@ export class WebgpuRenderer implements Renderer {
   readonly #pipelineMemo = new WgpuPipelineMemo();
 
   readonly #pipelineRequest = createPipelineRequest();
+  /** Scratch sources for the surface-group lookup (§7b: no per-draw allocation). */
+  readonly #surfaceSources: {
+    -readonly [K in keyof SurfaceSources]: SurfaceSources[K];
+  } = { metalRoughness: null, normal: null, occlusion: null, emissive: null };
+  #surfaces: WgpuSurfaceGroupCache | null = null;
+  #surfaceLayout: GpuBindGroupLayout | null = null;
 
   #geometries: WgpuGeometryCache | null = null;
 
@@ -1088,6 +1114,10 @@ export class WebgpuRenderer implements Renderer {
       () => this.#acquireEffectLayout(device),
       () => this.#acquireShadowLightsLayout(device),
       () => this.#acquireParticleLayout(device),
+      () => this.#acquireSurfaceLayout(device),
+    );
+    this.#surfaces = new WgpuSurfaceGroupCache(device, () =>
+      this.#acquireSurfaceLayout(device),
     );
     this.#geometries = new WgpuGeometryCache(device);
     // Constructed here because construction allocates nothing (the family
@@ -1720,18 +1750,6 @@ export class WebgpuRenderer implements Renderer {
           }
           continue;
         }
-        if (!maskPass && item.geometry.positions1 !== undefined) {
-          if (DEV) {
-            devWarnOnce(
-              "webgpu-gpu-morph-skip",
-              "§54: this scene contains a mesh with GPU morph streams " +
-                "(positions1) but the WebGPU backend does not draw them yet; " +
-                "those items are skipped rather than shown in bind pose " +
-                "(RFC 0003 WP-SK.4). Use the WebGL 2 one-target path.",
-            );
-          }
-          continue;
-        }
         if (
           !maskPass &&
           item.kind !== "unlit" &&
@@ -1821,9 +1839,18 @@ export class WebgpuRenderer implements Renderer {
         // A shaded draw asks the cache for the normal stream too (WP-R1.5);
         // a mask does not — coverage, not shading — and every other kind
         // passes the default `false`, i.e. exactly the call it always made.
+        // One-target GPU morph (RFC 0003): the unlit and lit draws ask for
+        // `positions1` (and, lit, `normals1`); everything else passes the
+        // default `false` — the call it always made.
         const record = geometries.acquire(
           item.geometry,
           !maskPass && (item.kind === "lit" || item.kind === "standard"),
+          false,
+          !maskPass &&
+            item.geometry.positions1 !== undefined &&
+            (item.kind === "lit" ||
+              item.kind === "unlit" ||
+              item.kind === "standard"),
         );
         if (record === null) {
           continue;
@@ -1988,6 +2015,44 @@ export class WebgpuRenderer implements Renderer {
             continue;
           }
           const useMetalRoughness = metalRoughnessBindGroup !== null;
+          // WP-W4.2: normal / occlusion / emissive maps, same contract (named
+          // + uvs + unresolved skips the draw; no uv stream degrades to the
+          // scalar factors). Any of them moves the draw onto the five-entry
+          // surface group, which also carries the metallic-roughness pair.
+          let surfaceBindGroup: GpuBindGroup | null = null;
+          let useNormalMap = false;
+          let useOcclusionMap = false;
+          let useEmissiveMap = false;
+          if (item.kind === "standard" && record.uvBuffer !== null) {
+            const normalSource = surfaceMapOf(item.material, "normalMap");
+            const occlusionSource = surfaceMapOf(item.material, "occlusionMap");
+            const emissiveSource = surfaceMapOf(item.material, "emissiveMap");
+            if (
+              normalSource !== null ||
+              occlusionSource !== null ||
+              emissiveSource !== null
+            ) {
+              const sources = this.#surfaceSources;
+              sources.metalRoughness = metalRoughnessSource;
+              sources.normal = normalSource;
+              sources.occlusion = occlusionSource;
+              sources.emissive = emissiveSource;
+              surfaceBindGroup =
+                this.#surfaces?.acquire(
+                  textures,
+                  sources,
+                  renderTargets,
+                  activeTarget,
+                ) ?? null;
+              if (surfaceBindGroup === null) {
+                continue;
+              }
+              useNormalMap = normalSource !== null;
+              useOcclusionMap = occlusionSource !== null;
+              useEmissiveMap = emissiveSource !== null;
+            }
+          }
+          const useSurface = surfaceBindGroup !== null;
           // The lights group is read off the *field*, not a frame local, and
           // read here — after the material's getters have run — so a
           // reentrant mid-frame `dispose()` inside application code (the
@@ -2044,6 +2109,17 @@ export class WebgpuRenderer implements Renderer {
           request.shadow = receiving;
           request.metalRoughness = useMetalRoughness;
           request.gpuInstances = false;
+          request.normalMap = useNormalMap;
+          request.occlusionMap = useOcclusionMap;
+          request.emissiveMap = useEmissiveMap;
+          const morph =
+            (item.kind === "lit" || item.kind === "standard") &&
+            record.position1Buffer !== null
+              ? normals && record.normal1Buffer !== null
+                ? "pn"
+                : "p"
+              : undefined;
+          request.morph = morph;
           const pipeline = this.#pipelineMemo.acquire(pipelines, request);
           if (pipeline === null) {
             // Unreachable given the class invariant — the unlit arm's
@@ -2067,6 +2143,9 @@ export class WebgpuRenderer implements Renderer {
               baseColor[3] * opacity,
             );
             this.#writeSurface(block, item.material);
+            if (morph !== undefined) {
+              this.#writeMorphWeight(block, item.morphWeights);
+            }
             pass.setPipeline(pipeline);
             pass.setBindGroup(
               0,
@@ -2084,6 +2163,9 @@ export class WebgpuRenderer implements Renderer {
               color[2],
               color[3] * opacity,
             );
+            if (morph !== undefined) {
+              this.#writeMorphWeight(block, item.morphWeights);
+            }
             pass.setPipeline(pipeline);
             pass.setBindGroup(
               0,
@@ -2119,14 +2201,29 @@ export class WebgpuRenderer implements Renderer {
             slot += 1;
             pass.setVertexBuffer(slot, record.normalBuffer);
           }
-          if (useMap || useMetalRoughness) {
+          if (useMap || useMetalRoughness || useSurface) {
             slot += 1;
             pass.setVertexBuffer(slot, record.uvBuffer);
+          }
+          if (morph !== undefined) {
+            slot += 1;
+            pass.setVertexBuffer(slot, record.position1Buffer);
+            if (morph === "pn") {
+              slot += 1;
+              pass.setVertexBuffer(slot, record.normal1Buffer);
+            }
           }
           if (mapBindGroup !== null) {
             pass.setBindGroup(SHADED_MAP_BIND_GROUP_INDEX, mapBindGroup);
           }
-          if (metalRoughnessBindGroup !== null) {
+          if (surfaceBindGroup !== null) {
+            // The surface group replaces the 2-entry metallic-roughness
+            // group at the same index (`wgpu-standard.ts`).
+            pass.setBindGroup(
+              useMap ? SHADED_MR_BIND_GROUP_INDEX : SHADED_MAP_BIND_GROUP_INDEX,
+              surfaceBindGroup,
+            );
+          } else if (metalRoughnessBindGroup !== null) {
             // Group 3 when albedo occupies 2; group 2 when it does not
             // (`wgpu-lights.ts` / `wgpu-standard.ts`).
             pass.setBindGroup(
@@ -2203,6 +2300,11 @@ export class WebgpuRenderer implements Renderer {
         request.shadow = false;
         request.metalRoughness = false;
         request.gpuInstances = false;
+        const morph = record.position1Buffer !== null ? "p" : undefined;
+        request.morph = morph;
+        request.normalMap = false;
+        request.occlusionMap = false;
+        request.emissiveMap = false;
         const pipeline = this.#pipelineMemo.acquire(pipelines, request);
         if (pipeline === null) {
           // Unreachable given the class invariant — the cache answers `null`
@@ -2223,6 +2325,9 @@ export class WebgpuRenderer implements Renderer {
           material.color[2],
           material.color[3] * opacity,
         );
+        if (morph !== undefined) {
+          this.#writeMorphWeight(block, item.morphWeights);
+        }
 
         pass.setPipeline(pipeline);
         pass.setBindGroup(
@@ -2250,6 +2355,10 @@ export class WebgpuRenderer implements Renderer {
           slot += 1;
           pass.setVertexBuffer(slot, record.uvBuffer);
           pass.setBindGroup(MAP_BIND_GROUP_INDEX, mapBindGroup);
+        }
+        if (morph !== undefined) {
+          slot += 1;
+          pass.setVertexBuffer(slot, record.position1Buffer);
         }
         if (record.indexBuffer !== null && record.indexFormat !== null) {
           pass.setIndexBuffer(record.indexBuffer, record.indexFormat);
@@ -3203,6 +3312,7 @@ export class WebgpuRenderer implements Renderer {
     if (this.#deviceLost) {
       this.#geometries?.forget();
       this.#textures?.forget();
+      this.#surfaces?.forget();
       this.#renderTargets?.forget();
       this.#particles?.forget();
       // §65's uploader, when the application assigned one (R-9): its buffers
@@ -3212,6 +3322,7 @@ export class WebgpuRenderer implements Renderer {
     } else {
       this.#geometries?.dispose();
       this.#textures?.dispose();
+      this.#surfaces?.dispose();
       this.#renderTargets?.dispose();
       this.#particles?.dispose();
       this.batching?.dispose();
@@ -3268,6 +3379,8 @@ export class WebgpuRenderer implements Renderer {
     this.#particleBindGroup = null;
     this.#standardLayout = null;
     this.#standardBindGroup = null;
+    this.#surfaceLayout = null;
+    this.#surfaces = null;
     this.#lightsLayout = null;
     this.#lightsBuffer = null;
     this.#lightsBindGroup = null;
@@ -3383,6 +3496,10 @@ export class WebgpuRenderer implements Renderer {
     request.shadow = false;
     request.metalRoughness = false;
     request.gpuInstances = false;
+    request.morph = undefined;
+    request.normalMap = false;
+    request.occlusionMap = false;
+    request.emissiveMap = false;
     const pipeline = this.#pipelineMemo.acquire(pipelines, request);
     if (pipeline === null) {
       // Unreachable for the unlit path's reason — this renderer always wires
@@ -3494,6 +3611,10 @@ export class WebgpuRenderer implements Renderer {
     request.shadow = false;
     request.metalRoughness = false;
     request.gpuInstances = simulation !== null;
+    request.morph = undefined;
+    request.normalMap = false;
+    request.occlusionMap = false;
+    request.emissiveMap = false;
     const pipeline = this.#pipelineMemo.acquire(pipelines, request);
     if (pipeline === null) {
       // Unreachable for the unlit path's reason — this renderer always wires
@@ -3734,6 +3855,12 @@ export class WebgpuRenderer implements Renderer {
   #acquireLightsLayout(device: GpuDevice): GpuBindGroupLayout {
     this.#lightsLayout ??= createLightsBindGroupLayout(device);
     return this.#lightsLayout;
+  }
+
+  /** WP-W4.2's surface group layout, one per renderer, created on first use. */
+  #acquireSurfaceLayout(device: GpuDevice): GpuBindGroupLayout {
+    this.#surfaceLayout ??= createSurfaceBindGroupLayout(device);
+    return this.#surfaceLayout;
   }
 
   /** §59's group-0 layout, one per renderer, created on first use (WP-R1.5). */
@@ -4044,8 +4171,10 @@ export class WebgpuRenderer implements Renderer {
     const surfaceBase = base + STANDARD_SURFACE_OFFSET / 4;
     staging[surfaceBase] = material.metalness;
     staging[surfaceBase + 1] = material.roughness;
-    staging[surfaceBase + 2] = 0;
-    staging[surfaceBase + 3] = 0;
+    // WP-W4.2: the normal-scale and occlusion-strength offsets from their
+    // identity of 1 (zero = "no change", as in GL).
+    staging[surfaceBase + 2] = (material.normalScale ?? 1) - 1;
+    staging[surfaceBase + 3] = (material.occlusionStrength ?? 1) - 1;
   }
 
   /**
@@ -4085,6 +4214,20 @@ export class WebgpuRenderer implements Renderer {
     // and recreated by the next receiving draw, the sprite group's rule.
     this.#shadowBindGroup = null;
     this.#shadowBindGroupView = null;
+  }
+
+  /**
+   * Writes the one-target morph weight (`morphWeights[0]`, default 0) into the
+   * padding word of the block's `normalMatrix` first column (RFC 0003) —
+   * after {@link WebgpuRenderer.#writeBlock}, which zeroes it.
+   */
+  #writeMorphWeight(
+    block: number,
+    weights: Float32Array | null | undefined,
+  ): void {
+    this.#uniformStaging[
+      block * UNIFORM_STRIDE_FLOATS + DRAW_MORPH_WEIGHT_OFFSET / 4
+    ] = weights?.[0] ?? 0;
   }
 
   /** Packs one `DrawUniforms` block into the staging array at `block`'s stride. */
@@ -4273,6 +4416,8 @@ export class WebgpuRenderer implements Renderer {
       // device — dropped, never destroyed.
       this.#standardLayout = null;
       this.#standardBindGroup = null;
+      this.#surfaceLayout = null;
+      this.#surfaces = null;
       this.#lightsLayout = null;
       this.#lightsBuffer = null;
       this.#lightsBindGroup = null;

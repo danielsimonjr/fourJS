@@ -72,6 +72,7 @@ import {
   STANDARD_EMISSIVE_OFFSET,
   STANDARD_SURFACE_OFFSET,
   UNIFORM_STRIDE_BYTES,
+  DRAW_MORPH_WEIGHT_OFFSET,
   WebgpuRenderer,
   JOINT_PALETTE_FLOATS,
   clearRegisteredSkinningPipeline,
@@ -2321,6 +2322,16 @@ class TestStandardMaterial {
 
   metalRoughnessMap?: TestTexture | null;
 
+  normalMap?: TestTexture | null;
+
+  occlusionMap?: TestTexture | null;
+
+  emissiveMap?: TestTexture | null;
+
+  normalScale?: number;
+
+  occlusionStrength?: number;
+
   constructor(baseColor: [number, number, number, number] = [1, 1, 1, 1]) {
     this.baseColor = baseColor;
   }
@@ -4464,5 +4475,489 @@ describe("registerSkinningPipeline — WebgpuRenderer colour pair (RFC 0003)", (
     harness.gpu.reset();
     harness.renderer.render(node, [createView()]);
     expect(harness.gpu.countOf("pass.draw")).toBe(1);
+  });
+});
+
+describe("WebgpuRenderer one-target GPU morph (RFC 0003 WP-SK.4)", () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await initialized();
+  });
+
+  afterEach(() => {
+    harness.renderer.dispose();
+  });
+
+  /** A triangle (optionally with normals) carrying the first morph target. */
+  function morphTriangle(withNormals: boolean): TestGeometry {
+    const geometry = withNormals ? litTriangle() : triangle();
+    Object.assign(geometry, {
+      positions1: new Float32Array([-1, -1, 0, 1, -1, 0, 0, 1, 0]),
+    });
+    if (withNormals) {
+      Object.assign(geometry, {
+        normals1: new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]),
+      });
+    }
+    return geometry;
+  }
+
+  function morphing(node: Renderable, weight: number): Renderable {
+    (
+      node as unknown as { morphTargetWeights: Float32Array }
+    ).morphTargetWeights = new Float32Array([weight]);
+    return node;
+  }
+
+  /** The morph-weight word of every uniform block in the frame's upload. */
+  function weightWords(): number[] {
+    const data = uniformUpload(harness.gpu);
+    const words: number[] = [];
+    for (let at = 0; at < data.length; at += UNIFORM_STRIDE_BYTES / 4) {
+      words.push(data[at + DRAW_MORPH_WEIGHT_OFFSET / 4]);
+    }
+    return words;
+  }
+
+  function shaderLabels(): string[] {
+    return harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((call) => String((call.args[0] as { label?: string }).label));
+  }
+
+  it("draws an unlit morph mesh with a second vertex stream and its own pipeline", () => {
+    const root = createRoot();
+    root.add(morphing(renderable(morphTriangle(false)), 0.25));
+    harness.renderer.render(root, [createView()]);
+
+    expect(shaderLabels()).toContain("fourJS:unlit|mo:p");
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 1]);
+    expect(harness.gpu.countOf("pass.draw")).toBeGreaterThanOrEqual(1);
+    const uploads = harness.gpu
+      .callsOf("device.createBuffer")
+      .map((call) => String((call.args[0] as { label?: string }).label));
+    expect(
+      uploads.some((label) => label.startsWith("fourJS:positions1:")),
+    ).toBe(true);
+    const code = harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((call) => (call.args[0] as { code: string }).code)
+      .find((source) => source.includes("position1"));
+    expect(code).toContain("mix(position, position1, draw.normalColumn0.w)");
+  });
+
+  it("draws a lit morph mesh with position1 and normal1 streams", () => {
+    const root = createRoot();
+    root.add(
+      morphing(
+        new Renderable(
+          morphTriangle(true).asGeometry,
+          new TestLitMaterial().asMaterial,
+        ),
+        0.5,
+      ),
+    );
+    harness.renderer.render(root, [createView()]);
+
+    expect(shaderLabels()).toContain("fourJS:lit|n|mo:pn");
+    // position, normal, position1, normal1 — one counter.
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 1, 2, 3]);
+    const code = harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((call) => (call.args[0] as { code: string }).code)
+      .find((source) => source.includes("normal1"));
+    expect(code).toContain("mix(normal, normal1, draw.normalColumn0.w)");
+    expect(code).toContain("mix(position, position1, draw.normalColumn0.w)");
+  });
+
+  it("morphs positions only when a lit mesh has no normals1", () => {
+    const root = createRoot();
+    const geometry = morphTriangle(true);
+    Object.assign(geometry, { normals1: undefined });
+    root.add(
+      new Renderable(geometry.asGeometry, new TestLitMaterial().asMaterial),
+    );
+    harness.renderer.render(root, [createView()]);
+    expect(shaderLabels()).toContain("fourJS:lit|n|mo:p");
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 1, 2]);
+  });
+
+  it("leaves a non-morph mesh on the original pipeline and memo path", () => {
+    const root = createRoot();
+    root.add(renderable(triangle()));
+    root.add(renderable(triangle()));
+    harness.renderer.render(root, [createView()]);
+    expect(shaderLabels().filter((label) => label.includes("mo:"))).toEqual([]);
+    // Clear + one unlit pipeline shared by both draws.
+    expect(harness.gpu.countOf("device.createRenderPipeline")).toBe(2);
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 0]);
+    expect(
+      harness.gpu
+        .callsOf("device.createBuffer")
+        .some((call) =>
+          String((call.args[0] as { label?: string }).label).includes(
+            "positions1",
+          ),
+        ),
+    ).toBe(false);
+  });
+
+  it("keeps morph and plain unlit pipelines distinct in one frame", () => {
+    const root = createRoot();
+    root.add(renderable(triangle()));
+    root.add(morphing(renderable(morphTriangle(false)), 1));
+    harness.renderer.render(root, [createView()]);
+    // Clear + plain unlit + morph unlit.
+    expect(harness.gpu.countOf("device.createRenderPipeline")).toBe(3);
+  });
+
+  it("writes morphWeights[0] into the draw uniform and tracks updates", () => {
+    const root = createRoot();
+    const node = morphing(renderable(morphTriangle(false)), 0.25);
+    root.add(node);
+    harness.renderer.render(root, [createView()]);
+    expect(weightWords()).toContain(0.25);
+
+    harness.gpu.reset();
+    morphing(node, 0.75);
+    harness.renderer.render(root, [createView()]);
+    expect(weightWords()).toContain(0.75);
+    expect(weightWords()).not.toContain(0.25);
+    // Same variant: no new pipeline on the second frame.
+    expect(harness.gpu.countOf("device.createRenderPipeline")).toBe(0);
+  });
+
+  it("defaults the weight to 0 when the node carries none", () => {
+    const root = createRoot();
+    root.add(renderable(morphTriangle(false)));
+    harness.renderer.render(root, [createView()]);
+    expect(weightWords().every((word) => word === 0)).toBe(true);
+  });
+});
+
+describe("WebgpuRenderer standard surface maps (WP-W4.2)", () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await initialized();
+  });
+
+  afterEach(() => {
+    harness.renderer.dispose();
+  });
+
+  function uvTriangle(): TestGeometry {
+    const geometry = litTriangle();
+    geometry.uvs = new Float32Array([0, 0, 1, 0, 0.5, 1]);
+    return geometry;
+  }
+
+  function draw(
+    material: TestStandardMaterial,
+    geometry: TestGeometry = uvTriangle(),
+  ): void {
+    const root = createRoot();
+    root.add(new Renderable(geometry.asGeometry, material.asMaterial));
+    harness.renderer.render(root, [createView()]);
+  }
+
+  function surfaceGroups(): { entries: { binding: number }[] }[] {
+    return harness.gpu
+      .callsOf("device.createBindGroup")
+      .map(
+        (call) =>
+          call.args[0] as { label?: string; entries: { binding: number }[] },
+      )
+      .filter((desc) => desc.label === "fourJS:surface");
+  }
+
+  it("binds the five-entry surface group at group 2 for a normal map", () => {
+    const material = new TestStandardMaterial();
+    material.normalMap = new TestTexture();
+    draw(material);
+
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n|nm");
+    expect(layoutLabels(harness.gpu)).toContain("fourJS:surface");
+    const groups = surfaceGroups();
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.entries.map((e) => e.binding)).toEqual([0, 1, 2, 3, 4]);
+    expect(bindGroupOffsets(harness.gpu, 2)).toHaveLength(1);
+    expect(bindGroupOffsets(harness.gpu, 3)).toEqual([]);
+    expect(
+      pipelineLabels(harness.gpu).some((label) => label.endsWith("|nm:y")),
+    ).toBe(true);
+    // One allocation for the map, plus the 1x1 defaults for the other slots.
+    expect(mapAllocations(harness.gpu)).toBe(1);
+    const defaults = harness.gpu
+      .callsOf("device.createTexture")
+      .filter((call) =>
+        String((call.args[0] as { label?: string }).label).startsWith(
+          "fourJS:surface-default:",
+        ),
+      );
+    expect(defaults).toHaveLength(4 - 1);
+  });
+
+  it("places the surface group at 3 behind albedo and keys each map", () => {
+    const material = new TestStandardMaterial();
+    material.map = new TestTexture();
+    material.normalMap = new TestTexture();
+    material.occlusionMap = new TestTexture();
+    material.emissiveMap = new TestTexture();
+    draw(material);
+
+    expect(moduleLabels(harness.gpu)).toContain(
+      "fourJS:standard|n|map|nm|oc|em",
+    );
+    expect(bindGroupOffsets(harness.gpu, 2)).toHaveLength(1);
+    expect(bindGroupOffsets(harness.gpu, 3)).toHaveLength(1);
+    expect(
+      pipelineLabels(harness.gpu).some((label) =>
+        label.endsWith("|nm:y|oc:y|em:y"),
+      ),
+    ).toBe(true);
+  });
+
+  it("includes the metallic-roughness map in the same group", () => {
+    const material = new TestStandardMaterial();
+    material.metalRoughnessMap = new TestTexture();
+    material.emissiveMap = new TestTexture();
+    draw(material);
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n|mr|em");
+    expect(surfaceGroups()).toHaveLength(1);
+    const code = harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((call) => call.args[0] as { label?: string; code: string })
+      .find((module) => module.label === "fourJS:standard|n|mr|em")?.code;
+    expect(code).toContain("textureSample(mrTexture, surfaceSampler");
+  });
+
+  it("keeps the absent-map path on the old key, layout and defaults", () => {
+    draw(new TestStandardMaterial());
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n");
+    expect(
+      pipelineLabels(harness.gpu).some((label) => label.includes("|nm:")),
+    ).toBe(false);
+    expect(layoutLabels(harness.gpu)).not.toContain("fourJS:surface");
+    expect(surfaceGroups()).toEqual([]);
+    expect(
+      harness.gpu
+        .callsOf("device.createTexture")
+        .some((call) =>
+          String((call.args[0] as { label?: string }).label).startsWith(
+            "fourJS:surface-default:",
+          ),
+        ),
+    ).toBe(false);
+  });
+
+  it("degrades to the scalar variant without uvs and skips an unresolved map", () => {
+    const material = new TestStandardMaterial();
+    material.normalMap = new TestTexture();
+    draw(material, litTriangle());
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n");
+
+    const disposed = new TestStandardMaterial();
+    disposed.occlusionMap = new TestTexture();
+    disposed.occlusionMap.dispose();
+    harness.gpu.reset();
+    draw(disposed);
+    expect(
+      moduleLabels(harness.gpu).some((label) => label.includes("standard")),
+    ).toBe(false);
+  });
+
+  it("draws a render-target metallic-roughness map together with a normal map", () => {
+    const target = new RenderTarget({ width: 8, height: 8 });
+    const material = new TestStandardMaterial();
+    material.metalRoughnessMap = target.colorTexture as never;
+    material.normalMap = new TestTexture();
+    const drawsBefore = harness.gpu.countOf("pass.drawIndexed");
+    draw(material);
+    expect(surfaceGroups()).toHaveLength(1);
+    expect(
+      harness.gpu.countOf("pass.drawIndexed") +
+        harness.gpu.countOf("pass.draw"),
+    ).toBeGreaterThan(drawsBefore + 1);
+    const group = harness.gpu
+      .callsOf("device.createBindGroup")
+      .map(
+        (c) =>
+          c.args[0] as {
+            label?: string;
+            entries: { binding: number; resource: unknown }[];
+          },
+      )
+      .find((d) => d.label === "fourJS:surface");
+    expect(group?.entries[0]?.resource).toBeDefined();
+    expect(group?.entries[0]?.resource).not.toBe(group?.entries[2]?.resource);
+    // Drawing into that same target is a feedback loop: skipped.
+    harness.gpu.reset();
+    const root = createRoot();
+    root.add(new Renderable(uvTriangle().asGeometry, material.asMaterial));
+    harness.renderer.render(root, [createView()], undefined, target);
+    expect(surfaceGroups()).toHaveLength(0);
+  });
+
+  it("shares one bind group between draws of the same maps", () => {
+    const material = new TestStandardMaterial();
+    material.normalMap = new TestTexture();
+    const root = createRoot();
+    root.add(new Renderable(uvTriangle().asGeometry, material.asMaterial));
+    root.add(new Renderable(uvTriangle().asGeometry, material.asMaterial));
+    harness.renderer.render(root, [createView()]);
+    expect(surfaceGroups()).toHaveLength(1);
+    expect(bindGroupOffsets(harness.gpu, 2)).toHaveLength(2);
+  });
+
+  it("writes normalScale - 1 and occlusionStrength - 1 into the block", () => {
+    const material = new TestStandardMaterial();
+    material.normalMap = new TestTexture();
+    material.normalScale = 2.5;
+    material.occlusionStrength = 0.25;
+    draw(material);
+    const data = drawUniformUpload(harness.gpu);
+    const base = 208 / 4;
+    const found = [];
+    for (let at = 0; at < data.length; at += UNIFORM_STRIDE_BYTES / 4) {
+      found.push([data[at + base + 2], data[at + base + 3]]);
+    }
+    expect(found).toContainEqual([1.5, -0.75]);
+  });
+
+  it("writes 0 / 0 when the material carries no scale fields", () => {
+    draw(new TestStandardMaterial());
+    const data = drawUniformUpload(harness.gpu);
+    const base = 208 / 4;
+    const found = [];
+    for (let at = 0; at < data.length; at += UNIFORM_STRIDE_BYTES / 4) {
+      found.push([data[at + base + 2], data[at + base + 3]]);
+    }
+    expect(found).toContainEqual([0, 0]);
+  });
+
+  it("releases the surface defaults on dispose", () => {
+    const material = new TestStandardMaterial();
+    material.emissiveMap = new TestTexture();
+    draw(material);
+    harness.renderer.dispose();
+    expect(harness.gpu.countOf("texture.destroy")).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("WebgpuRenderer standard-family GPU morph (WP-W4.2b)", () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await initialized();
+  });
+
+  afterEach(() => {
+    harness.renderer.dispose();
+  });
+
+  function morphGeometry(withNormals: boolean): TestGeometry {
+    const geometry = litTriangle();
+    Object.assign(geometry, {
+      positions1: new Float32Array([-1, -1, 0, 1, -1, 0, 0, 1, 0]),
+    });
+    if (withNormals) {
+      Object.assign(geometry, {
+        normals1: new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]),
+      });
+    }
+    return geometry;
+  }
+
+  function morphNode(geometry: TestGeometry, weight: number): Renderable {
+    const node = new Renderable(
+      geometry.asGeometry,
+      new TestStandardMaterial().asMaterial,
+    );
+    (
+      node as unknown as { morphTargetWeights: Float32Array }
+    ).morphTargetWeights = new Float32Array([weight]);
+    return node;
+  }
+
+  it("draws a standard morph mesh with position1 and normal1 streams", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const root = createRoot();
+    root.add(morphNode(morphGeometry(true), 0.5));
+    harness.renderer.render(root, [createView()]);
+
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n|mo:pn");
+    expect(
+      pipelineLabels(harness.gpu).some((label) => label.endsWith("|mo:pn")),
+    ).toBe(true);
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 1, 2, 3]);
+    const code = harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((call) => (call.args[0] as { code: string }).code)
+      .find((source) => source.includes("normal1"));
+    expect(code).toContain("mix(position, position1, draw.normalColumn0.w)");
+    expect(code).toContain("mix(normal, normal1, draw.normalColumn0.w)");
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("morphs positions only when there is no normals1", () => {
+    const root = createRoot();
+    root.add(morphNode(morphGeometry(false), 1));
+    harness.renderer.render(root, [createView()]);
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n|mo:p");
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 1, 2]);
+  });
+
+  it("carries the weight in the standard block's normal-matrix pad word", () => {
+    const root = createRoot();
+    root.add(morphNode(morphGeometry(true), 0.25));
+    harness.renderer.render(root, [createView()]);
+    const data = drawUniformUpload(harness.gpu);
+    const words = [];
+    for (let at = 0; at < data.length; at += UNIFORM_STRIDE_BYTES / 4) {
+      words.push(data[at + DRAW_MORPH_WEIGHT_OFFSET / 4]);
+    }
+    expect(words).toContain(0.25);
+  });
+
+  it("composes with a normal map and a following non-morph standard draw", () => {
+    const root = createRoot();
+    const geometry = morphGeometry(true);
+    geometry.uvs = new Float32Array([0, 0, 1, 0, 0.5, 1]);
+    const node = new Renderable(
+      geometry.asGeometry,
+      (() => {
+        const m = new TestStandardMaterial();
+        m.normalMap = new TestTexture();
+        return m.asMaterial;
+      })(),
+    );
+    (
+      node as unknown as { morphTargetWeights: Float32Array }
+    ).morphTargetWeights = new Float32Array([0.5]);
+    root.add(node);
+    root.add(
+      new Renderable(
+        litTriangle().asGeometry,
+        new TestStandardMaterial().asMaterial,
+      ),
+    );
+    harness.renderer.render(root, [createView()]);
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n|mo:pn|nm");
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n");
   });
 });

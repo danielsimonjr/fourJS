@@ -252,7 +252,7 @@ reverse an edge without an owner decision (RFC/ADR per §95).
   transform-authority machinery live in `@fourjs/scene` rather than either
   pillar.
 
-The generated graph (25 packages, 352 files, 0 runtime cycles and
+The generated graph (24 packages, 352 files, 0 runtime cycles and
 10 type-only cycles) is in [DEPENDENCY_GRAPH.md](./DEPENDENCY_GRAPH.md) and
 `dependency-summary.compact.json`.
 

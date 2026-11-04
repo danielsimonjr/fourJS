@@ -100,6 +100,18 @@ export interface WgpuGeometryRecord {
    * {@link WgpuGeometryRecord.jointBuffer}; the two upgrade together.
    */
   weightBuffer: GpuBuffer | null;
+  /**
+   * Buffer backing the first morph target's positions (`positions1`, shader
+   * location 6), or `null` — absent, or not asked for (`acquire`'s `morph`
+   * parameter). Mutable for the upgrade the other optional streams use.
+   */
+  position1Buffer: GpuBuffer | null;
+  /**
+   * Buffer backing the first morph target's normals (`normals1`, shader
+   * location 7), or `null`. Uploaded only for a morph acquisition that also
+   * shades (`normals`), since only the lit family reads it.
+   */
+  normal1Buffer: GpuBuffer | null;
   /** Index buffer, or `null` for a non-indexed geometry. */
   readonly indexBuffer: GpuBuffer | null;
   /** `"uint16"` or `"uint32"`, or `null` when there are no indices. */
@@ -182,6 +194,7 @@ export class WgpuGeometryCache {
     geometry: CacheableGeometry,
     normals = false,
     skinning = false,
+    morph = false,
   ): WgpuGeometryRecord | null {
     if (this.#disposed) {
       return null;
@@ -206,6 +219,9 @@ export class WgpuGeometryCache {
         if (skinning) {
           this.#upgradeSkinning(existing, geometry);
         }
+        if (morph) {
+          this.#upgradeMorph(existing, geometry, normals);
+        }
         return existing;
       }
       this.#destroyRecord(existing);
@@ -219,7 +235,7 @@ export class WgpuGeometryCache {
       return null;
     }
 
-    const record = this.#upload(geometry, normals, skinning);
+    const record = this.#upload(geometry, normals, skinning, morph);
     this.#records.set(geometry.id, record);
     return record;
   }
@@ -265,10 +281,36 @@ export class WgpuGeometryCache {
     }
   }
 
+  #upgradeMorph(
+    record: WgpuGeometryRecord,
+    geometry: CacheableGeometry,
+    normals: boolean,
+  ): void {
+    if (record.position1Buffer === null && geometry.positions1 !== undefined) {
+      record.position1Buffer = this.#uploadBuffer(
+        geometry.positions1,
+        GPU_BUFFER_USAGE.VERTEX,
+        `fourJS:positions1:${geometry.id}`,
+      );
+    }
+    if (
+      normals &&
+      record.normal1Buffer === null &&
+      geometry.normals1 !== undefined
+    ) {
+      record.normal1Buffer = this.#uploadBuffer(
+        geometry.normals1,
+        GPU_BUFFER_USAGE.VERTEX,
+        `fourJS:normals1:${geometry.id}`,
+      );
+    }
+  }
+
   #upload(
     geometry: CacheableGeometry,
     normals: boolean,
     skinning: boolean,
+    morph: boolean,
   ): WgpuGeometryRecord {
     const positionBuffer = this.#uploadBuffer(
       geometry.positions,
@@ -331,6 +373,26 @@ export class WgpuGeometryCache {
             `fourJS:weights:${geometry.id}`,
           );
 
+    const position1Data = morph ? geometry.positions1 : undefined;
+    const position1Buffer =
+      position1Data === undefined
+        ? null
+        : this.#uploadBuffer(
+            position1Data,
+            GPU_BUFFER_USAGE.VERTEX,
+            `fourJS:positions1:${geometry.id}`,
+          );
+
+    const normal1Data = morph && normals ? geometry.normals1 : undefined;
+    const normal1Buffer =
+      normal1Data === undefined
+        ? null
+        : this.#uploadBuffer(
+            normal1Data,
+            GPU_BUFFER_USAGE.VERTEX,
+            `fourJS:normals1:${geometry.id}`,
+          );
+
     const indices = geometry.indices;
     const indexBuffer =
       indices === undefined
@@ -348,6 +410,8 @@ export class WgpuGeometryCache {
       uvBuffer,
       jointBuffer,
       weightBuffer,
+      position1Buffer,
+      normal1Buffer,
       indexBuffer,
       indexFormat:
         indices === undefined
@@ -382,6 +446,8 @@ export class WgpuGeometryCache {
     record.uvBuffer?.destroy();
     record.jointBuffer?.destroy();
     record.weightBuffer?.destroy();
+    record.position1Buffer?.destroy();
+    record.normal1Buffer?.destroy();
     record.indexBuffer?.destroy();
   }
 }

@@ -59,11 +59,18 @@ import {
 } from "./wgpu-shadow.js";
 import {
   FRAGMENT_ENTRY_POINT,
+  MORPH_DRAW_UNIFORM_WGSL,
+  MORPH_WEIGHT_WGSL,
+  NORMAL1_BUFFER_LAYOUT,
+  NORMAL1_SHADER_LOCATION,
+  POSITION1_BUFFER_LAYOUT,
+  POSITION1_SHADER_LOCATION,
   POSITION_BUFFER_LAYOUT,
   POSITION_SHADER_LOCATION,
   UV_BUFFER_LAYOUT,
   UV_SHADER_LOCATION,
   VERTEX_ENTRY_POINT,
+  type WgpuMorph,
 } from "./wgpu-unlit.js";
 
 /**
@@ -103,6 +110,7 @@ export const NORMAL_BUFFER_LAYOUT: GpuVertexBufferLayout = Object.freeze({
 export function shadedVertexBufferLayouts(
   normals: boolean,
   map: boolean,
+  morph?: WgpuMorph,
 ): readonly GpuVertexBufferLayout[] {
   const layouts: GpuVertexBufferLayout[] = [POSITION_BUFFER_LAYOUT];
   if (normals) {
@@ -110,6 +118,12 @@ export function shadedVertexBufferLayouts(
   }
   if (map) {
     layouts.push(UV_BUFFER_LAYOUT);
+  }
+  if (morph !== undefined) {
+    layouts.push(POSITION1_BUFFER_LAYOUT);
+    if (morph === "pn") {
+      layouts.push(NORMAL1_BUFFER_LAYOUT);
+    }
   }
   return layouts;
 }
@@ -151,7 +165,11 @@ export const NORMAL_MATRIX_WGSL = `fn normalMatrix(model : mat4x4<f32>) -> mat3x
  * yields, so the shared fragment guard shades it ambient-only — see the module
  * header's departure 2.
  */
-export function shadedVertexStageWgsl(normals: boolean, map: boolean): string {
+export function shadedVertexStageWgsl(
+  normals: boolean,
+  map: boolean,
+  morph?: WgpuMorph,
+): string {
   let input = `  @location(${String(POSITION_SHADER_LOCATION)}) position : vec3<f32>,`;
   if (normals) {
     input += `
@@ -161,6 +179,32 @@ export function shadedVertexStageWgsl(normals: boolean, map: boolean): string {
     input += `
   @location(${String(UV_SHADER_LOCATION)}) uv : vec2<f32>,`;
   }
+  if (morph !== undefined) {
+    input += `
+  @location(${String(POSITION1_SHADER_LOCATION)}) position1 : vec3<f32>,`;
+    if (morph === "pn") {
+      input += `
+  @location(${String(NORMAL1_SHADER_LOCATION)}) normal1 : vec3<f32>,`;
+    }
+  }
+  // One-target GPU morph (RFC 0003): GLSL's mix(position, position1, w), and
+  // likewise the normal when both normal streams are present.
+  const morphed =
+    morph === undefined
+      ? ""
+      : `  let morphedPosition = mix(position, position1, ${MORPH_WEIGHT_WGSL});
+${
+  normals && morph === "pn"
+    ? `  let morphedNormal = mix(normal, normal1, ${MORPH_WEIGHT_WGSL});
+`
+    : ""
+}`;
+  const positionName = morph === undefined ? "position" : "morphedPosition";
+  const normalName = morph === "pn" && normals ? "morphedNormal" : "normal";
+  const normalMatrix =
+    morph === undefined
+      ? "draw.normalMatrix"
+      : "mat3x3<f32>(draw.normalColumn0.xyz, draw.normalColumn1.xyz, draw.normalColumn2.xyz)";
   return `struct VertexOutput {
   @builtin(position) position : vec4<f32>,
   @location(0) normal : vec3<f32>,
@@ -177,10 +221,10 @@ fn ${VERTEX_ENTRY_POINT}(
 ${input}
 ) -> VertexOutput {
   var output : VertexOutput;
-  let world = draw.model * vec4<f32>(position, 1.0);
+${morphed}  let world = draw.model * vec4<f32>(${positionName}, 1.0);
   output.worldPosition = world.xyz;
   output.normal = ${
-    normals ? "draw.normalMatrix * normal" : "vec3<f32>(0.0, 0.0, 0.0)"
+    normals ? `${normalMatrix} * ${normalName}` : "vec3<f32>(0.0, 0.0, 0.0)"
   };${
     map
       ? `
@@ -217,8 +261,9 @@ export function litShaderSource(
   normals: boolean,
   map: boolean,
   shadow = false,
+  morph?: WgpuMorph,
 ): string {
-  return `${DRAW_UNIFORM_WGSL}
+  return `${morph === undefined ? DRAW_UNIFORM_WGSL : MORPH_DRAW_UNIFORM_WGSL}
 
 ${shadow ? SHADOW_LIGHT_UNIFORM_WGSL : LIGHT_UNIFORM_WGSL}${
     map
@@ -228,7 +273,7 @@ ${SHADED_MAP_BINDING_WGSL}`
       : ""
   }
 
-${shadedVertexStageWgsl(normals, map)}
+${shadedVertexStageWgsl(normals, map, morph)}
 
 ${PUNCTUAL_LIGHT_WGSL}
 
