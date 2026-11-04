@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 352
+  totalFiles: 355
   totalModules: 24
-  totalExports: 3558
+  totalExports: 3574
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -2655,16 +2655,209 @@ modules:
         - isSvgSupported
         - registerSvgRenderer
   packages/physics-box2d:
+    packages/physics-box2d/src/box2d-adapter.ts:
+      description: "`Box2dAdapter` — the 2D §37 solver adapter over `@box2d/core` 0.11.0 (W8.1)."
+      externalDependencies:
+        - package: "@box2d/core"
+          imports:
+            - b2BodyType
+            - b2CircleShape
+            - b2ContactListener
+            - b2DistanceJointDef
+            - b2_maxFloat
+            - b2PolygonShape
+            - b2PrismaticJointDef
+            - b2RevoluteJointDef
+            - b2Vec2
+            - b2WeldJointDef
+            - b2World
+            - b2WorldManifold
+            - b2AABB
+            - b2ShapeCast
+            - b2Distance
+            - b2DistanceInput
+            - b2DistanceOutput
+            - b2SimplexCache
+            - b2ShapeCastInput
+            - b2ShapeCastOutput
+            - b2TestOverlap
+            - b2Transform
+        - package: "@box2d/core"
+          imports:
+            - b2Body
+            - b2Contact
+            - b2Fixture
+            - b2Joint
+            - b2PrismaticJoint
+            - b2RevoluteJoint
+            - b2Shape
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./snapshot-codec.js
+          imports:
+            - SNAPSHOT_FORMAT_VERSION
+            - SNAPSHOT_MAGIC
+            - SnapshotReader
+            - SnapshotWriter
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Quaternion
+            - Vector3
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix3
+        - package: "@fourjs/physics"
+          directory: packages/physics
+          imports:
+            - ALL_COLLISION_GROUPS
+            - DEFAULT_FRICTION
+            - DEFAULT_RESTITUTION
+            - DETERMINISM_LEVELS
+            - passesQueryFilter
+            - rejectStalePhysicsHandle
+            - resolveAngularVelocity
+            - resolveQueryOptions
+            - sortHitsByDistance
+            - validateQueryShape
+            - resolveDensity
+            - resolveGravity
+            - resolveRotation
+            - resolveSleepingConfig
+            - validateColliderDescriptor
+            - validateJointDescriptor
+            - validatePhysicsWorldOptions
+            - validateRigidBodyDescriptor
+        - package: "@fourjs/physics"
+          directory: packages/physics
+          imports:
+            - AngularVelocityInput
+            - BodyType
+            - CCDMode
+            - ColliderDescriptor
+            - ContactPoint
+            - JointDescriptor
+            - QueryCandidate
+            - ResolvedQueryOptions
+            - OverlapHit
+            - OverlapQuery
+            - PhysicsBodyHandle
+            - PhysicsCapabilities
+            - PhysicsColliderHandle
+            - PhysicsEvent
+            - PhysicsEventInterest
+            - PhysicsJointHandle
+            - PhysicsSolverAdapter
+            - PhysicsWorldOptions
+            - PointHit
+            - PointQuery
+            - RaycastHit
+            - RaycastQuery
+            - RigidBodyDescriptor
+            - RotationInput
+            - ShapeCastHit
+            - ShapeCastQuery
+            - ShippedJointType
+            - SolverBodyAccess
+            - SolverBodyTuningAccess
+            - SolverJointAccess
+            - SolverJointMotor
+            - Vector3Input
+      exports:
+        - BOX2D_CORE_VERSION
+        - BOX2D_CAPABILITIES
+        - Box2dAdapter
+      classes:
+        - Box2dAdapter
+      constants:
+        - BOX2D_CORE_VERSION
+        - BOX2D_CAPABILITIES
     packages/physics-box2d/src/index.ts:
-      description: Entry point exporting 1 symbols
+      description: Package entry point for @fourjs/physics-box2d (re-exports 6 symbols)
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./box2d-adapter.js
+          imports:
+            - Box2dAdapter
+            - BOX2D_CAPABILITIES
+            - BOX2D_CORE_VERSION
+          reExport: true
+        - file: ./register.js
+          imports:
+            - createBox2dAdapter
+            - isBox2dSupported
+            - registerBox2dSolver
+          reExport: true
+      workspaceDependencies: []
+      exports:
+        - Box2dAdapter
+        - BOX2D_CAPABILITIES
+        - BOX2D_CORE_VERSION
+        - createBox2dAdapter
+        - isBox2dSupported
+        - registerBox2dSolver
+        - PACKAGE_NAME
+      reExported:
+        - Box2dAdapter
+        - BOX2D_CAPABILITIES
+        - BOX2D_CORE_VERSION
+        - createBox2dAdapter
+        - isBox2dSupported
+        - registerBox2dSolver
+      constants:
+        - PACKAGE_NAME
+    packages/physics-box2d/src/snapshot-codec.ts:
+      description: Byte codec for the Box2D adapter's §34 snapshot envelope (W8.3).
       externalDependencies: []
       nodeDependencies: []
       internalDependencies: []
-      workspaceDependencies: []
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
       exports:
-        - PACKAGE_NAME
+        - SNAPSHOT_MAGIC
+        - SNAPSHOT_FORMAT_VERSION
+        - SnapshotWriter
+        - SnapshotReader
+      classes:
+        - SnapshotWriter
+        - SnapshotReader
       constants:
-        - PACKAGE_NAME
+        - SNAPSHOT_MAGIC
+        - SNAPSHOT_FORMAT_VERSION
+    packages/physics-box2d/src/register.ts:
+      description: This package's opt-in to §37's solver registry (W8.1).
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./box2d-adapter.js
+          imports:
+            - Box2dAdapter
+      workspaceDependencies:
+        - package: "@fourjs/physics"
+          directory: packages/physics
+          imports:
+            - registerSolver
+            - PhysicsWorldAdapter
+            - PhysicsWorldOptions
+            - SolverRegistry
+      exports:
+        - isBox2dSupported
+        - createBox2dAdapter
+        - registerBox2dSolver
+      functions:
+        - isBox2dSupported
+        - createBox2dAdapter
+        - registerBox2dSolver
   packages/scene:
     packages/scene/src/transform.ts:
       description: Local/world transform of a scene node (§7).
@@ -20940,7 +21133,10 @@ dependencyGraph:
         - packages/render-svg/src/register.ts
     - name: Packages/physics-box2d
       files:
+        - packages/physics-box2d/src/box2d-adapter.ts
         - packages/physics-box2d/src/index.ts
+        - packages/physics-box2d/src/snapshot-codec.ts
+        - packages/physics-box2d/src/register.ts
     - name: Packages/scene
       files:
         - packages/scene/src/transform.ts
@@ -21265,17 +21461,17 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 352
+  totalTypeScriptFiles: 355
   totalModules: 24
-  totalLinesOfCode: 168168
-  totalExports: 3558
-  totalClasses: 216
+  totalLinesOfCode: 171112
+  totalExports: 3574
+  totalClasses: 219
   totalInterfaces: 656
-  totalFunctions: 598
-  totalTypeGuards: 32
+  totalFunctions: 601
+  totalTypeGuards: 33
   totalEnums: 0
-  totalConstants: 520
-  totalReExports: 2242
+  totalConstants: 524
+  totalReExports: 2248
   totalTypeOnlyImports: 456
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10

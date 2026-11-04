@@ -57,7 +57,7 @@ The codebase is organized into the following modules:
 - **packages/text**: 6 files
 - **packages/math**: 11 files
 - **packages/render-svg**: 3 files
-- **packages/physics-box2d**: 1 file
+- **packages/physics-box2d**: 4 files
 - **packages/scene**: 17 files
 - **packages/assets**: 18 files
 - **packages/physics-soft**: 1 file
@@ -90,7 +90,7 @@ The codebase is organized into the following modules:
 | `@fourjs/text` (`packages/text/`)                     | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 6              | 3               |
 | `@fourjs/math` (`packages/math/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 11             | 0               |
 | `@fourjs/render-svg` (`packages/render-svg/`)         | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`                                                                                                                                                                                                                                                                                                                                                                                                                                      | 3              | 0               |
-| `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
+| `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/physics`                                                                                                                                                                                                                                                                                                                                                                                                                                     | 4              | 0               |
 | `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 17             | 0               |
 | `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 18             | 0               |
 | `@fourjs/physics-soft` (`packages/physics-soft/`)     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
@@ -153,6 +153,9 @@ graph LR
     P5 --> P21
     P5 --> P4
     P5 --> P14
+    P6 --> P21
+    P6 --> P4
+    P6 --> P12
     P7 --> P4
     P7 --> P21
     P8 --> P21
@@ -1406,11 +1409,86 @@ graph LR
 
 ## Packages/physics box2d Dependencies
 
-### `packages/physics-box2d/src/index.ts` - Entry point exporting 1 symbols
+### `packages/physics-box2d/src/box2d-adapter.ts` - `Box2dAdapter` — the 2D §37 solver adapter over `@box2d/core` 0.11.0 (W8.1).
+
+**External Dependencies:**
+
+| Package       | Import                                                                                                                                                                                                                                                                                                                                          |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@box2d/core` | `b2BodyType, b2CircleShape, b2ContactListener, b2DistanceJointDef, b2_maxFloat, b2PolygonShape, b2PrismaticJointDef, b2RevoluteJointDef, b2Vec2, b2WeldJointDef, b2World, b2WorldManifold, b2AABB, b2ShapeCast, b2Distance, b2DistanceInput, b2DistanceOutput, b2SimplexCache, b2ShapeCastInput, b2ShapeCastOutput, b2TestOverlap, b2Transform` |
+| `@box2d/core` | `b2Body, b2Contact, b2Fixture, b2Joint, b2PrismaticJoint, b2RevoluteJoint, b2Shape`                                                                                                                                                                                                                                                             |
+
+**Workspace Dependencies:**
+
+| Package           | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`    | `FourError`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `@fourjs/math`    | `Quaternion, Vector3`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `@fourjs/math`    | `Matrix3`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `@fourjs/physics` | `ALL_COLLISION_GROUPS, DEFAULT_FRICTION, DEFAULT_RESTITUTION, DETERMINISM_LEVELS, passesQueryFilter, rejectStalePhysicsHandle, resolveAngularVelocity, resolveQueryOptions, sortHitsByDistance, validateQueryShape, resolveDensity, resolveGravity, resolveRotation, resolveSleepingConfig, validateColliderDescriptor, validateJointDescriptor, validatePhysicsWorldOptions, validateRigidBodyDescriptor`                                                                                                                                                      |
+| `@fourjs/physics` | `AngularVelocityInput, BodyType, CCDMode, ColliderDescriptor, ContactPoint, JointDescriptor, QueryCandidate, ResolvedQueryOptions, OverlapHit, OverlapQuery, PhysicsBodyHandle, PhysicsCapabilities, PhysicsColliderHandle, PhysicsEvent, PhysicsEventInterest, PhysicsJointHandle, PhysicsSolverAdapter, PhysicsWorldOptions, PointHit, PointQuery, RaycastHit, RaycastQuery, RigidBodyDescriptor, RotationInput, ShapeCastHit, ShapeCastQuery, ShippedJointType, SolverBodyAccess, SolverBodyTuningAccess, SolverJointAccess, SolverJointMotor, Vector3Input` |
+
+**Internal Dependencies:**
+
+| File                  | Imports                                                                   | Type   |
+| --------------------- | ------------------------------------------------------------------------- | ------ |
+| `./snapshot-codec.js` | `SNAPSHOT_FORMAT_VERSION, SNAPSHOT_MAGIC, SnapshotReader, SnapshotWriter` | Import |
+
+**Exports:**
+
+- Classes: `Box2dAdapter`
+- Constants: `BOX2D_CORE_VERSION`, `BOX2D_CAPABILITIES`
+
+---
+
+### `packages/physics-box2d/src/index.ts` - Package entry point for @fourjs/physics-box2d (re-exports 6 symbols)
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                     | Type      |
+| -------------------- | ----------------------------------------------------------- | --------- |
+| `./box2d-adapter.js` | `Box2dAdapter, BOX2D_CAPABILITIES, BOX2D_CORE_VERSION`      | Re-export |
+| `./register.js`      | `createBox2dAdapter, isBox2dSupported, registerBox2dSolver` | Re-export |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
+- Re-exports: `Box2dAdapter`, `BOX2D_CAPABILITIES`, `BOX2D_CORE_VERSION`, `createBox2dAdapter`, `isBox2dSupported`, `registerBox2dSolver`
+
+---
+
+### `packages/physics-box2d/src/snapshot-codec.ts` - Byte codec for the Box2D adapter's §34 snapshot envelope (W8.3).
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Exports:**
+
+- Classes: `SnapshotWriter`, `SnapshotReader`
+- Constants: `SNAPSHOT_MAGIC`, `SNAPSHOT_FORMAT_VERSION`
+
+---
+
+### `packages/physics-box2d/src/register.ts` - This package's opt-in to §37's solver registry (W8.1).
+
+**Workspace Dependencies:**
+
+| Package           | Import                                                                     |
+| ----------------- | -------------------------------------------------------------------------- |
+| `@fourjs/physics` | `registerSolver, PhysicsWorldAdapter, PhysicsWorldOptions, SolverRegistry` |
+
+**Internal Dependencies:**
+
+| File                 | Imports        | Type   |
+| -------------------- | -------------- | ------ |
+| `./box2d-adapter.js` | `Box2dAdapter` | Import |
+
+**Exports:**
+
+- Functions: `isBox2dSupported`, `createBox2dAdapter`, `registerBox2dSolver`
 
 ---
 
@@ -7893,217 +7971,220 @@ graph TD
     end
 
     subgraph Packages/physics-box2d
-        N51[index]
+        N51[box2d-adapter]
+        N52[index]
+        N53[snapshot-codec]
+        N54[register]
     end
 
     subgraph Packages/scene
-        N52[transform]
-        N53[layers]
-        N54[node-space]
-        N55[index]
-        N56[skeleton]
-        N57[group]
-        N58[screen-camera]
-        N59[light]
-        N60[trackball]
-        N61[world-transforms]
-        N62[...7 more]
+        N55[transform]
+        N56[layers]
+        N57[node-space]
+        N58[index]
+        N59[skeleton]
+        N60[group]
+        N61[screen-camera]
+        N62[light]
+        N63[trackball]
+        N64[world-transforms]
+        N65[...7 more]
     end
 
     subgraph Packages/assets
-        N63[image-probe]
-        N64[gltf]
-        N65[image-memory]
-        N66[capabilities]
-        N67[index]
-        N68[texture]
-        N69[asset-manager]
-        N70[loader-registry]
-        N71[manifest]
-        N72[content-hash]
-        N73[...8 more]
+        N66[image-probe]
+        N67[gltf]
+        N68[image-memory]
+        N69[capabilities]
+        N70[index]
+        N71[texture]
+        N72[asset-manager]
+        N73[loader-registry]
+        N74[manifest]
+        N75[content-hash]
+        N76[...8 more]
     end
 
     subgraph Packages/physics-soft
-        N74[index]
+        N77[index]
     end
 
     subgraph Packages/physics-rapier
-        N75[ccd]
-        N76[index]
-        N77[conversions2d]
-        N78[rapier2d-adapter]
-        N79[rapier3d-adapter]
-        N80[register]
-        N81[conversions3d]
-        N82[init]
+        N78[ccd]
+        N79[index]
+        N80[conversions2d]
+        N81[rapier2d-adapter]
+        N82[rapier3d-adapter]
+        N83[register]
+        N84[conversions3d]
+        N85[init]
     end
 
     subgraph Packages/render-webgl
-        N83[gl-render-target]
-        N84[gl-picking]
-        N85[gl-effect]
-        N86[gl-shadow-registry]
-        N87[index]
-        N88[gl-standard-registry]
-        N89[gl-skinning-glsl]
-        N90[gl-particles]
-        N91[gl-picking-registry]
-        N92[gl-geometry]
-        N93[...15 more]
+        N86[gl-render-target]
+        N87[gl-picking]
+        N88[gl-effect]
+        N89[gl-shadow-registry]
+        N90[index]
+        N91[gl-standard-registry]
+        N92[gl-skinning-glsl]
+        N93[gl-particles]
+        N94[gl-picking-registry]
+        N95[gl-geometry]
+        N96[...15 more]
     end
 
     subgraph Packages/physics
-        N94[solver-registry]
-        N95[capabilities]
-        N96[index]
-        N97[world]
-        N98[rigid-body]
-        N99[validation]
-        N100[joints]
-        N101[descriptors]
-        N102[swept-character-controller]
-        N103[physics-event-system]
-        N104[...15 more]
+        N97[solver-registry]
+        N98[capabilities]
+        N99[index]
+        N100[world]
+        N101[rigid-body]
+        N102[validation]
+        N103[joints]
+        N104[descriptors]
+        N105[swept-character-controller]
+        N106[physics-event-system]
+        N107[...15 more]
     end
 
     subgraph Packages/geometry
-        N105[index]
-        N106[tessellation]
-        N107[path-boolean]
-        N108[path]
-        N109[svg-document]
-        N110[geometry]
-        N111[primitives-3d]
-        N112[primitive-support]
-        N113[resource-memory]
-        N114[buffer-geometry]
-        N115[...3 more]
+        N108[index]
+        N109[tessellation]
+        N110[path-boolean]
+        N111[path]
+        N112[svg-document]
+        N113[geometry]
+        N114[primitives-3d]
+        N115[primitive-support]
+        N116[resource-memory]
+        N117[buffer-geometry]
+        N118[...3 more]
     end
 
     subgraph Packages/render
-        N116[read-pixels]
-        N117[shape-paint]
-        N118[scissor]
-        N119[sprite]
-        N120[capabilities]
-        N121[view-list]
-        N122[index]
-        N123[compute-workloads]
-        N124[texture]
-        N125[render-target-bytes]
-        N126[...24 more]
+        N119[read-pixels]
+        N120[shape-paint]
+        N121[scissor]
+        N122[sprite]
+        N123[capabilities]
+        N124[view-list]
+        N125[index]
+        N126[compute-workloads]
+        N127[texture]
+        N128[render-target-bytes]
+        N129[...24 more]
     end
 
     subgraph Packages/input
-        N127[pick]
-        N128[index]
-        N129[keyboard-input]
-        N130[key-events]
-        N131[pointer-events]
-        N132[pointer-input]
-        N133[drag]
-        N134[keyboard-state]
-        N135[propagation]
+        N130[pick]
+        N131[index]
+        N132[keyboard-input]
+        N133[key-events]
+        N134[pointer-events]
+        N135[pointer-input]
+        N136[drag]
+        N137[keyboard-state]
+        N138[propagation]
     end
 
     subgraph Packages/render-webgpu
-        N136[wgpu-geometry]
-        N137[webgpu-device]
-        N138[wgpu-effect]
-        N139[index]
-        N140[wgpu-bindings]
-        N141[wgpu-skinning]
-        N142[wgpu-node-program]
-        N143[wgpu-shadow]
-        N144[wgpu-gpu-timer]
-        N145[wgpu-readback]
-        N146[...21 more]
+        N139[wgpu-geometry]
+        N140[webgpu-device]
+        N141[wgpu-effect]
+        N142[index]
+        N143[wgpu-bindings]
+        N144[wgpu-skinning]
+        N145[wgpu-node-program]
+        N146[wgpu-shadow]
+        N147[wgpu-gpu-timer]
+        N148[wgpu-readback]
+        N149[...21 more]
     end
 
     subgraph Packages/render-canvas
-        N147[index]
-        N148[project]
-        N149[canvas2d-renderer]
-        N150[register]
+        N150[index]
+        N151[project]
+        N152[canvas2d-renderer]
+        N153[register]
     end
 
     subgraph Packages/motion
-        N151[systems]
-        N152[ik]
-        N153[capabilities]
-        N154[character-controller]
-        N155[clock]
-        N156[index]
-        N157[waypoint-graph-planner]
-        N158[kinematic-controller]
-        N159[scheduler]
-        N160[steering]
-        N161[...14 more]
+        N154[systems]
+        N155[ik]
+        N156[capabilities]
+        N157[character-controller]
+        N158[clock]
+        N159[index]
+        N160[waypoint-graph-planner]
+        N161[kinematic-controller]
+        N162[scheduler]
+        N163[steering]
+        N164[...14 more]
     end
 
     subgraph Packages/animation
-        N162[tween]
-        N163[timeline]
-        N164[animation-system]
-        N165[index]
-        N166[when]
-        N167[track]
-        N168[binding]
-        N169[mixer]
-        N170[blend-tree]
-        N171[values]
-        N172[...4 more]
+        N165[tween]
+        N166[timeline]
+        N167[animation-system]
+        N168[index]
+        N169[when]
+        N170[track]
+        N171[binding]
+        N172[mixer]
+        N173[blend-tree]
+        N174[values]
+        N175[...4 more]
     end
 
     subgraph Packages/diagnostics
-        N173[checksum]
-        N174[leak-registry]
-        N175[index]
-        N176[validation]
-        N177[replay-format]
-        N178[recorder]
-        N179[stats]
-        N180[rollback]
-        N181[replay-player]
-        N182[debug-draw]
-        N183[...2 more]
+        N176[checksum]
+        N177[leak-registry]
+        N178[index]
+        N179[validation]
+        N180[replay-format]
+        N181[recorder]
+        N182[stats]
+        N183[rollback]
+        N184[replay-player]
+        N185[debug-draw]
+        N186[...2 more]
     end
 
     subgraph Packages/core
-        N184[units]
-        N185[leak-registry]
-        N186[index]
-        N187[disposable]
-        N188[conventions]
-        N189[dev]
-        N190[plugin]
-        N191[events]
-        N192[space]
-        N193[random]
-        N194[...4 more]
+        N187[units]
+        N188[leak-registry]
+        N189[index]
+        N190[disposable]
+        N191[conventions]
+        N192[dev]
+        N193[plugin]
+        N194[events]
+        N195[space]
+        N196[random]
+        N197[...4 more]
     end
 
     subgraph Packages/fourjs
-        N195[physics-box2d]
-        N196[gltf]
-        N197[application]
-        N198[capabilities]
-        N199[plugins]
-        N200[physics]
-        N201[compute-pass]
-        N202[index]
-        N203[core]
-        N204[render-webgpu]
-        N205[...25 more]
+        N198[physics-box2d]
+        N199[gltf]
+        N200[application]
+        N201[capabilities]
+        N202[plugins]
+        N203[physics]
+        N204[compute-pass]
+        N205[index]
+        N206[core]
+        N207[render-webgpu]
+        N208[...25 more]
     end
 
     subgraph Packages/serialization
-        N206[capabilities]
-        N207[migration]
-        N208[index]
-        N209[format]
-        N210[serializer]
+        N209[capabilities]
+        N210[migration]
+        N211[index]
+        N212[format]
+        N213[serializer]
     end
 
     N0 --> N1
@@ -8191,15 +8272,15 @@ graph TD
 
 | Category                | Count  |
 | ----------------------- | ------ |
-| Total TypeScript Files  | 352    |
+| Total TypeScript Files  | 355    |
 | Total Modules           | 24     |
-| Total Lines of Code     | 168168 |
-| Total Exports           | 3558   |
-| Total Re-exports        | 2242   |
-| Total Classes           | 216    |
+| Total Lines of Code     | 171112 |
+| Total Exports           | 3574   |
+| Total Re-exports        | 2248   |
+| Total Classes           | 219    |
 | Total Interfaces        | 656    |
-| Total Functions         | 598    |
-| Total Type Guards       | 32     |
+| Total Functions         | 601    |
+| Total Type Guards       | 33     |
 | Total Enums             | 0      |
 | Type-only Imports       | 456    |
 | Runtime Circular Deps   | 0      |

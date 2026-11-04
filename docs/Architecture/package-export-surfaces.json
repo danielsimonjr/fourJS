@@ -1198,7 +1198,15 @@
       "worldToPlane",
       "worldToPlaneVec"
     ],
-    "packages/physics-box2d": ["PACKAGE_NAME"],
+    "packages/physics-box2d": [
+      "BOX2D_CAPABILITIES",
+      "BOX2D_CORE_VERSION",
+      "Box2dAdapter",
+      "createBox2dAdapter",
+      "isBox2dSupported",
+      "PACKAGE_NAME",
+      "registerBox2dSolver"
+    ],
     "packages/physics-rapier": [
       "createRapierAdapter",
       "createRapierColliderDesc",

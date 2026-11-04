@@ -45,7 +45,7 @@ point reaches.
 | Metric                          | Value                              |
 | ------------------------------- | ---------------------------------- |
 | Packages                        | 24 (`@fourjs/*` + umbrella `four`) |
-| Source files                    | 352 TypeScript files               |
+| Source files                    | 355 TypeScript files               |
 | Lines of code                   | 164,674                            |
 | Total exports                   | 3,469                              |
 | Re-exports (barrel)             | 2,190                              |
@@ -252,7 +252,7 @@ reverse an edge without an owner decision (RFC/ADR per §95).
   transform-authority machinery live in `@fourjs/scene` rather than either
   pillar.
 
-The generated graph (24 packages, 352 files, 0 runtime cycles and
+The generated graph (24 packages, 355 files, 0 runtime cycles and
 10 type-only cycles) is in [DEPENDENCY_GRAPH.md](./DEPENDENCY_GRAPH.md) and
 `dependency-summary.compact.json`.
 
