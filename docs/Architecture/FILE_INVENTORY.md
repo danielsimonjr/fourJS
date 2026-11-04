@@ -10,13 +10,13 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 
 **Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every tracked `.ts` appears below with an explicit disposition.
 
-**Total files**: 985
+**Total files**: 989
 
 ## Disposition counts
 
 | Disposition   |   Count | Meaning                                                                                                      |
 | ------------- | ------: | ------------------------------------------------------------------------------------------------------------ |
-| `reachable`   |     319 | A `src/` file in the module graph, reachable from a root.                                                    |
+| `reachable`   |     323 | A `src/` file in the module graph, reachable from a root.                                                    |
 | `build-entry` |      50 | A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …). |
 | `test-only`   |       4 | A `src/` file not reachable from src roots but imported by a test.                                           |
 | `orphan`      |       0 | A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate).                        |
@@ -24,7 +24,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `tool`        |       1 | A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks).                                        |
 | `config`      |      19 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).                                |
 | `example`     |      16 | An `examples/` or `docs/` reference/illustration source.                                                     |
-| **Total**     | **985** |                                                                                                              |
+| **Total**     | **989** |                                                                                                              |
 
 ## Per-area counts
 
@@ -32,7 +32,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | ---------- | ----: |
 | `config`   |    19 |
 | `examples` |    16 |
-| `src`      |   373 |
+| `src`      |   377 |
 | `tests`    |   576 |
 | `tools`    |     1 |
 
@@ -59,7 +59,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `@fourjs/render`         |    81 |
 | `@fourjs/render-canvas`  |     7 |
 | `@fourjs/render-svg`     |     5 |
-| `@fourjs/render-webgl`   |    40 |
+| `@fourjs/render-webgl`   |    44 |
 | `@fourjs/render-webgpu`  |    62 |
 | `@fourjs/scene`          |    35 |
 | `@fourjs/serialization`  |    11 |
@@ -565,6 +565,8 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/render-webgl/src/gl-effect.ts`                          | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-geometry.ts`                        | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-gpu-timer.ts`                       | @fourjs/render-webgl   | src      | reachable   |
+| `packages/render-webgl/src/gl-morph-registry.ts`                  | @fourjs/render-webgl   | src      | reachable   |
+| `packages/render-webgl/src/gl-morph-targets.ts`                   | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-node-program.ts`                    | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-node-uniform-block.ts`              | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-particles-registry.ts`              | @fourjs/render-webgl   | src      | reachable   |
@@ -573,6 +575,8 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/render-webgl/src/gl-picking.ts`                         | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-program.ts`                         | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-render-target.ts`                   | @fourjs/render-webgl   | src      | reachable   |
+| `packages/render-webgl/src/gl-shadow-atlas-registry.ts`           | @fourjs/render-webgl   | src      | reachable   |
+| `packages/render-webgl/src/gl-shadow-atlas.ts`                    | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-shadow-registry.ts`                 | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-shadow.ts`                          | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-skinning-glsl.ts`                   | @fourjs/render-webgl   | src      | reachable   |
