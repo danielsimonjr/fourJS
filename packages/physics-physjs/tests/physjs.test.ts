@@ -1,11 +1,8 @@
 import { isFourError } from "@fourjs/core";
-import { Quaternion, Vector3 } from "@fourjs/math";
 import {
   SolverRegistry,
   registeredSolvers,
   clearRegisteredSolvers,
-  type PhysicsBodyHandle,
-  type PhysicsColliderHandle,
   type PhysicsJointHandle,
   type PhysicsWorldAdapter,
 } from "@fourjs/physics";
@@ -137,57 +134,18 @@ describe("capability record (RFC 0010 decision 4)", () => {
   });
 });
 
-describe("every operation refuses with NOT_IMPLEMENTED", () => {
-  const body = {} as PhysicsBodyHandle;
-  const collider = {} as PhysicsColliderHandle;
+describe("the W9.3 surface still refuses with NOT_IMPLEMENTED", () => {
   const joint = {} as PhysicsJointHandle;
-  const v = new Vector3();
-  const q = new Quaternion();
-  const visit = (): void => undefined;
 
   const calls: Record<string, (a: PhysicsWorldAdapter) => unknown> = {
-    initialize: (a) => a.initialize({ dimension: "3d" }),
-    createBody: (a) => a.createBody({ type: "dynamic" } as never),
-    destroyBody: (a) => a.destroyBody(body),
-    createCollider: (a) => a.createCollider({} as never),
-    destroyCollider: (a) => a.destroyCollider(collider),
     createJoint: (a) => a.createJoint({} as never),
     destroyJoint: (a) => a.destroyJoint(joint),
-    step: (a) => a.step(1 / 60),
-    drainEvents: (a) => a.drainEvents(),
-    syncSceneToSolver: (a) => a.syncSceneToSolver(),
-    syncSolverToScene: (a) => a.syncSolverToScene(),
     raycast: (a) => a.raycast({} as never),
     shapeCast: (a) => a.shapeCast({} as never),
     overlap: (a) => a.overlap({} as never),
     pointQuery: (a) => a.pointQuery({} as never),
     createSnapshot: (a) => a.createSnapshot?.(),
     restoreSnapshot: (a) => a.restoreSnapshot?.(new ArrayBuffer(0)),
-    getBodyTransform: (a) => a.getBodyTransform(body, v, q),
-    setBodyTransform: (a) => a.setBodyTransform(body, v, q),
-    getBodyVelocities: (a) => a.getBodyVelocities(body, v, v),
-    setBodyVelocities: (a) => a.setBodyVelocities(body, v, v),
-    applyForce: (a) => a.applyForce(body, v),
-    applyForceAtPoint: (a) => a.applyForceAtPoint(body, v, v),
-    applyTorque: (a) => a.applyTorque(body, v),
-    applyImpulse: (a) => a.applyImpulse(body, v),
-    applyImpulseAtPoint: (a) => a.applyImpulseAtPoint(body, v, v),
-    applyAngularImpulse: (a) => a.applyAngularImpulse(body, v),
-    resetForces: (a) => a.resetForces(body),
-    setNextKinematicTransform: (a) => a.setNextKinematicTransform(body, v),
-    setBodyType: (a) => a.setBodyType(body, "static"),
-    wakeBody: (a) => a.wakeBody(body),
-    sleepBody: (a) => a.sleepBody(body),
-    isBodySleeping: (a) => a.isBodySleeping(body),
-    getBodyCcdMode: (a) => a.getBodyCcdMode(body),
-    getBodyMass: (a) => a.getBodyMass(body),
-    getBodyCenterOfMass: (a) => a.getBodyCenterOfMass(body, v),
-    getBodyId: (a) => a.getBodyId(body),
-    forEachBody: (a) => a.forEachBody(visit),
-    getColliderBody: (a) => a.getColliderBody(collider),
-    getColliderId: (a) => a.getColliderId(collider),
-    forEachCollider: (a) => a.forEachCollider(visit),
-    countContacts: (a) => a.countContacts(),
   };
 
   for (const Adapter of [PhysJSAdapter2D, PhysJSAdapter3D]) {
@@ -205,10 +163,4 @@ describe("every operation refuses with NOT_IMPLEMENTED", () => {
       });
     }
   }
-
-  it("dispose is a harmless idempotent no-op", () => {
-    const adapter = new PhysJSAdapter3D();
-    adapter.dispose();
-    adapter.dispose();
-  });
 });
