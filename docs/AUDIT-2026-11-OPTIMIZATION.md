@@ -46,6 +46,22 @@ every one uses `DEV_WARNING_PREFIX`.
 
 ## Findings
 
+### Review findings on the implementation (fixed before merge)
+
+The Opus reviewer read the whole branch diff against `main` and confirmed two gaps in the
+sleeping-body publish skip, both fixed in the same PR with regression tests in
+`packages/physics/tests/world-sleeping-publish.test.ts`:
+
+- a body that fell asleep under `"manual"` or `"animation"` authority and was handed back to
+  `"physics"` kept its stale pose, because an authority change goes through no world method.
+  `BodyRegistration.publishedAuthority` now forces one publish on any change;
+- a hand-edited `linearVelocity` on a sleeping body was no longer refreshed to the solver's
+  zero. Velocities are now published every step (two cheap reads, no `Transform.version`).
+
+Everything else in the diff was checked and found correct: the deferred-queue drop, every
+`begin`/`end` pairing, the numeric keys, the half-open rectangle and p-vertex frustum
+conventions, and bit-identical particle and slerp arithmetic.
+
 ### Correctness (fixed in this PR)
 
 - **C-1 `@fourjs/core` — a throwing listener leaked deferred events into the next unrelated
