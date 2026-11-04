@@ -17,6 +17,12 @@ specification; until then, entries are grouped by date under **Unreleased**.
   both backends; §69 cascaded directional shadows (1–4) and spot/point shadow maps in one
   atlas (≤ 4 shadowed punctual lights). Single-map, uniform-palette, radial-only and
   transient-free paths are unchanged.
+- **Wave 7 (2026-11-04)**: RFC 0001 addendum accepted — node materials gain `storage`
+  (§82 read-only storage buffers, WebGPU), `select` over compile-time `defines` (dead branch
+  not emitted, programs shared by emitted source) and the `light` input family bound to the
+  renderer's light block; KTX2 container parser and `createBoundedBasisTranscoder` over the
+  raw codec ABI; closed compressed `TextureFormat` set (bc7 / etc2 / astc-4x4) uploaded on
+  WebGL and WebGPU with rgba8 fallback; security guide section on the Basis ABI and budgets.
 - **Wave 5 render residues (2026-11-04)**: up to four directional lights
   (`MAX_DIRECTIONAL_LIGHTS` = 4, `MAX_LIGHT_SLOTS` = 11) with per-frame light layers
   (`unionViewLayerMask`) on WebGL and WebGPU; cube / 2D-array / 3D texture uploads

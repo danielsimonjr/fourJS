@@ -19,3 +19,7 @@ Known parity gap: the standard family's surface group samples every map (metalli
 Unit tests are colocated in `tests/` per §92. Browser-pixel coverage lives under `tests/browser/webgpu/`.
 
 Workspace name `@fourjs/render-webgpu`; publishes as `@danielsimonjr/fourjs-render-webgpu`.
+
+## Compressed textures (R-30c)
+
+WebGPU: block-compressed 2D textures (`format` + `levels`) upload with `writeTexture` when the device has `texture-compression-bc` / `-etc2` / `-astc`; `capabilities.textureFormats` lists the engine names. Without the feature the texture allocates zero-filled RGBA8; transcode to the `rgba8unorm` fallback instead.

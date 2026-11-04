@@ -160,6 +160,31 @@ when cancellation must interrupt computation. Neither this heap limit nor an
 require `script-src 'wasm-unsafe-eval'` under a strict CSP, without permitting
 JavaScript `unsafe-eval`.
 
+## Compressed textures: KTX2 and Basis Universal (R-30c)
+
+`parseKtx2` reads a KTX2 container's header, level index, DFD basics,
+supercompression scheme and key/value block without decoding a texel. Every
+declared offset and length is checked against the byte length, level ranges may
+not overlap the header, and the file size plus the sum of declared uncompressed
+level sizes must fit `maximumWorkingBytes` (default 128 MiB).
+
+`createBoundedBasisTranscoder({ wasmBinary, maximumWorkingBytes?,
+maximumDecodedBytes? })` follows the raw-codec pattern: no dependency, no glue,
+no network; the application pins the Basis transcoder Wasm. The module must
+import nothing and export `memory`, `malloc(len)`, `free(ptr, len)` and
+`transcode(ptr, len, target, infoPtr) -> outPtr`. `target` is 0 rgba8, 1 bc7,
+2 etc2-rgba8, 3 astc-4x4. The transcoder writes u32 `width`, `height`,
+`levelCount` and then one u32 byte length per level at `infoPtr` (at most 16
+levels) and returns the concatenated levels (0 on failure). The host verifies
+every length against block arithmetic and the decoded-byte budget, copies, then
+frees; any failure poisons the instance. Only 2D, single-layer ETC1S/UASTC
+files with no supercompression or BasisLZ are accepted (zstd/zlib are refused).
+The result is a `TextureSource`-shaped record: `format` is the best of the
+caller's `supportedFormats` (bc7, astc, etc2, in that order) with per-level
+`levels`, else uncompressed `rgba8unorm` with `data` (and `mipmaps: true` for a
+chain). Transcoding is deterministic. Run it off the main thread for large
+files; the call is synchronous Wasm.
+
 ## Documents: length and depth
 
 ```ts

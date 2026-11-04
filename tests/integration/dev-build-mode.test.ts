@@ -270,6 +270,10 @@ const GATED: ReadonlyMap<string, string> = new Map([
     "§83's disposed-texture warning when acquire meets a disposed texture — draw skipped identically in both builds; message only",
   ],
   [
+    join("packages", "render-webgpu", "src", "wgpu-texture.ts"),
+    "§77 compressed-format warning when the device lacks the feature — the zero-filled rgba8 fallback is allocated identically in both builds; message only",
+  ],
+  [
     join("packages", "render-webgl", "src", "webgl-renderer.ts"),
     "§67's clip-without-a-stencil-buffer warning (R-23, 2026-08-28). Diagnostic only, and O(1): mask draws sort to the head of the frame list, so the check is one read of the first item, issues no GL call, and writes no value any later code reads — a production build draws the identical (unclipped) frame silently, which is the same fail-toward-drawing behaviour the warning describes. RFC 0001 (2026-08-28) added two §60 warnings under the same rule: the unregistered-node-pipeline notice and the unresolvable-node-texture notice — in both builds the draw is skipped identically (absence, never a flat-coloured stand-in), and only the message naming the fix moves with the flag",
   ],

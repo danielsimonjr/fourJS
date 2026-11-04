@@ -45,6 +45,15 @@ failures are tested; APNG and other formats are refused. See the
 [security guide](../../docs/guides/security-and-untrusted-content.md#image-decoder-heap-limits)
 for complete accounting, trusted-code setup, native callback behavior, and CSP.
 
+## KTX2 and Basis Universal (R-30c, §96)
+
+`parseKtx2(buffer, { maximumWorkingBytes })` is a bounds-checked KTX2 parser
+(header, levels, DFD, supercompression, key/value). `createBoundedBasisTranscoder`
+runs an application-pinned raw-ABI Basis transcoder and returns a texture source
+in `bc7-rgba-unorm`, `etc2-rgba8unorm` or `astc-4x4-unorm` (per the caller's
+`supportedFormats`) with a mip chain in `levels`, or `rgba8unorm` data as the
+fallback. ABI and limits: `docs/guides/security-and-untrusted-content.md`.
+
 ## Bounded WebP and AVIF decoding (§96)
 
 `createBoundedWebpDecoder` and `createBoundedAvifDecoder` take the same options

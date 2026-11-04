@@ -5,7 +5,7 @@
     "lastUpdated": "2026-11-04",
     "totalFiles": 366,
     "totalModules": 25,
-    "totalExports": 3785
+    "totalExports": 3729
   },
   "entryPoints": [
     {
@@ -216,7 +216,6 @@
               "ParticleColor",
               "ParticleForceField",
               "ParticleGpuIntegrateExtras",
-              "ParticleGpuField",
               "ParticleGpuRadialField",
               "ParticleGpuSimulation",
               "ParticleLifetimeRamp",
@@ -230,7 +229,6 @@
           {
             "file": "./types.js",
             "imports": [
-              "MAX_GPU_FIELDS",
               "evaluateLifetimeRampColorInto",
               "evaluateLifetimeRampNumber"
             ]
@@ -346,7 +344,6 @@
           {
             "file": "./types.js",
             "imports": [
-              "MAX_GPU_FIELDS",
               "evaluateLifetimeRampColor",
               "evaluateLifetimeRampColorInto",
               "evaluateLifetimeRampNumber"
@@ -403,14 +400,7 @@
               "ParticleColor",
               "ParticleForceField",
               "ParticleGpuIntegrateExtras",
-              "ParticleGpuDragField",
-              "ParticleGpuField",
               "ParticleGpuRadialField",
-              "ParticleGpuTurbulenceField",
-              "ParticleGpuUniformField",
-              "ParticleGpuVolume",
-              "ParticleGpuVortexField",
-              "ParticleGpuWindField",
               "ParticleGpuSimulation",
               "MutableParticleColor",
               "ParticleLifetimeRamp",
@@ -462,7 +452,6 @@
           "TRAIL_VERTEX_FLOATS",
           "buildTrailRibbonMesh",
           "resolveTrailOptions",
-          "MAX_GPU_FIELDS",
           "evaluateLifetimeRampColor",
           "evaluateLifetimeRampColorInto",
           "evaluateLifetimeRampNumber",
@@ -485,14 +474,7 @@
           "ParticleColor",
           "ParticleForceField",
           "ParticleGpuIntegrateExtras",
-          "ParticleGpuDragField",
-          "ParticleGpuField",
           "ParticleGpuRadialField",
-          "ParticleGpuTurbulenceField",
-          "ParticleGpuUniformField",
-          "ParticleGpuVolume",
-          "ParticleGpuVortexField",
-          "ParticleGpuWindField",
           "ParticleGpuSimulation",
           "MutableParticleColor",
           "ParticleLifetimeRamp",
@@ -539,7 +521,6 @@
           "TRAIL_VERTEX_FLOATS",
           "buildTrailRibbonMesh",
           "resolveTrailOptions",
-          "MAX_GPU_FIELDS",
           "evaluateLifetimeRampColor",
           "evaluateLifetimeRampColorInto",
           "evaluateLifetimeRampNumber",
@@ -561,14 +542,7 @@
           "ParticleColor",
           "ParticleForceField",
           "ParticleGpuIntegrateExtras",
-          "ParticleGpuDragField",
-          "ParticleGpuField",
           "ParticleGpuRadialField",
-          "ParticleGpuTurbulenceField",
-          "ParticleGpuUniformField",
-          "ParticleGpuVolume",
-          "ParticleGpuVortexField",
-          "ParticleGpuWindField",
           "ParticleGpuSimulation",
           "MutableParticleColor",
           "ParticleLifetimeRamp",
@@ -639,7 +613,7 @@
           },
           {
             "file": "./types.js",
-            "imports": ["ParticleForceField", "ParticleGpuVolume"],
+            "imports": ["ParticleForceField"],
             "typeOnly": true
           }
         ],
@@ -743,7 +717,6 @@
           }
         ],
         "exports": [
-          "MAX_GPU_FIELDS",
           "evaluateLifetimeRampNumber",
           "evaluateLifetimeRampColor",
           "evaluateLifetimeRampColorInto"
@@ -751,12 +724,6 @@
         "interfaces": [
           "ParticleForceField",
           "ParticleGpuRadialField",
-          "ParticleGpuVolume",
-          "ParticleGpuUniformField",
-          "ParticleGpuDragField",
-          "ParticleGpuWindField",
-          "ParticleGpuVortexField",
-          "ParticleGpuTurbulenceField",
           "ParticleGpuIntegrateExtras",
           "ParticleGpuSimulation",
           "ParticleRange",
@@ -770,8 +737,7 @@
           "evaluateLifetimeRampNumber",
           "evaluateLifetimeRampColor",
           "evaluateLifetimeRampColorInto"
-        ],
-        "constants": ["MAX_GPU_FIELDS"]
+        ]
       }
     },
     "packages/materials": {
@@ -840,13 +806,27 @@
             "file": "./shader-graph.js",
             "imports": [
               "MAX_SHADER_GRAPH_NODES",
+              "MAX_SHADER_GRAPH_DEFINES",
+              "MAX_SHADER_GRAPH_STORAGE",
               "MAX_SHADER_GRAPH_TEXTURES",
+              "MAX_SHADER_STORAGE_COUNT",
               "SHADER_ATTRIBUTE_TYPES",
+              "SHADER_LIGHT_ARRAY_TYPES",
+              "SHADER_LIGHT_SCALAR_TYPES",
+              "SHADER_LIGHT_SLOTS",
               "SHADER_VALUE_COMPONENTS",
               "analyzeShaderGraph",
               "forEachShaderNodeReference",
-              "freezeShaderGraph"
+              "freezeShaderGraph",
+              "resolveShaderSelect",
+              "shaderDefineKey",
+              "specializeShaderGraph"
             ],
+            "reExport": true
+          },
+          {
+            "file": "./shader-storage.js",
+            "imports": ["ShaderStorageBuffer"],
             "reExport": true
           },
           {
@@ -929,7 +909,12 @@
               "ShaderGraphAnalysis",
               "ShaderNode",
               "ShaderNodeId",
+              "ShaderLightArrayMember",
+              "ShaderLightMember",
+              "ShaderLightScalarMember",
               "ShaderReflection",
+              "ShaderStorageElementType",
+              "ShaderStorageReflection",
               "ShaderTextureReflection",
               "ShaderUnaryOp",
               "ShaderUniformReflection",
@@ -998,12 +983,22 @@
           "ShaderGraphBuilder",
           "ShaderGraphOutput",
           "MAX_SHADER_GRAPH_NODES",
+          "MAX_SHADER_GRAPH_DEFINES",
+          "MAX_SHADER_GRAPH_STORAGE",
           "MAX_SHADER_GRAPH_TEXTURES",
+          "MAX_SHADER_STORAGE_COUNT",
           "SHADER_ATTRIBUTE_TYPES",
+          "SHADER_LIGHT_ARRAY_TYPES",
+          "SHADER_LIGHT_SCALAR_TYPES",
+          "SHADER_LIGHT_SLOTS",
           "SHADER_VALUE_COMPONENTS",
           "analyzeShaderGraph",
           "forEachShaderNodeReference",
           "freezeShaderGraph",
+          "resolveShaderSelect",
+          "shaderDefineKey",
+          "specializeShaderGraph",
+          "ShaderStorageBuffer",
           "SpriteMaterial",
           "MAX_STENCIL_VALUE",
           "StencilState",
@@ -1027,7 +1022,12 @@
           "ShaderGraphAnalysis",
           "ShaderNode",
           "ShaderNodeId",
+          "ShaderLightArrayMember",
+          "ShaderLightMember",
+          "ShaderLightScalarMember",
           "ShaderReflection",
+          "ShaderStorageElementType",
+          "ShaderStorageReflection",
           "ShaderTextureReflection",
           "ShaderUnaryOp",
           "ShaderUniformReflection",
@@ -1060,12 +1060,22 @@
           "ShaderGraphBuilder",
           "ShaderGraphOutput",
           "MAX_SHADER_GRAPH_NODES",
+          "MAX_SHADER_GRAPH_DEFINES",
+          "MAX_SHADER_GRAPH_STORAGE",
           "MAX_SHADER_GRAPH_TEXTURES",
+          "MAX_SHADER_STORAGE_COUNT",
           "SHADER_ATTRIBUTE_TYPES",
+          "SHADER_LIGHT_ARRAY_TYPES",
+          "SHADER_LIGHT_SCALAR_TYPES",
+          "SHADER_LIGHT_SLOTS",
           "SHADER_VALUE_COMPONENTS",
           "analyzeShaderGraph",
           "forEachShaderNodeReference",
           "freezeShaderGraph",
+          "resolveShaderSelect",
+          "shaderDefineKey",
+          "specializeShaderGraph",
+          "ShaderStorageBuffer",
           "SpriteMaterial",
           "MAX_STENCIL_VALUE",
           "StencilState",
@@ -1088,7 +1098,12 @@
           "ShaderGraphAnalysis",
           "ShaderNode",
           "ShaderNodeId",
+          "ShaderLightArrayMember",
+          "ShaderLightMember",
+          "ShaderLightScalarMember",
           "ShaderReflection",
+          "ShaderStorageElementType",
+          "ShaderStorageReflection",
           "ShaderTextureReflection",
           "ShaderUnaryOp",
           "ShaderUniformReflection",
@@ -1294,8 +1309,10 @@
               "ShaderBinaryOp",
               "ShaderDomain",
               "ShaderGraph",
+              "ShaderLightMember",
               "ShaderNode",
               "ShaderNodeId",
+              "ShaderStorageElementType",
               "ShaderUnaryOp",
               "ShaderValueType"
             ]
@@ -1343,6 +1360,11 @@
               "ShaderReflection",
               "ShaderValueType"
             ]
+          },
+          {
+            "file": "./shader-storage.js",
+            "imports": ["ShaderStorageBuffer"],
+            "typeOnly": true
           },
           {
             "file": "./texture.js",
@@ -1395,11 +1417,20 @@
         "exports": [
           "MAX_SHADER_GRAPH_NODES",
           "MAX_SHADER_GRAPH_TEXTURES",
+          "MAX_SHADER_GRAPH_STORAGE",
+          "MAX_SHADER_STORAGE_COUNT",
+          "MAX_SHADER_GRAPH_DEFINES",
+          "SHADER_LIGHT_SLOTS",
+          "SHADER_LIGHT_SCALAR_TYPES",
+          "SHADER_LIGHT_ARRAY_TYPES",
           "SHADER_VALUE_COMPONENTS",
           "SHADER_ATTRIBUTE_TYPES",
           "forEachShaderNodeReference",
           "analyzeShaderGraph",
           "analyzeShaderNodeType",
+          "resolveShaderSelect",
+          "shaderDefineKey",
+          "specializeShaderGraph",
           "freezeShaderGraph"
         ],
         "interfaces": [
@@ -1407,17 +1438,27 @@
           "ShaderUniformReflection",
           "ShaderTextureReflection",
           "ShaderReflection",
+          "ShaderStorageReflection",
           "ShaderGraphAnalysis"
         ],
         "functions": [
           "forEachShaderNodeReference",
           "analyzeShaderGraph",
           "analyzeShaderNodeType",
+          "resolveShaderSelect",
+          "shaderDefineKey",
+          "specializeShaderGraph",
           "freezeShaderGraph"
         ],
         "constants": [
           "MAX_SHADER_GRAPH_NODES",
           "MAX_SHADER_GRAPH_TEXTURES",
+          "MAX_SHADER_GRAPH_STORAGE",
+          "MAX_SHADER_STORAGE_COUNT",
+          "MAX_SHADER_GRAPH_DEFINES",
+          "SHADER_LIGHT_SLOTS",
+          "SHADER_LIGHT_SCALAR_TYPES",
+          "SHADER_LIGHT_ARRAY_TYPES",
           "SHADER_VALUE_COMPONENTS",
           "SHADER_ATTRIBUTE_TYPES"
         ]
@@ -1475,6 +1516,24 @@
           "trackMaterialDisposable",
           "releaseMaterialDisposable"
         ]
+      },
+      "packages/materials/src/shader-storage.ts": {
+        "description": "CPU-side data for a read-only storage buffer a node-material graph reads",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./shader-graph.js",
+            "imports": [
+              "MAX_SHADER_STORAGE_COUNT",
+              "SHADER_VALUE_COMPONENTS",
+              "ShaderStorageElementType"
+            ]
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": ["ShaderStorageBuffer"],
+        "classes": ["ShaderStorageBuffer"]
       },
       "packages/materials/src/lit-material.ts": {
         "description": "`LitMaterial` (§57, §68, §120) — one RGBA color that responds to lights.",
@@ -3354,7 +3413,7 @@
         "constants": ["NODE_SPACE_SERIALIZER"]
       },
       "packages/scene/src/index.ts": {
-        "description": "Package entry point for @fourjs/scene (re-exports 93 symbols)",
+        "description": "Package entry point for @fourjs/scene (re-exports 91 symbols)",
         "externalDependencies": [],
         "nodeDependencies": [],
         "internalDependencies": [
@@ -3436,7 +3495,6 @@
               "HemisphereLight",
               "PointLight",
               "PunctualLight",
-              "PunctualLightShadow",
               "SpotLight"
             ],
             "reExport": true
@@ -3543,7 +3601,6 @@
               "LightColorInput",
               "DirectionalLightShadowOptions",
               "PunctualLightOptions",
-              "PunctualLightShadowOptions",
               "SpotLightOptions"
             ],
             "reExport": true,
@@ -3633,7 +3690,6 @@
           "HemisphereLight",
           "PointLight",
           "PunctualLight",
-          "PunctualLightShadow",
           "SpotLight",
           "POSE_SNAPSHOT_PRIORITY",
           "PoseBuffer",
@@ -3670,7 +3726,6 @@
           "LightColorInput",
           "DirectionalLightShadowOptions",
           "PunctualLightOptions",
-          "PunctualLightShadowOptions",
           "SpotLightOptions",
           "PoseSnapshotSystem",
           "SnapshotSystemOptions",
@@ -3729,7 +3784,6 @@
           "HemisphereLight",
           "PointLight",
           "PunctualLight",
-          "PunctualLightShadow",
           "SpotLight",
           "POSE_SNAPSHOT_PRIORITY",
           "PoseBuffer",
@@ -3765,7 +3819,6 @@
           "LightColorInput",
           "DirectionalLightShadowOptions",
           "PunctualLightOptions",
-          "PunctualLightShadowOptions",
           "SpotLightOptions",
           "PoseSnapshotSystem",
           "SnapshotSystemOptions",
@@ -3908,7 +3961,6 @@
           "DirectionalLightShadow",
           "DirectionalLight",
           "HemisphereLight",
-          "PunctualLightShadow",
           "PointLight",
           "SpotLight",
           "ColorRGB"
@@ -3918,7 +3970,6 @@
           "DirectionalLightShadow",
           "DirectionalLight",
           "HemisphereLight",
-          "PunctualLightShadow",
           "PointLight",
           "SpotLight"
         ],
@@ -3927,7 +3978,6 @@
           "DirectionalLightOptions",
           "HemisphereLightOptions",
           "PunctualLightOptions",
-          "PunctualLightShadowOptions",
           "SpotLightOptions"
         ]
       },
@@ -4422,6 +4472,16 @@
             "reExport": true
           },
           {
+            "file": "./bounded-basis.js",
+            "imports": ["BASIS_TARGET_CODES", "createBoundedBasisTranscoder"],
+            "reExport": true
+          },
+          {
+            "file": "./ktx2.js",
+            "imports": ["KTX2_HEADER_BYTES", "KTX2_IDENTIFIER", "parseKtx2"],
+            "reExport": true
+          },
+          {
             "file": "./image-probe.js",
             "imports": [
               "probeAvif",
@@ -4554,6 +4614,31 @@
             "typeOnly": true
           },
           {
+            "file": "./bounded-basis.js",
+            "imports": [
+              "BasisTextureFormat",
+              "BasisTextureSource",
+              "BasisTranscodeRequest",
+              "BasisTranscoder",
+              "BoundedBasisTranscoderOptions"
+            ],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
+            "file": "./ktx2.js",
+            "imports": [
+              "Ktx2BasisCodec",
+              "Ktx2Dfd",
+              "Ktx2Info",
+              "Ktx2Level",
+              "Ktx2ParseOptions",
+              "Ktx2Supercompression"
+            ],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
             "file": "./image-probe.js",
             "imports": ["ImageDimensions"],
             "reExport": true,
@@ -4590,6 +4675,11 @@
           "createBoundedJpegDecoder",
           "createBoundedWebpDecoder",
           "createBoundedAvifDecoder",
+          "BASIS_TARGET_CODES",
+          "createBoundedBasisTranscoder",
+          "KTX2_HEADER_BYTES",
+          "KTX2_IDENTIFIER",
+          "parseKtx2",
           "probeAvif",
           "probeImage",
           "probeJpeg",
@@ -4650,6 +4740,17 @@
           "BoundedJpegDecoderOptions",
           "BoundedWebpDecoderOptions",
           "BoundedAvifDecoderOptions",
+          "BasisTextureFormat",
+          "BasisTextureSource",
+          "BasisTranscodeRequest",
+          "BasisTranscoder",
+          "BoundedBasisTranscoderOptions",
+          "Ktx2BasisCodec",
+          "Ktx2Dfd",
+          "Ktx2Info",
+          "Ktx2Level",
+          "Ktx2ParseOptions",
+          "Ktx2Supercompression",
           "ImageDimensions"
         ],
         "reExported": [
@@ -4681,6 +4782,11 @@
           "createBoundedJpegDecoder",
           "createBoundedWebpDecoder",
           "createBoundedAvifDecoder",
+          "BASIS_TARGET_CODES",
+          "createBoundedBasisTranscoder",
+          "KTX2_HEADER_BYTES",
+          "KTX2_IDENTIFIER",
+          "parseKtx2",
           "probeAvif",
           "probeImage",
           "probeJpeg",
@@ -4740,6 +4846,17 @@
           "BoundedJpegDecoderOptions",
           "BoundedWebpDecoderOptions",
           "BoundedAvifDecoderOptions",
+          "BasisTextureFormat",
+          "BasisTextureSource",
+          "BasisTranscodeRequest",
+          "BasisTranscoder",
+          "BoundedBasisTranscoderOptions",
+          "Ktx2BasisCodec",
+          "Ktx2Dfd",
+          "Ktx2Info",
+          "Ktx2Level",
+          "Ktx2ParseOptions",
+          "Ktx2Supercompression",
           "ImageDimensions"
         ],
         "constants": ["PACKAGE_NAME"]
@@ -4974,6 +5091,28 @@
         "interfaces": ["GzipReader", "GzipLoaderOptions"],
         "functions": ["createGzipLoader"]
       },
+      "packages/assets/src/ktx2.ts": {
+        "description": "Bounded KTX2 container parser (§77, §96; R-30c). Reads the header, level",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./bounded-png.js",
+            "imports": ["DEFAULT_IMAGE_WORKING_BYTES"]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          }
+        ],
+        "exports": ["KTX2_IDENTIFIER", "KTX2_HEADER_BYTES", "parseKtx2"],
+        "interfaces": ["Ktx2Level", "Ktx2Dfd", "Ktx2Info", "Ktx2ParseOptions"],
+        "functions": ["parseKtx2"],
+        "constants": ["KTX2_IDENTIFIER", "KTX2_HEADER_BYTES"]
+      },
       "packages/assets/src/bounded-raw-codec.ts": {
         "description": "Raw C-style ABI required of the pinned binary (no JS glue, no imports):",
         "externalDependencies": [],
@@ -5045,6 +5184,58 @@
         "exports": ["DEFAULT_IMAGE_WORKING_BYTES", "createBoundedWebpDecoder"],
         "reExported": ["DEFAULT_IMAGE_WORKING_BYTES"],
         "functions": ["createBoundedWebpDecoder"]
+      },
+      "packages/assets/src/bounded-basis.ts": {
+        "description": "Bounded Basis Universal transcoder (§77, §96; R-30c). Mirrors the wave-4",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./bounded-png.js",
+            "imports": ["DEFAULT_IMAGE_WORKING_BYTES"]
+          },
+          {
+            "file": "./image-memory.js",
+            "imports": ["registerBoundedImageDecoder"]
+          },
+          {
+            "file": "./ktx2.js",
+            "imports": ["parseKtx2"]
+          },
+          {
+            "file": "./texture.js",
+            "imports": ["DEFAULT_MAXIMUM_DECODED_BYTES"]
+          },
+          {
+            "file": "./wasm-memory.js",
+            "imports": ["limitWasmMemory"]
+          },
+          {
+            "file": "./bounded-png.js",
+            "imports": ["DEFAULT_IMAGE_WORKING_BYTES"],
+            "reExport": true
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          }
+        ],
+        "exports": [
+          "DEFAULT_IMAGE_WORKING_BYTES",
+          "BASIS_TARGET_CODES",
+          "createBoundedBasisTranscoder"
+        ],
+        "reExported": ["DEFAULT_IMAGE_WORKING_BYTES"],
+        "interfaces": [
+          "BoundedBasisTranscoderOptions",
+          "BasisTranscodeRequest",
+          "BasisTextureSource"
+        ],
+        "functions": ["createBoundedBasisTranscoder"],
+        "constants": ["BASIS_TARGET_CODES"]
       },
       "packages/assets/src/wasm-memory.ts": {
         "description": "Copies a single-memory Wasm32 codec and caps its declared linear memory.",
@@ -6224,20 +6415,11 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": [
-              "RenderTargetPool",
-              "warnDisposedInUse",
-              "PassUsageRecord"
-            ]
-          },
-          {
-            "package": "@fourjs/core",
-            "directory": "packages/core",
-            "imports": ["DEV", "devWarnOnce"]
+            "imports": ["warnDisposedInUse"]
           }
         ],
-        "exports": ["RenderTargetCache", "GlTransientTargetPool"],
-        "classes": ["RenderTargetCache", "GlTransientTargetPool"],
+        "exports": ["RenderTargetCache"],
+        "classes": ["RenderTargetCache"],
         "interfaces": ["RenderTargetRecord"]
       },
       "packages/render-webgl/src/gl-picking.ts": {
@@ -6300,7 +6482,6 @@
             "directory": "packages/render",
             "imports": [
               "RenderTarget",
-              "MAX_SKINNING_JOINTS",
               "assertEncodableCandidateCount",
               "buildRenderList",
               "buildViewRenderList",
@@ -6513,7 +6694,7 @@
           },
           {
             "file": "./gl-render-target.js",
-            "imports": ["GlTransientTargetPool", "RenderTargetCache"],
+            "imports": ["RenderTargetCache"],
             "reExport": true
           },
           {
@@ -6795,7 +6976,6 @@
           "SkinnedIdProgram",
           "WebglPickingService",
           "registerPickingPipeline",
-          "GlTransientTargetPool",
           "RenderTargetCache",
           "JOINTS_ATTRIBUTE_LOCATION",
           "WEIGHTS_ATTRIBUTE_LOCATION",
@@ -6931,7 +7111,6 @@
           "SkinnedIdProgram",
           "WebglPickingService",
           "registerPickingPipeline",
-          "GlTransientTargetPool",
           "RenderTargetCache",
           "JOINTS_ATTRIBUTE_LOCATION",
           "WEIGHTS_ATTRIBUTE_LOCATION",
@@ -7057,19 +7236,11 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": ["MAX_SKINNING_JOINTS", "SKIN_PALETTE_TEXTURE_WIDTH"]
+            "imports": ["MAX_SKINNING_JOINTS"]
           }
         ],
-        "exports": [
-          "SKINNING_GLSL",
-          "JOINT_TEXTURE_UNIT",
-          "SKINNING_TEXTURE_GLSL"
-        ],
-        "constants": [
-          "SKINNING_GLSL",
-          "JOINT_TEXTURE_UNIT",
-          "SKINNING_TEXTURE_GLSL"
-        ]
+        "exports": ["SKINNING_GLSL"],
+        "constants": ["SKINNING_GLSL"]
       },
       "packages/render-webgl/src/gl-particles.ts": {
         "description": "The batched particle pipeline for the WebGL 2 backend (§36, §64 stage 6,",
@@ -7276,7 +7447,7 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": ["NodeRenderItem", "ShaderGraph"]
+            "imports": ["NodeRenderItem", "SceneLights", "ShaderGraph"]
           }
         ],
         "exports": [
@@ -7472,6 +7643,11 @@
             "directory": "packages/render",
             "imports": [
               "analyzeShaderGraph",
+              "resolveShaderSelect",
+              "SHADER_LIGHT_ARRAY_TYPES",
+              "SHADER_LIGHT_SLOTS",
+              "SceneLights",
+              "ShaderLightMember",
               "createShaderSourceMap",
               "ShaderSourceMap",
               "ShaderAttributeName",
@@ -7513,7 +7689,7 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": ["MAX_LIGHT_SLOTS", "SHADOW_CUBE_FACES", "SceneLights"]
+            "imports": ["MAX_LIGHT_SLOTS", "SceneLights"]
           }
         ],
         "exports": [
@@ -7652,11 +7828,7 @@
           },
           {
             "file": "./gl-render-target.js",
-            "imports": [
-              "GlTransientTargetPool",
-              "RenderTargetCache",
-              "RenderTargetRecord"
-            ]
+            "imports": ["RenderTargetCache", "RenderTargetRecord"]
           },
           {
             "file": "./gl-skinning-registry.js",
@@ -7689,7 +7861,11 @@
           },
           {
             "file": "./gl-texture.js",
-            "imports": ["TextureCache", "CacheableTexture"]
+            "imports": [
+              "TextureCache",
+              "queryCompressedFormats",
+              "CacheableTexture"
+            ]
           }
         ],
         "workspaceDependencies": [
@@ -7708,13 +7884,10 @@
             "directory": "packages/render",
             "imports": [
               "MAX_SKINNING_JOINTS",
-              "MAX_TEXTURE_SKINNING_JOINTS",
               "RenderTarget",
               "buildInterpolatedRenderList",
               "buildRenderList",
               "buildViewRenderList",
-              "MAX_SHADOWED_PUNCTUAL_LIGHTS",
-              "MAX_SHADOW_CASCADES",
               "collectSceneLights",
               "unionViewLayerMask",
               "createSceneLights",
@@ -7801,11 +7974,7 @@
         "internalDependencies": [
           {
             "file": "./gl-skinning-glsl.js",
-            "imports": [
-              "JOINT_TEXTURE_UNIT",
-              "SKINNING_GLSL",
-              "SKINNING_TEXTURE_GLSL"
-            ]
+            "imports": ["SKINNING_GLSL"]
           },
           {
             "file": "./gl-program.js",
@@ -7819,9 +7988,7 @@
               "createLinkedProgram",
               "matrixScratch",
               "requireUniform",
-              "GL",
               "GlProgramHandle",
-              "GlTexture",
               "GlUniformLocation",
               "WebglContext"
             ]
@@ -7851,27 +8018,17 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": [
-              "SKIN_PALETTE_FLOATS_PER_ROW",
-              "SKIN_PALETTE_TEXTURE_WIDTH",
-              "skinPaletteRows",
-              "stageSkinPalette",
-              "SceneLights"
-            ]
+            "imports": ["SceneLights"]
           }
         ],
         "exports": [
-          "JOINT_TEXTURE_UNIT",
           "SKINNING_GLSL",
-          "SKINNING_TEXTURE_GLSL",
           "registerSkinningPipeline",
-          "JointPaletteTextures",
           "SkinnedUnlitProgram",
           "SkinnedLitProgram",
           "SkinnedShadowProgram"
         ],
         "classes": [
-          "JointPaletteTextures",
           "SkinnedUnlitProgram",
           "SkinnedLitProgram",
           "SkinnedShadowProgram"
@@ -7958,7 +8115,7 @@
           {
             "package": "@fourjs/core",
             "directory": "packages/core",
-            "imports": ["FourError"]
+            "imports": ["DEV", "FourError", "devWarnOnce"]
           },
           {
             "package": "@fourjs/render",
@@ -7971,9 +8128,10 @@
             "imports": ["warnDisposedInUse"]
           }
         ],
-        "exports": ["TextureCache"],
+        "exports": ["queryCompressedFormats", "TextureCache"],
         "classes": ["TextureCache"],
-        "interfaces": ["TextureRecord"]
+        "interfaces": ["TextureRecord"],
+        "functions": ["queryCompressedFormats"]
       },
       "packages/render-webgl/src/gl-node-uniform-block.ts": {
         "description": "Opt-in std140 transport. Scalars and vectors occupy one vec4 lane; matrices",
@@ -11742,25 +11900,6 @@
             "reExport": true
           },
           {
-            "file": "./shadow-atlas.js",
-            "imports": [
-              "MAX_SHADOWED_PUNCTUAL_LIGHTS",
-              "MAX_SHADOW_CASCADES",
-              "MAX_SHADOW_TILES",
-              "MAX_SPOT_SHADOW_FOV",
-              "SHADOW_ATLAS_MAX_EDGE",
-              "SHADOW_CUBE_FACES",
-              "SHADOW_KIND_POINT",
-              "SHADOW_KIND_SPOT",
-              "computeAtlasGrid",
-              "computeCascadeSplits",
-              "fitDirectionalCascades",
-              "writeCubeFaceShadowMatrix",
-              "writeSpotShadowMatrix"
-            ],
-            "reExport": true
-          },
-          {
             "file": "./particles.js",
             "imports": [
               "PARTICLE_COLOR_OFFSET",
@@ -11800,16 +11939,6 @@
           {
             "file": "./render-graph.js",
             "imports": ["RenderGraph"],
-            "reExport": true
-          },
-          {
-            "file": "./transient-pool.js",
-            "imports": [
-              "RenderTargetPool",
-              "planTransientSlots",
-              "resolveTransientSpec",
-              "transientKeyString"
-            ],
             "reExport": true
           },
           {
@@ -11863,20 +11992,6 @@
           {
             "file": "./mesh.js",
             "imports": ["MAX_SKINNING_JOINTS", "Mesh", "restoreMeshSkeleton"],
-            "reExport": true
-          },
-          {
-            "file": "./skin-palette.js",
-            "imports": [
-              "MAX_TEXTURE_SKINNING_JOINTS",
-              "SKIN_PALETTE_FLOATS_PER_ROW",
-              "SKIN_PALETTE_JOINTS_PER_ROW",
-              "SKIN_PALETTE_TEXELS_PER_JOINT",
-              "SKIN_PALETTE_TEXTURE_FORMAT",
-              "SKIN_PALETTE_TEXTURE_WIDTH",
-              "skinPaletteRows",
-              "stageSkinPalette"
-            ],
             "reExport": true
           },
           {
@@ -11956,7 +12071,12 @@
           },
           {
             "file": "./texture.js",
-            "imports": ["Texture"],
+            "imports": [
+              "COMPRESSED_BLOCK_BYTES",
+              "COMPRESSED_TEXTURE_FORMATS",
+              "Texture",
+              "compressedLevelBytes"
+            ],
             "reExport": true
           },
           {
@@ -12049,7 +12169,6 @@
             "imports": [
               "AmbientLightSource",
               "DirectionalLightSource",
-              "PunctualShadowSource",
               "DirectionalShadowSource",
               "HemisphereLightSource",
               "PointLightSource",
@@ -12058,12 +12177,6 @@
               "SceneLights",
               "SpotLightSource"
             ],
-            "reExport": true,
-            "typeOnly": true
-          },
-          {
-            "file": "./shadow-atlas.js",
-            "imports": ["ShadowCubeFace", "ShadowFitCamera"],
             "reExport": true,
             "typeOnly": true
           },
@@ -12102,27 +12215,6 @@
               "RenderPass",
               "RenderPassContext",
               "SceneRenderPass"
-            ],
-            "reExport": true,
-            "typeOnly": true
-          },
-          {
-            "file": "./render-graph.js",
-            "imports": ["TransientPlan"],
-            "reExport": true,
-            "typeOnly": true
-          },
-          {
-            "file": "./transient-pool.js",
-            "imports": [
-              "PassUsageRecord",
-              "TransientRequest",
-              "TransientSlot",
-              "TransientTargetKey",
-              "TransientTargetPool",
-              "TransientTargetSpec",
-              "TransientTargetUsage",
-              "UsageTransition"
             ],
             "reExport": true,
             "typeOnly": true
@@ -12269,6 +12361,12 @@
             "typeOnly": true
           },
           {
+            "file": "./texture.js",
+            "imports": ["TextureFormat"],
+            "reExport": true,
+            "typeOnly": true
+          },
+          {
             "file": "./view-list.js",
             "imports": ["ViewRenderListOptions"],
             "reExport": true,
@@ -12297,11 +12395,15 @@
             "directory": "packages/materials",
             "imports": [
               "MAX_SHADER_GRAPH_NODES",
+              "MAX_SHADER_GRAPH_STORAGE",
               "MAX_SHADER_GRAPH_TEXTURES",
               "SHADER_ATTRIBUTE_TYPES",
+              "SHADER_LIGHT_ARRAY_TYPES",
+              "SHADER_LIGHT_SLOTS",
               "SHADER_VALUE_COMPONENTS",
               "analyzeShaderGraph",
-              "forEachShaderNodeReference"
+              "forEachShaderNodeReference",
+              "resolveShaderSelect"
             ]
           },
           {
@@ -12319,13 +12421,23 @@
               "ShaderGraph",
               "ShaderGraphAnalysis",
               "ShaderNode",
+              "ShaderLightArrayMember",
+              "ShaderLightMember",
+              "ShaderLightScalarMember",
               "ShaderNodeId",
               "ShaderReflection",
+              "ShaderStorageElementType",
+              "ShaderStorageReflection",
               "ShaderTextureReflection",
               "ShaderUnaryOp",
               "ShaderUniformReflection",
               "ShaderValueType"
             ]
+          },
+          {
+            "package": "@fourjs/materials",
+            "directory": "packages/materials",
+            "imports": ["ShaderStorageBuffer"]
           },
           {
             "package": "@fourjs/materials",
@@ -12364,19 +12476,6 @@
           "isDirectionalLightSource",
           "isHemisphereLightSource",
           "isPunctualLightSource",
-          "MAX_SHADOWED_PUNCTUAL_LIGHTS",
-          "MAX_SHADOW_CASCADES",
-          "MAX_SHADOW_TILES",
-          "MAX_SPOT_SHADOW_FOV",
-          "SHADOW_ATLAS_MAX_EDGE",
-          "SHADOW_CUBE_FACES",
-          "SHADOW_KIND_POINT",
-          "SHADOW_KIND_SPOT",
-          "computeAtlasGrid",
-          "computeCascadeSplits",
-          "fitDirectionalCascades",
-          "writeCubeFaceShadowMatrix",
-          "writeSpotShadowMatrix",
           "PARTICLE_COLOR_OFFSET",
           "PARTICLE_INSTANCE_FLOATS",
           "PARTICLE_POSITION_OFFSET",
@@ -12403,16 +12502,16 @@
           "isUnlitItem",
           "viewLayerMask",
           "MAX_SHADER_GRAPH_NODES",
+          "MAX_SHADER_GRAPH_STORAGE",
           "MAX_SHADER_GRAPH_TEXTURES",
           "SHADER_ATTRIBUTE_TYPES",
+          "SHADER_LIGHT_ARRAY_TYPES",
+          "SHADER_LIGHT_SLOTS",
           "SHADER_VALUE_COMPONENTS",
           "analyzeShaderGraph",
           "forEachShaderNodeReference",
+          "resolveShaderSelect",
           "RenderGraph",
-          "RenderTargetPool",
-          "planTransientSlots",
-          "resolveTransientSpec",
-          "transientKeyString",
           "CanvasTexture",
           "supportsReadPixels",
           "validateReadbackRegion",
@@ -12438,14 +12537,6 @@
           "MAX_SKINNING_JOINTS",
           "Mesh",
           "restoreMeshSkeleton",
-          "MAX_TEXTURE_SKINNING_JOINTS",
-          "SKIN_PALETTE_FLOATS_PER_ROW",
-          "SKIN_PALETTE_JOINTS_PER_ROW",
-          "SKIN_PALETTE_TEXELS_PER_JOINT",
-          "SKIN_PALETTE_TEXTURE_FORMAT",
-          "SKIN_PALETTE_TEXTURE_WIDTH",
-          "skinPaletteRows",
-          "stageSkinPalette",
           "AUTO_RENDERER_ORDER",
           "RENDERER_CAPABILITY_NAMES",
           "RendererRegistry",
@@ -12482,7 +12573,10 @@
           "registerShapePaints",
           "Sprite",
           "groupSpritesByTexture",
+          "COMPRESSED_BLOCK_BYTES",
+          "COMPRESSED_TEXTURE_FORMATS",
           "Texture",
+          "compressedLevelBytes",
           "buildViewRenderList",
           "sortRenderListByDepth",
           "GpuReadbackSource",
@@ -12520,7 +12614,6 @@
           "ScreenEffectRenderer",
           "AmbientLightSource",
           "DirectionalLightSource",
-          "PunctualShadowSource",
           "DirectionalShadowSource",
           "HemisphereLightSource",
           "PointLightSource",
@@ -12528,8 +12621,6 @@
           "PunctualLightSourceBase",
           "SceneLights",
           "SpotLightSource",
-          "ShadowCubeFace",
-          "ShadowFitCamera",
           "ParticleDrawable",
           "LitRenderItem",
           "NodeRenderItem",
@@ -12547,12 +12638,18 @@
           "ShaderGraph",
           "ShaderGraphAnalysis",
           "ShaderNode",
+          "ShaderLightArrayMember",
+          "ShaderLightMember",
+          "ShaderLightScalarMember",
           "ShaderNodeId",
           "ShaderReflection",
+          "ShaderStorageElementType",
+          "ShaderStorageReflection",
           "ShaderTextureReflection",
           "ShaderUnaryOp",
           "ShaderUniformReflection",
           "ShaderValueType",
+          "ShaderStorageBuffer",
           "AddPassOptions",
           "CustomRenderPass",
           "RenderGraphIssue",
@@ -12562,15 +12659,6 @@
           "RenderPass",
           "RenderPassContext",
           "SceneRenderPass",
-          "TransientPlan",
-          "PassUsageRecord",
-          "TransientRequest",
-          "TransientSlot",
-          "TransientTargetKey",
-          "TransientTargetPool",
-          "TransientTargetSpec",
-          "TransientTargetUsage",
-          "UsageTransition",
           "CanvasTextureOptions",
           "RasterOrigin",
           "RasterSource",
@@ -12646,6 +12734,7 @@
           "TextureMinFilter",
           "TextureSource",
           "TextureWrap",
+          "TextureFormat",
           "ViewRenderListOptions",
           "GpuReadbackSourceOptions",
           "ShaderSourceLocation",
@@ -12685,19 +12774,6 @@
           "isDirectionalLightSource",
           "isHemisphereLightSource",
           "isPunctualLightSource",
-          "MAX_SHADOWED_PUNCTUAL_LIGHTS",
-          "MAX_SHADOW_CASCADES",
-          "MAX_SHADOW_TILES",
-          "MAX_SPOT_SHADOW_FOV",
-          "SHADOW_ATLAS_MAX_EDGE",
-          "SHADOW_CUBE_FACES",
-          "SHADOW_KIND_POINT",
-          "SHADOW_KIND_SPOT",
-          "computeAtlasGrid",
-          "computeCascadeSplits",
-          "fitDirectionalCascades",
-          "writeCubeFaceShadowMatrix",
-          "writeSpotShadowMatrix",
           "PARTICLE_COLOR_OFFSET",
           "PARTICLE_INSTANCE_FLOATS",
           "PARTICLE_POSITION_OFFSET",
@@ -12724,16 +12800,16 @@
           "isUnlitItem",
           "viewLayerMask",
           "MAX_SHADER_GRAPH_NODES",
+          "MAX_SHADER_GRAPH_STORAGE",
           "MAX_SHADER_GRAPH_TEXTURES",
           "SHADER_ATTRIBUTE_TYPES",
+          "SHADER_LIGHT_ARRAY_TYPES",
+          "SHADER_LIGHT_SLOTS",
           "SHADER_VALUE_COMPONENTS",
           "analyzeShaderGraph",
           "forEachShaderNodeReference",
+          "resolveShaderSelect",
           "RenderGraph",
-          "RenderTargetPool",
-          "planTransientSlots",
-          "resolveTransientSpec",
-          "transientKeyString",
           "CanvasTexture",
           "supportsReadPixels",
           "validateReadbackRegion",
@@ -12759,14 +12835,6 @@
           "MAX_SKINNING_JOINTS",
           "Mesh",
           "restoreMeshSkeleton",
-          "MAX_TEXTURE_SKINNING_JOINTS",
-          "SKIN_PALETTE_FLOATS_PER_ROW",
-          "SKIN_PALETTE_JOINTS_PER_ROW",
-          "SKIN_PALETTE_TEXELS_PER_JOINT",
-          "SKIN_PALETTE_TEXTURE_FORMAT",
-          "SKIN_PALETTE_TEXTURE_WIDTH",
-          "skinPaletteRows",
-          "stageSkinPalette",
           "AUTO_RENDERER_ORDER",
           "RENDERER_CAPABILITY_NAMES",
           "RendererRegistry",
@@ -12803,7 +12871,10 @@
           "registerShapePaints",
           "Sprite",
           "groupSpritesByTexture",
+          "COMPRESSED_BLOCK_BYTES",
+          "COMPRESSED_TEXTURE_FORMATS",
           "Texture",
+          "compressedLevelBytes",
           "buildViewRenderList",
           "sortRenderListByDepth",
           "GpuReadbackSource",
@@ -12840,7 +12911,6 @@
           "ScreenEffectRenderer",
           "AmbientLightSource",
           "DirectionalLightSource",
-          "PunctualShadowSource",
           "DirectionalShadowSource",
           "HemisphereLightSource",
           "PointLightSource",
@@ -12848,8 +12918,6 @@
           "PunctualLightSourceBase",
           "SceneLights",
           "SpotLightSource",
-          "ShadowCubeFace",
-          "ShadowFitCamera",
           "ParticleDrawable",
           "LitRenderItem",
           "NodeRenderItem",
@@ -12867,12 +12935,18 @@
           "ShaderGraph",
           "ShaderGraphAnalysis",
           "ShaderNode",
+          "ShaderLightArrayMember",
+          "ShaderLightMember",
+          "ShaderLightScalarMember",
           "ShaderNodeId",
           "ShaderReflection",
+          "ShaderStorageElementType",
+          "ShaderStorageReflection",
           "ShaderTextureReflection",
           "ShaderUnaryOp",
           "ShaderUniformReflection",
           "ShaderValueType",
+          "ShaderStorageBuffer",
           "AddPassOptions",
           "CustomRenderPass",
           "RenderGraphIssue",
@@ -12882,15 +12956,6 @@
           "RenderPass",
           "RenderPassContext",
           "SceneRenderPass",
-          "TransientPlan",
-          "PassUsageRecord",
-          "TransientRequest",
-          "TransientSlot",
-          "TransientTargetKey",
-          "TransientTargetPool",
-          "TransientTargetSpec",
-          "TransientTargetUsage",
-          "UsageTransition",
           "CanvasTextureOptions",
           "RasterOrigin",
           "RasterSource",
@@ -12966,6 +13031,7 @@
           "TextureMinFilter",
           "TextureSource",
           "TextureWrap",
+          "TextureFormat",
           "ViewRenderListOptions",
           "GpuReadbackSourceOptions",
           "ShaderSourceLocation",
@@ -13041,10 +13107,22 @@
             "imports": ["ColorSpace", "Rectangle2"]
           }
         ],
-        "exports": ["textureChainBytes", "validateTextureSource", "Texture"],
+        "exports": [
+          "COMPRESSED_TEXTURE_FORMATS",
+          "COMPRESSED_BLOCK_BYTES",
+          "compressedLevelBytes",
+          "textureChainBytes",
+          "validateTextureSource",
+          "Texture"
+        ],
         "classes": ["Texture"],
         "interfaces": ["TextureSource"],
-        "functions": ["textureChainBytes", "validateTextureSource"]
+        "functions": [
+          "compressedLevelBytes",
+          "textureChainBytes",
+          "validateTextureSource"
+        ],
+        "constants": ["COMPRESSED_TEXTURE_FORMATS", "COMPRESSED_BLOCK_BYTES"]
       },
       "packages/render/src/render-target-bytes.ts": {
         "description": "Per-texel byte accounting for {@link RenderTarget} attachments (§83, §84).",
@@ -13290,45 +13368,6 @@
           "COPY_EFFECT"
         ]
       },
-      "packages/render/src/transient-pool.ts": {
-        "description": "§63 transient render targets: the pool seam, the lifetime/aliasing planner,",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [
-          {
-            "file": "./render-target.js",
-            "imports": ["RenderTarget", "RenderTargetFormat"]
-          }
-        ],
-        "workspaceDependencies": [
-          {
-            "package": "@fourjs/core",
-            "directory": "packages/core",
-            "imports": ["FourError"]
-          }
-        ],
-        "exports": [
-          "transientKeyString",
-          "planTransientSlots",
-          "resolveTransientSpec",
-          "RenderTargetPool"
-        ],
-        "classes": ["RenderTargetPool"],
-        "interfaces": [
-          "TransientTargetKey",
-          "TransientTargetUsage",
-          "PassUsageRecord",
-          "UsageTransition",
-          "TransientTargetPool",
-          "TransientRequest",
-          "TransientSlot"
-        ],
-        "functions": [
-          "transientKeyString",
-          "planTransientSlots",
-          "resolveTransientSpec"
-        ]
-      },
       "packages/render/src/raster.ts": {
         "description": "Raster painting (§77a; RFC 0004, accepted 2026-08-21) — a surface an",
         "externalDependencies": [],
@@ -13510,10 +13549,6 @@
         "nodeDependencies": [],
         "internalDependencies": [
           {
-            "file": "./skin-palette.js",
-            "imports": ["MAX_TEXTURE_SKINNING_JOINTS"]
-          },
-          {
             "file": "./renderable.js",
             "imports": ["Renderable", "RenderableOptions", "SurfaceMaterial"]
           }
@@ -13549,38 +13584,6 @@
         "classes": ["Mesh"],
         "functions": ["restoreMeshSkeleton"],
         "constants": ["MAX_SKINNING_JOINTS"]
-      },
-      "packages/render/src/skin-palette.ts": {
-        "description": "The bone-texture skin palette (§54, §62; RFC 0003 residue, decision D7).",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [
-          {
-            "file": "./render-target.js",
-            "imports": ["RenderTargetFormat"],
-            "typeOnly": true
-          }
-        ],
-        "workspaceDependencies": [],
-        "exports": [
-          "SKIN_PALETTE_TEXTURE_FORMAT",
-          "SKIN_PALETTE_TEXTURE_WIDTH",
-          "SKIN_PALETTE_TEXELS_PER_JOINT",
-          "SKIN_PALETTE_JOINTS_PER_ROW",
-          "SKIN_PALETTE_FLOATS_PER_ROW",
-          "MAX_TEXTURE_SKINNING_JOINTS",
-          "skinPaletteRows",
-          "stageSkinPalette"
-        ],
-        "functions": ["skinPaletteRows", "stageSkinPalette"],
-        "constants": [
-          "SKIN_PALETTE_TEXTURE_FORMAT",
-          "SKIN_PALETTE_TEXTURE_WIDTH",
-          "SKIN_PALETTE_TEXELS_PER_JOINT",
-          "SKIN_PALETTE_JOINTS_PER_ROW",
-          "SKIN_PALETTE_FLOATS_PER_ROW",
-          "MAX_TEXTURE_SKINNING_JOINTS"
-        ]
       },
       "packages/render/src/renderable.ts": {
         "description": "`Renderable` (§49) — the node that draws something.",
@@ -13715,10 +13718,6 @@
             "file": "./statistics.js",
             "imports": ["RenderStatistics"],
             "typeOnly": true
-          },
-          {
-            "file": "./transient-pool.js",
-            "imports": ["RenderTargetPool", "TransientTargetPool"]
           }
         ],
         "workspaceDependencies": [
@@ -13855,35 +13854,16 @@
             "imports": ["isRenderTargetTexture", "RenderTarget"]
           },
           {
-            "file": "./render-target-bytes.js",
-            "imports": ["renderTargetByteLength"]
-          },
-          {
             "file": "./renderer.js",
             "imports": ["RenderInterpolation", "Renderer"],
             "typeOnly": true
-          },
-          {
-            "file": "./transient-pool.js",
-            "imports": [
-              "RenderTargetPool",
-              "planTransientSlots",
-              "resolveTransientSpec",
-              "transientKeyString",
-              "PassUsageRecord",
-              "TransientRequest",
-              "TransientSlot",
-              "TransientTargetPool",
-              "TransientTargetSpec",
-              "UsageTransition"
-            ]
           }
         ],
         "workspaceDependencies": [
           {
             "package": "@fourjs/core",
             "directory": "packages/core",
-            "imports": ["DEV", "FourError", "devWarnOnce"]
+            "imports": ["FourError"]
           },
           {
             "package": "@fourjs/scene",
@@ -13899,7 +13879,6 @@
           "CustomRenderPass",
           "AddPassOptions",
           "RenderGraphPass",
-          "TransientPlan",
           "RenderGraphIssue"
         ]
       },
@@ -14224,22 +14203,6 @@
           {
             "file": "./render-list.js",
             "imports": ["viewLayerMask"]
-          },
-          {
-            "file": "./shadow-atlas.js",
-            "imports": [
-              "MAX_SHADOWED_PUNCTUAL_LIGHTS",
-              "MAX_SHADOW_CASCADES",
-              "MAX_SHADOW_TILES",
-              "SHADOW_ATLAS_MAX_EDGE",
-              "SHADOW_KIND_POINT",
-              "SHADOW_KIND_SPOT",
-              "computeAtlasGrid",
-              "fitDirectionalCascades",
-              "writeCubeFaceShadowMatrix",
-              "writeSpotShadowMatrix",
-              "ShadowFitCamera"
-            ]
           }
         ],
         "workspaceDependencies": [
@@ -14274,7 +14237,6 @@
         "interfaces": [
           "DirectionalLightSource",
           "DirectionalShadowSource",
-          "PunctualShadowSource",
           "PunctualLightSourceBase",
           "PointLightSource",
           "SpotLightSource",
@@ -14295,52 +14257,6 @@
           "MAX_DIRECTIONAL_LIGHTS",
           "MAX_LIGHT_SLOTS",
           "EXTRA_DIRECTIONAL_FLAG"
-        ]
-      },
-      "packages/render/src/shadow-atlas.ts": {
-        "description": "§69's shadow-atlas math (W6.3, 2026-11-04) — cascade fitting, the punctual",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [],
-        "workspaceDependencies": [
-          {
-            "package": "@fourjs/math",
-            "directory": "packages/math",
-            "imports": ["Matrix4", "Vector3"]
-          }
-        ],
-        "exports": [
-          "MAX_SHADOW_CASCADES",
-          "MAX_SHADOWED_PUNCTUAL_LIGHTS",
-          "MAX_SHADOW_TILES",
-          "SHADOW_ATLAS_MAX_EDGE",
-          "SHADOW_KIND_SPOT",
-          "SHADOW_KIND_POINT",
-          "MAX_SPOT_SHADOW_FOV",
-          "SHADOW_CUBE_FACES",
-          "computeCascadeSplits",
-          "fitDirectionalCascades",
-          "writeSpotShadowMatrix",
-          "writeCubeFaceShadowMatrix",
-          "computeAtlasGrid"
-        ],
-        "interfaces": ["ShadowCubeFace", "ShadowFitCamera"],
-        "functions": [
-          "computeCascadeSplits",
-          "fitDirectionalCascades",
-          "writeSpotShadowMatrix",
-          "writeCubeFaceShadowMatrix",
-          "computeAtlasGrid"
-        ],
-        "constants": [
-          "MAX_SHADOW_CASCADES",
-          "MAX_SHADOWED_PUNCTUAL_LIGHTS",
-          "MAX_SHADOW_TILES",
-          "SHADOW_ATLAS_MAX_EDGE",
-          "SHADOW_KIND_SPOT",
-          "SHADOW_KIND_POINT",
-          "MAX_SPOT_SHADOW_FOV",
-          "SHADOW_CUBE_FACES"
         ]
       }
     },
@@ -15116,9 +15032,7 @@
               "RENDER_TARGET_DEPTH_STENCIL_FORMAT",
               "RENDER_TARGET_DEPTH_TEXTURE_FORMAT",
               "WgpuRenderTargetCache",
-              "WgpuTransientTargetPool",
-              "renderTargetDepthFormat",
-              "transientUsageOf"
+              "renderTargetDepthFormat"
             ],
             "reExport": true
           },
@@ -15148,13 +15062,8 @@
             "file": "./wgpu-compute.js",
             "imports": [
               "COMPUTE_ENTRY_POINT",
-              "PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE",
-              "PARTICLE_FIELD_KIND",
               "PARTICLE_INTEGRATOR_SHADER_SOURCE",
               "PARTICLE_INTEGRATOR_WORKGROUP_SIZE",
-              "PARTICLE_SIMULATION_FIELD_FLOATS",
-              "PARTICLE_SIMULATION_HEADER_FLOATS",
-              "PARTICLE_SIMULATION_MAX_FIELDS",
               "PARTICLE_SIMULATION_PARAMS_FLOATS",
               "WgpuComputeBuffer",
               "WgpuComputeCache",
@@ -15192,7 +15101,6 @@
           {
             "file": "./wgpu-particle-simulation.js",
             "imports": [
-              "DEFAULT_DEPTH_BIAS",
               "PARTICLE_SIMULATION_SCRATCH_BYTES",
               "PARTICLE_SIMULATION_VECTOR_BYTES",
               "WgpuParticleSimulation"
@@ -15202,17 +15110,7 @@
           {
             "file": "./wgpu-shadow.js",
             "imports": [
-              "SHADOW_ATLAS_OFFSET",
-              "SHADOW_CASCADE_MATRIX_OFFSET",
-              "SHADOW_CASCADE_SPLITS_OFFSET",
               "SHADOW_FACTOR_WGSL",
-              "SHADOW_INFO_OFFSET",
-              "SHADOW_LEGACY_UNIFORM_BYTES",
-              "SHADOW_PUNCTUAL_PARAMS_OFFSET",
-              "SHADOW_PUNCTUAL_RANGE_OFFSET",
-              "SHADOW_PUNCTUAL_SLOT_OFFSET",
-              "SHADOW_SPOT_MATRIX_OFFSET",
-              "SHADOW_VIEW_DEPTH_OFFSET",
               "SHADOW_LIGHT_UNIFORM_BYTES",
               "SHADOW_LIGHT_UNIFORM_WGSL",
               "SHADOW_MAP_BINDING",
@@ -15450,10 +15348,7 @@
           },
           {
             "file": "./wgpu-compute.js",
-            "imports": [
-              "ParticleSimulationField",
-              "ParticleSimulationFieldParams"
-            ],
+            "imports": ["ParticleSimulationFieldParams"],
             "reExport": true,
             "typeOnly": true
           },
@@ -15465,7 +15360,7 @@
           },
           {
             "file": "./wgpu-particle-simulation.js",
-            "imports": ["ParticleDepthSource", "WgpuParticleSimulationOptions"],
+            "imports": ["WgpuParticleSimulationOptions"],
             "reExport": true,
             "typeOnly": true
           },
@@ -15643,9 +15538,7 @@
           "RENDER_TARGET_DEPTH_STENCIL_FORMAT",
           "RENDER_TARGET_DEPTH_TEXTURE_FORMAT",
           "WgpuRenderTargetCache",
-          "WgpuTransientTargetPool",
           "renderTargetDepthFormat",
-          "transientUsageOf",
           "EFFECT_BIND_GROUP_INDEX",
           "EFFECT_GRADE_OFFSET",
           "EFFECT_PASS_VERTEX_COUNT",
@@ -15657,13 +15550,8 @@
           "readTexturePixels",
           "readbackBytesPerRow",
           "COMPUTE_ENTRY_POINT",
-          "PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE",
-          "PARTICLE_FIELD_KIND",
           "PARTICLE_INTEGRATOR_SHADER_SOURCE",
           "PARTICLE_INTEGRATOR_WORKGROUP_SIZE",
-          "PARTICLE_SIMULATION_FIELD_FLOATS",
-          "PARTICLE_SIMULATION_HEADER_FLOATS",
-          "PARTICLE_SIMULATION_MAX_FIELDS",
           "PARTICLE_SIMULATION_PARAMS_FLOATS",
           "WgpuComputeBuffer",
           "WgpuComputeCache",
@@ -15689,21 +15577,10 @@
           "PARTICLE_VIEW_OFFSET",
           "WgpuParticleCache",
           "createParticleBindGroupLayout",
-          "DEFAULT_DEPTH_BIAS",
           "PARTICLE_SIMULATION_SCRATCH_BYTES",
           "PARTICLE_SIMULATION_VECTOR_BYTES",
           "WgpuParticleSimulation",
-          "SHADOW_ATLAS_OFFSET",
-          "SHADOW_CASCADE_MATRIX_OFFSET",
-          "SHADOW_CASCADE_SPLITS_OFFSET",
           "SHADOW_FACTOR_WGSL",
-          "SHADOW_INFO_OFFSET",
-          "SHADOW_LEGACY_UNIFORM_BYTES",
-          "SHADOW_PUNCTUAL_PARAMS_OFFSET",
-          "SHADOW_PUNCTUAL_RANGE_OFFSET",
-          "SHADOW_PUNCTUAL_SLOT_OFFSET",
-          "SHADOW_SPOT_MATRIX_OFFSET",
-          "SHADOW_VIEW_DEPTH_OFFSET",
           "SHADOW_LIGHT_UNIFORM_BYTES",
           "SHADOW_LIGHT_UNIFORM_WGSL",
           "SHADOW_MAP_BINDING",
@@ -15838,10 +15715,8 @@
           "ComputeBindingAccess",
           "ComputeBufferOptions",
           "ComputePassDescriptor",
-          "ParticleSimulationField",
           "ParticleSimulationFieldParams",
           "WgpuParticleRecord",
-          "ParticleDepthSource",
           "WgpuParticleSimulationOptions",
           "WgpuStencilSource",
           "SurfaceMaps",
@@ -15983,9 +15858,7 @@
           "RENDER_TARGET_DEPTH_STENCIL_FORMAT",
           "RENDER_TARGET_DEPTH_TEXTURE_FORMAT",
           "WgpuRenderTargetCache",
-          "WgpuTransientTargetPool",
           "renderTargetDepthFormat",
-          "transientUsageOf",
           "EFFECT_BIND_GROUP_INDEX",
           "EFFECT_GRADE_OFFSET",
           "EFFECT_PASS_VERTEX_COUNT",
@@ -15997,13 +15870,8 @@
           "readTexturePixels",
           "readbackBytesPerRow",
           "COMPUTE_ENTRY_POINT",
-          "PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE",
-          "PARTICLE_FIELD_KIND",
           "PARTICLE_INTEGRATOR_SHADER_SOURCE",
           "PARTICLE_INTEGRATOR_WORKGROUP_SIZE",
-          "PARTICLE_SIMULATION_FIELD_FLOATS",
-          "PARTICLE_SIMULATION_HEADER_FLOATS",
-          "PARTICLE_SIMULATION_MAX_FIELDS",
           "PARTICLE_SIMULATION_PARAMS_FLOATS",
           "WgpuComputeBuffer",
           "WgpuComputeCache",
@@ -16029,21 +15897,10 @@
           "PARTICLE_VIEW_OFFSET",
           "WgpuParticleCache",
           "createParticleBindGroupLayout",
-          "DEFAULT_DEPTH_BIAS",
           "PARTICLE_SIMULATION_SCRATCH_BYTES",
           "PARTICLE_SIMULATION_VECTOR_BYTES",
           "WgpuParticleSimulation",
-          "SHADOW_ATLAS_OFFSET",
-          "SHADOW_CASCADE_MATRIX_OFFSET",
-          "SHADOW_CASCADE_SPLITS_OFFSET",
           "SHADOW_FACTOR_WGSL",
-          "SHADOW_INFO_OFFSET",
-          "SHADOW_LEGACY_UNIFORM_BYTES",
-          "SHADOW_PUNCTUAL_PARAMS_OFFSET",
-          "SHADOW_PUNCTUAL_RANGE_OFFSET",
-          "SHADOW_PUNCTUAL_SLOT_OFFSET",
-          "SHADOW_SPOT_MATRIX_OFFSET",
-          "SHADOW_VIEW_DEPTH_OFFSET",
           "SHADOW_LIGHT_UNIFORM_BYTES",
           "SHADOW_LIGHT_UNIFORM_WGSL",
           "SHADOW_MAP_BINDING",
@@ -16177,10 +16034,8 @@
           "ComputeBindingAccess",
           "ComputeBufferOptions",
           "ComputePassDescriptor",
-          "ParticleSimulationField",
           "ParticleSimulationFieldParams",
           "WgpuParticleRecord",
-          "ParticleDepthSource",
           "WgpuParticleSimulationOptions",
           "WgpuStencilSource",
           "SurfaceMaps",
@@ -16268,7 +16123,6 @@
             "imports": [
               "GPU_BUFFER_USAGE",
               "GPU_SHADER_STAGE",
-              "GPU_TEXTURE_USAGE",
               "GpuBindGroup",
               "GpuBindGroupLayout",
               "GpuBuffer",
@@ -16276,7 +16130,6 @@
               "GpuPipelineLayout",
               "GpuRenderPipeline",
               "GpuShaderModule",
-              "GpuTexture",
               "GpuVertexBufferLayout"
             ]
           },
@@ -16337,12 +16190,7 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": [
-              "MAX_SKINNING_JOINTS",
-              "SKIN_PALETTE_FLOATS_PER_ROW",
-              "SKIN_PALETTE_TEXTURE_FORMAT",
-              "SKIN_PALETTE_TEXTURE_WIDTH"
-            ]
+            "imports": ["MAX_SKINNING_JOINTS"]
           }
         ],
         "exports": [
@@ -16353,14 +16201,10 @@
           "JOINT_PALETTE_BYTES",
           "JOINT_PALETTE_FLOATS",
           "JOINT_PALETTE_BINDING",
-          "JOINT_TEXTURE_BINDING",
-          "JOINT_TEXTURE_INFO_BINDING",
-          "JOINT_TEXTURE_INFO_STRIDE",
           "SKINNED_SHADOW_VERTEX_BUFFER_LAYOUTS",
           "SKINNED_SHADOW_SHADER_SOURCE",
           "skinnedPaletteBindGroupIndex",
           "createJointPaletteBindGroupLayout",
-          "createJointPaletteTextureBindGroupLayout",
           "skinningWgsl",
           "skinnedUnlitVertexBufferLayouts",
           "skinnedLitVertexBufferLayouts",
@@ -16372,7 +16216,6 @@
         "functions": [
           "skinnedPaletteBindGroupIndex",
           "createJointPaletteBindGroupLayout",
-          "createJointPaletteTextureBindGroupLayout",
           "skinningWgsl",
           "skinnedUnlitVertexBufferLayouts",
           "skinnedLitVertexBufferLayouts",
@@ -16389,9 +16232,6 @@
           "JOINT_PALETTE_BYTES",
           "JOINT_PALETTE_FLOATS",
           "JOINT_PALETTE_BINDING",
-          "JOINT_TEXTURE_BINDING",
-          "JOINT_TEXTURE_INFO_BINDING",
-          "JOINT_TEXTURE_INFO_STRIDE",
           "SKINNED_SHADOW_VERTEX_BUFFER_LAYOUTS",
           "SKINNED_SHADOW_SHADER_SOURCE"
         ]
@@ -16450,6 +16290,16 @@
             "typeOnly": true
           },
           {
+            "file": "./wgpu-lights.js",
+            "imports": [
+              "LIGHT_UNIFORM_BYTES",
+              "LIGHT_UNIFORM_FLOATS",
+              "LIGHT_UNIFORM_MEMBERS_WGSL",
+              "LIGHT_UNIFORM_STRIDE_FLOATS",
+              "writeLightUniforms"
+            ]
+          },
+          {
             "file": "./wgpu-stencil.js",
             "imports": ["applyStencilReference", "stencilDescriptor"]
           },
@@ -16477,6 +16327,11 @@
               "SHADER_VALUE_COMPONENTS",
               "analyzeShaderGraph",
               "createShaderSourceMap",
+              "resolveShaderSelect",
+              "SHADER_LIGHT_ARRAY_TYPES",
+              "MAX_LIGHT_SLOTS",
+              "ShaderStorageReflection",
+              "ShaderStorageBuffer",
               "ShaderSourceMap",
               "isRenderTargetTexture",
               "GraphEffect",
@@ -16539,7 +16394,6 @@
             "file": "./wgpu-lights.js",
             "imports": [
               "LIGHTS_BIND_GROUP_INDEX",
-              "LIGHT_BINDING_BYTES",
               "HEMISPHERE_UNIFORM_MEMBERS_WGSL",
               "LIGHT_UNIFORM_BYTES",
               "LIGHT_UNIFORM_MEMBERS_WGSL",
@@ -16559,22 +16413,12 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": ["SHADOW_CUBE_FACES", "SceneLights"]
+            "imports": ["SceneLights"]
           }
         ],
         "exports": [
           "SHADOW_MATRIX_OFFSET",
           "SHADOW_PARAMS_OFFSET",
-          "SHADOW_LEGACY_UNIFORM_BYTES",
-          "SHADOW_CASCADE_MATRIX_OFFSET",
-          "SHADOW_SPOT_MATRIX_OFFSET",
-          "SHADOW_CASCADE_SPLITS_OFFSET",
-          "SHADOW_VIEW_DEPTH_OFFSET",
-          "SHADOW_ATLAS_OFFSET",
-          "SHADOW_INFO_OFFSET",
-          "SHADOW_PUNCTUAL_SLOT_OFFSET",
-          "SHADOW_PUNCTUAL_PARAMS_OFFSET",
-          "SHADOW_PUNCTUAL_RANGE_OFFSET",
           "SHADOW_LIGHT_UNIFORM_BYTES",
           "SHADOW_MAP_BINDING",
           "SHADOW_SAMPLER_BINDING",
@@ -16594,16 +16438,6 @@
         "constants": [
           "SHADOW_MATRIX_OFFSET",
           "SHADOW_PARAMS_OFFSET",
-          "SHADOW_LEGACY_UNIFORM_BYTES",
-          "SHADOW_CASCADE_MATRIX_OFFSET",
-          "SHADOW_SPOT_MATRIX_OFFSET",
-          "SHADOW_CASCADE_SPLITS_OFFSET",
-          "SHADOW_VIEW_DEPTH_OFFSET",
-          "SHADOW_ATLAS_OFFSET",
-          "SHADOW_INFO_OFFSET",
-          "SHADOW_PUNCTUAL_SLOT_OFFSET",
-          "SHADOW_PUNCTUAL_PARAMS_OFFSET",
-          "SHADOW_PUNCTUAL_RANGE_OFFSET",
           "SHADOW_LIGHT_UNIFORM_BYTES",
           "SHADOW_MAP_BINDING",
           "SHADOW_SAMPLER_BINDING",
@@ -16838,7 +16672,7 @@
           {
             "package": "@fourjs/core",
             "directory": "packages/core",
-            "imports": ["FourError"]
+            "imports": ["DEV", "FourError", "devWarnOnce"]
           },
           {
             "package": "@fourjs/render",
@@ -16852,7 +16686,9 @@
           }
         ],
         "exports": [
+          "COMPRESSED_FORMAT_FEATURES",
           "MIPMAP_SHADER_SOURCE",
+          "supportedCompressedFormats",
           "mipLevelCount",
           "textureByteLength",
           "downsampleVolume",
@@ -16862,12 +16698,13 @@
         "classes": ["WgpuTextureCache"],
         "interfaces": ["ResolvedSamplerState", "WgpuTextureRecord"],
         "functions": [
+          "supportedCompressedFormats",
           "mipLevelCount",
           "textureByteLength",
           "downsampleVolume",
           "samplerKey"
         ],
-        "constants": ["MIPMAP_SHADER_SOURCE"]
+        "constants": ["COMPRESSED_FORMAT_FEATURES", "MIPMAP_SHADER_SOURCE"]
       },
       "packages/render-webgpu/src/wgpu-unlit.ts": {
         "description": "The unlit pipeline in hand-written WGSL (§64, §120's MVP tier), plus the",
@@ -17068,13 +16905,7 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": [
-              "RenderTargetPool",
-              "warnDisposedInUse",
-              "PassUsageRecord",
-              "TransientTargetKey",
-              "TransientTargetUsage"
-            ]
+            "imports": ["warnDisposedInUse"]
           }
         ],
         "exports": [
@@ -17083,13 +16914,11 @@
           "RENDER_TARGET_DEPTH_TEXTURE_FORMAT",
           "RENDER_TARGET_DEPTH_STENCIL_FORMAT",
           "renderTargetDepthFormat",
-          "transientUsageOf",
-          "WgpuRenderTargetCache",
-          "WgpuTransientTargetPool"
+          "WgpuRenderTargetCache"
         ],
-        "classes": ["WgpuRenderTargetCache", "WgpuTransientTargetPool"],
+        "classes": ["WgpuRenderTargetCache"],
         "interfaces": ["WgpuRenderTargetRecord"],
-        "functions": ["renderTargetDepthFormat", "transientUsageOf"],
+        "functions": ["renderTargetDepthFormat"],
         "constants": [
           "RENDER_TARGET_COLOR_FORMAT",
           "RENDER_TARGET_DEPTH_FORMAT",
@@ -17388,21 +17217,11 @@
         "internalDependencies": [
           {
             "file": "./webgpu-device.js",
-            "imports": [
-              "GPU_BUFFER_USAGE",
-              "GPU_SHADER_STAGE",
-              "GpuBindGroup",
-              "GpuBuffer",
-              "GpuComputePipeline",
-              "GpuDevice",
-              "GpuTextureView"
-            ]
+            "imports": ["GPU_BUFFER_USAGE", "GpuBuffer", "GpuDevice"]
           },
           {
             "file": "./wgpu-compute.js",
             "imports": [
-              "COMPUTE_ENTRY_POINT",
-              "PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE",
               "PARTICLE_INTEGRATOR_SHADER_SOURCE",
               "PARTICLE_SIMULATION_PARAMS_FLOATS",
               "WgpuComputeBuffer",
@@ -17411,7 +17230,6 @@
               "particleIntegratorWorkgroups",
               "writeComputeBuffer",
               "writeParticleSimulationParams",
-              "ParticleSimulationField",
               "ParticleSimulationFieldParams"
             ]
           }
@@ -17425,15 +17243,13 @@
         ],
         "exports": [
           "PARTICLE_SIMULATION_VECTOR_BYTES",
-          "DEFAULT_DEPTH_BIAS",
           "PARTICLE_SIMULATION_SCRATCH_BYTES",
           "WgpuParticleSimulation"
         ],
         "classes": ["WgpuParticleSimulation"],
-        "interfaces": ["WgpuParticleSimulationOptions", "ParticleDepthSource"],
+        "interfaces": ["WgpuParticleSimulationOptions"],
         "constants": [
           "PARTICLE_SIMULATION_VECTOR_BYTES",
-          "DEFAULT_DEPTH_BIAS",
           "PARTICLE_SIMULATION_SCRATCH_BYTES"
         ]
       },
@@ -17478,13 +17294,8 @@
         "exports": [
           "COMPUTE_ENTRY_POINT",
           "PARTICLE_INTEGRATOR_WORKGROUP_SIZE",
-          "PARTICLE_SIMULATION_MAX_FIELDS",
-          "PARTICLE_SIMULATION_HEADER_FLOATS",
-          "PARTICLE_SIMULATION_FIELD_FLOATS",
           "PARTICLE_SIMULATION_PARAMS_FLOATS",
-          "PARTICLE_FIELD_KIND",
           "PARTICLE_INTEGRATOR_SHADER_SOURCE",
-          "PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE",
           "createComputeBuffer",
           "writeComputeBuffer",
           "readComputeBufferBytes",
@@ -17494,11 +17305,7 @@
           "WgpuComputeCache"
         ],
         "classes": ["WgpuComputeBuffer", "WgpuComputeCache"],
-        "interfaces": [
-          "ComputeBufferOptions",
-          "ParticleSimulationField",
-          "ParticleSimulationFieldParams"
-        ],
+        "interfaces": ["ComputeBufferOptions", "ParticleSimulationFieldParams"],
         "functions": [
           "createComputeBuffer",
           "writeComputeBuffer",
@@ -17508,13 +17315,8 @@
         ],
         "constants": [
           "PARTICLE_INTEGRATOR_WORKGROUP_SIZE",
-          "PARTICLE_SIMULATION_MAX_FIELDS",
-          "PARTICLE_SIMULATION_HEADER_FLOATS",
-          "PARTICLE_SIMULATION_FIELD_FLOATS",
           "PARTICLE_SIMULATION_PARAMS_FLOATS",
-          "PARTICLE_FIELD_KIND",
-          "PARTICLE_INTEGRATOR_SHADER_SOURCE",
-          "PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE"
+          "PARTICLE_INTEGRATOR_SHADER_SOURCE"
         ]
       },
       "packages/render-webgpu/src/register.ts": {
@@ -17584,7 +17386,8 @@
               "GraphEffect",
               "NodeRenderItem",
               "RenderItem",
-              "RenderStatistics"
+              "RenderStatistics",
+              "SceneLights"
             ]
           }
         ],
@@ -18091,7 +17894,6 @@
           {
             "file": "./wgpu-particle-simulation.js",
             "imports": [
-              "ParticleDepthSource",
               "WgpuParticleSimulation",
               "WgpuParticleSimulationOptions"
             ]
@@ -18112,9 +17914,7 @@
             "file": "./wgpu-render-target.js",
             "imports": [
               "RENDER_TARGET_COLOR_FORMAT",
-              "RENDER_TARGET_DEPTH_TEXTURE_FORMAT",
               "WgpuRenderTargetCache",
-              "WgpuTransientTargetPool",
               "WgpuRenderTargetRecord"
             ]
           },
@@ -18154,7 +17954,11 @@
           },
           {
             "file": "./wgpu-texture.js",
-            "imports": ["WgpuTextureCache", "WgpuCacheableTexture"]
+            "imports": [
+              "WgpuTextureCache",
+              "supportedCompressedFormats",
+              "WgpuCacheableTexture"
+            ]
           },
           {
             "file": "./wgpu-node-registry.js",
@@ -18215,11 +18019,6 @@
               "buildRenderList",
               "buildViewRenderList",
               "MAX_SKINNING_JOINTS",
-              "MAX_TEXTURE_SKINNING_JOINTS",
-              "SKIN_PALETTE_TEXELS_PER_JOINT",
-              "SKIN_PALETTE_TEXTURE_WIDTH",
-              "MAX_SHADOWED_PUNCTUAL_LIGHTS",
-              "MAX_SHADOW_CASCADES",
               "collectSceneLights",
               "unionViewLayerMask",
               "createSceneLights",
@@ -24761,6 +24560,7 @@
           "packages/materials/src/shader-graph.ts",
           "packages/materials/src/material.ts",
           "packages/materials/src/resource-memory.ts",
+          "packages/materials/src/shader-storage.ts",
           "packages/materials/src/lit-material.ts"
         ]
       },
@@ -24866,8 +24666,10 @@
           "packages/assets/src/content-hash.ts",
           "packages/assets/src/bounded-png.ts",
           "packages/assets/src/gzip.ts",
+          "packages/assets/src/ktx2.ts",
           "packages/assets/src/bounded-raw-codec.ts",
           "packages/assets/src/bounded-webp.ts",
+          "packages/assets/src/bounded-basis.ts",
           "packages/assets/src/wasm-memory.ts",
           "packages/assets/src/bounded-jpeg.ts",
           "packages/assets/src/bounded-avif.ts",
@@ -24990,13 +24792,11 @@
           "packages/render/src/render-list.ts",
           "packages/render/src/host-texture.ts",
           "packages/render/src/effect-pass.ts",
-          "packages/render/src/transient-pool.ts",
           "packages/render/src/raster.ts",
           "packages/render/src/particles.ts",
           "packages/render/src/gpu-readback.ts",
           "packages/render/src/statistics.ts",
           "packages/render/src/mesh.ts",
-          "packages/render/src/skin-palette.ts",
           "packages/render/src/renderable.ts",
           "packages/render/src/texture-updates.ts",
           "packages/render/src/batch.ts",
@@ -25012,8 +24812,7 @@
           "packages/render/src/shape.ts",
           "packages/render/src/renderer-registry.ts",
           "packages/render/src/resource-warnings.ts",
-          "packages/render/src/lights.ts",
-          "packages/render/src/shadow-atlas.ts"
+          "packages/render/src/lights.ts"
         ]
       },
       {
@@ -25224,19 +25023,19 @@
   "statistics": {
     "totalTypeScriptFiles": 366,
     "totalModules": 25,
-    "totalLinesOfCode": 181756,
-    "totalExports": 3785,
-    "totalClasses": 230,
-    "totalInterfaces": 693,
-    "totalFunctions": 638,
+    "totalLinesOfCode": 179438,
+    "totalExports": 3729,
+    "totalClasses": 226,
+    "totalInterfaces": 681,
+    "totalFunctions": 634,
     "totalTypeGuards": 34,
     "totalEnums": 0,
-    "totalConstants": 584,
-    "totalReExports": 2352,
+    "totalConstants": 560,
+    "totalReExports": 2330,
     "totalTypeOnlyImports": 460,
     "runtimeCircularDeps": 0,
     "typeOnlyCircularDeps": 10,
     "unusedFilesCount": 0,
-    "unusedExportsCount": 24
+    "unusedExportsCount": 20
   }
 }

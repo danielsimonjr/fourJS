@@ -12,9 +12,9 @@
 - **Dormant files** (runtime code on disk, unreachable from any entry/build root): 4
   - **Orphaned (reachable from nothing — delete/wire candidates)**: 0
   - **Test-only (exercised by a test, ships nothing)**: 4
-- **Potentially unused exports**: 24
+- **Potentially unused exports**: 20
   - **Unreferenced anywhere (deletion candidates)**: 2
-  - **Referenced in-module (type contracts / helpers backing live exports)**: 22
+  - **Referenced in-module (type contracts / helpers backing live exports)**: 18
 
 ## Dormant Files — Orphaned (delete/wire candidates)
 
@@ -76,10 +76,6 @@ interfaces typing live guards and per-package API completeness, not rot.
 
 - `PbdTuning` (interface) — 2 in-file refs
 
-### `packages/render-webgl/src/gl-skinning.ts`
-
-- `JointPaletteTextures` (class) — 8 in-file refs
-
 ### `packages/render-webgl/src/gl-batch.ts`
 
 - `INSTANCE_MODEL_LOCATION` (constant) — 3 in-file refs
@@ -101,12 +97,9 @@ interfaces typing live guards and per-package API completeness, not rot.
 
 - `textureChainBytes` (function) — 1 in-file ref
 
-### `packages/render-webgpu/src/wgpu-skinning.ts`
+### `packages/render-webgpu/src/wgpu-texture.ts`
 
-- `createJointPaletteTextureBindGroupLayout` (function) — 1 in-file ref
-- `JOINT_TEXTURE_BINDING` (constant) — 3 in-file refs
-- `JOINT_TEXTURE_INFO_BINDING` (constant) — 3 in-file refs
-- `JOINT_TEXTURE_INFO_STRIDE` (constant) — 5 in-file refs
+- `COMPRESSED_FORMAT_FEATURES` (constant) — 3 in-file refs
 
 ### `packages/render-webgpu/src/wgpu-unlit.ts`
 

@@ -632,6 +632,12 @@ describe("WebgpuRenderer.initialize", () => {
       "texture-compression-bc",
       "texture-compression-astc",
     ]);
+    // R-30c: the engine-format names follow "rgba8" in textureFormats.
+    expect(renderer.capabilities.textureFormats).toEqual([
+      "rgba8",
+      "bc7-rgba-unorm",
+      "astc-4x4-unorm",
+    ]);
   });
 
   it("reports the floor before initialization", () => {

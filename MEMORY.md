@@ -5022,3 +5022,18 @@ positions, previous, velocities}]}` with float64 arrays; checksum is FNV-1a over
   re-bases in one day means the renderer module carries every shader family unconditionally;
   a per-family lazy module split (shadow atlas, texture skinning, morph > 1) is the honest fix and
   is filed in TODO.md under the batching/size follow-ups rather than re-basing a third time.
+
+## 2026-11-04 — program wave 7 (RFC 0001 addendum, compressed containers)
+
+- **D4 taken by the lead:** the RFC 0001 addendum's three gated items are accepted and shipped
+  (spec revision 1.23). The `ShaderNode` union stays closed and JSON-only; names are validated
+  against `/^[A-Za-z][A-Za-z0-9_]*$/` (no `__`, ≤ 64 chars) before any interpolation, define
+  names never reach source, light members map through a closed table. WebGL refuses `storage`
+  (no storage buffers, no texture-backed seam) with the existing one-warning latch and no draw.
+- **D3 taken by the lead:** no transcoder dependency. Basis follows the wave-4 raw codec ABI
+  (application-supplied Wasm bytes, no imports, `limitWasmMemory`, poisoned after failure).
+  Targets: 0 rgba8, 1 bc7, 2 etc2-rgba8, 3 astc-4x4; `infoPtr` carries u32 width, height,
+  levelCount and per-level byte lengths (≤ 16 levels). Non-multiple-of-4 sizes fall back to
+  rgba8unorm (render's `validateCompressed` rule is kept).
+- **Still open after wave 7:** glTF `KHR_texture_basisu` routing (the loader's image path is
+  RGBA8-only through `TexelDecodeLike`), compressed cube/array/3D and regional updates, Draco.

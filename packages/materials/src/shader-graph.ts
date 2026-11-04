@@ -151,7 +151,61 @@ export type ShaderNode =
       readonly a: ShaderNodeId;
       readonly b: ShaderNodeId;
       readonly t: ShaderNodeId;
+    }
+  | {
+      /**
+       * A read-only storage buffer element (§82; RFC 0001 addendum, accepted
+       * 2026-11-04): `name` binds a `ShaderStorageBuffer` of `count` elements
+       * of `type`; `index` is a float node, floored and clamped into
+       * `[0, count - 1]` at the read. Fragment stage, surface domain only.
+       */
+      readonly kind: "storage";
+      readonly name: string;
+      readonly type: ShaderStorageElementType;
+      readonly count: number;
+      readonly index: ShaderNodeId;
+    }
+  | {
+      /**
+       * Compile-time conditional: resolves to `then` when the graph's named
+       * boolean define is true and to `otherwise` otherwise. The dead branch
+       * is never emitted and reserves no resources.
+       */
+      readonly kind: "select";
+      readonly define: string;
+      readonly then: ShaderNodeId;
+      readonly otherwise: ShaderNodeId;
+    }
+  | {
+      /**
+       * A member of the renderer's light block (§68), bound automatically —
+       * the graph declares no uniform. Array members need `index`, a float
+       * node clamped into `[0, SHADER_LIGHT_SLOTS - 1]`. Fragment stage,
+       * surface domain only.
+       */
+      readonly kind: "light";
+      readonly member: ShaderLightMember;
+      readonly index?: ShaderNodeId;
     };
+
+/** Element types a storage node may read (vec3 is excluded: its array stride is padded). */
+export type ShaderStorageElementType = "float" | "vec2" | "vec4";
+
+/** Scalar members of the light family and their types. */
+export type ShaderLightScalarMember =
+  | "ambient"
+  | "directionalDirection"
+  | "directionalColor"
+  | "cameraPosition"
+  | "punctualCount";
+
+/** Array members of the light family (indexed by a float node). */
+export type ShaderLightArrayMember =
+  "punctualPosition" | "punctualColor" | "punctualDirection" | "punctualParams";
+
+/** Every member the `"lights"` input family exposes. */
+export type ShaderLightMember =
+  ShaderLightScalarMember | ShaderLightArrayMember;
 
 /**
  * A validated graph: nodes in insertion order (§33), plus its two outputs.
@@ -167,6 +221,13 @@ export interface ShaderGraph {
   readonly uniformTransport?: "individual" | "std140";
   readonly domain: ShaderDomain;
   readonly nodes: readonly ShaderNode[];
+  /**
+   * Named boolean compile-time defines that `"select"` nodes read. A select
+   * whose define is absent here resolves to `false`. Backends emit only the
+   * live branch, so two define sets yielding identical source share one
+   * compiled program. See {@link specializeShaderGraph}.
+   */
+  readonly defines?: Readonly<Record<string, boolean>>;
   /** `vec4`, required. The fragment result, in the domain's colour space (§60a). */
   readonly color: ShaderNodeId;
   /**
@@ -201,6 +262,18 @@ export interface ShaderReflection {
   readonly uniforms: readonly ShaderUniformReflection[];
   readonly textures: readonly ShaderTextureReflection[];
   readonly attributes: readonly ShaderAttributeName[];
+  /** Storage buffers the live graph reads, first-appearance order (§82). */
+  readonly storage: readonly ShaderStorageReflection[];
+  /** Light-block members the live graph reads, first-appearance order (§68). */
+  readonly lights: readonly ShaderLightMember[];
+}
+
+/** One storage buffer a compiled shader reads (§82). */
+export interface ShaderStorageReflection {
+  readonly name: string;
+  readonly type: ShaderStorageElementType;
+  /** The compile-time element bound reads are clamped to. */
+  readonly count: number;
 }
 
 /**
@@ -231,6 +304,43 @@ export const MAX_SHADER_GRAPH_NODES = 1024;
  * units (the albedo map's 0, the §69 shadow map's 1) untouched.
  */
 export const MAX_SHADER_GRAPH_TEXTURES = 8;
+
+/** The most distinct storage buffers a graph may read (§82). */
+export const MAX_SHADER_GRAPH_STORAGE = 4;
+
+/** The most elements one storage node may declare. */
+export const MAX_SHADER_STORAGE_COUNT = 65536;
+
+/** The most named defines a graph may carry. */
+export const MAX_SHADER_GRAPH_DEFINES = 32;
+
+/**
+ * Slots in the light block's punctual arrays — equal to the renderer's
+ * `MAX_LIGHT_SLOTS` (`@fourjs/render`; pinned by a render-webgpu test, since
+ * materials cannot import render).
+ */
+export const SHADER_LIGHT_SLOTS = 11;
+
+/** Value types of the scalar light members. */
+export const SHADER_LIGHT_SCALAR_TYPES: Readonly<
+  Record<ShaderLightScalarMember, ShaderValueType>
+> = Object.freeze({
+  ambient: "vec3",
+  directionalDirection: "vec3",
+  directionalColor: "vec3",
+  cameraPosition: "vec3",
+  punctualCount: "float",
+});
+
+/** Value types of the array light members. */
+export const SHADER_LIGHT_ARRAY_TYPES: Readonly<
+  Record<ShaderLightArrayMember, ShaderValueType>
+> = Object.freeze({
+  punctualPosition: "vec3",
+  punctualColor: "vec3",
+  punctualDirection: "vec3",
+  punctualParams: "vec4",
+});
 
 /** Components per {@link ShaderValueType} — the arity table everything shares. */
 export const SHADER_VALUE_COMPONENTS: Readonly<
@@ -343,6 +453,19 @@ export function forEachShaderNodeReference(
       visit(node.a);
       visit(node.b);
       visit(node.t);
+      return;
+    case "storage":
+      visit(node.index);
+      return;
+    case "select":
+      // Structural walk: both branches. Liveness is define-aware elsewhere.
+      visit(node.then);
+      visit(node.otherwise);
+      return;
+    case "light":
+      if (node.index !== undefined) {
+        visit(node.index);
+      }
       return;
     default:
       // constant, uniform, attribute, time: leaves.
@@ -521,8 +644,14 @@ function analyzeGraph(
     );
   }
 
+  validateDefines(graph.defines);
+  const defines = graph.defines;
   const types: ShaderValueType[] = [];
   const uniformTypes = new Map<string, ShaderValueType>();
+  const storageDeclarations = new Map<
+    string,
+    Extract<ShaderNode, { kind: "storage" }>
+  >();
 
   for (let index = 0; index < nodes.length; index += 1) {
     const node = nodes[index];
@@ -706,6 +835,118 @@ function analyzeGraph(
         types.push(aType);
         break;
       }
+      case "storage": {
+        if (
+          !IDENTIFIER_PATTERN.test(node.name) ||
+          node.name.includes("__") ||
+          node.name.length > 64
+        ) {
+          refuse(
+            index,
+            `storage name ${JSON.stringify(node.name)} must be an identifier ` +
+              "(letter first, no double underscore, at most 64 characters)",
+          );
+        }
+        if (
+          node.type !== "float" &&
+          node.type !== "vec2" &&
+          node.type !== "vec4"
+        ) {
+          refuse(
+            index,
+            `storage element type must be float, vec2 or vec4; got ${JSON.stringify(node.type)}`,
+          );
+        }
+        if (
+          !Number.isInteger(node.count) ||
+          node.count < 1 ||
+          node.count > MAX_SHADER_STORAGE_COUNT
+        ) {
+          refuse(
+            index,
+            `storage count must be an integer in [1, ${String(MAX_SHADER_STORAGE_COUNT)}]; got ${String(node.count)}`,
+          );
+        }
+        if (graph.domain === "screen") {
+          refuse(
+            index,
+            'storage buffers need the "surface" domain at this tier',
+          );
+        }
+        requireReference(node.index, index, "storage index");
+        if (types[node.index] !== "float") {
+          refuse(
+            index,
+            `storage index must be float; got ${types[node.index]}`,
+          );
+        }
+        const declared = storageDeclarations.get(node.name);
+        if (
+          declared !== undefined &&
+          (declared.type !== node.type || declared.count !== node.count)
+        ) {
+          refuse(
+            index,
+            `storage ${JSON.stringify(node.name)} is declared twice with ` +
+              "different element types or counts; one name has one shape",
+          );
+        }
+        storageDeclarations.set(node.name, node);
+        types.push(node.type);
+        break;
+      }
+      case "select": {
+        if (!IDENTIFIER_PATTERN.test(node.define) || node.define.length > 64) {
+          refuse(
+            index,
+            `define name ${JSON.stringify(node.define)} must be an identifier`,
+          );
+        }
+        requireReference(node.then, index, "select then");
+        requireReference(node.otherwise, index, "select otherwise");
+        if (types[node.then] !== types[node.otherwise]) {
+          refuse(
+            index,
+            `select branches must share a type; got ${types[node.then]} and ` +
+              types[node.otherwise],
+          );
+        }
+        types.push(types[node.then]);
+        break;
+      }
+      case "light": {
+        if (graph.domain === "screen") {
+          refuse(index, 'the "lights" family needs the "surface" domain');
+        }
+        const scalar = Object.hasOwn(SHADER_LIGHT_SCALAR_TYPES, node.member);
+        const array = Object.hasOwn(SHADER_LIGHT_ARRAY_TYPES, node.member);
+        if (!scalar && !array) {
+          refuse(index, `unknown light member ${JSON.stringify(node.member)}`);
+        }
+        if (scalar) {
+          if (node.index !== undefined) {
+            refuse(index, `light member ${node.member} takes no index`);
+          }
+          types.push(
+            SHADER_LIGHT_SCALAR_TYPES[node.member as ShaderLightScalarMember],
+          );
+        } else {
+          if (node.index === undefined) {
+            refuse(index, `light member ${node.member} needs an index`);
+          }
+          requireReference(node.index, index, "light index");
+          if (types[node.index] !== "float") {
+            refuse(
+              index,
+              `light index must be float; got ${types[node.index]}`,
+            );
+          }
+          types.push(
+            SHADER_LIGHT_ARRAY_TYPES[node.member as ShaderLightArrayMember],
+          );
+        }
+        break;
+      }
       default:
         refuse(
           index,
@@ -741,11 +982,11 @@ function analyzeGraph(
   // Reachability, one back-to-front pass per output: every reference points at
   // an earlier node, so marking from high indices to low is complete in one
   // sweep (§33: array order, never collection enumeration).
-  const colorReachable = markReachable(nodes, color);
+  const colorReachable = markReachable(nodes, color, defines);
   const offsetReachable =
     offset === undefined
       ? nodes.map(() => false)
-      : markReachable(nodes, offset);
+      : markReachable(nodes, offset, defines);
 
   // The MVP emits `positionOffset` in the vertex stage, where a texture
   // sample has no implicit derivatives — rejected here, at setup, rather than
@@ -758,6 +999,16 @@ function analyzeGraph(
           "displacement runs in the vertex stage)",
       );
     }
+    if (
+      offsetReachable[index] &&
+      (nodes[index].kind === "storage" || nodes[index].kind === "light")
+    ) {
+      refuse(
+        index,
+        `${nodes[index].kind} nodes are fragment-stage only and cannot feed ` +
+          "positionOffset",
+      );
+    }
   }
 
   // Reflection, over reachable nodes only, in first-appearance order (§33).
@@ -767,6 +1018,10 @@ function analyzeGraph(
   const seenUniforms = new Set<string>();
   const seenTextures = new Set<string>();
   const seenAttributes = new Set<ShaderAttributeName>();
+  const storage: ShaderStorageReflection[] = [];
+  const lights: ShaderLightMember[] = [];
+  const seenStorage = new Set<string>();
+  const seenLights = new Set<ShaderLightMember>();
   for (let index = 0; index < nodes.length; index += 1) {
     if (!colorReachable[index] && !offsetReachable[index]) {
       continue;
@@ -781,7 +1036,20 @@ function analyzeGraph(
     } else if (node.kind === "attribute" && !seenAttributes.has(node.name)) {
       seenAttributes.add(node.name);
       attributes.push(node.name);
+    } else if (node.kind === "storage" && !seenStorage.has(node.name)) {
+      seenStorage.add(node.name);
+      storage.push({ name: node.name, type: node.type, count: node.count });
+    } else if (node.kind === "light" && !seenLights.has(node.member)) {
+      seenLights.add(node.member);
+      lights.push(node.member);
     }
+  }
+  if (storage.length > MAX_SHADER_GRAPH_STORAGE) {
+    refuse(
+      null,
+      `${String(storage.length)} storage buffers exceed the limit of ` +
+        String(MAX_SHADER_GRAPH_STORAGE),
+    );
   }
   if (textures.length > MAX_SHADER_GRAPH_TEXTURES) {
     refuse(
@@ -792,17 +1060,30 @@ function analyzeGraph(
   }
 
   return {
-    reflection: { uniforms, textures, attributes },
+    reflection: { uniforms, textures, attributes, storage, lights },
     nodeTypes: types,
     colorReachable,
     offsetReachable,
   };
 }
 
-/** Marks every node reachable from `root` (references point backwards). */
+/** The branch a `"select"` node resolves to under `defines` (absent = false). */
+export function resolveShaderSelect(
+  node: Extract<ShaderNode, { kind: "select" }>,
+  defines: Readonly<Record<string, boolean>> | undefined,
+): ShaderNodeId {
+  return defines !== undefined &&
+    Object.hasOwn(defines, node.define) &&
+    defines[node.define]
+    ? node.then
+    : node.otherwise;
+}
+
+/** Marks every live node reachable from `root` (references point backwards). */
 function markReachable(
   nodes: readonly ShaderNode[],
   root: ShaderNodeId,
+  defines: Readonly<Record<string, boolean>> | undefined,
 ): boolean[] {
   const reachable = nodes.map(() => false);
   reachable[root] = true;
@@ -810,11 +1091,109 @@ function markReachable(
     if (!reachable[index]) {
       continue;
     }
-    forEachShaderNodeReference(nodes[index], (id) => {
+    const node = nodes[index];
+    if (node.kind === "select") {
+      reachable[resolveShaderSelect(node, defines)] = true;
+      continue;
+    }
+    forEachShaderNodeReference(node, (id) => {
       reachable[id] = true;
     });
   }
   return reachable;
+}
+
+function validateDefines(
+  defines: Readonly<Record<string, boolean>> | undefined,
+): void {
+  if (defines === undefined) {
+    return;
+  }
+  const raw: unknown = defines;
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    refuse(null, "defines must be an object of named booleans");
+  }
+  const names = Object.keys(defines);
+  if (names.length > MAX_SHADER_GRAPH_DEFINES) {
+    refuse(
+      null,
+      `${String(names.length)} defines exceed the limit of ` +
+        String(MAX_SHADER_GRAPH_DEFINES),
+    );
+  }
+  for (const name of names) {
+    if (!IDENTIFIER_PATTERN.test(name) || name.length > 64) {
+      refuse(null, `define name ${JSON.stringify(name)} must be an identifier`);
+    }
+    if (typeof defines[name] !== "boolean") {
+      refuse(null, `define ${JSON.stringify(name)} must be a boolean`);
+    }
+  }
+}
+
+/**
+ * The canonical, sorted define-set key (`"A=1,B=0"`) that joins the structural
+ * cache key: the same set always yields the same string, whatever the
+ * insertion order. Absent defines yield `""`.
+ */
+export function shaderDefineKey(
+  defines: Readonly<Record<string, boolean>> | undefined,
+): string {
+  if (defines === undefined) {
+    return "";
+  }
+  return Object.keys(defines)
+    .sort()
+    .map((name) => `${name}=${defines[name] ? "1" : "0"}`)
+    .join(",");
+}
+
+const specializations = new WeakMap<ShaderGraph, Map<string, ShaderGraph>>();
+
+/**
+ * Resolves a graph's compile-time defines: returns a frozen graph with
+ * `overrides` merged over the graph's own defines (names must be read by a
+ * `"select"` node — a typo is refused). Memoised per source graph on the
+ * sorted define key, so equal define sets return the identical object and a
+ * backend's identity fast path hits; sets whose emitted source is equal then
+ * share one program through the backend's source cache.
+ */
+export function specializeShaderGraph(
+  graph: ShaderGraph,
+  overrides: Readonly<Record<string, boolean>>,
+): ShaderGraph {
+  analyzeShaderGraph(graph);
+  freezeShaderGraph(graph);
+  const used = new Set<string>();
+  for (const node of graph.nodes) {
+    if (node.kind === "select") {
+      used.add(node.define);
+    }
+  }
+  const merged: Record<string, boolean> = { ...graph.defines };
+  for (const name of Object.keys(overrides).sort()) {
+    if (!used.has(name)) {
+      refuse(null, `define ${JSON.stringify(name)} is read by no select node`);
+    }
+    merged[name] = overrides[name];
+  }
+  validateDefines(merged);
+  const sorted: Record<string, boolean> = {};
+  for (const name of Object.keys(merged).sort()) {
+    sorted[name] = merged[name];
+  }
+  const key = shaderDefineKey(sorted);
+  let cache = specializations.get(graph);
+  if (cache === undefined) {
+    cache = new Map();
+    specializations.set(graph, cache);
+  }
+  let result = cache.get(key);
+  if (result === undefined) {
+    result = freezeShaderGraph({ ...graph, defines: Object.freeze(sorted) });
+    cache.set(key, result);
+  }
+  return result;
 }
 
 /**
@@ -836,5 +1215,8 @@ export function freezeShaderGraph(graph: ShaderGraph): ShaderGraph {
     Object.freeze(node);
   }
   Object.freeze(graph.nodes);
+  if (graph.defines !== undefined) {
+    Object.freeze(graph.defines);
+  }
   return Object.freeze(graph);
 }
