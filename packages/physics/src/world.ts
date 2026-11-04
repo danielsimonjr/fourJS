@@ -2652,6 +2652,10 @@ export class PhysicsWorld {
     this.#adapter.restoreSnapshot(snapshot.data);
     for (const registration of this.#bodiesByNode.values()) {
       registration.publishPending = true;
+      // A solver snapshot may carry the persistent force a body held when it
+      // was taken; arm the flag so the next step's resetForces clears it (§26)
+      // instead of letting a restored force act on every later step.
+      registration.forcesLive = true;
     }
   }
 

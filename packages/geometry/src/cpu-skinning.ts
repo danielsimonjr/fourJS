@@ -19,7 +19,8 @@ import { BufferGeometry } from "./buffer-geometry.js";
  * early exit) and unchanged source version returns the output untouched, so
  * its version is not bumped and renderers skip re-upload. Bind matrices are
  * folded into the palette (`Skeleton.jointMatrices`), so a bind change shows
- * up as a palette difference. Edits to the source must `markDirty()` to be seen.
+ * up as a palette difference. Edits to the source or to the output must
+ * `markDirty()` to be seen.
  */
 export class CpuSkinning {
   readonly geometry: BufferGeometry;
@@ -31,6 +32,9 @@ export class CpuSkinning {
   #lastPalette: Float32Array | null = null;
 
   #lastSourceVersion = -1;
+
+  /** `output.version` after the last re-skin; a consumer edit to the output bumps it. */
+  #lastOutputVersion = -1;
 
   constructor(source: BufferGeometry) {
     if (source.joints === undefined || source.weights === undefined) {
@@ -79,7 +83,8 @@ export class CpuSkinning {
     if (
       last !== null &&
       last.length === palette.length &&
-      this.#lastSourceVersion === source.version
+      this.#lastSourceVersion === source.version &&
+      this.#lastOutputVersion === output.version
     ) {
       let same = true;
       for (let i = 0; i < palette.length; i += 1) {
@@ -150,6 +155,7 @@ export class CpuSkinning {
     (this.#lastPalette as Float32Array).set(palette);
     this.#lastSourceVersion = source.version;
     output.markDirty();
+    this.#lastOutputVersion = output.version;
     return output;
   }
 

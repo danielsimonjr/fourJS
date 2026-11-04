@@ -152,6 +152,16 @@ describe("CPU skinning skip-when-unchanged", () => {
     expect(out.positions[0]).toBe(8);
   });
 
+  it("re-skins when a consumer edited the output and marked it dirty", () => {
+    const skin = new CpuSkinning(source());
+    const out = skin.update(palette());
+    const skinned = out.positions[0];
+    out.positions[0] = 123;
+    out.markDirty();
+    skin.update(palette());
+    expect(out.positions[0]).toBe(skinned);
+  });
+
   it("re-skins when the palette length changes", () => {
     const skin = new CpuSkinning(source());
     const out = skin.update(palette());
