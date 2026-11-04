@@ -169,4 +169,24 @@ conventions, and bit-identical particle and slerp arithmetic.
 
 ## Verification
 
-<!-- VERIFICATION -->
+Run locally on 2026-11-04 against the branch head, mirroring `ci.yml` and `doc-gates.yml`:
+
+| Gate                                                                                                 | Result                                                                                               |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `bun install --frozen-lockfile`, `bun run build`                                                     | pass                                                                                                 |
+| `bun run test` (per-package unit suites)                                                             | 7,969 tests in 310 files, 0 failures (new tests in core, math, particles, physics, scene and motion) |
+| `bun run coverage` (≥95 % package, ≥80 % per file, all 24 packages)                                  | pass                                                                                                 |
+| `bun run test:suites` (integration + determinism)                                                    | 685 tests in 98 files, 0 failures                                                                    |
+| `bun run lint` (oxlint type-aware), `bun run format:check`                                           | pass                                                                                                 |
+| `typecheck:tests`, `typecheck:examples`, `typecheck:benchmarks`, `typecheck:config`, `typecheck:ts6` | pass                                                                                                 |
+| `check-spec`, `check-docs`, `check-compat`, `publish-names:test`, `graph:test`                       | pass                                                                                                 |
+| `bun run graph`, `graph:check`, `graph:duplicates` (0 new duplicates)                                | pass                                                                                                 |
+| `repo-tools check . --docs=docs/Architecture` (`typeOnlyCircularDeps` 10, runtime 0)                 | pass                                                                                                 |
+| `bun run examples:build`, `bun run size` (all budgets)                                               | pass                                                                                                 |
+| `bun run docs` (TypeDoc)                                                                             | pass after retyping one math test helper for TypeScript 6                                            |
+| `bun run test:browser`                                                                               | run in progress at the time of this commit; result recorded in the next commit                       |
+
+No threshold, timeout, golden or bundle budget was relaxed. No benchmark result file was
+committed; the particle and physics benchmarks are the suggested follow-up measurements
+(`benchmarks/particles-100k.mjs`, and a sleeping-on pile scenario that
+`benchmarks/physics-step.mjs` does not yet have).
