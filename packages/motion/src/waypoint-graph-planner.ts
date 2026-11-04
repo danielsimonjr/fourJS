@@ -27,7 +27,7 @@ function before(a: Entry, b: Entry): boolean {
   return a.f < b.f || (a.f === b.f && a.order < b.order);
 }
 function distance(a: Vector3, b: Vector3): number {
-  const value = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+  const value = a.distanceTo(b);
   if (!Number.isFinite(value))
     throw new RangeError("Waypoint distance exceeds finite precision (§85).");
   return value;
