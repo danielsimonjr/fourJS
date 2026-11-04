@@ -112,8 +112,22 @@ export class EventEmitter<EventMap> {
       this.#deferred.push({ type, event });
       return;
     }
-    this.#dispatch(type, event);
-    this.#drain();
+    let completed = false;
+    try {
+      this.#dispatch(type, event);
+      this.#drain();
+      completed = true;
+    } finally {
+      // A listener that throws aborts the outermost emit (rule 3's "remaining
+      // listeners" extends to the events those listeners deferred): the queue
+      // is dropped rather than left to surface at the start of the next,
+      // unrelated `emit()` — possibly much later and to listeners registered
+      // since (2026-11-04 audit). A nested emit whose throw an outer listener
+      // catches leaves the queue alone; the outer frame still drains it.
+      if (!completed && this.#dispatching.size === 0) {
+        this.#deferred.length = 0;
+      }
+    }
   }
 
   /** Number of live registrations for `type` (diagnostics, §83). */
@@ -131,14 +145,12 @@ export class EventEmitter<EventMap> {
     return count;
   }
 
+  /**
+   * @deprecated Since 2026-11-04: identical to {@link listenerCountAll}, which
+   * is the documented name. Kept as an alias for one release.
+   */
   totalListenerCount(): number {
-    let count = 0;
-    for (const records of this.#listeners.values()) {
-      for (const record of records) {
-        if (!record.removed) count += 1;
-      }
-    }
-    return count;
+    return this.listenerCountAll();
   }
 
   /**
@@ -171,16 +183,34 @@ export class EventEmitter<EventMap> {
         }
       }
       this.#listeners.clear();
+      // Teardown from inside a dispatch (a node disposed by its own handler)
+      // must also drop the events deferred by rule 4, or they are delivered
+      // to whatever registers next (2026-11-04 audit).
+      this.#deferred.length = 0;
       return;
     }
     const records = this.#listeners.get(type);
-    if (records === undefined) {
-      return;
+    if (records !== undefined) {
+      for (const record of records) {
+        record.removed = true;
+      }
+      this.#listeners.delete(type);
     }
-    for (const record of records) {
-      record.removed = true;
+    this.#discardDeferred(type);
+  }
+
+  /** Drops the rule-4 queue entries of `type`, in place and allocation-free. */
+  #discardDeferred(type: PropertyKey): void {
+    const deferred = this.#deferred;
+    let write = 0;
+    for (let read = 0; read < deferred.length; read += 1) {
+      const queued = deferred[read];
+      if (queued.type !== type) {
+        deferred[write] = queued;
+        write += 1;
+      }
     }
-    this.#listeners.delete(type);
+    deferred.length = write;
   }
 
   /**
