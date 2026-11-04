@@ -110,7 +110,64 @@ export function probeWebp(data: ArrayBuffer): ImageDimensions | undefined {
   return undefined;
 }
 
-/** First matching PNG, JPEG, or WebP probe; `undefined` when none recognise. */
+function u32be(bytes: Uint8Array, offset: number): number {
+  return (
+    bytes[offset] * 0x1000000 +
+    ((bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3])
+  );
+}
+
+const AVIF_CONTAINERS = new Set(["meta", "iprp", "ipco"]);
+
+/**
+ * AVIF (ISOBMFF): requires an `ftyp` box whose major or compatible brand is
+ * `avif` or `avis`, then walks `meta` > `iprp` > `ipco` for `ispe` boxes and
+ * returns the LARGEST claimed extent (a conservative preflight: thumbnails and
+ * grid tiles never hide a larger item). Truncated or inconsistent boxes
+ * return `undefined`.
+ */
+export function probeAvif(data: ArrayBuffer): ImageDimensions | undefined {
+  const bytes = new Uint8Array(data);
+  if (bytes.length < 16) return undefined;
+  const ascii = (start: number, n: number): string =>
+    String.fromCharCode(...bytes.subarray(start, start + n));
+  if (ascii(4, 4) !== "ftyp") return undefined;
+  const ftypSize = u32be(bytes, 0);
+  if (ftypSize < 16 || ftypSize > bytes.length) return undefined;
+  let brand = ascii(8, 4) === "avif" || ascii(8, 4) === "avis";
+  for (let at = 16; !brand && at + 4 <= ftypSize; at += 4) {
+    const compatible = ascii(at, 4);
+    brand = compatible === "avif" || compatible === "avis";
+  }
+  if (!brand) return undefined;
+  let best: ImageDimensions | undefined;
+  const walk = (start: number, end: number, depth: number): void => {
+    let at = start;
+    while (at + 8 <= end) {
+      const size = u32be(bytes, at);
+      const type = ascii(at + 4, 4);
+      if (size < 8 || at + size > end) return;
+      const bodyStart = at + 8;
+      const bodyEnd = at + size;
+      if (type === "ispe" && bodyStart + 12 <= bodyEnd) {
+        const width = u32be(bytes, bodyStart + 4);
+        const height = u32be(bytes, bodyStart + 8);
+        if (best === undefined || width * height > best.width * best.height) {
+          best = { width, height };
+        }
+      } else if (AVIF_CONTAINERS.has(type) && depth < 4) {
+        walk(type === "meta" ? bodyStart + 4 : bodyStart, bodyEnd, depth + 1);
+      }
+      at += size;
+    }
+  };
+  walk(ftypSize, bytes.length, 0);
+  return best;
+}
+
+/** First matching PNG, JPEG, WebP, or AVIF probe; `undefined` when none recognise. */
 export function probeImage(data: ArrayBuffer): ImageDimensions | undefined {
-  return probePng(data) ?? probeJpeg(data) ?? probeWebp(data);
+  return (
+    probePng(data) ?? probeJpeg(data) ?? probeWebp(data) ?? probeAvif(data)
+  );
 }

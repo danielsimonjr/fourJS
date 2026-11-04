@@ -129,5 +129,15 @@ export {
 export type { BoundedPngDecoderOptions } from "./bounded-png.js";
 export { createBoundedJpegDecoder } from "./bounded-jpeg.js";
 export type { BoundedJpegDecoderOptions } from "./bounded-jpeg.js";
-export { probeImage, probeJpeg, probePng, probeWebp } from "./image-probe.js";
+export { createBoundedWebpDecoder } from "./bounded-webp.js";
+export type { BoundedWebpDecoderOptions } from "./bounded-webp.js";
+export { createBoundedAvifDecoder } from "./bounded-avif.js";
+export type { BoundedAvifDecoderOptions } from "./bounded-avif.js";
+export {
+  probeAvif,
+  probeImage,
+  probeJpeg,
+  probePng,
+  probeWebp,
+} from "./image-probe.js";
 export type { ImageDimensions } from "./image-probe.js";
