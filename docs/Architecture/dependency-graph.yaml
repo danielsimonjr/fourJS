@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 353
-  totalModules: 24
-  totalExports: 3619
+  totalFiles: 362
+  totalModules: 25
+  totalExports: 3601
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -57,6 +57,9 @@ entryPoints:
   - file: packages/render-webgpu/src/index.ts
     type: main
     description: "`@fourjs/render-webgpu` — the WebGPU backend (§62 backend 1)."
+  - file: packages/physics-physjs/src/index.ts
+    type: main
+    description: "`@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102)."
   - file: packages/render-canvas/src/index.ts
     type: main
     description: "`@fourjs/render-canvas` — the Canvas 2D backend (§62 backend 3)."
@@ -2655,16 +2658,209 @@ modules:
         - isSvgSupported
         - registerSvgRenderer
   packages/physics-box2d:
+    packages/physics-box2d/src/box2d-adapter.ts:
+      description: "`Box2dAdapter` — the 2D §37 solver adapter over `@box2d/core` 0.11.0 (W8.1)."
+      externalDependencies:
+        - package: "@box2d/core"
+          imports:
+            - b2BodyType
+            - b2CircleShape
+            - b2ContactListener
+            - b2DistanceJointDef
+            - b2_maxFloat
+            - b2PolygonShape
+            - b2PrismaticJointDef
+            - b2RevoluteJointDef
+            - b2Vec2
+            - b2WeldJointDef
+            - b2World
+            - b2WorldManifold
+            - b2AABB
+            - b2ShapeCast
+            - b2Distance
+            - b2DistanceInput
+            - b2DistanceOutput
+            - b2SimplexCache
+            - b2ShapeCastInput
+            - b2ShapeCastOutput
+            - b2TestOverlap
+            - b2Transform
+        - package: "@box2d/core"
+          imports:
+            - b2Body
+            - b2Contact
+            - b2Fixture
+            - b2Joint
+            - b2PrismaticJoint
+            - b2RevoluteJoint
+            - b2Shape
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./snapshot-codec.js
+          imports:
+            - SNAPSHOT_FORMAT_VERSION
+            - SNAPSHOT_MAGIC
+            - SnapshotReader
+            - SnapshotWriter
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Quaternion
+            - Vector3
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix3
+        - package: "@fourjs/physics"
+          directory: packages/physics
+          imports:
+            - ALL_COLLISION_GROUPS
+            - DEFAULT_FRICTION
+            - DEFAULT_RESTITUTION
+            - DETERMINISM_LEVELS
+            - passesQueryFilter
+            - rejectStalePhysicsHandle
+            - resolveAngularVelocity
+            - resolveQueryOptions
+            - sortHitsByDistance
+            - validateQueryShape
+            - resolveDensity
+            - resolveGravity
+            - resolveRotation
+            - resolveSleepingConfig
+            - validateColliderDescriptor
+            - validateJointDescriptor
+            - validatePhysicsWorldOptions
+            - validateRigidBodyDescriptor
+        - package: "@fourjs/physics"
+          directory: packages/physics
+          imports:
+            - AngularVelocityInput
+            - BodyType
+            - CCDMode
+            - ColliderDescriptor
+            - ContactPoint
+            - JointDescriptor
+            - QueryCandidate
+            - ResolvedQueryOptions
+            - OverlapHit
+            - OverlapQuery
+            - PhysicsBodyHandle
+            - PhysicsCapabilities
+            - PhysicsColliderHandle
+            - PhysicsEvent
+            - PhysicsEventInterest
+            - PhysicsJointHandle
+            - PhysicsSolverAdapter
+            - PhysicsWorldOptions
+            - PointHit
+            - PointQuery
+            - RaycastHit
+            - RaycastQuery
+            - RigidBodyDescriptor
+            - RotationInput
+            - ShapeCastHit
+            - ShapeCastQuery
+            - ShippedJointType
+            - SolverBodyAccess
+            - SolverBodyTuningAccess
+            - SolverJointAccess
+            - SolverJointMotor
+            - Vector3Input
+      exports:
+        - BOX2D_CORE_VERSION
+        - BOX2D_CAPABILITIES
+        - Box2dAdapter
+      classes:
+        - Box2dAdapter
+      constants:
+        - BOX2D_CORE_VERSION
+        - BOX2D_CAPABILITIES
     packages/physics-box2d/src/index.ts:
-      description: Entry point exporting 1 symbols
+      description: Package entry point for @fourjs/physics-box2d (re-exports 6 symbols)
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./box2d-adapter.js
+          imports:
+            - Box2dAdapter
+            - BOX2D_CAPABILITIES
+            - BOX2D_CORE_VERSION
+          reExport: true
+        - file: ./register.js
+          imports:
+            - createBox2dAdapter
+            - isBox2dSupported
+            - registerBox2dSolver
+          reExport: true
+      workspaceDependencies: []
+      exports:
+        - Box2dAdapter
+        - BOX2D_CAPABILITIES
+        - BOX2D_CORE_VERSION
+        - createBox2dAdapter
+        - isBox2dSupported
+        - registerBox2dSolver
+        - PACKAGE_NAME
+      reExported:
+        - Box2dAdapter
+        - BOX2D_CAPABILITIES
+        - BOX2D_CORE_VERSION
+        - createBox2dAdapter
+        - isBox2dSupported
+        - registerBox2dSolver
+      constants:
+        - PACKAGE_NAME
+    packages/physics-box2d/src/snapshot-codec.ts:
+      description: Byte codec for the Box2D adapter's §34 snapshot envelope (W8.3).
       externalDependencies: []
       nodeDependencies: []
       internalDependencies: []
-      workspaceDependencies: []
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
       exports:
-        - PACKAGE_NAME
+        - SNAPSHOT_MAGIC
+        - SNAPSHOT_FORMAT_VERSION
+        - SnapshotWriter
+        - SnapshotReader
+      classes:
+        - SnapshotWriter
+        - SnapshotReader
       constants:
-        - PACKAGE_NAME
+        - SNAPSHOT_MAGIC
+        - SNAPSHOT_FORMAT_VERSION
+    packages/physics-box2d/src/register.ts:
+      description: This package's opt-in to §37's solver registry (W8.1).
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./box2d-adapter.js
+          imports:
+            - Box2dAdapter
+      workspaceDependencies:
+        - package: "@fourjs/physics"
+          directory: packages/physics
+          imports:
+            - registerSolver
+            - PhysicsWorldAdapter
+            - PhysicsWorldOptions
+            - SolverRegistry
+      exports:
+        - isBox2dSupported
+        - createBox2dAdapter
+        - registerBox2dSolver
+      functions:
+        - isBox2dSupported
+        - createBox2dAdapter
+        - registerBox2dSolver
   packages/scene:
     packages/scene/src/transform.ts:
       description: Local/world transform of a scene node (§7).
@@ -4406,15 +4602,141 @@ modules:
         - binaryLoader
   packages/physics-soft:
     packages/physics-soft/src/index.ts:
-      description: Entry point exporting 1 symbols
+      description: Package entry point for @fourjs/physics-soft (re-exports 2 symbols)
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./soft-body.js
+          imports:
+            - "*"
+          reExport: true
+        - file: ./serializers.js
+          imports:
+            - "*"
+          reExport: true
+      workspaceDependencies: []
+      exports:
+        - PACKAGE_NAME
+      reExported:
+        - "* from ./soft-body.js"
+        - "* from ./serializers.js"
+      constants:
+        - PACKAGE_NAME
+    packages/physics-soft/src/soft-body.ts:
+      description: "Soft bodies (RFC 0011, §35/§35a): the `SoftBody` component and the"
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./pbd.js
+          imports:
+            - PbdSolver
+            - clothTopology
+            - computeNormals
+            - pressureTopology
+            - ropeTopology
+            - ParticleCollider
+            - PbdSolver
+            - SoftTopology
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+            - Component
+            - ComponentHost
+        - package: "@fourjs/geometry"
+          directory: packages/geometry
+          imports:
+            - BufferGeometry
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix4
+            - Vector3
+        - package: "@fourjs/scene"
+          directory: packages/scene
+          imports:
+            - Node
+            - resolveWorldTransform
+        - package: "@fourjs/motion"
+          directory: packages/motion
+          imports:
+            - PRIORITY_PHYSICS_SOLVE
+            - FixedUpdateContext
+            - SimulationContext
+            - SimulationSystem
+      exports:
+        - PRIORITY_SOFT_BODY
+        - SoftBody
+        - SoftBodySystem
+      classes:
+        - SoftBody
+        - SoftBodySystem
+      interfaces:
+        - SoftBodyTuning
+        - RopeDescriptor
+        - ClothDescriptor
+        - PressureDescriptor
+        - GravitySource
+        - SoftRaycastQuery
+        - SoftRaycastHit
+        - SoftCollisionWorld
+        - SoftBodySystemOptions
+        - SoftBodySnapshotEntry
+        - SoftBodySnapshot
+      constants:
+        - PRIORITY_SOFT_BODY
+    packages/physics-soft/src/pbd.ts:
+      description: "The CPU position-based-dynamics kernel (RFC 0011 #1-#4, #8)."
       externalDependencies: []
       nodeDependencies: []
       internalDependencies: []
       workspaceDependencies: []
       exports:
-        - PACKAGE_NAME
+        - signedVolume
+        - pressureTopology
+        - effectiveStiffness
+        - ropeTopology
+        - clothTopology
+        - computeNormals
+        - PbdSolver
+      classes:
+        - PbdSolver
+      interfaces:
+        - SoftTopology
+        - PbdTuning
+      functions:
+        - signedVolume
+        - pressureTopology
+        - effectiveStiffness
+        - ropeTopology
+        - clothTopology
+        - computeNormals
+    packages/physics-soft/src/serializers.ts:
+      description: "The §79 serializer for {@link SoftBody} (PH-17 policy: every shipped component"
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./soft-body.js
+          imports:
+            - SoftBody
+            - SoftBodyDescriptor
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+            - JsonValue
+        - package: "@fourjs/motion"
+          directory: packages/motion
+          imports:
+            - ComponentSerializerShape
+      exports:
+        - MAXIMUM_SOFT_BODY_ARRAY_LENGTH
+        - SOFT_BODY_SERIALIZER
       constants:
-        - PACKAGE_NAME
+        - MAXIMUM_SOFT_BODY_ARRAY_LENGTH
+        - SOFT_BODY_SERIALIZER
   packages/physics-rapier:
     packages/physics-rapier/src/ccd.ts:
       description: The §31 CCD-mode resolution both Rapier adapters share.
@@ -5347,8 +5669,6 @@ modules:
           imports:
             - GlBatching
             - createGlBatching
-            - createInstanceGl
-            - instanceVertexSource
           reExport: true
         - file: ./gl-effect-registry.js
           imports:
@@ -5397,8 +5717,6 @@ modules:
             - POSITION_ATTRIBUTE_LOCATION
             - POSITION1_ATTRIBUTE_LOCATION
             - NORMAL1_ATTRIBUTE_LOCATION
-            - morphNormalLocation
-            - morphPositionLocation
             - HEMISPHERE_LIGHT_GLSL
             - HemisphereLightUniforms
             - PUNCTUAL_LIGHT_GLSL
@@ -5495,8 +5813,6 @@ modules:
         - file: ./gl-batch.js
           imports:
             - BatchGlContext
-            - InstanceGlContext
-            - InstancedGeometryRecord
             - RenderBatching
           reExport: true
           typeOnly: true
@@ -5609,8 +5925,6 @@ modules:
       exports:
         - GlBatching
         - createGlBatching
-        - createInstanceGl
-        - instanceVertexSource
         - EFFECT_TEXTURE_UNIT
         - EFFECT_VERTEX_COUNT
         - clearRegisteredEffectPipeline
@@ -5641,8 +5955,6 @@ modules:
         - POSITION_ATTRIBUTE_LOCATION
         - POSITION1_ATTRIBUTE_LOCATION
         - NORMAL1_ATTRIBUTE_LOCATION
-        - morphNormalLocation
-        - morphPositionLocation
         - HEMISPHERE_LIGHT_GLSL
         - HemisphereLightUniforms
         - PUNCTUAL_LIGHT_GLSL
@@ -5692,8 +6004,6 @@ modules:
         - WebglRenderer
         - PACKAGE_NAME
         - BatchGlContext
-        - InstanceGlContext
-        - InstancedGeometryRecord
         - RenderBatching
         - EffectPipeline
         - EffectPipelineFactory
@@ -5743,8 +6053,6 @@ modules:
       reExported:
         - GlBatching
         - createGlBatching
-        - createInstanceGl
-        - instanceVertexSource
         - EFFECT_TEXTURE_UNIT
         - EFFECT_VERTEX_COUNT
         - clearRegisteredEffectPipeline
@@ -5775,8 +6083,6 @@ modules:
         - POSITION_ATTRIBUTE_LOCATION
         - POSITION1_ATTRIBUTE_LOCATION
         - NORMAL1_ATTRIBUTE_LOCATION
-        - morphNormalLocation
-        - morphPositionLocation
         - HEMISPHERE_LIGHT_GLSL
         - HemisphereLightUniforms
         - PUNCTUAL_LIGHT_GLSL
@@ -5825,8 +6131,6 @@ modules:
         - registerWebglRenderer
         - WebglRenderer
         - BatchGlContext
-        - InstanceGlContext
-        - InstancedGeometryRecord
         - RenderBatching
         - EffectPipeline
         - EffectPipelineFactory
@@ -6045,8 +6349,6 @@ modules:
             - POSITION1_ATTRIBUTE_LOCATION
             - UV_ATTRIBUTE_LOCATION
             - WEIGHTS_ATTRIBUTE_LOCATION
-            - morphNormalLocation
-            - morphPositionLocation
             - WebglContext
         - file: ./gl-program.js
           imports:
@@ -6063,16 +6365,11 @@ modules:
           imports:
             - warnDisposedInUse
       exports:
-        - GEOMETRY_RING_SLOTS
-        - GEOMETRY_RING_PROMOTE_AFTER
         - GeometryCache
       classes:
         - GeometryCache
       interfaces:
         - GeometryRecord
-      constants:
-        - GEOMETRY_RING_SLOTS
-        - GEOMETRY_RING_PROMOTE_AFTER
     packages/render-webgl/src/node-pipeline-registry.ts:
       description: The node-material pipeline's registration slot (§60, §62; RFC 0001, gap
       externalDependencies: []
@@ -6297,7 +6594,7 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
-            - MAX_LIGHT_SLOTS
+            - MAX_PUNCTUAL_LIGHTS
             - SceneLights
       exports:
         - GL
@@ -6321,8 +6618,6 @@ modules:
         - SHADOW_GLSL
         - LIT_FRAGMENT_SHADER_SOURCE
         - matrixScratch
-        - morphPositionLocation
-        - morphNormalLocation
         - uploadNormalMatrix
         - createLinkedProgram
         - requireUniform
@@ -6342,8 +6637,6 @@ modules:
       interfaces:
         - WebglContext
       functions:
-        - morphPositionLocation
-        - morphNormalLocation
         - uploadNormalMatrix
         - createLinkedProgram
         - requireUniform
@@ -6376,7 +6669,6 @@ modules:
       internalDependencies:
         - file: ./gl-batch.js
           imports:
-            - InstanceGlContext
             - RenderBatching
           typeOnly: true
         - file: ./gl-effect-registry.js
@@ -6472,7 +6764,6 @@ modules:
             - buildRenderList
             - buildViewRenderList
             - collectSceneLights
-            - unionViewLayerMask
             - createSceneLights
             - isLitItem
             - isNodeItem
@@ -6486,7 +6777,6 @@ modules:
             - validateReadbackRegion
             - COLOR_GRADE_DEFAULTS
             - EffectRenderPass
-            - InstancedRun
             - GraphEffect
             - PickingService
             - RenderItem
@@ -6597,19 +6887,13 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
-        - file: ./gl-standard-registry.js
-          imports:
-            - resolveStandardPipelineFactory
-            - StandardPipeline
         - file: ./gl-program.js
           imports:
             - COLOR_ATTRIBUTE_LOCATION
             - GL
             - POSITION_ATTRIBUTE_LOCATION
-            - LitProgram
             - UV_ATTRIBUTE_LOCATION
             - GlBuffer
-            - GlUniformLocation
             - GlVertexArray
             - UnlitProgram
             - WebglContext
@@ -6621,33 +6905,20 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
-            - INSTANCE_FLOATS
             - RenderBatcher
-            - InstancedRun
             - RenderBatch
             - RenderBatchOptions
             - RenderItem
       exports:
-        - INSTANCE_MODEL_LOCATION
-        - INSTANCE_NORMAL_LOCATION
-        - instanceVertexSource
-        - createInstanceGl
         - createGlBatching
         - GlBatching
       classes:
         - GlBatching
       interfaces:
         - BatchGlContext
-        - InstanceGlContext
-        - InstancedGeometryRecord
         - RenderBatching
       functions:
-        - instanceVertexSource
-        - createInstanceGl
         - createGlBatching
-      constants:
-        - INSTANCE_MODEL_LOCATION
-        - INSTANCE_NORMAL_LOCATION
     packages/render-webgl/src/gl-texture.ts:
       description: "GPU-side textures for the WebGL 2 backend: one `WebGLTexture` per"
       externalDependencies: []
@@ -9066,7 +9337,6 @@ modules:
         - file: ./buffer-geometry.js
           imports:
             - BufferGeometry
-            - MAX_MORPH_TARGETS
           reExport: true
         - file: ./geometry.js
           imports:
@@ -9131,7 +9401,6 @@ modules:
             - GeometryBounds
             - GeometryDrawMode
             - GeometryIndexArray
-            - MorphTargetStreams
           reExport: true
           typeOnly: true
         - file: ./geometry.js
@@ -9206,7 +9475,6 @@ modules:
       workspaceDependencies: []
       exports:
         - BufferGeometry
-        - MAX_MORPH_TARGETS
         - Geometry
         - capsuleGeometry
         - coneGeometry
@@ -9242,7 +9510,6 @@ modules:
         - GeometryBounds
         - GeometryDrawMode
         - GeometryIndexArray
-        - MorphTargetStreams
         - BoundingVolume
         - CapsuleGeometryOptions
         - ExtrudeGeometryOptions
@@ -9286,7 +9553,6 @@ modules:
         - StrokeMesh
       reExported:
         - BufferGeometry
-        - MAX_MORPH_TARGETS
         - Geometry
         - capsuleGeometry
         - coneGeometry
@@ -9321,7 +9587,6 @@ modules:
         - GeometryBounds
         - GeometryDrawMode
         - GeometryIndexArray
-        - MorphTargetStreams
         - BoundingVolume
         - CapsuleGeometryOptions
         - ExtrudeGeometryOptions
@@ -9654,15 +9919,11 @@ modules:
           imports:
             - Vector3
       exports:
-        - MAX_MORPH_TARGETS
         - BufferGeometry
       classes:
         - BufferGeometry
       interfaces:
         - BufferGeometryOptions
-        - MorphTargetStreams
-      constants:
-        - MAX_MORPH_TARGETS
     packages/geometry/src/cpu-skinning.ts:
       description: Reusable CPU linear-blend skinning (§54, RFC 0003).
       externalDependencies: []
@@ -9929,7 +10190,6 @@ modules:
         - file: ./batch.js
           imports:
             - DEFAULT_MAX_BATCH_VERTICES
-            - INSTANCE_FLOATS
             - RenderBatcher
           reExport: true
         - file: ./bounds.js
@@ -9972,12 +10232,8 @@ modules:
           reExport: true
         - file: ./lights.js
           imports:
-            - EXTRA_DIRECTIONAL_FLAG
-            - MAX_DIRECTIONAL_LIGHTS
-            - MAX_LIGHT_SLOTS
             - MAX_PUNCTUAL_LIGHTS
             - collectSceneLights
-            - unionViewLayerMask
             - createSceneLights
             - isDirectionalLightSource
             - isHemisphereLightSource
@@ -10151,8 +10407,6 @@ modules:
           imports:
             - BatchableItem
             - BatchableMaterial
-            - InstanceableItem
-            - InstancedRun
             - RenderBatch
             - RenderBatchOptions
           reExport: true
@@ -10422,7 +10676,6 @@ modules:
             - ShaderSourceMap
       exports:
         - DEFAULT_MAX_BATCH_VERTICES
-        - INSTANCE_FLOATS
         - RenderBatcher
         - computeWorldBoundingSphere
         - computeWorldBoundingSphereFromBox
@@ -10441,12 +10694,8 @@ modules:
         - OUTPUT_TRANSFORM_EFFECT
         - supportsScreenEffects
         - validateEffectRenderPass
-        - EXTRA_DIRECTIONAL_FLAG
-        - MAX_DIRECTIONAL_LIGHTS
-        - MAX_LIGHT_SLOTS
         - MAX_PUNCTUAL_LIGHTS
         - collectSceneLights
-        - unionViewLayerMask
         - createSceneLights
         - isDirectionalLightSource
         - isHemisphereLightSource
@@ -10556,8 +10805,6 @@ modules:
         - PACKAGE_NAME
         - BatchableItem
         - BatchableMaterial
-        - InstanceableItem
-        - InstancedRun
         - RenderBatch
         - RenderBatchOptions
         - BoundingSphere
@@ -10705,7 +10952,6 @@ modules:
         - VideoTextureSource
       reExported:
         - DEFAULT_MAX_BATCH_VERTICES
-        - INSTANCE_FLOATS
         - RenderBatcher
         - computeWorldBoundingSphere
         - computeWorldBoundingSphereFromBox
@@ -10724,12 +10970,8 @@ modules:
         - OUTPUT_TRANSFORM_EFFECT
         - supportsScreenEffects
         - validateEffectRenderPass
-        - EXTRA_DIRECTIONAL_FLAG
-        - MAX_DIRECTIONAL_LIGHTS
-        - MAX_LIGHT_SLOTS
         - MAX_PUNCTUAL_LIGHTS
         - collectSceneLights
-        - unionViewLayerMask
         - createSceneLights
         - isDirectionalLightSource
         - isHemisphereLightSource
@@ -10838,8 +11080,6 @@ modules:
         - VideoTexture
         - BatchableItem
         - BatchableMaterial
-        - InstanceableItem
-        - InstancedRun
         - RenderBatch
         - RenderBatchOptions
         - BoundingSphere
@@ -11025,6 +11265,7 @@ modules:
         - package: "@fourjs/core"
           directory: packages/core
           imports:
+            - FourError
             - Disposable
         - package: "@fourjs/materials"
           directory: packages/materials
@@ -11039,7 +11280,6 @@ modules:
             - ColorSpace
             - Rectangle2
       exports:
-        - textureChainBytes
         - validateTextureSource
         - Texture
       classes:
@@ -11047,7 +11287,6 @@ modules:
       interfaces:
         - TextureSource
       functions:
-        - textureChainBytes
         - validateTextureSource
     packages/render/src/render-target-bytes.ts:
       description: Per-texel byte accounting for {@link RenderTarget} attachments (§83, §84).
@@ -11526,10 +11765,8 @@ modules:
             - ScissorRect
         - file: ./render-list.js
           imports:
-            - LitRenderItem
             - RenderItem
             - SpriteRenderItem
-            - StandardRenderItem
             - UnlitRenderItem
           typeOnly: true
       workspaceDependencies:
@@ -11546,7 +11783,6 @@ modules:
         - package: "@fourjs/math"
           directory: packages/math
           imports:
-            - Matrix3
             - ColorRGBA
         - package: "@fourjs/scene"
           directory: packages/scene
@@ -11555,17 +11791,14 @@ modules:
             - LayerMask
       exports:
         - DEFAULT_MAX_BATCH_VERTICES
-        - INSTANCE_FLOATS
         - RenderBatcher
       classes:
         - RenderBatcher
       interfaces:
         - RenderBatchOptions
         - RenderBatch
-        - InstancedRun
       constants:
         - DEFAULT_MAX_BATCH_VERTICES
-        - INSTANCE_FLOATS
     packages/render/src/renderer.ts:
       description: The renderer interface (§61) — the seam every backend implements.
       externalDependencies: []
@@ -12031,10 +12264,7 @@ modules:
       description: Light collection (§68, §64) — scene graph in, one flat light state out.
       externalDependencies: []
       nodeDependencies: []
-      internalDependencies:
-        - file: ./render-list.js
-          imports:
-            - viewLayerMask
+      internalDependencies: []
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -12050,21 +12280,14 @@ modules:
         - package: "@fourjs/scene"
           directory: packages/scene
           imports:
-            - ALL_LAYERS
-            - LayerMask
             - Node
-            - Viewport
       exports:
         - MAX_PUNCTUAL_LIGHTS
-        - MAX_DIRECTIONAL_LIGHTS
-        - MAX_LIGHT_SLOTS
-        - EXTRA_DIRECTIONAL_FLAG
         - isDirectionalLightSource
         - isHemisphereLightSource
         - isPunctualLightSource
         - createSceneLights
         - collectSceneLights
-        - unionViewLayerMask
       interfaces:
         - DirectionalLightSource
         - DirectionalShadowSource
@@ -12080,12 +12303,8 @@ modules:
         - isPunctualLightSource
         - createSceneLights
         - collectSceneLights
-        - unionViewLayerMask
       constants:
         - MAX_PUNCTUAL_LIGHTS
-        - MAX_DIRECTIONAL_LIGHTS
-        - MAX_LIGHT_SLOTS
-        - EXTRA_DIRECTIONAL_FLAG
   packages/input:
     packages/input/src/pick.ts:
       description: Picking and hit testing (§71) — the bounds tier.
@@ -12514,9 +12733,6 @@ modules:
             - GPU_BUFFER_USAGE
             - GpuBuffer
             - GpuDevice
-        - file: ./wgpu-staging.js
-          imports:
-            - WgpuStagingRing
       workspaceDependencies:
         - package: "@fourjs/render"
           directory: packages/render
@@ -12667,12 +12883,6 @@ modules:
           imports:
             - WgpuGeometryCache
           reExport: true
-        - file: ./wgpu-staging.js
-          imports:
-            - STAGING_DIRECT_THRESHOLD
-            - STAGING_RING_FRAMES
-            - WgpuStagingRing
-          reExport: true
         - file: ./wgpu-pipeline-cache.js
           imports:
             - blendStateFor
@@ -12711,12 +12921,6 @@ modules:
             - COLOR_BUFFER_LAYOUT
             - COLOR_SHADER_LOCATION
             - DRAW_MORPH_WEIGHT_OFFSET
-            - DRAW_MORPH_WEIGHTS_OFFSET
-            - MORPH_N_DRAW_UNIFORM_WGSL
-            - morphHasNormals
-            - morphTargetCount
-            - morphVariant
-            - morphVertexBufferLayouts
             - FRAGMENT_ENTRY_POINT
             - MORPH_DRAW_UNIFORM_WGSL
             - MORPH_WEIGHT_WGSL
@@ -12867,9 +13071,7 @@ modules:
           reExport: true
         - file: ./wgpu-standard.js
           imports:
-            - MORPH_N_STANDARD_UNIFORM_WGSL
             - MORPH_STANDARD_UNIFORM_WGSL
-            - STANDARD_MORPH_WEIGHTS_OFFSET
             - NO_SURFACE_MAPS
             - SURFACE_DEFAULT_TEXELS
             - STANDARD_BASE_COLOR_OFFSET
@@ -13127,9 +13329,6 @@ modules:
         - createTextureBindGroupLayout
         - WgpuSurfaceGroupCache
         - WgpuGeometryCache
-        - STAGING_DIRECT_THRESHOLD
-        - STAGING_RING_FRAMES
-        - WgpuStagingRing
         - blendStateFor
         - pipelineKey
         - stencilStateFor
@@ -13154,12 +13353,6 @@ modules:
         - COLOR_BUFFER_LAYOUT
         - COLOR_SHADER_LOCATION
         - DRAW_MORPH_WEIGHT_OFFSET
-        - DRAW_MORPH_WEIGHTS_OFFSET
-        - MORPH_N_DRAW_UNIFORM_WGSL
-        - morphHasNormals
-        - morphTargetCount
-        - morphVariant
-        - morphVertexBufferLayouts
         - FRAGMENT_ENTRY_POINT
         - MORPH_DRAW_UNIFORM_WGSL
         - MORPH_WEIGHT_WGSL
@@ -13277,9 +13470,7 @@ modules:
         - applyStencilReference
         - frameWantsStencil
         - stencilDescriptor
-        - MORPH_N_STANDARD_UNIFORM_WGSL
         - MORPH_STANDARD_UNIFORM_WGSL
-        - STANDARD_MORPH_WEIGHTS_OFFSET
         - NO_SURFACE_MAPS
         - SURFACE_DEFAULT_TEXELS
         - STANDARD_BASE_COLOR_OFFSET
@@ -13446,9 +13637,6 @@ modules:
         - createTextureBindGroupLayout
         - WgpuSurfaceGroupCache
         - WgpuGeometryCache
-        - STAGING_DIRECT_THRESHOLD
-        - STAGING_RING_FRAMES
-        - WgpuStagingRing
         - blendStateFor
         - pipelineKey
         - stencilStateFor
@@ -13473,12 +13661,6 @@ modules:
         - COLOR_BUFFER_LAYOUT
         - COLOR_SHADER_LOCATION
         - DRAW_MORPH_WEIGHT_OFFSET
-        - DRAW_MORPH_WEIGHTS_OFFSET
-        - MORPH_N_DRAW_UNIFORM_WGSL
-        - morphHasNormals
-        - morphTargetCount
-        - morphVariant
-        - morphVertexBufferLayouts
         - FRAGMENT_ENTRY_POINT
         - MORPH_DRAW_UNIFORM_WGSL
         - MORPH_WEIGHT_WGSL
@@ -13596,9 +13778,7 @@ modules:
         - applyStencilReference
         - frameWantsStencil
         - stencilDescriptor
-        - MORPH_N_STANDARD_UNIFORM_WGSL
         - MORPH_STANDARD_UNIFORM_WGSL
-        - STANDARD_MORPH_WEIGHTS_OFFSET
         - NO_SURFACE_MAPS
         - SURFACE_DEFAULT_TEXELS
         - STANDARD_BASE_COLOR_OFFSET
@@ -14214,7 +14394,6 @@ modules:
       internalDependencies:
         - file: ./webgpu-device.js
           imports:
-            - GPU_SHADER_STAGE
             - GPU_TEXTURE_USAGE
             - GpuBindGroup
             - GpuBindGroupLayout
@@ -14251,7 +14430,6 @@ modules:
         - MIPMAP_SHADER_SOURCE
         - mipLevelCount
         - textureByteLength
-        - downsampleVolume
         - samplerKey
         - WgpuTextureCache
       classes:
@@ -14262,7 +14440,6 @@ modules:
       functions:
         - mipLevelCount
         - textureByteLength
-        - downsampleVolume
         - samplerKey
       constants:
         - MIPMAP_SHADER_SOURCE
@@ -14294,35 +14471,15 @@ modules:
         - NORMAL1_BUFFER_LAYOUT
         - DRAW_MORPH_WEIGHT_OFFSET
         - MORPH_DRAW_UNIFORM_WGSL
-        - DRAW_MORPH_WEIGHTS_OFFSET
-        - MORPH_N_DRAW_UNIFORM_WGSL
         - MORPH_WEIGHT_WGSL
         - VERTEX_ENTRY_POINT
         - FRAGMENT_ENTRY_POINT
         - CLEAR_VERTEX_COUNT
         - CLEAR_SHADER_SOURCE
-        - morphTargetCount
-        - morphHasNormals
-        - morphVariant
-        - morphPositionShaderLocation
-        - morphNormalShaderLocation
-        - morphVertexBufferLayouts
-        - morphInputWgsl
-        - morphSumWgsl
-        - drawUniformWgslFor
         - unlitVertexBufferLayouts
         - unlitShaderSource
         - unlitFragmentStageWgsl
       functions:
-        - morphTargetCount
-        - morphHasNormals
-        - morphVariant
-        - morphPositionShaderLocation
-        - morphNormalShaderLocation
-        - morphVertexBufferLayouts
-        - morphInputWgsl
-        - morphSumWgsl
-        - drawUniformWgslFor
         - unlitVertexBufferLayouts
         - unlitShaderSource
         - unlitFragmentStageWgsl
@@ -14339,8 +14496,6 @@ modules:
         - NORMAL1_BUFFER_LAYOUT
         - DRAW_MORPH_WEIGHT_OFFSET
         - MORPH_DRAW_UNIFORM_WGSL
-        - DRAW_MORPH_WEIGHTS_OFFSET
-        - MORPH_N_DRAW_UNIFORM_WGSL
         - MORPH_WEIGHT_WGSL
         - VERTEX_ENTRY_POINT
         - FRAGMENT_ENTRY_POINT
@@ -14474,7 +14629,7 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
-            - MAX_LIGHT_SLOTS
+            - MAX_PUNCTUAL_LIGHTS
             - SceneLights
       exports:
         - LIGHTS_BIND_GROUP_INDEX
@@ -14644,26 +14799,6 @@ modules:
         - PARTICLE_WIDE_INSTANCE_BUFFER_LAYOUT
         - PARTICLE_APPEARANCE_SHADER_SOURCE
         - PARTICLE_SHADER_SOURCE
-    packages/render-webgpu/src/wgpu-staging.ts:
-      description: Staging ring for dynamic buffer updates (§65) — WebGPU.
-      externalDependencies: []
-      nodeDependencies: []
-      internalDependencies:
-        - file: ./webgpu-device.js
-          imports:
-            - GPU_BUFFER_USAGE
-            - GpuBuffer
-            - GpuDevice
-      workspaceDependencies: []
-      exports:
-        - STAGING_DIRECT_THRESHOLD
-        - STAGING_RING_FRAMES
-        - WgpuStagingRing
-      classes:
-        - WgpuStagingRing
-      constants:
-        - STAGING_DIRECT_THRESHOLD
-        - STAGING_RING_FRAMES
     packages/render-webgpu/src/wgpu-surface-group.ts:
       description: "The standard family's surface bind groups (WP-W4.2): the five-entry group of"
       externalDependencies: []
@@ -14902,9 +15037,7 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
-            - INSTANCE_FLOATS
             - RenderBatcher
-            - InstancedRun
             - RenderBatch
             - RenderBatchOptions
             - RenderItem
@@ -14955,7 +15088,6 @@ modules:
         - file: ./wgpu-unlit.js
           imports:
             - FRAGMENT_ENTRY_POINT
-            - morphTargetCount
             - WgpuMorph
       workspaceDependencies: []
       exports:
@@ -14970,8 +15102,6 @@ modules:
         - STANDARD_UNIFORM_BYTES
         - STANDARD_UNIFORM_WGSL
         - MORPH_STANDARD_UNIFORM_WGSL
-        - MORPH_N_STANDARD_UNIFORM_WGSL
-        - STANDARD_MORPH_WEIGHTS_OFFSET
         - surfaceBindingWgsl
         - createStandardBindGroupLayout
         - standardShaderSource
@@ -14993,8 +15123,6 @@ modules:
         - STANDARD_UNIFORM_BYTES
         - STANDARD_UNIFORM_WGSL
         - MORPH_STANDARD_UNIFORM_WGSL
-        - MORPH_N_STANDARD_UNIFORM_WGSL
-        - STANDARD_MORPH_WEIGHTS_OFFSET
     packages/render-webgpu/src/wgpu-sprite.ts:
       description: The sprite pipeline in hand-written WGSL (§55, WP-R1.3), plus the uniform
       externalDependencies: []
@@ -15145,6 +15273,9 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
+        - file: ./wgpu-bindings.js
+          imports:
+            - DRAW_UNIFORM_WGSL
         - file: ./webgpu-device.js
           imports:
             - GpuVertexBufferLayout
@@ -15162,13 +15293,12 @@ modules:
         - file: ./wgpu-unlit.js
           imports:
             - FRAGMENT_ENTRY_POINT
+            - MORPH_DRAW_UNIFORM_WGSL
             - MORPH_WEIGHT_WGSL
-            - drawUniformWgslFor
-            - morphHasNormals
-            - morphInputWgsl
-            - morphSumWgsl
-            - morphTargetCount
-            - morphVertexBufferLayouts
+            - NORMAL1_BUFFER_LAYOUT
+            - NORMAL1_SHADER_LOCATION
+            - POSITION1_BUFFER_LAYOUT
+            - POSITION1_SHADER_LOCATION
             - POSITION_BUFFER_LAYOUT
             - POSITION_SHADER_LOCATION
             - UV_BUFFER_LAYOUT
@@ -15179,9 +15309,6 @@ modules:
       exports:
         - NORMAL_SHADER_LOCATION
         - NORMAL_BUFFER_LAYOUT
-        - INSTANCE_SHADER_LOCATION_BASE
-        - INSTANCE_STRIDE_BYTES
-        - INSTANCE_BUFFER_LAYOUT
         - NORMAL_MATRIX_WGSL
         - shadedVertexBufferLayouts
         - shadedVertexStageWgsl
@@ -15195,9 +15322,6 @@ modules:
       constants:
         - NORMAL_SHADER_LOCATION
         - NORMAL_BUFFER_LAYOUT
-        - INSTANCE_SHADER_LOCATION_BASE
-        - INSTANCE_STRIDE_BYTES
-        - INSTANCE_BUFFER_LAYOUT
         - NORMAL_MATRIX_WGSL
     packages/render-webgpu/src/webgpu-renderer.ts:
       description: Draws fourJS scenes with WebGPU (§61, §62 backend 1).
@@ -15301,7 +15425,6 @@ modules:
         - file: ./wgpu-standard.js
           imports:
             - STANDARD_EMISSIVE_OFFSET
-            - STANDARD_MORPH_WEIGHTS_OFFSET
             - STANDARD_SURFACE_OFFSET
             - STANDARD_UNIFORM_BYTES
             - createStandardBindGroupLayout
@@ -15350,11 +15473,6 @@ modules:
           imports:
             - CLEAR_VERTEX_COUNT
             - DRAW_MORPH_WEIGHT_OFFSET
-            - DRAW_MORPH_WEIGHTS_OFFSET
-            - morphHasNormals
-            - morphTargetCount
-            - morphVariant
-            - WgpuMorph
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -15380,7 +15498,6 @@ modules:
             - buildViewRenderList
             - MAX_SKINNING_JOINTS
             - collectSceneLights
-            - unionViewLayerMask
             - createSceneLights
             - isRenderTargetTexture
             - isSkinnedLitItem
@@ -15388,7 +15505,6 @@ modules:
             - intersectScissor
             - validateReadbackRegion
             - EffectRenderPass
-            - InstancedRun
             - RenderBatch
             - PickingService
             - RenderInterpolation
@@ -15411,6 +15527,165 @@ modules:
         - WebgpuRenderer
       functions:
         - hostGpu
+  packages/physics-physjs:
+    packages/physics-physjs/src/index.ts:
+      description: "`@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102)."
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./physjs-adapter.js
+          imports:
+            - PHYSJS_CAPABILITIES
+            - PHYSJS_VERSION
+            - PhysJSAdapter2D
+            - PhysJSAdapter3D
+          reExport: true
+        - file: ./register.js
+          imports:
+            - createPhysJSAdapter
+            - isPhysJSSupported
+            - registerPhysJSSolver
+          reExport: true
+      workspaceDependencies: []
+      exports:
+        - PHYSJS_CAPABILITIES
+        - PHYSJS_VERSION
+        - PhysJSAdapter2D
+        - PhysJSAdapter3D
+        - createPhysJSAdapter
+        - isPhysJSSupported
+        - registerPhysJSSolver
+        - PACKAGE_NAME
+      reExported:
+        - PHYSJS_CAPABILITIES
+        - PHYSJS_VERSION
+        - PhysJSAdapter2D
+        - PhysJSAdapter3D
+        - createPhysJSAdapter
+        - isPhysJSSupported
+        - registerPhysJSSolver
+      constants:
+        - PACKAGE_NAME
+    packages/physics-physjs/src/physjs-adapter.ts:
+      description: The PhysJS solver adapters (RFC 0010, §37, §102).
+      externalDependencies:
+        - package: "@danielsimonjr/physjs"
+          imports:
+            - "* as pj"
+      nodeDependencies: []
+      internalDependencies: []
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourErrorCode
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Quaternion
+            - Vector3
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix3
+        - package: "@fourjs/physics"
+          directory: packages/physics
+          imports:
+            - ALL_COLLISION_GROUPS
+            - DEFAULT_DENSITY
+            - DEFAULT_FRICTION
+            - DEFAULT_RESTITUTION
+            - DETERMINISM_LEVELS
+            - rejectStalePhysicsHandle
+            - resolveAngularVelocity
+            - resolveGravity
+            - resolveRotation
+            - resolveSleepingConfig
+            - passesQueryFilter
+            - resolveQueryOptions
+            - validateColliderDescriptor
+            - validateJointDescriptor
+            - validateQueryShape
+            - validatePhysicsWorldOptions
+            - validateRigidBodyDescriptor
+            - widenToVector3
+        - package: "@fourjs/physics"
+          directory: packages/physics
+          imports:
+            - AngularVelocityInput
+            - BodyType
+            - CCDMode
+            - ColliderDescriptor
+            - CollisionShape
+            - ContactPoint
+            - JointDescriptor
+            - OverlapHit
+            - OverlapQuery
+            - PhysicsBodyHandle
+            - PhysicsCapabilities
+            - PhysicsColliderHandle
+            - PhysicsDimension
+            - PhysicsEvent
+            - PhysicsEventInterest
+            - PhysicsJointHandle
+            - PhysicsWorldAdapter
+            - PhysicsWorldOptions
+            - PointHit
+            - PointQuery
+            - RaycastHit
+            - RaycastQuery
+            - RigidBodyDescriptor
+            - RotationInput
+            - ShapeCastHit
+            - ShapeCastQuery
+            - ShippedJointType
+            - SleepingConfig
+            - SolverBodyAccess
+            - SolverBodyTuningAccess
+            - SolverJointAccess
+            - SolverJointMotor
+            - QueryCandidate
+            - Vector3Input
+      exports:
+        - PHYSJS_VERSION
+        - PHYSJS_CAPABILITIES
+        - PhysJSAdapter2D
+        - PhysJSAdapter3D
+      classes:
+        - PhysJSAdapter2D
+        - PhysJSAdapter3D
+      constants:
+        - PHYSJS_VERSION
+        - PHYSJS_CAPABILITIES
+    packages/physics-physjs/src/register.ts:
+      description: This package's opt-in to §37's solver registry (RFC 0010, decision 3).
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./physjs-adapter.js
+          imports:
+            - PhysJSAdapter2D
+            - PhysJSAdapter3D
+      workspaceDependencies:
+        - package: "@fourjs/physics"
+          directory: packages/physics
+          imports:
+            - registerSolver
+            - PhysicsWorldAdapter
+            - PhysicsWorldOptions
+            - SolverRegistry
+      exports:
+        - isPhysJSSupported
+        - createPhysJSAdapter
+        - registerPhysJSSolver
+      functions:
+        - isPhysJSSupported
+        - createPhysJSAdapter
+        - registerPhysJSSolver
   packages/render-canvas:
     packages/render-canvas/src/index.ts:
       description: "`@fourjs/render-canvas` — the Canvas 2D backend (§62 backend 3)."
@@ -19461,6 +19736,19 @@ modules:
         - Component
         - ComponentHostBinding
   packages/fourjs:
+    packages/fourjs/src/physics-physjs.ts:
+      description: physics-physjs module
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies: []
+      workspaceDependencies:
+        - package: "@fourjs/physics-physjs"
+          directory: packages/physics-physjs
+          imports:
+            - "*"
+      exports: []
+      reExported:
+        - "* from @fourjs/physics-physjs"
     packages/fourjs/src/physics-box2d.ts:
       description: physics-box2d module
       externalDependencies: []
@@ -20485,6 +20773,11 @@ modules:
             - RigidBody
             - SWEPT_CHARACTER_CONTROLLER_SERIALIZER
             - SweptCharacterController
+        - package: "@fourjs/physics-soft"
+          directory: packages/physics-soft
+          imports:
+            - SOFT_BODY_SERIALIZER
+            - SoftBody
         - package: "@fourjs/render"
           directory: packages/render
           imports:
@@ -21146,7 +21439,10 @@ dependencyGraph:
         - packages/render-svg/src/register.ts
     - name: Packages/physics-box2d
       files:
+        - packages/physics-box2d/src/box2d-adapter.ts
         - packages/physics-box2d/src/index.ts
+        - packages/physics-box2d/src/snapshot-codec.ts
+        - packages/physics-box2d/src/register.ts
     - name: Packages/scene
       files:
         - packages/scene/src/transform.ts
@@ -21189,6 +21485,9 @@ dependencyGraph:
     - name: Packages/physics-soft
       files:
         - packages/physics-soft/src/index.ts
+        - packages/physics-soft/src/soft-body.ts
+        - packages/physics-soft/src/pbd.ts
+        - packages/physics-soft/src/serializers.ts
     - name: Packages/physics-rapier
       files:
         - packages/physics-rapier/src/ccd.ts
@@ -21336,7 +21635,6 @@ dependencyGraph:
         - packages/render-webgpu/src/wgpu-lights.ts
         - packages/render-webgpu/src/wgpu-pipeline-memo.ts
         - packages/render-webgpu/src/wgpu-particles.ts
-        - packages/render-webgpu/src/wgpu-staging.ts
         - packages/render-webgpu/src/wgpu-surface-group.ts
         - packages/render-webgpu/src/wgpu-particle-simulation.ts
         - packages/render-webgpu/src/wgpu-compute.ts
@@ -21349,6 +21647,11 @@ dependencyGraph:
         - packages/render-webgpu/src/wgpu-pipeline-cache.ts
         - packages/render-webgpu/src/wgpu-lit.ts
         - packages/render-webgpu/src/webgpu-renderer.ts
+    - name: Packages/physics-physjs
+      files:
+        - packages/physics-physjs/src/index.ts
+        - packages/physics-physjs/src/physjs-adapter.ts
+        - packages/physics-physjs/src/register.ts
     - name: Packages/render-canvas
       files:
         - packages/render-canvas/src/index.ts
@@ -21429,6 +21732,7 @@ dependencyGraph:
         - packages/core/src/component.ts
     - name: Packages/fourjs
       files:
+        - packages/fourjs/src/physics-physjs.ts
         - packages/fourjs/src/physics-box2d.ts
         - packages/fourjs/src/gltf.ts
         - packages/fourjs/src/application.ts
@@ -21472,19 +21776,19 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 353
-  totalModules: 24
-  totalLinesOfCode: 170669
-  totalExports: 3619
-  totalClasses: 217
-  totalInterfaces: 660
-  totalFunctions: 614
-  totalTypeGuards: 32
+  totalTypeScriptFiles: 362
+  totalModules: 25
+  totalLinesOfCode: 174956
+  totalExports: 3601
+  totalClasses: 224
+  totalInterfaces: 669
+  totalFunctions: 610
+  totalTypeGuards: 34
   totalEnums: 0
-  totalConstants: 538
-  totalReExports: 2268
+  totalConstants: 530
+  totalReExports: 2258
   totalTypeOnlyImports: 456
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10
   unusedFilesCount: 0
-  unusedExportsCount: 18
+  unusedExportsCount: 11

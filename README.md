@@ -8,7 +8,7 @@ physics in a single shared scene model. 2D shapes, 3D meshes, sprites, text, UI 
 rigid bodies, joints, and particle emitters are all nodes and components in one scene
 graph, over one fixed-step simulation loop with interpolated rendering.
 
-The full implementation plan (§103–§113a) is complete: 24 workspace packages build,
+The full implementation plan (§103–§113a) is complete: 25 workspace packages build,
 test (≈3,000 unit tests, coverage ≥95% per package, browser-verified rendering and
 input), and lint. The §120 MVP audit stands at **43/43 shipped-or-MVP** — this line read
 "42/43 … lighting is the single staged absence" until 2026-08-05, which stopped being

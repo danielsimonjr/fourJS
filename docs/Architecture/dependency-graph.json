@@ -3,9 +3,9 @@
     "name": "fourjs-monorepo",
     "version": "0.0.0",
     "lastUpdated": "2026-11-04",
-    "totalFiles": 353,
-    "totalModules": 24,
-    "totalExports": 3619
+    "totalFiles": 362,
+    "totalModules": 25,
+    "totalExports": 3601
   },
   "entryPoints": [
     {
@@ -92,6 +92,11 @@
       "file": "packages/render-webgpu/src/index.ts",
       "type": "main",
       "description": "`@fourjs/render-webgpu` — the WebGPU backend (§62 backend 1)."
+    },
+    {
+      "file": "packages/physics-physjs/src/index.ts",
+      "type": "main",
+      "description": "`@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102)."
     },
     {
       "file": "packages/render-canvas/src/index.ts",
@@ -2973,14 +2978,241 @@
       }
     },
     "packages/physics-box2d": {
+      "packages/physics-box2d/src/box2d-adapter.ts": {
+        "description": "`Box2dAdapter` — the 2D §37 solver adapter over `@box2d/core` 0.11.0 (W8.1).",
+        "externalDependencies": [
+          {
+            "package": "@box2d/core",
+            "imports": [
+              "b2BodyType",
+              "b2CircleShape",
+              "b2ContactListener",
+              "b2DistanceJointDef",
+              "b2_maxFloat",
+              "b2PolygonShape",
+              "b2PrismaticJointDef",
+              "b2RevoluteJointDef",
+              "b2Vec2",
+              "b2WeldJointDef",
+              "b2World",
+              "b2WorldManifold",
+              "b2AABB",
+              "b2ShapeCast",
+              "b2Distance",
+              "b2DistanceInput",
+              "b2DistanceOutput",
+              "b2SimplexCache",
+              "b2ShapeCastInput",
+              "b2ShapeCastOutput",
+              "b2TestOverlap",
+              "b2Transform"
+            ]
+          },
+          {
+            "package": "@box2d/core",
+            "imports": [
+              "b2Body",
+              "b2Contact",
+              "b2Fixture",
+              "b2Joint",
+              "b2PrismaticJoint",
+              "b2RevoluteJoint",
+              "b2Shape"
+            ]
+          }
+        ],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./snapshot-codec.js",
+            "imports": [
+              "SNAPSHOT_FORMAT_VERSION",
+              "SNAPSHOT_MAGIC",
+              "SnapshotReader",
+              "SnapshotWriter"
+            ]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Quaternion", "Vector3"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Matrix3"]
+          },
+          {
+            "package": "@fourjs/physics",
+            "directory": "packages/physics",
+            "imports": [
+              "ALL_COLLISION_GROUPS",
+              "DEFAULT_FRICTION",
+              "DEFAULT_RESTITUTION",
+              "DETERMINISM_LEVELS",
+              "passesQueryFilter",
+              "rejectStalePhysicsHandle",
+              "resolveAngularVelocity",
+              "resolveQueryOptions",
+              "sortHitsByDistance",
+              "validateQueryShape",
+              "resolveDensity",
+              "resolveGravity",
+              "resolveRotation",
+              "resolveSleepingConfig",
+              "validateColliderDescriptor",
+              "validateJointDescriptor",
+              "validatePhysicsWorldOptions",
+              "validateRigidBodyDescriptor"
+            ]
+          },
+          {
+            "package": "@fourjs/physics",
+            "directory": "packages/physics",
+            "imports": [
+              "AngularVelocityInput",
+              "BodyType",
+              "CCDMode",
+              "ColliderDescriptor",
+              "ContactPoint",
+              "JointDescriptor",
+              "QueryCandidate",
+              "ResolvedQueryOptions",
+              "OverlapHit",
+              "OverlapQuery",
+              "PhysicsBodyHandle",
+              "PhysicsCapabilities",
+              "PhysicsColliderHandle",
+              "PhysicsEvent",
+              "PhysicsEventInterest",
+              "PhysicsJointHandle",
+              "PhysicsSolverAdapter",
+              "PhysicsWorldOptions",
+              "PointHit",
+              "PointQuery",
+              "RaycastHit",
+              "RaycastQuery",
+              "RigidBodyDescriptor",
+              "RotationInput",
+              "ShapeCastHit",
+              "ShapeCastQuery",
+              "ShippedJointType",
+              "SolverBodyAccess",
+              "SolverBodyTuningAccess",
+              "SolverJointAccess",
+              "SolverJointMotor",
+              "Vector3Input"
+            ]
+          }
+        ],
+        "exports": ["BOX2D_CORE_VERSION", "BOX2D_CAPABILITIES", "Box2dAdapter"],
+        "classes": ["Box2dAdapter"],
+        "constants": ["BOX2D_CORE_VERSION", "BOX2D_CAPABILITIES"]
+      },
       "packages/physics-box2d/src/index.ts": {
-        "description": "Entry point exporting 1 symbols",
+        "description": "Package entry point for @fourjs/physics-box2d (re-exports 6 symbols)",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./box2d-adapter.js",
+            "imports": [
+              "Box2dAdapter",
+              "BOX2D_CAPABILITIES",
+              "BOX2D_CORE_VERSION"
+            ],
+            "reExport": true
+          },
+          {
+            "file": "./register.js",
+            "imports": [
+              "createBox2dAdapter",
+              "isBox2dSupported",
+              "registerBox2dSolver"
+            ],
+            "reExport": true
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": [
+          "Box2dAdapter",
+          "BOX2D_CAPABILITIES",
+          "BOX2D_CORE_VERSION",
+          "createBox2dAdapter",
+          "isBox2dSupported",
+          "registerBox2dSolver",
+          "PACKAGE_NAME"
+        ],
+        "reExported": [
+          "Box2dAdapter",
+          "BOX2D_CAPABILITIES",
+          "BOX2D_CORE_VERSION",
+          "createBox2dAdapter",
+          "isBox2dSupported",
+          "registerBox2dSolver"
+        ],
+        "constants": ["PACKAGE_NAME"]
+      },
+      "packages/physics-box2d/src/snapshot-codec.ts": {
+        "description": "Byte codec for the Box2D adapter's §34 snapshot envelope (W8.3).",
         "externalDependencies": [],
         "nodeDependencies": [],
         "internalDependencies": [],
-        "workspaceDependencies": [],
-        "exports": ["PACKAGE_NAME"],
-        "constants": ["PACKAGE_NAME"]
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          }
+        ],
+        "exports": [
+          "SNAPSHOT_MAGIC",
+          "SNAPSHOT_FORMAT_VERSION",
+          "SnapshotWriter",
+          "SnapshotReader"
+        ],
+        "classes": ["SnapshotWriter", "SnapshotReader"],
+        "constants": ["SNAPSHOT_MAGIC", "SNAPSHOT_FORMAT_VERSION"]
+      },
+      "packages/physics-box2d/src/register.ts": {
+        "description": "This package's opt-in to §37's solver registry (W8.1).",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./box2d-adapter.js",
+            "imports": ["Box2dAdapter"]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/physics",
+            "directory": "packages/physics",
+            "imports": [
+              "registerSolver",
+              "PhysicsWorldAdapter",
+              "PhysicsWorldOptions",
+              "SolverRegistry"
+            ]
+          }
+        ],
+        "exports": [
+          "isBox2dSupported",
+          "createBox2dAdapter",
+          "registerBox2dSolver"
+        ],
+        "functions": [
+          "isBox2dSupported",
+          "createBox2dAdapter",
+          "registerBox2dSolver"
+        ]
       }
     },
     "packages/scene": {
@@ -4902,13 +5134,144 @@
     },
     "packages/physics-soft": {
       "packages/physics-soft/src/index.ts": {
-        "description": "Entry point exporting 1 symbols",
+        "description": "Package entry point for @fourjs/physics-soft (re-exports 2 symbols)",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./soft-body.js",
+            "imports": ["*"],
+            "reExport": true
+          },
+          {
+            "file": "./serializers.js",
+            "imports": ["*"],
+            "reExport": true
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": ["PACKAGE_NAME"],
+        "reExported": ["* from ./soft-body.js", "* from ./serializers.js"],
+        "constants": ["PACKAGE_NAME"]
+      },
+      "packages/physics-soft/src/soft-body.ts": {
+        "description": "Soft bodies (RFC 0011, §35/§35a): the `SoftBody` component and the",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./pbd.js",
+            "imports": [
+              "PbdSolver",
+              "clothTopology",
+              "computeNormals",
+              "pressureTopology",
+              "ropeTopology",
+              "ParticleCollider",
+              "PbdSolver",
+              "SoftTopology"
+            ]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError", "Component", "ComponentHost"]
+          },
+          {
+            "package": "@fourjs/geometry",
+            "directory": "packages/geometry",
+            "imports": ["BufferGeometry"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Matrix4", "Vector3"]
+          },
+          {
+            "package": "@fourjs/scene",
+            "directory": "packages/scene",
+            "imports": ["Node", "resolveWorldTransform"]
+          },
+          {
+            "package": "@fourjs/motion",
+            "directory": "packages/motion",
+            "imports": [
+              "PRIORITY_PHYSICS_SOLVE",
+              "FixedUpdateContext",
+              "SimulationContext",
+              "SimulationSystem"
+            ]
+          }
+        ],
+        "exports": ["PRIORITY_SOFT_BODY", "SoftBody", "SoftBodySystem"],
+        "classes": ["SoftBody", "SoftBodySystem"],
+        "interfaces": [
+          "SoftBodyTuning",
+          "RopeDescriptor",
+          "ClothDescriptor",
+          "PressureDescriptor",
+          "GravitySource",
+          "SoftRaycastQuery",
+          "SoftRaycastHit",
+          "SoftCollisionWorld",
+          "SoftBodySystemOptions",
+          "SoftBodySnapshotEntry",
+          "SoftBodySnapshot"
+        ],
+        "constants": ["PRIORITY_SOFT_BODY"]
+      },
+      "packages/physics-soft/src/pbd.ts": {
+        "description": "The CPU position-based-dynamics kernel (RFC 0011 #1-#4, #8).",
         "externalDependencies": [],
         "nodeDependencies": [],
         "internalDependencies": [],
         "workspaceDependencies": [],
-        "exports": ["PACKAGE_NAME"],
-        "constants": ["PACKAGE_NAME"]
+        "exports": [
+          "signedVolume",
+          "pressureTopology",
+          "effectiveStiffness",
+          "ropeTopology",
+          "clothTopology",
+          "computeNormals",
+          "PbdSolver"
+        ],
+        "classes": ["PbdSolver"],
+        "interfaces": ["SoftTopology", "PbdTuning"],
+        "functions": [
+          "signedVolume",
+          "pressureTopology",
+          "effectiveStiffness",
+          "ropeTopology",
+          "clothTopology",
+          "computeNormals"
+        ]
+      },
+      "packages/physics-soft/src/serializers.ts": {
+        "description": "The §79 serializer for {@link SoftBody} (PH-17 policy: every shipped component",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./soft-body.js",
+            "imports": ["SoftBody", "SoftBodyDescriptor"]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError", "JsonValue"]
+          },
+          {
+            "package": "@fourjs/motion",
+            "directory": "packages/motion",
+            "imports": ["ComponentSerializerShape"]
+          }
+        ],
+        "exports": ["MAXIMUM_SOFT_BODY_ARRAY_LENGTH", "SOFT_BODY_SERIALIZER"],
+        "constants": ["MAXIMUM_SOFT_BODY_ARRAY_LENGTH", "SOFT_BODY_SERIALIZER"]
       }
     },
     "packages/physics-rapier": {
@@ -5994,12 +6357,7 @@
         "internalDependencies": [
           {
             "file": "./gl-batch.js",
-            "imports": [
-              "GlBatching",
-              "createGlBatching",
-              "createInstanceGl",
-              "instanceVertexSource"
-            ],
+            "imports": ["GlBatching", "createGlBatching"],
             "reExport": true
           },
           {
@@ -6060,8 +6418,6 @@
               "POSITION_ATTRIBUTE_LOCATION",
               "POSITION1_ATTRIBUTE_LOCATION",
               "NORMAL1_ATTRIBUTE_LOCATION",
-              "morphNormalLocation",
-              "morphPositionLocation",
               "HEMISPHERE_LIGHT_GLSL",
               "HemisphereLightUniforms",
               "PUNCTUAL_LIGHT_GLSL",
@@ -6189,12 +6545,7 @@
           },
           {
             "file": "./gl-batch.js",
-            "imports": [
-              "BatchGlContext",
-              "InstanceGlContext",
-              "InstancedGeometryRecord",
-              "RenderBatching"
-            ],
+            "imports": ["BatchGlContext", "RenderBatching"],
             "reExport": true,
             "typeOnly": true
           },
@@ -6327,8 +6678,6 @@
         "exports": [
           "GlBatching",
           "createGlBatching",
-          "createInstanceGl",
-          "instanceVertexSource",
           "EFFECT_TEXTURE_UNIT",
           "EFFECT_VERTEX_COUNT",
           "clearRegisteredEffectPipeline",
@@ -6359,8 +6708,6 @@
           "POSITION_ATTRIBUTE_LOCATION",
           "POSITION1_ATTRIBUTE_LOCATION",
           "NORMAL1_ATTRIBUTE_LOCATION",
-          "morphNormalLocation",
-          "morphPositionLocation",
           "HEMISPHERE_LIGHT_GLSL",
           "HemisphereLightUniforms",
           "PUNCTUAL_LIGHT_GLSL",
@@ -6410,8 +6757,6 @@
           "WebglRenderer",
           "PACKAGE_NAME",
           "BatchGlContext",
-          "InstanceGlContext",
-          "InstancedGeometryRecord",
           "RenderBatching",
           "EffectPipeline",
           "EffectPipelineFactory",
@@ -6462,8 +6807,6 @@
         "reExported": [
           "GlBatching",
           "createGlBatching",
-          "createInstanceGl",
-          "instanceVertexSource",
           "EFFECT_TEXTURE_UNIT",
           "EFFECT_VERTEX_COUNT",
           "clearRegisteredEffectPipeline",
@@ -6494,8 +6837,6 @@
           "POSITION_ATTRIBUTE_LOCATION",
           "POSITION1_ATTRIBUTE_LOCATION",
           "NORMAL1_ATTRIBUTE_LOCATION",
-          "morphNormalLocation",
-          "morphPositionLocation",
           "HEMISPHERE_LIGHT_GLSL",
           "HemisphereLightUniforms",
           "PUNCTUAL_LIGHT_GLSL",
@@ -6544,8 +6885,6 @@
           "registerWebglRenderer",
           "WebglRenderer",
           "BatchGlContext",
-          "InstanceGlContext",
-          "InstancedGeometryRecord",
           "RenderBatching",
           "EffectPipeline",
           "EffectPipelineFactory",
@@ -6798,8 +7137,6 @@
               "POSITION1_ATTRIBUTE_LOCATION",
               "UV_ATTRIBUTE_LOCATION",
               "WEIGHTS_ATTRIBUTE_LOCATION",
-              "morphNormalLocation",
-              "morphPositionLocation",
               "WebglContext"
             ]
           },
@@ -6821,14 +7158,9 @@
             "imports": ["warnDisposedInUse"]
           }
         ],
-        "exports": [
-          "GEOMETRY_RING_SLOTS",
-          "GEOMETRY_RING_PROMOTE_AFTER",
-          "GeometryCache"
-        ],
+        "exports": ["GeometryCache"],
         "classes": ["GeometryCache"],
-        "interfaces": ["GeometryRecord"],
-        "constants": ["GEOMETRY_RING_SLOTS", "GEOMETRY_RING_PROMOTE_AFTER"]
+        "interfaces": ["GeometryRecord"]
       },
       "packages/render-webgl/src/node-pipeline-registry.ts": {
         "description": "The node-material pipeline's registration slot (§60, §62; RFC 0001, gap",
@@ -7087,7 +7419,7 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": ["MAX_LIGHT_SLOTS", "SceneLights"]
+            "imports": ["MAX_PUNCTUAL_LIGHTS", "SceneLights"]
           }
         ],
         "exports": [
@@ -7112,8 +7444,6 @@
           "SHADOW_GLSL",
           "LIT_FRAGMENT_SHADER_SOURCE",
           "matrixScratch",
-          "morphPositionLocation",
-          "morphNormalLocation",
           "uploadNormalMatrix",
           "createLinkedProgram",
           "requireUniform",
@@ -7134,8 +7464,6 @@
         ],
         "interfaces": ["WebglContext"],
         "functions": [
-          "morphPositionLocation",
-          "morphNormalLocation",
           "uploadNormalMatrix",
           "createLinkedProgram",
           "requireUniform"
@@ -7171,7 +7499,7 @@
         "internalDependencies": [
           {
             "file": "./gl-batch.js",
-            "imports": ["InstanceGlContext", "RenderBatching"],
+            "imports": ["RenderBatching"],
             "typeOnly": true
           },
           {
@@ -7283,7 +7611,6 @@
               "buildRenderList",
               "buildViewRenderList",
               "collectSceneLights",
-              "unionViewLayerMask",
               "createSceneLights",
               "isLitItem",
               "isNodeItem",
@@ -7297,7 +7624,6 @@
               "validateReadbackRegion",
               "COLOR_GRADE_DEFAULTS",
               "EffectRenderPass",
-              "InstancedRun",
               "GraphEffect",
               "PickingService",
               "RenderItem",
@@ -7435,19 +7761,13 @@
         "nodeDependencies": [],
         "internalDependencies": [
           {
-            "file": "./gl-standard-registry.js",
-            "imports": ["resolveStandardPipelineFactory", "StandardPipeline"]
-          },
-          {
             "file": "./gl-program.js",
             "imports": [
               "COLOR_ATTRIBUTE_LOCATION",
               "GL",
               "POSITION_ATTRIBUTE_LOCATION",
-              "LitProgram",
               "UV_ATTRIBUTE_LOCATION",
               "GlBuffer",
-              "GlUniformLocation",
               "GlVertexArray",
               "UnlitProgram",
               "WebglContext"
@@ -7464,36 +7784,17 @@
             "package": "@fourjs/render",
             "directory": "packages/render",
             "imports": [
-              "INSTANCE_FLOATS",
               "RenderBatcher",
-              "InstancedRun",
               "RenderBatch",
               "RenderBatchOptions",
               "RenderItem"
             ]
           }
         ],
-        "exports": [
-          "INSTANCE_MODEL_LOCATION",
-          "INSTANCE_NORMAL_LOCATION",
-          "instanceVertexSource",
-          "createInstanceGl",
-          "createGlBatching",
-          "GlBatching"
-        ],
+        "exports": ["createGlBatching", "GlBatching"],
         "classes": ["GlBatching"],
-        "interfaces": [
-          "BatchGlContext",
-          "InstanceGlContext",
-          "InstancedGeometryRecord",
-          "RenderBatching"
-        ],
-        "functions": [
-          "instanceVertexSource",
-          "createInstanceGl",
-          "createGlBatching"
-        ],
-        "constants": ["INSTANCE_MODEL_LOCATION", "INSTANCE_NORMAL_LOCATION"]
+        "interfaces": ["BatchGlContext", "RenderBatching"],
+        "functions": ["createGlBatching"]
       },
       "packages/render-webgl/src/gl-texture.ts": {
         "description": "GPU-side textures for the WebGL 2 backend: one `WebGLTexture` per",
@@ -10270,7 +10571,7 @@
         "internalDependencies": [
           {
             "file": "./buffer-geometry.js",
-            "imports": ["BufferGeometry", "MAX_MORPH_TARGETS"],
+            "imports": ["BufferGeometry"],
             "reExport": true
           },
           {
@@ -10356,8 +10657,7 @@
               "BufferGeometryOptions",
               "GeometryBounds",
               "GeometryDrawMode",
-              "GeometryIndexArray",
-              "MorphTargetStreams"
+              "GeometryIndexArray"
             ],
             "reExport": true,
             "typeOnly": true
@@ -10451,7 +10751,6 @@
         "workspaceDependencies": [],
         "exports": [
           "BufferGeometry",
-          "MAX_MORPH_TARGETS",
           "Geometry",
           "capsuleGeometry",
           "coneGeometry",
@@ -10487,7 +10786,6 @@
           "GeometryBounds",
           "GeometryDrawMode",
           "GeometryIndexArray",
-          "MorphTargetStreams",
           "BoundingVolume",
           "CapsuleGeometryOptions",
           "ExtrudeGeometryOptions",
@@ -10532,7 +10830,6 @@
         ],
         "reExported": [
           "BufferGeometry",
-          "MAX_MORPH_TARGETS",
           "Geometry",
           "capsuleGeometry",
           "coneGeometry",
@@ -10567,7 +10864,6 @@
           "GeometryBounds",
           "GeometryDrawMode",
           "GeometryIndexArray",
-          "MorphTargetStreams",
           "BoundingVolume",
           "CapsuleGeometryOptions",
           "ExtrudeGeometryOptions",
@@ -10934,10 +11230,9 @@
             "imports": ["Vector3"]
           }
         ],
-        "exports": ["MAX_MORPH_TARGETS", "BufferGeometry"],
+        "exports": ["BufferGeometry"],
         "classes": ["BufferGeometry"],
-        "interfaces": ["BufferGeometryOptions", "MorphTargetStreams"],
-        "constants": ["MAX_MORPH_TARGETS"]
+        "interfaces": ["BufferGeometryOptions"]
       },
       "packages/geometry/src/cpu-skinning.ts": {
         "description": "Reusable CPU linear-blend skinning (§54, RFC 0003).",
@@ -11221,11 +11516,7 @@
         "internalDependencies": [
           {
             "file": "./batch.js",
-            "imports": [
-              "DEFAULT_MAX_BATCH_VERTICES",
-              "INSTANCE_FLOATS",
-              "RenderBatcher"
-            ],
+            "imports": ["DEFAULT_MAX_BATCH_VERTICES", "RenderBatcher"],
             "reExport": true
           },
           {
@@ -11279,12 +11570,8 @@
           {
             "file": "./lights.js",
             "imports": [
-              "EXTRA_DIRECTIONAL_FLAG",
-              "MAX_DIRECTIONAL_LIGHTS",
-              "MAX_LIGHT_SLOTS",
               "MAX_PUNCTUAL_LIGHTS",
               "collectSceneLights",
-              "unionViewLayerMask",
               "createSceneLights",
               "isDirectionalLightSource",
               "isHemisphereLightSource",
@@ -11492,8 +11779,6 @@
             "imports": [
               "BatchableItem",
               "BatchableMaterial",
-              "InstanceableItem",
-              "InstancedRun",
               "RenderBatch",
               "RenderBatchOptions"
             ],
@@ -11815,7 +12100,6 @@
         ],
         "exports": [
           "DEFAULT_MAX_BATCH_VERTICES",
-          "INSTANCE_FLOATS",
           "RenderBatcher",
           "computeWorldBoundingSphere",
           "computeWorldBoundingSphereFromBox",
@@ -11834,12 +12118,8 @@
           "OUTPUT_TRANSFORM_EFFECT",
           "supportsScreenEffects",
           "validateEffectRenderPass",
-          "EXTRA_DIRECTIONAL_FLAG",
-          "MAX_DIRECTIONAL_LIGHTS",
-          "MAX_LIGHT_SLOTS",
           "MAX_PUNCTUAL_LIGHTS",
           "collectSceneLights",
-          "unionViewLayerMask",
           "createSceneLights",
           "isDirectionalLightSource",
           "isHemisphereLightSource",
@@ -11949,8 +12229,6 @@
           "PACKAGE_NAME",
           "BatchableItem",
           "BatchableMaterial",
-          "InstanceableItem",
-          "InstancedRun",
           "RenderBatch",
           "RenderBatchOptions",
           "BoundingSphere",
@@ -12099,7 +12377,6 @@
         ],
         "reExported": [
           "DEFAULT_MAX_BATCH_VERTICES",
-          "INSTANCE_FLOATS",
           "RenderBatcher",
           "computeWorldBoundingSphere",
           "computeWorldBoundingSphereFromBox",
@@ -12118,12 +12395,8 @@
           "OUTPUT_TRANSFORM_EFFECT",
           "supportsScreenEffects",
           "validateEffectRenderPass",
-          "EXTRA_DIRECTIONAL_FLAG",
-          "MAX_DIRECTIONAL_LIGHTS",
-          "MAX_LIGHT_SLOTS",
           "MAX_PUNCTUAL_LIGHTS",
           "collectSceneLights",
-          "unionViewLayerMask",
           "createSceneLights",
           "isDirectionalLightSource",
           "isHemisphereLightSource",
@@ -12232,8 +12505,6 @@
           "VideoTexture",
           "BatchableItem",
           "BatchableMaterial",
-          "InstanceableItem",
-          "InstancedRun",
           "RenderBatch",
           "RenderBatchOptions",
           "BoundingSphere",
@@ -12429,7 +12700,7 @@
           {
             "package": "@fourjs/core",
             "directory": "packages/core",
-            "imports": ["Disposable"]
+            "imports": ["FourError", "Disposable"]
           },
           {
             "package": "@fourjs/materials",
@@ -12447,10 +12718,10 @@
             "imports": ["ColorSpace", "Rectangle2"]
           }
         ],
-        "exports": ["textureChainBytes", "validateTextureSource", "Texture"],
+        "exports": ["validateTextureSource", "Texture"],
         "classes": ["Texture"],
         "interfaces": ["TextureSource"],
-        "functions": ["textureChainBytes", "validateTextureSource"]
+        "functions": ["validateTextureSource"]
       },
       "packages/render/src/render-target-bytes.ts": {
         "description": "Per-texel byte accounting for {@link RenderTarget} attachments (§83, §84).",
@@ -12976,13 +13247,7 @@
           },
           {
             "file": "./render-list.js",
-            "imports": [
-              "LitRenderItem",
-              "RenderItem",
-              "SpriteRenderItem",
-              "StandardRenderItem",
-              "UnlitRenderItem"
-            ],
+            "imports": ["RenderItem", "SpriteRenderItem", "UnlitRenderItem"],
             "typeOnly": true
           }
         ],
@@ -13000,7 +13265,7 @@
           {
             "package": "@fourjs/math",
             "directory": "packages/math",
-            "imports": ["Matrix3", "ColorRGBA"]
+            "imports": ["ColorRGBA"]
           },
           {
             "package": "@fourjs/scene",
@@ -13008,14 +13273,10 @@
             "imports": ["ALL_LAYERS", "LayerMask"]
           }
         ],
-        "exports": [
-          "DEFAULT_MAX_BATCH_VERTICES",
-          "INSTANCE_FLOATS",
-          "RenderBatcher"
-        ],
+        "exports": ["DEFAULT_MAX_BATCH_VERTICES", "RenderBatcher"],
         "classes": ["RenderBatcher"],
-        "interfaces": ["RenderBatchOptions", "RenderBatch", "InstancedRun"],
-        "constants": ["DEFAULT_MAX_BATCH_VERTICES", "INSTANCE_FLOATS"]
+        "interfaces": ["RenderBatchOptions", "RenderBatch"],
+        "constants": ["DEFAULT_MAX_BATCH_VERTICES"]
       },
       "packages/render/src/renderer.ts": {
         "description": "The renderer interface (§61) — the seam every backend implements.",
@@ -13527,12 +13788,7 @@
         "description": "Light collection (§68, §64) — scene graph in, one flat light state out.",
         "externalDependencies": [],
         "nodeDependencies": [],
-        "internalDependencies": [
-          {
-            "file": "./render-list.js",
-            "imports": ["viewLayerMask"]
-          }
-        ],
+        "internalDependencies": [],
         "workspaceDependencies": [
           {
             "package": "@fourjs/core",
@@ -13547,20 +13803,16 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["ALL_LAYERS", "LayerMask", "Node", "Viewport"]
+            "imports": ["Node"]
           }
         ],
         "exports": [
           "MAX_PUNCTUAL_LIGHTS",
-          "MAX_DIRECTIONAL_LIGHTS",
-          "MAX_LIGHT_SLOTS",
-          "EXTRA_DIRECTIONAL_FLAG",
           "isDirectionalLightSource",
           "isHemisphereLightSource",
           "isPunctualLightSource",
           "createSceneLights",
-          "collectSceneLights",
-          "unionViewLayerMask"
+          "collectSceneLights"
         ],
         "interfaces": [
           "DirectionalLightSource",
@@ -13577,15 +13829,9 @@
           "isHemisphereLightSource",
           "isPunctualLightSource",
           "createSceneLights",
-          "collectSceneLights",
-          "unionViewLayerMask"
+          "collectSceneLights"
         ],
-        "constants": [
-          "MAX_PUNCTUAL_LIGHTS",
-          "MAX_DIRECTIONAL_LIGHTS",
-          "MAX_LIGHT_SLOTS",
-          "EXTRA_DIRECTIONAL_FLAG"
-        ]
+        "constants": ["MAX_PUNCTUAL_LIGHTS"]
       }
     },
     "packages/input": {
@@ -14048,10 +14294,6 @@
           {
             "file": "./webgpu-device.js",
             "imports": ["GPU_BUFFER_USAGE", "GpuBuffer", "GpuDevice"]
-          },
-          {
-            "file": "./wgpu-staging.js",
-            "imports": ["WgpuStagingRing"]
           }
         ],
         "workspaceDependencies": [
@@ -14219,15 +14461,6 @@
             "reExport": true
           },
           {
-            "file": "./wgpu-staging.js",
-            "imports": [
-              "STAGING_DIRECT_THRESHOLD",
-              "STAGING_RING_FRAMES",
-              "WgpuStagingRing"
-            ],
-            "reExport": true
-          },
-          {
             "file": "./wgpu-pipeline-cache.js",
             "imports": [
               "blendStateFor",
@@ -14278,12 +14511,6 @@
               "COLOR_BUFFER_LAYOUT",
               "COLOR_SHADER_LOCATION",
               "DRAW_MORPH_WEIGHT_OFFSET",
-              "DRAW_MORPH_WEIGHTS_OFFSET",
-              "MORPH_N_DRAW_UNIFORM_WGSL",
-              "morphHasNormals",
-              "morphTargetCount",
-              "morphVariant",
-              "morphVertexBufferLayouts",
               "FRAGMENT_ENTRY_POINT",
               "MORPH_DRAW_UNIFORM_WGSL",
               "MORPH_WEIGHT_WGSL",
@@ -14467,9 +14694,7 @@
           {
             "file": "./wgpu-standard.js",
             "imports": [
-              "MORPH_N_STANDARD_UNIFORM_WGSL",
               "MORPH_STANDARD_UNIFORM_WGSL",
-              "STANDARD_MORPH_WEIGHTS_OFFSET",
               "NO_SURFACE_MAPS",
               "SURFACE_DEFAULT_TEXELS",
               "STANDARD_BASE_COLOR_OFFSET",
@@ -14775,9 +15000,6 @@
           "createTextureBindGroupLayout",
           "WgpuSurfaceGroupCache",
           "WgpuGeometryCache",
-          "STAGING_DIRECT_THRESHOLD",
-          "STAGING_RING_FRAMES",
-          "WgpuStagingRing",
           "blendStateFor",
           "pipelineKey",
           "stencilStateFor",
@@ -14802,12 +15024,6 @@
           "COLOR_BUFFER_LAYOUT",
           "COLOR_SHADER_LOCATION",
           "DRAW_MORPH_WEIGHT_OFFSET",
-          "DRAW_MORPH_WEIGHTS_OFFSET",
-          "MORPH_N_DRAW_UNIFORM_WGSL",
-          "morphHasNormals",
-          "morphTargetCount",
-          "morphVariant",
-          "morphVertexBufferLayouts",
           "FRAGMENT_ENTRY_POINT",
           "MORPH_DRAW_UNIFORM_WGSL",
           "MORPH_WEIGHT_WGSL",
@@ -14925,9 +15141,7 @@
           "applyStencilReference",
           "frameWantsStencil",
           "stencilDescriptor",
-          "MORPH_N_STANDARD_UNIFORM_WGSL",
           "MORPH_STANDARD_UNIFORM_WGSL",
-          "STANDARD_MORPH_WEIGHTS_OFFSET",
           "NO_SURFACE_MAPS",
           "SURFACE_DEFAULT_TEXELS",
           "STANDARD_BASE_COLOR_OFFSET",
@@ -15095,9 +15309,6 @@
           "createTextureBindGroupLayout",
           "WgpuSurfaceGroupCache",
           "WgpuGeometryCache",
-          "STAGING_DIRECT_THRESHOLD",
-          "STAGING_RING_FRAMES",
-          "WgpuStagingRing",
           "blendStateFor",
           "pipelineKey",
           "stencilStateFor",
@@ -15122,12 +15333,6 @@
           "COLOR_BUFFER_LAYOUT",
           "COLOR_SHADER_LOCATION",
           "DRAW_MORPH_WEIGHT_OFFSET",
-          "DRAW_MORPH_WEIGHTS_OFFSET",
-          "MORPH_N_DRAW_UNIFORM_WGSL",
-          "morphHasNormals",
-          "morphTargetCount",
-          "morphVariant",
-          "morphVertexBufferLayouts",
           "FRAGMENT_ENTRY_POINT",
           "MORPH_DRAW_UNIFORM_WGSL",
           "MORPH_WEIGHT_WGSL",
@@ -15245,9 +15450,7 @@
           "applyStencilReference",
           "frameWantsStencil",
           "stencilDescriptor",
-          "MORPH_N_STANDARD_UNIFORM_WGSL",
           "MORPH_STANDARD_UNIFORM_WGSL",
-          "STANDARD_MORPH_WEIGHTS_OFFSET",
           "NO_SURFACE_MAPS",
           "SURFACE_DEFAULT_TEXELS",
           "STANDARD_BASE_COLOR_OFFSET",
@@ -15955,7 +16158,6 @@
           {
             "file": "./webgpu-device.js",
             "imports": [
-              "GPU_SHADER_STAGE",
               "GPU_TEXTURE_USAGE",
               "GpuBindGroup",
               "GpuBindGroupLayout",
@@ -16002,18 +16204,12 @@
           "MIPMAP_SHADER_SOURCE",
           "mipLevelCount",
           "textureByteLength",
-          "downsampleVolume",
           "samplerKey",
           "WgpuTextureCache"
         ],
         "classes": ["WgpuTextureCache"],
         "interfaces": ["ResolvedSamplerState", "WgpuTextureRecord"],
-        "functions": [
-          "mipLevelCount",
-          "textureByteLength",
-          "downsampleVolume",
-          "samplerKey"
-        ],
+        "functions": ["mipLevelCount", "textureByteLength", "samplerKey"],
         "constants": ["MIPMAP_SHADER_SOURCE"]
       },
       "packages/render-webgpu/src/wgpu-unlit.ts": {
@@ -16049,36 +16245,16 @@
           "NORMAL1_BUFFER_LAYOUT",
           "DRAW_MORPH_WEIGHT_OFFSET",
           "MORPH_DRAW_UNIFORM_WGSL",
-          "DRAW_MORPH_WEIGHTS_OFFSET",
-          "MORPH_N_DRAW_UNIFORM_WGSL",
           "MORPH_WEIGHT_WGSL",
           "VERTEX_ENTRY_POINT",
           "FRAGMENT_ENTRY_POINT",
           "CLEAR_VERTEX_COUNT",
           "CLEAR_SHADER_SOURCE",
-          "morphTargetCount",
-          "morphHasNormals",
-          "morphVariant",
-          "morphPositionShaderLocation",
-          "morphNormalShaderLocation",
-          "morphVertexBufferLayouts",
-          "morphInputWgsl",
-          "morphSumWgsl",
-          "drawUniformWgslFor",
           "unlitVertexBufferLayouts",
           "unlitShaderSource",
           "unlitFragmentStageWgsl"
         ],
         "functions": [
-          "morphTargetCount",
-          "morphHasNormals",
-          "morphVariant",
-          "morphPositionShaderLocation",
-          "morphNormalShaderLocation",
-          "morphVertexBufferLayouts",
-          "morphInputWgsl",
-          "morphSumWgsl",
-          "drawUniformWgslFor",
           "unlitVertexBufferLayouts",
           "unlitShaderSource",
           "unlitFragmentStageWgsl"
@@ -16096,8 +16272,6 @@
           "NORMAL1_BUFFER_LAYOUT",
           "DRAW_MORPH_WEIGHT_OFFSET",
           "MORPH_DRAW_UNIFORM_WGSL",
-          "DRAW_MORPH_WEIGHTS_OFFSET",
-          "MORPH_N_DRAW_UNIFORM_WGSL",
           "MORPH_WEIGHT_WGSL",
           "VERTEX_ENTRY_POINT",
           "FRAGMENT_ENTRY_POINT",
@@ -16254,7 +16428,7 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": ["MAX_LIGHT_SLOTS", "SceneLights"]
+            "imports": ["MAX_PUNCTUAL_LIGHTS", "SceneLights"]
           }
         ],
         "exports": [
@@ -16443,25 +16617,6 @@
           "PARTICLE_APPEARANCE_SHADER_SOURCE",
           "PARTICLE_SHADER_SOURCE"
         ]
-      },
-      "packages/render-webgpu/src/wgpu-staging.ts": {
-        "description": "Staging ring for dynamic buffer updates (§65) — WebGPU.",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [
-          {
-            "file": "./webgpu-device.js",
-            "imports": ["GPU_BUFFER_USAGE", "GpuBuffer", "GpuDevice"]
-          }
-        ],
-        "workspaceDependencies": [],
-        "exports": [
-          "STAGING_DIRECT_THRESHOLD",
-          "STAGING_RING_FRAMES",
-          "WgpuStagingRing"
-        ],
-        "classes": ["WgpuStagingRing"],
-        "constants": ["STAGING_DIRECT_THRESHOLD", "STAGING_RING_FRAMES"]
       },
       "packages/render-webgpu/src/wgpu-surface-group.ts": {
         "description": "The standard family's surface bind groups (WP-W4.2): the five-entry group of",
@@ -16751,9 +16906,7 @@
             "package": "@fourjs/render",
             "directory": "packages/render",
             "imports": [
-              "INSTANCE_FLOATS",
               "RenderBatcher",
-              "InstancedRun",
               "RenderBatch",
               "RenderBatchOptions",
               "RenderItem"
@@ -16810,7 +16963,7 @@
           },
           {
             "file": "./wgpu-unlit.js",
-            "imports": ["FRAGMENT_ENTRY_POINT", "morphTargetCount", "WgpuMorph"]
+            "imports": ["FRAGMENT_ENTRY_POINT", "WgpuMorph"]
           }
         ],
         "workspaceDependencies": [],
@@ -16826,8 +16979,6 @@
           "STANDARD_UNIFORM_BYTES",
           "STANDARD_UNIFORM_WGSL",
           "MORPH_STANDARD_UNIFORM_WGSL",
-          "MORPH_N_STANDARD_UNIFORM_WGSL",
-          "STANDARD_MORPH_WEIGHTS_OFFSET",
           "surfaceBindingWgsl",
           "createStandardBindGroupLayout",
           "standardShaderSource"
@@ -16849,9 +17000,7 @@
           "STANDARD_SURFACE_OFFSET",
           "STANDARD_UNIFORM_BYTES",
           "STANDARD_UNIFORM_WGSL",
-          "MORPH_STANDARD_UNIFORM_WGSL",
-          "MORPH_N_STANDARD_UNIFORM_WGSL",
-          "STANDARD_MORPH_WEIGHTS_OFFSET"
+          "MORPH_STANDARD_UNIFORM_WGSL"
         ]
       },
       "packages/render-webgpu/src/wgpu-sprite.ts": {
@@ -17036,6 +17185,10 @@
         "nodeDependencies": [],
         "internalDependencies": [
           {
+            "file": "./wgpu-bindings.js",
+            "imports": ["DRAW_UNIFORM_WGSL"]
+          },
+          {
             "file": "./webgpu-device.js",
             "imports": ["GpuVertexBufferLayout"],
             "typeOnly": true
@@ -17057,13 +17210,12 @@
             "file": "./wgpu-unlit.js",
             "imports": [
               "FRAGMENT_ENTRY_POINT",
+              "MORPH_DRAW_UNIFORM_WGSL",
               "MORPH_WEIGHT_WGSL",
-              "drawUniformWgslFor",
-              "morphHasNormals",
-              "morphInputWgsl",
-              "morphSumWgsl",
-              "morphTargetCount",
-              "morphVertexBufferLayouts",
+              "NORMAL1_BUFFER_LAYOUT",
+              "NORMAL1_SHADER_LOCATION",
+              "POSITION1_BUFFER_LAYOUT",
+              "POSITION1_SHADER_LOCATION",
               "POSITION_BUFFER_LAYOUT",
               "POSITION_SHADER_LOCATION",
               "UV_BUFFER_LAYOUT",
@@ -17077,9 +17229,6 @@
         "exports": [
           "NORMAL_SHADER_LOCATION",
           "NORMAL_BUFFER_LAYOUT",
-          "INSTANCE_SHADER_LOCATION_BASE",
-          "INSTANCE_STRIDE_BYTES",
-          "INSTANCE_BUFFER_LAYOUT",
           "NORMAL_MATRIX_WGSL",
           "shadedVertexBufferLayouts",
           "shadedVertexStageWgsl",
@@ -17095,9 +17244,6 @@
         "constants": [
           "NORMAL_SHADER_LOCATION",
           "NORMAL_BUFFER_LAYOUT",
-          "INSTANCE_SHADER_LOCATION_BASE",
-          "INSTANCE_STRIDE_BYTES",
-          "INSTANCE_BUFFER_LAYOUT",
           "NORMAL_MATRIX_WGSL"
         ]
       },
@@ -17231,7 +17377,6 @@
             "file": "./wgpu-standard.js",
             "imports": [
               "STANDARD_EMISSIVE_OFFSET",
-              "STANDARD_MORPH_WEIGHTS_OFFSET",
               "STANDARD_SURFACE_OFFSET",
               "STANDARD_UNIFORM_BYTES",
               "createStandardBindGroupLayout"
@@ -17292,15 +17437,7 @@
           },
           {
             "file": "./wgpu-unlit.js",
-            "imports": [
-              "CLEAR_VERTEX_COUNT",
-              "DRAW_MORPH_WEIGHT_OFFSET",
-              "DRAW_MORPH_WEIGHTS_OFFSET",
-              "morphHasNormals",
-              "morphTargetCount",
-              "morphVariant",
-              "WgpuMorph"
-            ]
+            "imports": ["CLEAR_VERTEX_COUNT", "DRAW_MORPH_WEIGHT_OFFSET"]
           }
         ],
         "workspaceDependencies": [
@@ -17325,7 +17462,6 @@
               "buildViewRenderList",
               "MAX_SKINNING_JOINTS",
               "collectSceneLights",
-              "unionViewLayerMask",
               "createSceneLights",
               "isRenderTargetTexture",
               "isSkinnedLitItem",
@@ -17333,7 +17469,6 @@
               "intersectScissor",
               "validateReadbackRegion",
               "EffectRenderPass",
-              "InstancedRun",
               "RenderBatch",
               "PickingService",
               "RenderInterpolation",
@@ -17355,6 +17490,193 @@
         "exports": ["hostGpu", "WebgpuRenderer"],
         "classes": ["WebgpuRenderer"],
         "functions": ["hostGpu"]
+      }
+    },
+    "packages/physics-physjs": {
+      "packages/physics-physjs/src/index.ts": {
+        "description": "`@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102).",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./physjs-adapter.js",
+            "imports": [
+              "PHYSJS_CAPABILITIES",
+              "PHYSJS_VERSION",
+              "PhysJSAdapter2D",
+              "PhysJSAdapter3D"
+            ],
+            "reExport": true
+          },
+          {
+            "file": "./register.js",
+            "imports": [
+              "createPhysJSAdapter",
+              "isPhysJSSupported",
+              "registerPhysJSSolver"
+            ],
+            "reExport": true
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": [
+          "PHYSJS_CAPABILITIES",
+          "PHYSJS_VERSION",
+          "PhysJSAdapter2D",
+          "PhysJSAdapter3D",
+          "createPhysJSAdapter",
+          "isPhysJSSupported",
+          "registerPhysJSSolver",
+          "PACKAGE_NAME"
+        ],
+        "reExported": [
+          "PHYSJS_CAPABILITIES",
+          "PHYSJS_VERSION",
+          "PhysJSAdapter2D",
+          "PhysJSAdapter3D",
+          "createPhysJSAdapter",
+          "isPhysJSSupported",
+          "registerPhysJSSolver"
+        ],
+        "constants": ["PACKAGE_NAME"]
+      },
+      "packages/physics-physjs/src/physjs-adapter.ts": {
+        "description": "The PhysJS solver adapters (RFC 0010, §37, §102).",
+        "externalDependencies": [
+          {
+            "package": "@danielsimonjr/physjs",
+            "imports": ["* as pj"]
+          }
+        ],
+        "nodeDependencies": [],
+        "internalDependencies": [],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          },
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourErrorCode"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Quaternion", "Vector3"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Matrix3"]
+          },
+          {
+            "package": "@fourjs/physics",
+            "directory": "packages/physics",
+            "imports": [
+              "ALL_COLLISION_GROUPS",
+              "DEFAULT_DENSITY",
+              "DEFAULT_FRICTION",
+              "DEFAULT_RESTITUTION",
+              "DETERMINISM_LEVELS",
+              "rejectStalePhysicsHandle",
+              "resolveAngularVelocity",
+              "resolveGravity",
+              "resolveRotation",
+              "resolveSleepingConfig",
+              "passesQueryFilter",
+              "resolveQueryOptions",
+              "validateColliderDescriptor",
+              "validateJointDescriptor",
+              "validateQueryShape",
+              "validatePhysicsWorldOptions",
+              "validateRigidBodyDescriptor",
+              "widenToVector3"
+            ]
+          },
+          {
+            "package": "@fourjs/physics",
+            "directory": "packages/physics",
+            "imports": [
+              "AngularVelocityInput",
+              "BodyType",
+              "CCDMode",
+              "ColliderDescriptor",
+              "CollisionShape",
+              "ContactPoint",
+              "JointDescriptor",
+              "OverlapHit",
+              "OverlapQuery",
+              "PhysicsBodyHandle",
+              "PhysicsCapabilities",
+              "PhysicsColliderHandle",
+              "PhysicsDimension",
+              "PhysicsEvent",
+              "PhysicsEventInterest",
+              "PhysicsJointHandle",
+              "PhysicsWorldAdapter",
+              "PhysicsWorldOptions",
+              "PointHit",
+              "PointQuery",
+              "RaycastHit",
+              "RaycastQuery",
+              "RigidBodyDescriptor",
+              "RotationInput",
+              "ShapeCastHit",
+              "ShapeCastQuery",
+              "ShippedJointType",
+              "SleepingConfig",
+              "SolverBodyAccess",
+              "SolverBodyTuningAccess",
+              "SolverJointAccess",
+              "SolverJointMotor",
+              "QueryCandidate",
+              "Vector3Input"
+            ]
+          }
+        ],
+        "exports": [
+          "PHYSJS_VERSION",
+          "PHYSJS_CAPABILITIES",
+          "PhysJSAdapter2D",
+          "PhysJSAdapter3D"
+        ],
+        "classes": ["PhysJSAdapter2D", "PhysJSAdapter3D"],
+        "constants": ["PHYSJS_VERSION", "PHYSJS_CAPABILITIES"]
+      },
+      "packages/physics-physjs/src/register.ts": {
+        "description": "This package's opt-in to §37's solver registry (RFC 0010, decision 3).",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./physjs-adapter.js",
+            "imports": ["PhysJSAdapter2D", "PhysJSAdapter3D"]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/physics",
+            "directory": "packages/physics",
+            "imports": [
+              "registerSolver",
+              "PhysicsWorldAdapter",
+              "PhysicsWorldOptions",
+              "SolverRegistry"
+            ]
+          }
+        ],
+        "exports": [
+          "isPhysJSSupported",
+          "createPhysJSAdapter",
+          "registerPhysJSSolver"
+        ],
+        "functions": [
+          "isPhysJSSupported",
+          "createPhysJSAdapter",
+          "registerPhysJSSolver"
+        ]
       }
     },
     "packages/render-canvas": {
@@ -21773,6 +22095,21 @@
       }
     },
     "packages/fourjs": {
+      "packages/fourjs/src/physics-physjs.ts": {
+        "description": "physics-physjs module",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/physics-physjs",
+            "directory": "packages/physics-physjs",
+            "imports": ["*"]
+          }
+        ],
+        "exports": [],
+        "reExported": ["* from @fourjs/physics-physjs"]
+      },
       "packages/fourjs/src/physics-box2d.ts": {
         "description": "physics-box2d module",
         "externalDependencies": [],
@@ -22941,6 +23278,11 @@
             ]
           },
           {
+            "package": "@fourjs/physics-soft",
+            "directory": "packages/physics-soft",
+            "imports": ["SOFT_BODY_SERIALIZER", "SoftBody"]
+          },
+          {
             "package": "@fourjs/render",
             "directory": "packages/render",
             "imports": [
@@ -23719,7 +24061,12 @@
       },
       {
         "name": "Packages/physics-box2d",
-        "files": ["packages/physics-box2d/src/index.ts"]
+        "files": [
+          "packages/physics-box2d/src/box2d-adapter.ts",
+          "packages/physics-box2d/src/index.ts",
+          "packages/physics-box2d/src/snapshot-codec.ts",
+          "packages/physics-box2d/src/register.ts"
+        ]
       },
       {
         "name": "Packages/scene",
@@ -23768,7 +24115,12 @@
       },
       {
         "name": "Packages/physics-soft",
-        "files": ["packages/physics-soft/src/index.ts"]
+        "files": [
+          "packages/physics-soft/src/index.ts",
+          "packages/physics-soft/src/soft-body.ts",
+          "packages/physics-soft/src/pbd.ts",
+          "packages/physics-soft/src/serializers.ts"
+        ]
       },
       {
         "name": "Packages/physics-rapier",
@@ -23936,7 +24288,6 @@
           "packages/render-webgpu/src/wgpu-lights.ts",
           "packages/render-webgpu/src/wgpu-pipeline-memo.ts",
           "packages/render-webgpu/src/wgpu-particles.ts",
-          "packages/render-webgpu/src/wgpu-staging.ts",
           "packages/render-webgpu/src/wgpu-surface-group.ts",
           "packages/render-webgpu/src/wgpu-particle-simulation.ts",
           "packages/render-webgpu/src/wgpu-compute.ts",
@@ -23949,6 +24300,14 @@
           "packages/render-webgpu/src/wgpu-pipeline-cache.ts",
           "packages/render-webgpu/src/wgpu-lit.ts",
           "packages/render-webgpu/src/webgpu-renderer.ts"
+        ]
+      },
+      {
+        "name": "Packages/physics-physjs",
+        "files": [
+          "packages/physics-physjs/src/index.ts",
+          "packages/physics-physjs/src/physjs-adapter.ts",
+          "packages/physics-physjs/src/register.ts"
         ]
       },
       {
@@ -24047,6 +24406,7 @@
       {
         "name": "Packages/fourjs",
         "files": [
+          "packages/fourjs/src/physics-physjs.ts",
           "packages/fourjs/src/physics-box2d.ts",
           "packages/fourjs/src/gltf.ts",
           "packages/fourjs/src/application.ts",
@@ -24097,21 +24457,21 @@
     ]
   },
   "statistics": {
-    "totalTypeScriptFiles": 353,
-    "totalModules": 24,
-    "totalLinesOfCode": 170669,
-    "totalExports": 3619,
-    "totalClasses": 217,
-    "totalInterfaces": 660,
-    "totalFunctions": 614,
-    "totalTypeGuards": 32,
+    "totalTypeScriptFiles": 362,
+    "totalModules": 25,
+    "totalLinesOfCode": 174956,
+    "totalExports": 3601,
+    "totalClasses": 224,
+    "totalInterfaces": 669,
+    "totalFunctions": 610,
+    "totalTypeGuards": 34,
     "totalEnums": 0,
-    "totalConstants": 538,
-    "totalReExports": 2268,
+    "totalConstants": 530,
+    "totalReExports": 2258,
     "totalTypeOnlyImports": 456,
     "runtimeCircularDeps": 0,
     "typeOnlyCircularDeps": 10,
     "unusedFilesCount": 0,
-    "unusedExportsCount": 18
+    "unusedExportsCount": 11
   }
 }

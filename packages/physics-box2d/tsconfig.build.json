@@ -2,8 +2,20 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
   },
   "include": ["src"],
-  "references": [{ "path": "../physics/tsconfig.build.json" }]
+  "references": [
+    {
+      "path": "../core/tsconfig.build.json"
+    },
+    {
+      "path": "../math/tsconfig.build.json"
+    },
+    {
+      "path": "../physics/tsconfig.build.json"
+    }
+  ]
 }

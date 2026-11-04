@@ -5,8 +5,17 @@
  *
  * ```sh
  * bun run build          # this script imports the built dist, not src
- * node benchmarks/physics-step.mjs
+ * node benchmarks/physics-step.mjs          # Rapier 3D (the §86 row)
+ * node benchmarks/physics-step.mjs box2d    # Box2D 2D variant (W8.4)
  * ```
+ *
+ * The `box2d` variant drives `Box2dAdapter` (2D only, `@box2d/core` 0.11.0)
+ * through the same `PhysicsWorld.step` path: a single-plane lattice of unit
+ * squares (about sqrt(2N) columns by sqrt(N/2) layers) over a static slab. It
+ * is a *different workload* from the 3D lattice - N bodies in 2D are far
+ * fewer contacts than N in 3D - so its numbers are comparable only as "what
+ * does this adapter cost per body", never as a head-to-head solver ranking.
+ * It writes `physics-step-box2d.json`.
  *
  * ## The §86 row this speaks to, and exactly how far it goes
  *
@@ -86,8 +95,10 @@
  * script is scoped to the one §86 row it can name. Recorded, never gated.
  */
 
-import { Vector3 } from "@fourjs/math";
+import { Vector2, Vector3 } from "@fourjs/math";
 import { Collider, PhysicsWorld, RigidBody } from "@fourjs/physics";
+import { Box2dAdapter } from "@fourjs/physics-box2d";
+import { PhysJSAdapter3D } from "@fourjs/physics-physjs";
 import { Rapier3dAdapter } from "@fourjs/physics-rapier";
 import { Group } from "@fourjs/scene";
 
@@ -102,14 +113,39 @@ import {
   writeResult,
 } from "./harness.mjs";
 
+/** `box2d` selects the 2D Box2D variant; anything else is Rapier 3D. */
+const BOX2D = process.argv[2] === "box2d";
+
 /** §45 `fixedTimeStep`, in seconds (§7a: never milliseconds). */
 const FIXED_DELTA_TIME = 1 / 60;
 
 /** The budget one fixed step has at 60 Hz, in milliseconds. */
 const FIXED_STEP_BUDGET_MS = FIXED_DELTA_TIME * 1000;
 
-/** Body counts measured, ending on §86's stated baseline. */
-const BODY_COUNTS = [500, 1000, 2500, 5000];
+/**
+ * Solver under test: `PHYSICS_SOLVER=physjs` runs the PhysJS adapter (RFC 0010,
+ * wave 9); the default is Rapier. A non-default solver writes
+ * `physics-step-<solver>` so the Rapier record is never overwritten.
+ */
+const SOLVER = BOX2D
+  ? "box2d"
+  : process.env.PHYSICS_SOLVER === "physjs"
+    ? "physjs"
+    : "rapier";
+
+/** Builds a fresh adapter for the selected solver (Box2D is the 2D variant). */
+function createAdapter() {
+  if (BOX2D) return new Box2dAdapter();
+  return SOLVER === "physjs" ? new PhysJSAdapter3D() : new Rapier3dAdapter();
+}
+
+/**
+ * Body counts measured, ending on §86's stated baseline.
+ * `PHYSICS_BODY_COUNTS=500,1000` overrides it (PhysJS is far slower at 5 000).
+ */
+const BODY_COUNTS = (process.env.PHYSICS_BODY_COUNTS ?? "500,1000,2500,5000")
+  .split(",")
+  .map(Number);
 
 /** Measured fixed steps per scenario (2 s of simulation at 60 Hz). */
 const MEASURED_STEPS = 120;
@@ -149,8 +185,8 @@ const FLOOR_HALF = new Vector3(120, 0.5, 120);
  */
 async function buildWorld(bodyCount, withFloor) {
   const world = new PhysicsWorld({
-    dimension: "3d",
-    adapter: new Rapier3dAdapter(),
+    dimension: BOX2D ? "2d" : "3d",
+    adapter: createAdapter(),
     // §32 sleeping off: §86's row says *active* bodies. See the header.
     sleeping: { enabled: false },
   });
@@ -166,7 +202,14 @@ async function buildWorld(bodyCount, withFloor) {
     floor.transformAuthority = "manual";
     floor.addComponent(new RigidBody({ type: "static" }));
     floor.addComponent(
-      new Collider({ shape: { type: "box", halfExtents: FLOOR_HALF } }),
+      new Collider({
+        shape: BOX2D
+          ? {
+              type: "rectangle",
+              halfExtents: new Vector2(FLOOR_HALF.x * 2, FLOOR_HALF.y),
+            }
+          : { type: "box", halfExtents: FLOOR_HALF },
+      }),
     );
     root.add(floor);
     world.addBody(floor);
@@ -174,30 +217,38 @@ async function buildWorld(bodyCount, withFloor) {
 
   // A square lattice in x/z, stacked in y — deterministic and reproducible,
   // and §33 forbids reaching for an RNG to scatter it.
-  const perSide = Math.ceil(Math.sqrt(bodyCount / 8));
+  const perSide = BOX2D
+    ? Math.ceil(Math.sqrt(bodyCount * 2))
+    : Math.ceil(Math.sqrt(bodyCount / 8));
+  const perLayer = BOX2D ? perSide : perSide * perSide;
   const origin = -((perSide - 1) * SPACING) / 2;
   for (let i = 0; i < bodyCount; i += 1) {
-    const layer = Math.floor(i / (perSide * perSide));
-    const within = i % (perSide * perSide);
+    const layer = Math.floor(i / perLayer);
+    const within = i % perLayer;
     const node = new Group();
     node.name = `box-${i}`;
     node.transform.position.set(
       origin + (within % perSide) * SPACING,
       DROP_HEIGHT + layer * (SPACING + 2 * BOX_HALF_EXTENT),
-      origin + Math.floor(within / perSide) * SPACING,
+      BOX2D ? 0 : origin + Math.floor(within / perSide) * SPACING,
     );
     node.transformAuthority = "physics";
     node.addComponent(new RigidBody({ type: "dynamic" }));
     node.addComponent(
       new Collider({
-        shape: {
-          type: "box",
-          halfExtents: new Vector3(
-            BOX_HALF_EXTENT,
-            BOX_HALF_EXTENT,
-            BOX_HALF_EXTENT,
-          ),
-        },
+        shape: BOX2D
+          ? {
+              type: "rectangle",
+              halfExtents: new Vector2(BOX_HALF_EXTENT, BOX_HALF_EXTENT),
+            }
+          : {
+              type: "box",
+              halfExtents: new Vector3(
+                BOX_HALF_EXTENT,
+                BOX_HALF_EXTENT,
+                BOX_HALF_EXTENT,
+              ),
+            },
         friction: 0.5,
         restitution: 0,
       }),
@@ -309,7 +360,8 @@ for (const bodyCount of BODY_COUNTS) {
   rows.push(await runScenario(bodyCount));
 }
 
-const baselineRow = rows.find((row) => row.bodies === 5000);
+const baselineRow =
+  rows.find((row) => row.bodies === 5000) ?? rows[rows.length - 1];
 
 // --- the record --------------------------------------------------------------
 
@@ -320,9 +372,12 @@ const record = {
   specification:
     "§86 (active rigid bodies: 5 000 simple bodies baseline), §20–32, §37, §39, §92; plan §6j P11-4, WP-11.4",
   recordedAt: new Date().toISOString(),
-  solver:
-    "rapier3d (@fourjs/physics-rapier Rapier3dAdapter) through @fourjs/physics",
-  dimension: "3d",
+  solver: BOX2D
+    ? "box2d (@fourjs/physics-box2d Box2dAdapter, @box2d/core 0.11.0) through @fourjs/physics"
+    : SOLVER === "physjs"
+      ? "physjs3d (@fourjs/physics-physjs PhysJSAdapter3D) through @fourjs/physics"
+      : "rapier3d (@fourjs/physics-rapier Rapier3dAdapter) through @fourjs/physics",
+  dimension: BOX2D ? "2d" : "3d",
   fixedDeltaTimeSeconds: round(FIXED_DELTA_TIME, 9),
   fixedStepBudgetMs: round(FIXED_STEP_BUDGET_MS, 4),
   scenario: `static floor + N dynamic ${2 * BOX_HALF_EXTENT} m boxes on a lattice (spacing ${SPACING} m), density-derived mass, friction 0.5, restitution 0`,
@@ -342,12 +397,15 @@ const record = {
     "CI container, no GPU, shared host; run-to-run spread is large. §86's 'suitable modern desktop hardware' is NOT this machine, so a row over budget here is not a failed §86 and a row under it is not a passed one. Recorded, never gated — nothing in CI asserts on these timings.",
 };
 
-const path = writeResult("physics-step", record);
+const path = writeResult(
+  SOLVER === "rapier" ? "physics-step" : `physics-step-${SOLVER}`,
+  record,
+);
 
 // --- the report --------------------------------------------------------------
 
 printReport([
-  "fourJS — Rapier 3D fixed-step cost vs §86's 5 000-active-body row (§20–32, §37, §92)",
+  `fourJS — ${BOX2D ? "Box2D 2D" : SOLVER === "physjs" ? "PhysJS 3D" : "Rapier 3D"} fixed-step cost vs §86's 5 000-active-body row (§20–32, §37, §92)`,
   "  scenario                static floor + N dynamic boxes on a lattice, §32 sleeping DISABLED (all N awake)",
   `  steps                   ${MEASURED_STEPS} measured, ${WARMUP_STEPS} warm-up (the pile landing), per variant`,
   `  60 Hz budget            ${round(FIXED_STEP_BUDGET_MS, 3)} ms/step`,

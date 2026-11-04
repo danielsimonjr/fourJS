@@ -1,0 +1,26 @@
+{
+  "name": "@fourjs/physics-physjs",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node ../../node_modules/typescript/bin/tsc -b tsconfig.build.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@danielsimonjr/physjs": "0.5.0",
+    "@fourjs/core": "workspace:*",
+    "@fourjs/math": "workspace:*",
+    "@fourjs/physics": "workspace:*"
+  }
+}

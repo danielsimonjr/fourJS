@@ -1,15 +1,41 @@
 # @fourjs/physics-box2d
 
-Box2D solver adapter — **a reserved stub. This package contains no implementation today.** Part of [fourJS](../../README.md).
+Box2D solver adapter for [fourJS](../../README.md): `Box2dAdapter`, a 2D `PhysicsSolverAdapter` (§37) over [`@box2d/core`](https://www.npmjs.com/package/@box2d/core) **0.11.0** (pinned exactly), a pure-TypeScript port of Box2D 2.4. No wasm, no async initialisation.
 
-What a consumer gets by installing it: **one export, `PACKAGE_NAME`, and nothing else** — measured from a consumer seat on 2026-09-19 (dogfood cycle 9) against installed tarballs, in Node and in Chrome. There is no `register*` function and no adapter class. `fourJS/physics-box2d` imports cleanly and registers no solver, so selecting `solver: "box2d"` fails with the registry's "no physics solver is registered" message (§37), not with a module error. **The shipped solver capability lives in [`@fourjs/physics-rapier`](../physics-rapier/README.md)** (`Rapier2dAdapter`, `Rapier3dAdapter`); unlike the renderer seam, there is no consumer-side workaround short of writing a whole §37 adapter — see [docs/guides/custom-solver-adapters.md](../../docs/guides/custom-solver-adapters.md) for that contract.
+```ts
+import { PhysicsWorld, SolverRegistry } from "@fourjs/physics";
+import { registerBox2dSolver } from "@fourjs/physics-box2d";
 
-Reserved for the 2D solver adapter backed by Box2D, implementing `@fourjs/physics`'s `PhysicsSolverAdapter` (§37) plus the `SolverBodyAccess`/`SolverJointAccess` seams, and declaring its capability differences per §102 in [`docs/SPECIFICATION.md`](../../docs/SPECIFICATION.md).
+const registry = new SolverRegistry();
+registerBox2dSolver(registry);
+const world = new PhysicsWorld({
+  dimension: "2d",
+  solver: "box2d",
+  solverRegistry: registry,
+});
+await world.initialize();
+```
 
-The package exists in the workspace so the §98 monorepo tree and the §102 solver list stay accurate (see ERRATA E-3: `physics-rapier`, `physics-box2d`, and `physics-soft` are the deliberate set — no `physics-matter` or `physics-cannon` without a spec amendment). The barrel currently exports only `PACKAGE_NAME`, and `tests/` holds a single smoke test.
+## Supported
 
-One recorded motivation for this adapter: Box2D could honor §28's motor `maxTorque`/`maxForce` as a real hard cap, which Rapier treats as a force-based gain (capability-table item).
+- 2D worlds, the four §22 body types, circle / rectangle / convex-polygon (at most 8 vertices) / capsule colliders. A capsule is three fixtures (rectangle plus two circles) under one collider handle.
+- Joints: `fixed`, `spring`, `revolute`, `prismatic`, `rope`. **Motor `maxTorque` / `maxForce` is a real hard cap** (`tuning.jointMotorEffortCap: true`), unlike Rapier's force-based gain. `reportsJointReactions` is `true`, so breakable joints work.
+- The four §30 queries, collision / trigger / sleep / wake events, `ccdModes` `disabled` and `swept`.
+- §34 snapshots in an explicit float64 envelope; determinism tier `same-runtime`.
 
-Unit tests are colocated in `tests/` per §92.
+## Refused / not provided
+
+- 3D worlds. `solver: "auto"` skips this adapter for a `"3d"` world and names it in the failure.
+- `spherical` joints, speculative CCD, rolling / spinning friction, sleep-threshold tuning.
+- Cross-platform determinism (not claimed).
+
+## Differences from Rapier you should know
+
+- **Friction combines by `sqrt(a * b)`**, not Appendix A's average. Restitution combines by `max`.
+- **Snapshot caveat.** `capabilities.snapshots` is a plain boolean (`true`), but snapshots do not capture warm-start contact or joint impulses. A restore reproduces body, joint and sleep state, and the continuation is bit-identical to the uninterrupted run only from a snapshot taken with no touching contacts and no loaded joints. From a loaded state the continuation is a valid simulation that can differ from the original in its first steps.
+
+Registered capabilities appear as the `box2d` column of [docs/COMPATIBILITY.md](../../docs/COMPATIBILITY.md). Cost numbers: [docs/benchmarks/box2d-vs-rapier.md](../../docs/benchmarks/box2d-vs-rapier.md). The adapter contract: [docs/guides/custom-solver-adapters.md](../../docs/guides/custom-solver-adapters.md).
+
+Unit tests are colocated in `tests/` per §92; cross-package suites are `tests/integration/box2d-conformance.test.ts` and `tests/determinism/box2d-determinism.test.ts`.
 
 Workspace name `@fourjs/physics-box2d`; publishes as `@danielsimonjr/fourjs-physics-box2d`.

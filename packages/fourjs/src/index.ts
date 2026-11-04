@@ -23,6 +23,12 @@ export * as ui from "@fourjs/ui";
 export * as physicsRapier from "@fourjs/physics-rapier";
 export * as physicsBox2d from "@fourjs/physics-box2d";
 export * as physicsSoft from "@fourjs/physics-soft";
+// @fourjs/physics-physjs is deliberately NOT re-exported from the root entry.
+// Its dependency (@danielsimonjr/physjs -> mathts-functions -> mathts-workerpool)
+// instantiates a Web Worker via `new URL("./worker.js", import.meta.url)`, so a
+// namespace re-export here would make every bundle that imports "fourjs" emit
+// that worker chunk (and Vite 8 drops its shared chunk, breaking `bun run size`
+// on 2026-11-04). Import it from the "fourjs/physics-physjs" subpath instead.
 
 export type {
   ApplicationEventMap,

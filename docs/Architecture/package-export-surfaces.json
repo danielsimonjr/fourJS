@@ -1200,7 +1200,25 @@
       "worldToPlane",
       "worldToPlaneVec"
     ],
-    "packages/physics-box2d": ["PACKAGE_NAME"],
+    "packages/physics-box2d": [
+      "BOX2D_CAPABILITIES",
+      "BOX2D_CORE_VERSION",
+      "Box2dAdapter",
+      "createBox2dAdapter",
+      "isBox2dSupported",
+      "PACKAGE_NAME",
+      "registerBox2dSolver"
+    ],
+    "packages/physics-physjs": [
+      "createPhysJSAdapter",
+      "isPhysJSSupported",
+      "PACKAGE_NAME",
+      "PHYSJS_CAPABILITIES",
+      "PHYSJS_VERSION",
+      "PhysJSAdapter2D",
+      "PhysJSAdapter3D",
+      "registerPhysJSSolver"
+    ],
     "packages/physics-rapier": [
       "createRapierAdapter",
       "createRapierColliderDesc",
@@ -1247,7 +1265,14 @@
       "toRapierVector2",
       "toRapierVector3"
     ],
-    "packages/physics-soft": ["PACKAGE_NAME"],
+    "packages/physics-soft": [
+      "MAXIMUM_SOFT_BODY_ARRAY_LENGTH",
+      "PACKAGE_NAME",
+      "PRIORITY_SOFT_BODY",
+      "SOFT_BODY_SERIALIZER",
+      "SoftBody",
+      "SoftBodySystem"
+    ],
     "packages/render": [
       "AddPassOptions",
       "AmbientLightSource",

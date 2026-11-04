@@ -25,6 +25,7 @@ const barrels: ReadonlyArray<readonly [string, () => Promise<object>]> = [
   ["particles", () => import("../src/particles.js")],
   ["physics", () => import("../src/physics.js")],
   ["physics-box2d", () => import("../src/physics-box2d.js")],
+  ["physics-physjs", () => import("../src/physics-physjs.js")],
   ["physics-rapier", () => import("../src/physics-rapier.js")],
   ["physics-soft", () => import("../src/physics-soft.js")],
   ["render", () => import("../src/render.js")],

@@ -31,17 +31,18 @@ This document provides a comprehensive dependency graph of all files, components
 17. [Packages/render Dependencies](#packages-render-dependencies)
 18. [Packages/input Dependencies](#packages-input-dependencies)
 19. [Packages/render webgpu Dependencies](#packages-render-webgpu-dependencies)
-20. [Packages/render canvas Dependencies](#packages-render-canvas-dependencies)
-21. [Packages/motion Dependencies](#packages-motion-dependencies)
-22. [Packages/animation Dependencies](#packages-animation-dependencies)
-23. [Packages/diagnostics Dependencies](#packages-diagnostics-dependencies)
-24. [Packages/core Dependencies](#packages-core-dependencies)
-25. [Packages/fourjs Dependencies](#packages-fourjs-dependencies)
-26. [Packages/serialization Dependencies](#packages-serialization-dependencies)
-27. [Dependency Matrix](#dependency-matrix)
-28. [Circular Dependency Analysis](#circular-dependency-analysis)
-29. [Visual Dependency Graph](#visual-dependency-graph)
-30. [Summary Statistics](#summary-statistics)
+20. [Packages/physics physjs Dependencies](#packages-physics-physjs-dependencies)
+21. [Packages/render canvas Dependencies](#packages-render-canvas-dependencies)
+22. [Packages/motion Dependencies](#packages-motion-dependencies)
+23. [Packages/animation Dependencies](#packages-animation-dependencies)
+24. [Packages/diagnostics Dependencies](#packages-diagnostics-dependencies)
+25. [Packages/core Dependencies](#packages-core-dependencies)
+26. [Packages/fourjs Dependencies](#packages-fourjs-dependencies)
+27. [Packages/serialization Dependencies](#packages-serialization-dependencies)
+28. [Dependency Matrix](#dependency-matrix)
+29. [Circular Dependency Analysis](#circular-dependency-analysis)
+30. [Visual Dependency Graph](#visual-dependency-graph)
+31. [Summary Statistics](#summary-statistics)
 
 ---
 
@@ -57,23 +58,24 @@ The codebase is organized into the following modules:
 - **packages/text**: 6 files
 - **packages/math**: 11 files
 - **packages/render-svg**: 3 files
-- **packages/physics-box2d**: 1 file
+- **packages/physics-box2d**: 4 files
 - **packages/scene**: 17 files
 - **packages/assets**: 18 files
-- **packages/physics-soft**: 1 file
+- **packages/physics-soft**: 4 files
 - **packages/physics-rapier**: 8 files
 - **packages/render-webgl**: 25 files
 - **packages/physics**: 25 files
 - **packages/geometry**: 13 files
 - **packages/render**: 34 files
 - **packages/input**: 9 files
-- **packages/render-webgpu**: 32 files
+- **packages/render-webgpu**: 31 files
+- **packages/physics-physjs**: 3 files
 - **packages/render-canvas**: 4 files
 - **packages/motion**: 24 files
 - **packages/animation**: 14 files
 - **packages/diagnostics**: 12 files
 - **packages/core**: 14 files
-- **packages/fourjs**: 35 files
+- **packages/fourjs**: 36 files
 - **packages/serialization**: 5 files
 
 ---
@@ -82,33 +84,34 @@ The codebase is organized into the following modules:
 
 ## Package Dependencies
 
-| Package                                               | Depends On                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Files (Active) | Files (Dormant) |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | --------------- |
-| `@fourjs/particles` (`packages/particles/`)           | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 9              | 0               |
-| `@fourjs/materials` (`packages/materials/`)           | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 17             | 0               |
-| `@fourjs/ui` (`packages/ui/`)                         | `@fourjs/text`, `@fourjs/math`, `@fourjs/input`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                      | 16             | 0               |
-| `@fourjs/text` (`packages/text/`)                     | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 6              | 3               |
-| `@fourjs/math` (`packages/math/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 11             | 0               |
-| `@fourjs/render-svg` (`packages/render-svg/`)         | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`                                                                                                                                                                                                                                                                                                                                                                                                                                      | 3              | 0               |
-| `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
-| `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 17             | 0               |
-| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 18             | 0               |
-| `@fourjs/physics-soft` (`packages/physics-soft/`)     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
-| `@fourjs/physics-rapier` (`packages/physics-rapier/`) | `@fourjs/physics`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                     | 8              | 0               |
-| `@fourjs/render-webgl` (`packages/render-webgl/`)     | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                      | 25             | 0               |
-| `@fourjs/physics` (`packages/physics/`)               | `@fourjs/core`, `@fourjs/math`, `@fourjs/motion`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 25             | 0               |
-| `@fourjs/geometry` (`packages/geometry/`)             | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 13             | 0               |
-| `@fourjs/render` (`packages/render/`)                 | `@fourjs/math`, `@fourjs/materials`, `@fourjs/geometry`, `@fourjs/core`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                              | 34             | 0               |
-| `@fourjs/input` (`packages/input/`)                   | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 9              | 0               |
-| `@fourjs/render-webgpu` (`packages/render-webgpu/`)   | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 32             | 0               |
-| `@fourjs/render-canvas` (`packages/render-canvas/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 4              | 0               |
-| `@fourjs/motion` (`packages/motion/`)                 | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 24             | 0               |
-| `@fourjs/animation` (`packages/animation/`)           | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                     | 14             | 0               |
-| `@fourjs/diagnostics` (`packages/diagnostics/`)       | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 12             | 1               |
-| `@fourjs/core` (`packages/core/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 14             | 0               |
-| `fourJS` (`packages/fourjs/`)                         | `@fourjs/physics-box2d`, `@fourjs/assets`, `@fourjs/animation`, `@fourjs/core`, `@fourjs/geometry`, `@fourjs/materials`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`, `@fourjs/diagnostics`, `@fourjs/motion`, `@fourjs/physics`, `@fourjs/serialization`, `@fourjs/ui`, `@fourjs/render-webgpu`, `@fourjs/render-svg`, `@fourjs/input`, `@fourjs/text`, `@fourjs/particles`, `@fourjs/physics-soft`, `@fourjs/render-canvas`, `@fourjs/render-webgl`, `@fourjs/physics-rapier` | 35             | 1               |
-| `@fourjs/serialization` (`packages/serialization/`)   | `@fourjs/core`, `@fourjs/scene`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 5              | 0               |
-| `@fourjs-tools/docs` (`tools/docs/`)                  | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 0              | 0               |
+| Package                                               | Depends On                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Files (Active) | Files (Dormant) |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | --------------- |
+| `@fourjs/particles` (`packages/particles/`)           | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 9              | 0               |
+| `@fourjs/materials` (`packages/materials/`)           | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 17             | 0               |
+| `@fourjs/ui` (`packages/ui/`)                         | `@fourjs/text`, `@fourjs/math`, `@fourjs/input`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                | 16             | 0               |
+| `@fourjs/text` (`packages/text/`)                     | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 6              | 3               |
+| `@fourjs/math` (`packages/math/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 11             | 0               |
+| `@fourjs/render-svg` (`packages/render-svg/`)         | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 3              | 0               |
+| `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/physics`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 4              | 0               |
+| `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 17             | 0               |
+| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 18             | 0               |
+| `@fourjs/physics-soft` (`packages/physics-soft/`)     | `@fourjs/core`, `@fourjs/geometry`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                           | 4              | 0               |
+| `@fourjs/physics-rapier` (`packages/physics-rapier/`) | `@fourjs/physics`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 8              | 0               |
+| `@fourjs/render-webgl` (`packages/render-webgl/`)     | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 25             | 0               |
+| `@fourjs/physics` (`packages/physics/`)               | `@fourjs/core`, `@fourjs/math`, `@fourjs/motion`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 25             | 0               |
+| `@fourjs/geometry` (`packages/geometry/`)             | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 13             | 0               |
+| `@fourjs/render` (`packages/render/`)                 | `@fourjs/math`, `@fourjs/materials`, `@fourjs/geometry`, `@fourjs/core`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                        | 34             | 0               |
+| `@fourjs/input` (`packages/input/`)                   | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 9              | 0               |
+| `@fourjs/render-webgpu` (`packages/render-webgpu/`)   | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 31             | 0               |
+| `@fourjs/physics-physjs` (`packages/physics-physjs/`) | `@fourjs/core`, `@fourjs/math`, `@fourjs/physics`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 3              | 0               |
+| `@fourjs/render-canvas` (`packages/render-canvas/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 4              | 0               |
+| `@fourjs/motion` (`packages/motion/`)                 | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 24             | 0               |
+| `@fourjs/animation` (`packages/animation/`)           | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 14             | 0               |
+| `@fourjs/diagnostics` (`packages/diagnostics/`)       | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 12             | 1               |
+| `@fourjs/core` (`packages/core/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 14             | 0               |
+| `fourJS` (`packages/fourjs/`)                         | `@fourjs/physics-physjs`, `@fourjs/physics-box2d`, `@fourjs/assets`, `@fourjs/animation`, `@fourjs/core`, `@fourjs/geometry`, `@fourjs/materials`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`, `@fourjs/diagnostics`, `@fourjs/motion`, `@fourjs/physics`, `@fourjs/serialization`, `@fourjs/ui`, `@fourjs/render-webgpu`, `@fourjs/render-svg`, `@fourjs/input`, `@fourjs/text`, `@fourjs/particles`, `@fourjs/physics-soft`, `@fourjs/render-canvas`, `@fourjs/render-webgl`, `@fourjs/physics-rapier` | 36             | 1               |
+| `@fourjs/serialization` (`packages/serialization/`)   | `@fourjs/core`, `@fourjs/scene`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 5              | 0               |
+| `@fourjs-tools/docs` (`tools/docs/`)                  | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 0              | 0               |
 
 ### Package Dependency Diagram
 
@@ -131,94 +134,107 @@ graph LR
     P14[packages/render]
     P15[packages/input]
     P16[packages/render-webgpu]
-    P17[packages/render-canvas]
-    P18[packages/motion]
-    P19[packages/animation]
-    P20[packages/diagnostics]
-    P21[packages/core]
-    P22[packages/fourjs]
-    P23[packages/serialization]
-    P24[tools/docs]
+    P17[packages/physics-physjs]
+    P18[packages/render-canvas]
+    P19[packages/motion]
+    P20[packages/animation]
+    P21[packages/diagnostics]
+    P22[packages/core]
+    P23[packages/fourjs]
+    P24[packages/serialization]
+    P25[tools/docs]
     P0 --> P4
     P0 --> P7
-    P0 --> P21
-    P1 --> P21
+    P0 --> P22
+    P1 --> P22
     P1 --> P4
     P2 --> P3
     P2 --> P4
     P2 --> P15
     P2 --> P7
-    P2 --> P21
-    P3 --> P21
-    P5 --> P21
+    P2 --> P22
+    P3 --> P22
+    P5 --> P22
     P5 --> P4
     P5 --> P14
+    P6 --> P22
+    P6 --> P4
+    P6 --> P12
     P7 --> P4
-    P7 --> P21
-    P8 --> P21
+    P7 --> P22
+    P8 --> P22
+    P9 --> P22
+    P9 --> P13
+    P9 --> P4
+    P9 --> P7
+    P9 --> P19
     P10 --> P12
-    P10 --> P21
+    P10 --> P22
     P10 --> P4
     P11 --> P14
-    P11 --> P21
+    P11 --> P22
     P11 --> P4
-    P12 --> P21
+    P12 --> P22
     P12 --> P4
-    P12 --> P18
+    P12 --> P19
     P12 --> P7
     P13 --> P4
-    P13 --> P21
+    P13 --> P22
     P14 --> P4
     P14 --> P1
     P14 --> P13
-    P14 --> P21
+    P14 --> P22
     P14 --> P7
-    P15 --> P21
+    P15 --> P22
     P15 --> P4
     P15 --> P7
     P16 --> P14
-    P16 --> P21
+    P16 --> P22
     P16 --> P4
     P16 --> P7
-    P17 --> P21
+    P17 --> P22
     P17 --> P4
-    P17 --> P14
-    P17 --> P7
+    P17 --> P12
+    P18 --> P22
     P18 --> P4
+    P18 --> P14
     P18 --> P7
-    P18 --> P21
-    P19 --> P21
     P19 --> P4
     P19 --> P7
-    P19 --> P18
-    P20 --> P21
+    P19 --> P22
+    P20 --> P22
     P20 --> P4
-    P22 --> P6
-    P22 --> P8
-    P22 --> P19
-    P22 --> P21
-    P22 --> P13
-    P22 --> P1
-    P22 --> P4
-    P22 --> P14
-    P22 --> P7
-    P22 --> P20
-    P22 --> P18
-    P22 --> P12
-    P22 --> P23
-    P22 --> P2
-    P22 --> P16
-    P22 --> P5
-    P22 --> P15
-    P22 --> P3
-    P22 --> P0
-    P22 --> P9
-    P22 --> P17
-    P22 --> P11
-    P22 --> P10
-    P23 --> P21
-    P23 --> P7
+    P20 --> P7
+    P20 --> P19
+    P21 --> P22
+    P21 --> P4
+    P23 --> P17
+    P23 --> P6
+    P23 --> P8
+    P23 --> P20
+    P23 --> P22
+    P23 --> P13
+    P23 --> P1
     P23 --> P4
+    P23 --> P14
+    P23 --> P7
+    P23 --> P21
+    P23 --> P19
+    P23 --> P12
+    P23 --> P24
+    P23 --> P2
+    P23 --> P16
+    P23 --> P5
+    P23 --> P15
+    P23 --> P3
+    P23 --> P0
+    P23 --> P9
+    P23 --> P18
+    P23 --> P11
+    P23 --> P10
+    P24 --> P22
+    P24 --> P7
+    P24 --> P4
 ```
 
 ---
@@ -1406,11 +1422,86 @@ graph LR
 
 ## Packages/physics box2d Dependencies
 
-### `packages/physics-box2d/src/index.ts` - Entry point exporting 1 symbols
+### `packages/physics-box2d/src/box2d-adapter.ts` - `Box2dAdapter` — the 2D §37 solver adapter over `@box2d/core` 0.11.0 (W8.1).
+
+**External Dependencies:**
+
+| Package       | Import                                                                                                                                                                                                                                                                                                                                          |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@box2d/core` | `b2BodyType, b2CircleShape, b2ContactListener, b2DistanceJointDef, b2_maxFloat, b2PolygonShape, b2PrismaticJointDef, b2RevoluteJointDef, b2Vec2, b2WeldJointDef, b2World, b2WorldManifold, b2AABB, b2ShapeCast, b2Distance, b2DistanceInput, b2DistanceOutput, b2SimplexCache, b2ShapeCastInput, b2ShapeCastOutput, b2TestOverlap, b2Transform` |
+| `@box2d/core` | `b2Body, b2Contact, b2Fixture, b2Joint, b2PrismaticJoint, b2RevoluteJoint, b2Shape`                                                                                                                                                                                                                                                             |
+
+**Workspace Dependencies:**
+
+| Package           | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`    | `FourError`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `@fourjs/math`    | `Quaternion, Vector3`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `@fourjs/math`    | `Matrix3`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `@fourjs/physics` | `ALL_COLLISION_GROUPS, DEFAULT_FRICTION, DEFAULT_RESTITUTION, DETERMINISM_LEVELS, passesQueryFilter, rejectStalePhysicsHandle, resolveAngularVelocity, resolveQueryOptions, sortHitsByDistance, validateQueryShape, resolveDensity, resolveGravity, resolveRotation, resolveSleepingConfig, validateColliderDescriptor, validateJointDescriptor, validatePhysicsWorldOptions, validateRigidBodyDescriptor`                                                                                                                                                      |
+| `@fourjs/physics` | `AngularVelocityInput, BodyType, CCDMode, ColliderDescriptor, ContactPoint, JointDescriptor, QueryCandidate, ResolvedQueryOptions, OverlapHit, OverlapQuery, PhysicsBodyHandle, PhysicsCapabilities, PhysicsColliderHandle, PhysicsEvent, PhysicsEventInterest, PhysicsJointHandle, PhysicsSolverAdapter, PhysicsWorldOptions, PointHit, PointQuery, RaycastHit, RaycastQuery, RigidBodyDescriptor, RotationInput, ShapeCastHit, ShapeCastQuery, ShippedJointType, SolverBodyAccess, SolverBodyTuningAccess, SolverJointAccess, SolverJointMotor, Vector3Input` |
+
+**Internal Dependencies:**
+
+| File                  | Imports                                                                   | Type   |
+| --------------------- | ------------------------------------------------------------------------- | ------ |
+| `./snapshot-codec.js` | `SNAPSHOT_FORMAT_VERSION, SNAPSHOT_MAGIC, SnapshotReader, SnapshotWriter` | Import |
+
+**Exports:**
+
+- Classes: `Box2dAdapter`
+- Constants: `BOX2D_CORE_VERSION`, `BOX2D_CAPABILITIES`
+
+---
+
+### `packages/physics-box2d/src/index.ts` - Package entry point for @fourjs/physics-box2d (re-exports 6 symbols)
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                     | Type      |
+| -------------------- | ----------------------------------------------------------- | --------- |
+| `./box2d-adapter.js` | `Box2dAdapter, BOX2D_CAPABILITIES, BOX2D_CORE_VERSION`      | Re-export |
+| `./register.js`      | `createBox2dAdapter, isBox2dSupported, registerBox2dSolver` | Re-export |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
+- Re-exports: `Box2dAdapter`, `BOX2D_CAPABILITIES`, `BOX2D_CORE_VERSION`, `createBox2dAdapter`, `isBox2dSupported`, `registerBox2dSolver`
+
+---
+
+### `packages/physics-box2d/src/snapshot-codec.ts` - Byte codec for the Box2D adapter's §34 snapshot envelope (W8.3).
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Exports:**
+
+- Classes: `SnapshotWriter`, `SnapshotReader`
+- Constants: `SNAPSHOT_MAGIC`, `SNAPSHOT_FORMAT_VERSION`
+
+---
+
+### `packages/physics-box2d/src/register.ts` - This package's opt-in to §37's solver registry (W8.1).
+
+**Workspace Dependencies:**
+
+| Package           | Import                                                                     |
+| ----------------- | -------------------------------------------------------------------------- |
+| `@fourjs/physics` | `registerSolver, PhysicsWorldAdapter, PhysicsWorldOptions, SolverRegistry` |
+
+**Internal Dependencies:**
+
+| File                 | Imports        | Type   |
+| -------------------- | -------------- | ------ |
+| `./box2d-adapter.js` | `Box2dAdapter` | Import |
+
+**Exports:**
+
+- Functions: `isBox2dSupported`, `createBox2dAdapter`, `registerBox2dSolver`
 
 ---
 
@@ -2191,11 +2282,78 @@ graph LR
 
 ## Packages/physics soft Dependencies
 
-### `packages/physics-soft/src/index.ts` - Entry point exporting 1 symbols
+### `packages/physics-soft/src/index.ts` - Package entry point for @fourjs/physics-soft (re-exports 2 symbols)
+
+**Internal Dependencies:**
+
+| File               | Imports | Type      |
+| ------------------ | ------- | --------- |
+| `./soft-body.js`   | `*`     | Re-export |
+| `./serializers.js` | `*`     | Re-export |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
+- Re-exports: `* from ./soft-body.js`, `* from ./serializers.js`
+
+---
+
+### `packages/physics-soft/src/soft-body.ts` - Soft bodies (RFC 0011, §35/§35a): the `SoftBody` component and the
+
+**Workspace Dependencies:**
+
+| Package            | Import                                                                            |
+| ------------------ | --------------------------------------------------------------------------------- |
+| `@fourjs/core`     | `FourError, Component, ComponentHost`                                             |
+| `@fourjs/geometry` | `BufferGeometry`                                                                  |
+| `@fourjs/math`     | `Matrix4, Vector3`                                                                |
+| `@fourjs/scene`    | `Node, resolveWorldTransform`                                                     |
+| `@fourjs/motion`   | `PRIORITY_PHYSICS_SOLVE, FixedUpdateContext, SimulationContext, SimulationSystem` |
+
+**Internal Dependencies:**
+
+| File       | Imports                                                                                                               | Type   |
+| ---------- | --------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./pbd.js` | `PbdSolver, clothTopology, computeNormals, pressureTopology, ropeTopology, ParticleCollider, PbdSolver, SoftTopology` | Import |
+
+**Exports:**
+
+- Classes: `SoftBody`, `SoftBodySystem`
+- Interfaces: `SoftBodyTuning`, `RopeDescriptor`, `ClothDescriptor`, `PressureDescriptor`, `GravitySource`, `SoftRaycastQuery`, `SoftRaycastHit`, `SoftCollisionWorld`, `SoftBodySystemOptions`, `SoftBodySnapshotEntry`, `SoftBodySnapshot`
+- Types: `SoftBodyDescriptor`
+- Constants: `PRIORITY_SOFT_BODY`
+
+---
+
+### `packages/physics-soft/src/pbd.ts` - The CPU position-based-dynamics kernel (RFC 0011 #1-#4, #8).
+
+**Exports:**
+
+- Classes: `PbdSolver`
+- Interfaces: `SoftTopology`, `PbdTuning`
+- Types: `ParticleCollider`
+- Functions: `signedVolume`, `pressureTopology`, `effectiveStiffness`, `ropeTopology`, `clothTopology`, `computeNormals`
+
+---
+
+### `packages/physics-soft/src/serializers.ts` - The §79 serializer for {@link SoftBody} (PH-17 policy: every shipped component
+
+**Workspace Dependencies:**
+
+| Package          | Import                     |
+| ---------------- | -------------------------- |
+| `@fourjs/core`   | `FourError, JsonValue`     |
+| `@fourjs/motion` | `ComponentSerializerShape` |
+
+**Internal Dependencies:**
+
+| File             | Imports                        | Type   |
+| ---------------- | ------------------------------ | ------ |
+| `./soft-body.js` | `SoftBody, SoftBodyDescriptor` | Import |
+
+**Exports:**
+
+- Constants: `MAXIMUM_SOFT_BODY_ARRAY_LENGTH`, `SOFT_BODY_SERIALIZER`
 
 ---
 
@@ -2518,51 +2676,51 @@ graph LR
 
 **Internal Dependencies:**
 
-| File                          | Imports                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Type                  |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./gl-batch.js`               | `GlBatching, createGlBatching, createInstanceGl, instanceVertexSource`                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
-| `./gl-effect-registry.js`     | `EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT, clearRegisteredEffectPipeline, resolveEffectPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./gl-effect.js`              | `EffectProgram, registerEffectPipeline`                                                                                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./gl-geometry.js`            | `GeometryCache`                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
-| `./gl-particles-registry.js`  | `clearRegisteredParticlePipeline, particleItemFloats, resolveParticlePipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                             | Re-export             |
-| `./gl-particles.js`           | `PARTICLE_ATTRIBUTE_LOCATIONS, PARTICLE_DEPTH_TEXTURE_UNIT, PARTICLE_GL, PARTICLE_VERTEX_SHADER_SOURCE, ParticleAppearanceProgram, ParticleBatchCache, ParticleProgram, ParticleTrailBatchCache, ParticleTrailProgram, registerParticlePipeline`                                                                                                                                                                                                                                  | Re-export             |
-| `./gl-program.js`             | `COLOR_ATTRIBUTE_LOCATION, GL, LitProgram, MAP_TEXTURE_UNIT, METAL_ROUGHNESS_TEXTURE_UNIT, EMISSIVE_TEXTURE_UNIT, NORMAL_ATTRIBUTE_LOCATION, POSITION_ATTRIBUTE_LOCATION, POSITION1_ATTRIBUTE_LOCATION, NORMAL1_ATTRIBUTE_LOCATION, morphNormalLocation, morphPositionLocation, HEMISPHERE_LIGHT_GLSL, HemisphereLightUniforms, PUNCTUAL_LIGHT_GLSL, PunctualLightUniforms, SHADOW_GLSL, SHADOW_TEXTURE_UNIT, ShadowUniforms, SpriteProgram, UV_ATTRIBUTE_LOCATION, UnlitProgram` | Re-export             |
-| `./gl-picking-registry.js`    | `clearRegisteredPickingPipeline, resolvePickingServiceFactory`                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
-| `./gl-picking.js`             | `IdPassProgram, PICKING_GL, ParticleIdProgram, SkinnedIdProgram, WebglPickingService, registerPickingPipeline`                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
-| `./gl-render-target.js`       | `RenderTargetCache`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
-| `./gl-program.js`             | `JOINTS_ATTRIBUTE_LOCATION, WEIGHTS_ATTRIBUTE_LOCATION`                                                                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./gl-skinning-registry.js`   | `clearRegisteredSkinningPipeline, resolveSkinningPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
-| `./gl-skinning.js`            | `SKINNING_GLSL, SkinnedLitProgram, SkinnedShadowProgram, SkinnedUnlitProgram, registerSkinningPipeline`                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./node-pipeline-registry.js` | `NODE_SURFACE_TEXTURE_UNIT_BASE, clearRegisteredNodeMaterialPipeline, resolveNodeMaterialPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
-| `./gl-node-program.js`        | `GlNodeProgram, GlNodeProgramCache, emitShaderGraphGlsl, registerNodeMaterialPipeline`                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
-| `./gl-shadow-registry.js`     | `clearRegisteredShadowPipeline, resolveShadowPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
-| `./gl-shadow.js`              | `ShadowProgram, registerShadowPipeline`                                                                                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./gl-standard-registry.js`   | `clearRegisteredStandardPipeline, resolveStandardPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
-| `./gl-standard.js`            | `StandardProgram, registerStandardPipeline`                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
-| `./gl-texture.js`             | `TextureCache`                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
-| `./register.js`               | `isWebgl2Supported, registerWebglRenderer`                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
-| `./webgl-renderer.js`         | `WebglRenderer`                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
-| `./gl-batch.js`               | `BatchGlContext, InstanceGlContext, InstancedGeometryRecord, RenderBatching`                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
-| `./gl-effect-registry.js`     | `EffectPipeline, EffectPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
-| `./gl-geometry.js`            | `CacheableGeometry, GeometryRecord`                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
-| `./gl-particles-registry.js`  | `ParticleAppearancePipeline, ParticleBillboardPipeline, ParticlePipelineFactory, ParticlePrograms`                                                                                                                                                                                                                                                                                                                                                                                | Re-export (type-only) |
-| `./gl-particles.js`           | `ParticleBatchRecord, ParticleGlContext, ParticleTrailBatchRecord`                                                                                                                                                                                                                                                                                                                                                                                                                | Re-export (type-only) |
-| `./gl-program.js`             | `GlBuffer, GlProgramHandle, GlShader, GlQuery, GlSync, GlTexture, GlUniformLocation, GlVertexArray, WebglContext`                                                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
-| `./gl-program.js`             | `GlFramebuffer, GlRenderbuffer`                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
-| `./gl-picking-registry.js`    | `PickingRendererHost, PickingServiceFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
-| `./gl-render-target.js`       | `CacheableRenderTarget, RenderTargetRecord`                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./gl-skinning-registry.js`   | `SkinnedLitPipeline, SkinnedPrograms, SkinnedShadowPipeline, SkinnedUnlitPipeline, SkinningPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./node-pipeline-registry.js` | `NodeItemMaterial, NodeMaterialPipelineFactory, NodeMaterialProgram, NodeMaterialPrograms`                                                                                                                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
-| `./gl-node-program.js`        | `EmittedNodeShader`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
-| `./gl-shadow-registry.js`     | `ShadowCasterPipeline, ShadowPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
-| `./gl-standard-registry.js`   | `StandardPipeline, StandardPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./gl-texture.js`             | `CacheableTexture, TextureRecord`                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
-| `./webgl-renderer.js`         | `WebglCanvas, WebglContextAttributes, WebglContextEventLike`                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
+| File                          | Imports                                                                                                                                                                                                                                                                                                                                                                                                                               | Type                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./gl-batch.js`               | `GlBatching, createGlBatching`                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./gl-effect-registry.js`     | `EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT, clearRegisteredEffectPipeline, resolveEffectPipelineFactory`                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./gl-effect.js`              | `EffectProgram, registerEffectPipeline`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./gl-geometry.js`            | `GeometryCache`                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
+| `./gl-particles-registry.js`  | `clearRegisteredParticlePipeline, particleItemFloats, resolveParticlePipelineFactory`                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
+| `./gl-particles.js`           | `PARTICLE_ATTRIBUTE_LOCATIONS, PARTICLE_DEPTH_TEXTURE_UNIT, PARTICLE_GL, PARTICLE_VERTEX_SHADER_SOURCE, ParticleAppearanceProgram, ParticleBatchCache, ParticleProgram, ParticleTrailBatchCache, ParticleTrailProgram, registerParticlePipeline`                                                                                                                                                                                      | Re-export             |
+| `./gl-program.js`             | `COLOR_ATTRIBUTE_LOCATION, GL, LitProgram, MAP_TEXTURE_UNIT, METAL_ROUGHNESS_TEXTURE_UNIT, EMISSIVE_TEXTURE_UNIT, NORMAL_ATTRIBUTE_LOCATION, POSITION_ATTRIBUTE_LOCATION, POSITION1_ATTRIBUTE_LOCATION, NORMAL1_ATTRIBUTE_LOCATION, HEMISPHERE_LIGHT_GLSL, HemisphereLightUniforms, PUNCTUAL_LIGHT_GLSL, PunctualLightUniforms, SHADOW_GLSL, SHADOW_TEXTURE_UNIT, ShadowUniforms, SpriteProgram, UV_ATTRIBUTE_LOCATION, UnlitProgram` | Re-export             |
+| `./gl-picking-registry.js`    | `clearRegisteredPickingPipeline, resolvePickingServiceFactory`                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./gl-picking.js`             | `IdPassProgram, PICKING_GL, ParticleIdProgram, SkinnedIdProgram, WebglPickingService, registerPickingPipeline`                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./gl-render-target.js`       | `RenderTargetCache`                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
+| `./gl-program.js`             | `JOINTS_ATTRIBUTE_LOCATION, WEIGHTS_ATTRIBUTE_LOCATION`                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./gl-skinning-registry.js`   | `clearRegisteredSkinningPipeline, resolveSkinningPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
+| `./gl-skinning.js`            | `SKINNING_GLSL, SkinnedLitProgram, SkinnedShadowProgram, SkinnedUnlitProgram, registerSkinningPipeline`                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./node-pipeline-registry.js` | `NODE_SURFACE_TEXTURE_UNIT_BASE, clearRegisteredNodeMaterialPipeline, resolveNodeMaterialPipelineFactory`                                                                                                                                                                                                                                                                                                                             | Re-export             |
+| `./gl-node-program.js`        | `GlNodeProgram, GlNodeProgramCache, emitShaderGraphGlsl, registerNodeMaterialPipeline`                                                                                                                                                                                                                                                                                                                                                | Re-export             |
+| `./gl-shadow-registry.js`     | `clearRegisteredShadowPipeline, resolveShadowPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./gl-shadow.js`              | `ShadowProgram, registerShadowPipeline`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./gl-standard-registry.js`   | `clearRegisteredStandardPipeline, resolveStandardPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
+| `./gl-standard.js`            | `StandardProgram, registerStandardPipeline`                                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
+| `./gl-texture.js`             | `TextureCache`                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./register.js`               | `isWebgl2Supported, registerWebglRenderer`                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./webgl-renderer.js`         | `WebglRenderer`                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
+| `./gl-batch.js`               | `BatchGlContext, RenderBatching`                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
+| `./gl-effect-registry.js`     | `EffectPipeline, EffectPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
+| `./gl-geometry.js`            | `CacheableGeometry, GeometryRecord`                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
+| `./gl-particles-registry.js`  | `ParticleAppearancePipeline, ParticleBillboardPipeline, ParticlePipelineFactory, ParticlePrograms`                                                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
+| `./gl-particles.js`           | `ParticleBatchRecord, ParticleGlContext, ParticleTrailBatchRecord`                                                                                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
+| `./gl-program.js`             | `GlBuffer, GlProgramHandle, GlShader, GlQuery, GlSync, GlTexture, GlUniformLocation, GlVertexArray, WebglContext`                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./gl-program.js`             | `GlFramebuffer, GlRenderbuffer`                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./gl-picking-registry.js`    | `PickingRendererHost, PickingServiceFactory`                                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
+| `./gl-render-target.js`       | `CacheableRenderTarget, RenderTargetRecord`                                                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./gl-skinning-registry.js`   | `SkinnedLitPipeline, SkinnedPrograms, SkinnedShadowPipeline, SkinnedUnlitPipeline, SkinningPipelineFactory`                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./node-pipeline-registry.js` | `NodeItemMaterial, NodeMaterialPipelineFactory, NodeMaterialProgram, NodeMaterialPrograms`                                                                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
+| `./gl-node-program.js`        | `EmittedNodeShader`                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
+| `./gl-shadow-registry.js`     | `ShadowCasterPipeline, ShadowPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                         | Re-export (type-only) |
+| `./gl-standard-registry.js`   | `StandardPipeline, StandardPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./gl-texture.js`             | `CacheableTexture, TextureRecord`                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./webgl-renderer.js`         | `WebglCanvas, WebglContextAttributes, WebglContextEventLike`                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `GlBatching`, `createGlBatching`, `createInstanceGl`, `instanceVertexSource`, `EFFECT_TEXTURE_UNIT`, `EFFECT_VERTEX_COUNT`, `clearRegisteredEffectPipeline`, `resolveEffectPipelineFactory`, `EffectProgram`, `registerEffectPipeline`, `GeometryCache`, `clearRegisteredParticlePipeline`, `particleItemFloats`, `resolveParticlePipelineFactory`, `PARTICLE_ATTRIBUTE_LOCATIONS`, `PARTICLE_DEPTH_TEXTURE_UNIT`, `PARTICLE_GL`, `PARTICLE_VERTEX_SHADER_SOURCE`, `ParticleAppearanceProgram`, `ParticleBatchCache`, `ParticleProgram`, `ParticleTrailBatchCache`, `ParticleTrailProgram`, `registerParticlePipeline`, `COLOR_ATTRIBUTE_LOCATION`, `GL`, `LitProgram`, `MAP_TEXTURE_UNIT`, `METAL_ROUGHNESS_TEXTURE_UNIT`, `EMISSIVE_TEXTURE_UNIT`, `NORMAL_ATTRIBUTE_LOCATION`, `POSITION_ATTRIBUTE_LOCATION`, `POSITION1_ATTRIBUTE_LOCATION`, `NORMAL1_ATTRIBUTE_LOCATION`, `morphNormalLocation`, `morphPositionLocation`, `HEMISPHERE_LIGHT_GLSL`, `HemisphereLightUniforms`, `PUNCTUAL_LIGHT_GLSL`, `PunctualLightUniforms`, `SHADOW_GLSL`, `SHADOW_TEXTURE_UNIT`, `ShadowUniforms`, `SpriteProgram`, `UV_ATTRIBUTE_LOCATION`, `UnlitProgram`, `clearRegisteredPickingPipeline`, `resolvePickingServiceFactory`, `IdPassProgram`, `PICKING_GL`, `ParticleIdProgram`, `SkinnedIdProgram`, `WebglPickingService`, `registerPickingPipeline`, `RenderTargetCache`, `JOINTS_ATTRIBUTE_LOCATION`, `WEIGHTS_ATTRIBUTE_LOCATION`, `clearRegisteredSkinningPipeline`, `resolveSkinningPipelineFactory`, `SKINNING_GLSL`, `SkinnedLitProgram`, `SkinnedShadowProgram`, `SkinnedUnlitProgram`, `registerSkinningPipeline`, `NODE_SURFACE_TEXTURE_UNIT_BASE`, `clearRegisteredNodeMaterialPipeline`, `resolveNodeMaterialPipelineFactory`, `GlNodeProgram`, `GlNodeProgramCache`, `emitShaderGraphGlsl`, `registerNodeMaterialPipeline`, `clearRegisteredShadowPipeline`, `resolveShadowPipelineFactory`, `ShadowProgram`, `registerShadowPipeline`, `clearRegisteredStandardPipeline`, `resolveStandardPipelineFactory`, `StandardProgram`, `registerStandardPipeline`, `TextureCache`, `isWebgl2Supported`, `registerWebglRenderer`, `WebglRenderer`, `BatchGlContext`, `InstanceGlContext`, `InstancedGeometryRecord`, `RenderBatching`, `EffectPipeline`, `EffectPipelineFactory`, `CacheableGeometry`, `GeometryRecord`, `ParticleAppearancePipeline`, `ParticleBillboardPipeline`, `ParticlePipelineFactory`, `ParticlePrograms`, `ParticleBatchRecord`, `ParticleGlContext`, `ParticleTrailBatchRecord`, `GlBuffer`, `GlProgramHandle`, `GlShader`, `GlQuery`, `GlSync`, `GlTexture`, `GlUniformLocation`, `GlVertexArray`, `WebglContext`, `GlFramebuffer`, `GlRenderbuffer`, `PickingRendererHost`, `PickingServiceFactory`, `CacheableRenderTarget`, `RenderTargetRecord`, `SkinnedLitPipeline`, `SkinnedPrograms`, `SkinnedShadowPipeline`, `SkinnedUnlitPipeline`, `SkinningPipelineFactory`, `NodeItemMaterial`, `NodeMaterialPipelineFactory`, `NodeMaterialProgram`, `NodeMaterialPrograms`, `EmittedNodeShader`, `ShadowCasterPipeline`, `ShadowPipelineFactory`, `StandardPipeline`, `StandardPipelineFactory`, `CacheableTexture`, `TextureRecord`, `WebglCanvas`, `WebglContextAttributes`, `WebglContextEventLike`
+- Re-exports: `GlBatching`, `createGlBatching`, `EFFECT_TEXTURE_UNIT`, `EFFECT_VERTEX_COUNT`, `clearRegisteredEffectPipeline`, `resolveEffectPipelineFactory`, `EffectProgram`, `registerEffectPipeline`, `GeometryCache`, `clearRegisteredParticlePipeline`, `particleItemFloats`, `resolveParticlePipelineFactory`, `PARTICLE_ATTRIBUTE_LOCATIONS`, `PARTICLE_DEPTH_TEXTURE_UNIT`, `PARTICLE_GL`, `PARTICLE_VERTEX_SHADER_SOURCE`, `ParticleAppearanceProgram`, `ParticleBatchCache`, `ParticleProgram`, `ParticleTrailBatchCache`, `ParticleTrailProgram`, `registerParticlePipeline`, `COLOR_ATTRIBUTE_LOCATION`, `GL`, `LitProgram`, `MAP_TEXTURE_UNIT`, `METAL_ROUGHNESS_TEXTURE_UNIT`, `EMISSIVE_TEXTURE_UNIT`, `NORMAL_ATTRIBUTE_LOCATION`, `POSITION_ATTRIBUTE_LOCATION`, `POSITION1_ATTRIBUTE_LOCATION`, `NORMAL1_ATTRIBUTE_LOCATION`, `HEMISPHERE_LIGHT_GLSL`, `HemisphereLightUniforms`, `PUNCTUAL_LIGHT_GLSL`, `PunctualLightUniforms`, `SHADOW_GLSL`, `SHADOW_TEXTURE_UNIT`, `ShadowUniforms`, `SpriteProgram`, `UV_ATTRIBUTE_LOCATION`, `UnlitProgram`, `clearRegisteredPickingPipeline`, `resolvePickingServiceFactory`, `IdPassProgram`, `PICKING_GL`, `ParticleIdProgram`, `SkinnedIdProgram`, `WebglPickingService`, `registerPickingPipeline`, `RenderTargetCache`, `JOINTS_ATTRIBUTE_LOCATION`, `WEIGHTS_ATTRIBUTE_LOCATION`, `clearRegisteredSkinningPipeline`, `resolveSkinningPipelineFactory`, `SKINNING_GLSL`, `SkinnedLitProgram`, `SkinnedShadowProgram`, `SkinnedUnlitProgram`, `registerSkinningPipeline`, `NODE_SURFACE_TEXTURE_UNIT_BASE`, `clearRegisteredNodeMaterialPipeline`, `resolveNodeMaterialPipelineFactory`, `GlNodeProgram`, `GlNodeProgramCache`, `emitShaderGraphGlsl`, `registerNodeMaterialPipeline`, `clearRegisteredShadowPipeline`, `resolveShadowPipelineFactory`, `ShadowProgram`, `registerShadowPipeline`, `clearRegisteredStandardPipeline`, `resolveStandardPipelineFactory`, `StandardProgram`, `registerStandardPipeline`, `TextureCache`, `isWebgl2Supported`, `registerWebglRenderer`, `WebglRenderer`, `BatchGlContext`, `RenderBatching`, `EffectPipeline`, `EffectPipelineFactory`, `CacheableGeometry`, `GeometryRecord`, `ParticleAppearancePipeline`, `ParticleBillboardPipeline`, `ParticlePipelineFactory`, `ParticlePrograms`, `ParticleBatchRecord`, `ParticleGlContext`, `ParticleTrailBatchRecord`, `GlBuffer`, `GlProgramHandle`, `GlShader`, `GlQuery`, `GlSync`, `GlTexture`, `GlUniformLocation`, `GlVertexArray`, `WebglContext`, `GlFramebuffer`, `GlRenderbuffer`, `PickingRendererHost`, `PickingServiceFactory`, `CacheableRenderTarget`, `RenderTargetRecord`, `SkinnedLitPipeline`, `SkinnedPrograms`, `SkinnedShadowPipeline`, `SkinnedUnlitPipeline`, `SkinningPipelineFactory`, `NodeItemMaterial`, `NodeMaterialPipelineFactory`, `NodeMaterialProgram`, `NodeMaterialPrograms`, `EmittedNodeShader`, `ShadowCasterPipeline`, `ShadowPipelineFactory`, `StandardPipeline`, `StandardPipelineFactory`, `CacheableTexture`, `TextureRecord`, `WebglCanvas`, `WebglContextAttributes`, `WebglContextEventLike`
 
 ---
 
@@ -2663,17 +2821,16 @@ graph LR
 
 **Internal Dependencies:**
 
-| File              | Imports                                                                                                                                                                                                                                                                                  | Type               |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./gl-program.js` | `COLOR_ATTRIBUTE_LOCATION, GL, JOINTS_ATTRIBUTE_LOCATION, NORMAL_ATTRIBUTE_LOCATION, NORMAL1_ATTRIBUTE_LOCATION, POSITION_ATTRIBUTE_LOCATION, POSITION1_ATTRIBUTE_LOCATION, UV_ATTRIBUTE_LOCATION, WEIGHTS_ATTRIBUTE_LOCATION, morphNormalLocation, morphPositionLocation, WebglContext` | Import             |
-| `./gl-program.js` | `GlBuffer, GlVertexArray`                                                                                                                                                                                                                                                                | Import (type-only) |
+| File              | Imports                                                                                                                                                                                                                                      | Type               |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./gl-program.js` | `COLOR_ATTRIBUTE_LOCATION, GL, JOINTS_ATTRIBUTE_LOCATION, NORMAL_ATTRIBUTE_LOCATION, NORMAL1_ATTRIBUTE_LOCATION, POSITION_ATTRIBUTE_LOCATION, POSITION1_ATTRIBUTE_LOCATION, UV_ATTRIBUTE_LOCATION, WEIGHTS_ATTRIBUTE_LOCATION, WebglContext` | Import             |
+| `./gl-program.js` | `GlBuffer, GlVertexArray`                                                                                                                                                                                                                    | Import (type-only) |
 
 **Exports:**
 
 - Classes: `GeometryCache`
 - Interfaces: `GeometryRecord`
 - Types: `CacheableGeometry`
-- Constants: `GEOMETRY_RING_SLOTS`, `GEOMETRY_RING_PROMOTE_AFTER`
 
 ---
 
@@ -2798,18 +2955,18 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                         |
-| ---------------- | ------------------------------ |
-| `@fourjs/core`   | `FourError, Disposable`        |
-| `@fourjs/math`   | `Matrix3, Matrix4, Vector3`    |
-| `@fourjs/render` | `MAX_LIGHT_SLOTS, SceneLights` |
+| Package          | Import                             |
+| ---------------- | ---------------------------------- |
+| `@fourjs/core`   | `FourError, Disposable`            |
+| `@fourjs/math`   | `Matrix3, Matrix4, Vector3`        |
+| `@fourjs/render` | `MAX_PUNCTUAL_LIGHTS, SceneLights` |
 
 **Exports:**
 
 - Classes: `HemisphereLightUniforms`, `PunctualLightUniforms`, `ShadowUniforms`, `UnlitProgram`, `SpriteProgram`, `LitProgram`
 - Interfaces: `WebglContext`
 - Types: `GlShader`, `GlProgramHandle`, `GlBuffer`, `GlVertexArray`, `GlUniformLocation`, `GlTexture`, `GlFramebuffer`, `GlRenderbuffer`, `GlSync`, `GlQuery`
-- Functions: `morphPositionLocation`, `morphNormalLocation`, `uploadNormalMatrix`, `createLinkedProgram`, `requireUniform`
+- Functions: `uploadNormalMatrix`, `createLinkedProgram`, `requireUniform`
 - Constants: `GL`, `POSITION_ATTRIBUTE_LOCATION`, `NORMAL_ATTRIBUTE_LOCATION`, `UV_ATTRIBUTE_LOCATION`, `COLOR_ATTRIBUTE_LOCATION`, `JOINTS_ATTRIBUTE_LOCATION`, `WEIGHTS_ATTRIBUTE_LOCATION`, `POSITION1_ATTRIBUTE_LOCATION`, `NORMAL1_ATTRIBUTE_LOCATION`, `JOINTS1_ATTRIBUTE_LOCATION`, `WEIGHTS1_ATTRIBUTE_LOCATION`, `MAP_TEXTURE_UNIT`, `SHADOW_TEXTURE_UNIT`, `METAL_ROUGHNESS_TEXTURE_UNIT`, `EMISSIVE_TEXTURE_UNIT`, `FRAGMENT_SHADER_SOURCE`, `PUNCTUAL_LIGHT_GLSL`, `HEMISPHERE_LIGHT_GLSL`, `SHADOW_GLSL`, `LIT_FRAGMENT_SHADER_SOURCE`, `matrixScratch`
 
 ---
@@ -2818,17 +2975,17 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEV, devWarnOnce, EventEmitter, FourError`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `@fourjs/math`   | `Frustum, Matrix4, Rectangle2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `@fourjs/render` | `MAX_SKINNING_JOINTS, RenderTarget, buildInterpolatedRenderList, buildRenderList, buildViewRenderList, collectSceneLights, unionViewLayerMask, createSceneLights, isLitItem, isNodeItem, isParticlesItem, isRenderTargetTexture, isSkinnedLitItem, isSkinnedUnlitItem, isSpriteItem, isStandardItem, intersectScissor, validateReadbackRegion, COLOR_GRADE_DEFAULTS, EffectRenderPass, InstancedRun, GraphEffect, PickingService, RenderItem, RenderItemKind, RenderStatistics, Renderer, RendererCapabilities, ScissorRect, RendererEventMap, RendererOptions, ScreenEffectRenderer` |
+| Package          | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEV, devWarnOnce, EventEmitter, FourError`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `@fourjs/math`   | `Frustum, Matrix4, Rectangle2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `@fourjs/render` | `MAX_SKINNING_JOINTS, RenderTarget, buildInterpolatedRenderList, buildRenderList, buildViewRenderList, collectSceneLights, createSceneLights, isLitItem, isNodeItem, isParticlesItem, isRenderTargetTexture, isSkinnedLitItem, isSkinnedUnlitItem, isSpriteItem, isStandardItem, intersectScissor, validateReadbackRegion, COLOR_GRADE_DEFAULTS, EffectRenderPass, GraphEffect, PickingService, RenderItem, RenderItemKind, RenderStatistics, Renderer, RendererCapabilities, ScissorRect, RendererEventMap, RendererOptions, ScreenEffectRenderer` |
 
 **Internal Dependencies:**
 
 | File                          | Imports                                                                                                                                              | Type               |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./gl-batch.js`               | `InstanceGlContext, RenderBatching`                                                                                                                  | Import (type-only) |
+| `./gl-batch.js`               | `RenderBatching`                                                                                                                                     | Import (type-only) |
 | `./gl-effect-registry.js`     | `EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT, resolveEffectPipelineFactory, EffectPipeline`                                                             | Import             |
 | `./gl-geometry.js`            | `GeometryCache`                                                                                                                                      | Import             |
 | `./gl-gpu-timer.js`           | `GlGpuTimer, hasDisjointTimerQuery`                                                                                                                  | Import             |
@@ -2902,24 +3059,22 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| `@fourjs/math`   | `Matrix4`                                                                                   |
-| `@fourjs/render` | `INSTANCE_FLOATS, RenderBatcher, InstancedRun, RenderBatch, RenderBatchOptions, RenderItem` |
+| Package          | Import                                                       |
+| ---------------- | ------------------------------------------------------------ |
+| `@fourjs/math`   | `Matrix4`                                                    |
+| `@fourjs/render` | `RenderBatcher, RenderBatch, RenderBatchOptions, RenderItem` |
 
 **Internal Dependencies:**
 
-| File                        | Imports                                                                                                                                                                | Type   |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./gl-standard-registry.js` | `resolveStandardPipelineFactory, StandardPipeline`                                                                                                                     | Import |
-| `./gl-program.js`           | `COLOR_ATTRIBUTE_LOCATION, GL, POSITION_ATTRIBUTE_LOCATION, LitProgram, UV_ATTRIBUTE_LOCATION, GlBuffer, GlUniformLocation, GlVertexArray, UnlitProgram, WebglContext` | Import |
+| File              | Imports                                                                                                                                 | Type   |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./gl-program.js` | `COLOR_ATTRIBUTE_LOCATION, GL, POSITION_ATTRIBUTE_LOCATION, UV_ATTRIBUTE_LOCATION, GlBuffer, GlVertexArray, UnlitProgram, WebglContext` | Import |
 
 **Exports:**
 
 - Classes: `GlBatching`
-- Interfaces: `BatchGlContext`, `InstanceGlContext`, `InstancedGeometryRecord`, `RenderBatching`
-- Functions: `instanceVertexSource`, `createInstanceGl`, `createGlBatching`
-- Constants: `INSTANCE_MODEL_LOCATION`, `INSTANCE_NORMAL_LOCATION`
+- Interfaces: `BatchGlContext`, `RenderBatching`
+- Functions: `createGlBatching`
 
 ---
 
@@ -3683,7 +3838,7 @@ graph LR
 
 | File                   | Imports                                                                                                                                                                                                          | Type                  |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./buffer-geometry.js` | `BufferGeometry, MAX_MORPH_TARGETS`                                                                                                                                                                              | Re-export             |
+| `./buffer-geometry.js` | `BufferGeometry`                                                                                                                                                                                                 | Re-export             |
 | `./geometry.js`        | `Geometry`                                                                                                                                                                                                       | Re-export             |
 | `./primitives-3d.js`   | `capsuleGeometry, coneGeometry, cylinderGeometry, extrudeGeometry, heightFieldGeometry, latheGeometry, sphereGeometry, torusGeometry, tubeGeometry`                                                              | Re-export             |
 | `./path.js`            | `DEFAULT_FLATTEN_TOLERANCE, MAX_SUBDIVISION_DEPTH, Path, booleanOp`                                                                                                                                              | Re-export             |
@@ -3693,7 +3848,7 @@ graph LR
 | `./resource-memory.js` | `geometryMemoryBytes, liveGeometryCount`                                                                                                                                                                         | Re-export             |
 | `./tessellation.js`    | `DEFAULT_MITER_LIMIT, earClippingTessellator, expandStroke, triangulatePolygon`                                                                                                                                  | Re-export             |
 | `./cpu-skinning.js`    | `CpuSkinning`                                                                                                                                                                                                    | Re-export             |
-| `./buffer-geometry.js` | `BufferGeometryOptions, GeometryBounds, GeometryDrawMode, GeometryIndexArray, MorphTargetStreams`                                                                                                                | Re-export (type-only) |
+| `./buffer-geometry.js` | `BufferGeometryOptions, GeometryBounds, GeometryDrawMode, GeometryIndexArray`                                                                                                                                    | Re-export (type-only) |
 | `./geometry.js`        | `BoundingVolume`                                                                                                                                                                                                 | Re-export (type-only) |
 | `./primitives-3d.js`   | `CapsuleGeometryOptions, ExtrudeGeometryOptions, HeightFieldGeometryOptions, LatheGeometryOptions, Point3D, SphereGeometryOptions, TaperedGeometryOptions, TorusGeometryOptions, TubeGeometryOptions`            | Re-export (type-only) |
 | `./path.js`            | `BooleanOp, FillRule, PathArcCommand, PathClosestPoint, PathCloseCommand, PathCommand, PathCubicCommand, PathFillRings, PathLineCommand, PathMoveCommand, PathOptions, PathQuadraticCommand, PathSegmentCommand` | Re-export (type-only) |
@@ -3705,7 +3860,7 @@ graph LR
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `BufferGeometry`, `MAX_MORPH_TARGETS`, `Geometry`, `capsuleGeometry`, `coneGeometry`, `cylinderGeometry`, `extrudeGeometry`, `heightFieldGeometry`, `latheGeometry`, `sphereGeometry`, `torusGeometry`, `tubeGeometry`, `DEFAULT_FLATTEN_TOLERANCE`, `MAX_SUBDIVISION_DEPTH`, `Path`, `booleanOp`, `DEFAULT_MAXIMUM_SVG_DOCUMENT_LENGTH`, `parseSvgDocument`, `DEFAULT_MAXIMUM_PATH_DATA_LENGTH`, `formatSvgPathData`, `parseSvgPathData`, `boxGeometry`, `circleGeometry2D`, `planeGeometry`, `polygonGeometry2D`, `geometryMemoryBytes`, `liveGeometryCount`, `DEFAULT_MITER_LIMIT`, `earClippingTessellator`, `expandStroke`, `triangulatePolygon`, `CpuSkinning`, `BufferGeometryOptions`, `GeometryBounds`, `GeometryDrawMode`, `GeometryIndexArray`, `MorphTargetStreams`, `BoundingVolume`, `CapsuleGeometryOptions`, `ExtrudeGeometryOptions`, `HeightFieldGeometryOptions`, `LatheGeometryOptions`, `Point3D`, `SphereGeometryOptions`, `TaperedGeometryOptions`, `TorusGeometryOptions`, `TubeGeometryOptions`, `BooleanOp`, `FillRule`, `PathArcCommand`, `PathClosestPoint`, `PathCloseCommand`, `PathCommand`, `PathCubicCommand`, `PathFillRings`, `PathLineCommand`, `PathMoveCommand`, `PathOptions`, `PathQuadraticCommand`, `PathSegmentCommand`, `SvgDocument`, `SvgDocumentParseOptions`, `SvgDocumentPath`, `SvgViewBox`, `SvgPathFormatOptions`, `SvgPathParseOptions`, `BoxGeometryOptions`, `CircleGeometry2DOptions`, `PlaneGeometryOptions`, `PolygonGeometry2DOptions`, `Point2D`, `PolygonTessellator`, `Polyline2D`, `StrokeAlignment`, `StrokeGeometryOptions`, `StrokeLineCap`, `StrokeLineJoin`, `StrokeMesh`
+- Re-exports: `BufferGeometry`, `Geometry`, `capsuleGeometry`, `coneGeometry`, `cylinderGeometry`, `extrudeGeometry`, `heightFieldGeometry`, `latheGeometry`, `sphereGeometry`, `torusGeometry`, `tubeGeometry`, `DEFAULT_FLATTEN_TOLERANCE`, `MAX_SUBDIVISION_DEPTH`, `Path`, `booleanOp`, `DEFAULT_MAXIMUM_SVG_DOCUMENT_LENGTH`, `parseSvgDocument`, `DEFAULT_MAXIMUM_PATH_DATA_LENGTH`, `formatSvgPathData`, `parseSvgPathData`, `boxGeometry`, `circleGeometry2D`, `planeGeometry`, `polygonGeometry2D`, `geometryMemoryBytes`, `liveGeometryCount`, `DEFAULT_MITER_LIMIT`, `earClippingTessellator`, `expandStroke`, `triangulatePolygon`, `CpuSkinning`, `BufferGeometryOptions`, `GeometryBounds`, `GeometryDrawMode`, `GeometryIndexArray`, `BoundingVolume`, `CapsuleGeometryOptions`, `ExtrudeGeometryOptions`, `HeightFieldGeometryOptions`, `LatheGeometryOptions`, `Point3D`, `SphereGeometryOptions`, `TaperedGeometryOptions`, `TorusGeometryOptions`, `TubeGeometryOptions`, `BooleanOp`, `FillRule`, `PathArcCommand`, `PathClosestPoint`, `PathCloseCommand`, `PathCommand`, `PathCubicCommand`, `PathFillRings`, `PathLineCommand`, `PathMoveCommand`, `PathOptions`, `PathQuadraticCommand`, `PathSegmentCommand`, `SvgDocument`, `SvgDocumentParseOptions`, `SvgDocumentPath`, `SvgViewBox`, `SvgPathFormatOptions`, `SvgPathParseOptions`, `BoxGeometryOptions`, `CircleGeometry2DOptions`, `PlaneGeometryOptions`, `PolygonGeometry2DOptions`, `Point2D`, `PolygonTessellator`, `Polyline2D`, `StrokeAlignment`, `StrokeGeometryOptions`, `StrokeLineCap`, `StrokeLineJoin`, `StrokeMesh`
 
 ---
 
@@ -3869,9 +4024,8 @@ graph LR
 **Exports:**
 
 - Classes: `BufferGeometry`
-- Interfaces: `BufferGeometryOptions`, `MorphTargetStreams`
+- Interfaces: `BufferGeometryOptions`
 - Types: `GeometryDrawMode`, `GeometryIndexArray`, `GeometryBounds`
-- Constants: `MAX_MORPH_TARGETS`
 
 ---
 
@@ -4069,7 +4223,7 @@ graph LR
 
 | File                       | Imports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Type                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
-| `./batch.js`               | `DEFAULT_MAX_BATCH_VERTICES, INSTANCE_FLOATS, RenderBatcher`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./batch.js`               | `DEFAULT_MAX_BATCH_VERTICES, RenderBatcher`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Re-export             |
 | `./bounds.js`              | `computeWorldBoundingSphere, computeWorldBoundingSphereFromBox`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
 | `./capabilities.js`        | `COMPUTE_WORKLOADS, RENDERER_REGISTRY, RENDER_GRAPH`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
 | `./compute-workloads.js`   | `ComputeWorkloadRegistry`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
@@ -4077,7 +4231,7 @@ graph LR
 | `./scissor.js`             | `intersectScissor, scissorsEqual`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
 | `./compute.js`             | `COMPUTE_ENTRY_POINT, supportsCompute`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
 | `./effect-pass.js`         | `COLOR_GRADE_DEFAULTS, COPY_EFFECT, OUTPUT_TRANSFORM_EFFECT, supportsScreenEffects, validateEffectRenderPass`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
-| `./lights.js`              | `EXTRA_DIRECTIONAL_FLAG, MAX_DIRECTIONAL_LIGHTS, MAX_LIGHT_SLOTS, MAX_PUNCTUAL_LIGHTS, collectSceneLights, unionViewLayerMask, createSceneLights, isDirectionalLightSource, isHemisphereLightSource, isPunctualLightSource`                                                                                                                                                                                                                                                                                                                                                                                                          | Re-export             |
+| `./lights.js`              | `MAX_PUNCTUAL_LIGHTS, collectSceneLights, createSceneLights, isDirectionalLightSource, isHemisphereLightSource, isPunctualLightSource`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
 | `./particles.js`           | `PARTICLE_COLOR_OFFSET, PARTICLE_INSTANCE_FLOATS, PARTICLE_POSITION_OFFSET, PARTICLE_ROTATION_OFFSET, PARTICLE_SIZE_OFFSET, PARTICLE_SOFTNESS_OFFSET, PARTICLE_WIDE_INSTANCE_FLOATS, TRAIL_COLOR_OFFSET, TRAIL_POSITION_OFFSET, TRAIL_VERTEX_FLOATS, isParticleDrawable, particleQuadGeometry`                                                                                                                                                                                                                                                                                                                                       | Re-export             |
 | `./render-list.js`         | `buildInterpolatedRenderList, buildRenderList, compareRenderItems, groupRenderListByPipeline, isLitItem, isNodeItem, isParticlesItem, isSkinnedLitItem, isSkinnedUnlitItem, isSpriteItem, isStandardItem, isUnlitItem, viewLayerMask`                                                                                                                                                                                                                                                                                                                                                                                                | Re-export             |
 | `./render-graph.js`        | `RenderGraph`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
@@ -4101,7 +4255,7 @@ graph LR
 | `./gpu-readback.js`        | `GpuReadbackSource, isGpuReadbackSource`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Re-export             |
 | `./raster-limits.js`       | `DEFAULT_RASTER_MAXIMUM_BYTES`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
 | `./host-texture.js`        | `ImageBitmapTexture, VideoTexture`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
-| `./batch.js`               | `BatchableItem, BatchableMaterial, InstanceableItem, InstancedRun, RenderBatch, RenderBatchOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./batch.js`               | `BatchableItem, BatchableMaterial, RenderBatch, RenderBatchOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
 | `./bounds.js`              | `BoundingSphere`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
 | `./compute-workloads.js`   | `ComputeWorkloadFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Re-export (type-only) |
 | `./clip.js`                | `ClipScope, RenderItemClip, RenderItemStencil`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
@@ -4131,7 +4285,7 @@ graph LR
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `DEFAULT_MAX_BATCH_VERTICES`, `INSTANCE_FLOATS`, `RenderBatcher`, `computeWorldBoundingSphere`, `computeWorldBoundingSphereFromBox`, `COMPUTE_WORKLOADS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `ComputeWorkloadRegistry`, `ClipPlaneAllocator`, `MAX_CLIP_PLANES`, `intersectScissor`, `scissorsEqual`, `COMPUTE_ENTRY_POINT`, `supportsCompute`, `COLOR_GRADE_DEFAULTS`, `COPY_EFFECT`, `OUTPUT_TRANSFORM_EFFECT`, `supportsScreenEffects`, `validateEffectRenderPass`, `EXTRA_DIRECTIONAL_FLAG`, `MAX_DIRECTIONAL_LIGHTS`, `MAX_LIGHT_SLOTS`, `MAX_PUNCTUAL_LIGHTS`, `collectSceneLights`, `unionViewLayerMask`, `createSceneLights`, `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `PARTICLE_COLOR_OFFSET`, `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_POSITION_OFFSET`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SIZE_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `TRAIL_COLOR_OFFSET`, `TRAIL_POSITION_OFFSET`, `TRAIL_VERTEX_FLOATS`, `isParticleDrawable`, `particleQuadGeometry`, `buildInterpolatedRenderList`, `buildRenderList`, `compareRenderItems`, `groupRenderListByPipeline`, `isLitItem`, `isNodeItem`, `isParticlesItem`, `isSkinnedLitItem`, `isSkinnedUnlitItem`, `isSpriteItem`, `isStandardItem`, `isUnlitItem`, `viewLayerMask`, `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_TEXTURES`, `SHADER_ATTRIBUTE_TYPES`, `SHADER_VALUE_COMPONENTS`, `analyzeShaderGraph`, `forEachShaderNodeReference`, `RenderGraph`, `CanvasTexture`, `supportsReadPixels`, `validateReadbackRegion`, `MAX_PICK_CANDIDATES`, `assertEncodableCandidateCount`, `collectPickCandidates`, `decodePickId`, `encodePickId`, `supportsPicking`, `RenderTarget`, `isRenderTargetTexture`, `RENDER_TARGET_COLOR_BYTES`, `RENDER_TARGET_DEPTH_RENDERBUFFER_BYTES`, `RENDER_TARGET_DEPTH_STENCIL_BYTES`, `RENDER_TARGET_DEPTH_TEXTURE_BYTES`, `RENDER_TARGET_RGBA16F_BYTES`, `RENDER_TARGET_RGBA32F_BYTES`, `RENDER_TARGET_RGBA8_BYTES`, `colorAttachmentBytesPerTexel`, `depthAttachmentBytesPerTexel`, `renderTargetByteLength`, `Renderable`, `MAX_SKINNING_JOINTS`, `Mesh`, `restoreMeshSkeleton`, `AUTO_RENDERER_ORDER`, `RENDERER_CAPABILITY_NAMES`, `RendererRegistry`, `clearRegisteredRenderers`, `missingCapabilities`, `registerRenderer`, `registeredRenderers`, `resolveRenderer`, `validateCapabilityDeclaration`, `NullRenderer`, `liveRenderTargetCount`, `liveTextureCount`, `textureMemoryBytes`, `warnDisposedInUse`, `createRenderStatistics`, `resetRenderStatistics`, `supportsRenderStatistics`, `Arc`, `Circle`, `clearRegisteredShapePaints`, `Ellipse`, `Line`, `PathShape`, `Polygon`, `Polyline`, `Rectangle`, `RegularPolygon`, `resolveShapePaintSupport`, `Ring`, `Sector`, `setShapePaintSupport`, `Shape2D`, `Star`, `registerShapePaints`, `Sprite`, `groupSpritesByTexture`, `Texture`, `buildViewRenderList`, `sortRenderListByDepth`, `GpuReadbackSource`, `isGpuReadbackSource`, `DEFAULT_RASTER_MAXIMUM_BYTES`, `createShaderSourceMap`, `ImageBitmapTexture`, `VideoTexture`, `BatchableItem`, `BatchableMaterial`, `InstanceableItem`, `InstancedRun`, `RenderBatch`, `RenderBatchOptions`, `BoundingSphere`, `ComputeWorkloadFactory`, `ClipScope`, `RenderItemClip`, `RenderItemStencil`, `ScissorRect`, `ComputeBinding`, `ComputeBindingAccess`, `ComputeBuffer`, `ComputeDispatcher`, `ComputePassDescriptor`, `ColorGradeEffect`, `CopyEffect`, `EffectDestinationRect`, `EffectRenderPass`, `GraphEffect`, `OutputTransformEffect`, `ScreenEffect`, `ScreenEffectKind`, `ScreenEffectRenderer`, `AmbientLightSource`, `DirectionalLightSource`, `DirectionalShadowSource`, `HemisphereLightSource`, `PointLightSource`, `PunctualLightSource`, `PunctualLightSourceBase`, `SceneLights`, `SpotLightSource`, `ParticleDrawable`, `LitRenderItem`, `NodeRenderItem`, `ParticleRenderItem`, `RenderItem`, `RenderItemKind`, `SkinnedLitRenderItem`, `SkinnedUnlitRenderItem`, `SpriteRenderItem`, `StandardRenderItem`, `UnlitRenderItem`, `ShaderAttributeName`, `ShaderBinaryOp`, `ShaderDomain`, `ShaderGraph`, `ShaderGraphAnalysis`, `ShaderNode`, `ShaderNodeId`, `ShaderReflection`, `ShaderTextureReflection`, `ShaderUnaryOp`, `ShaderUniformReflection`, `ShaderValueType`, `AddPassOptions`, `CustomRenderPass`, `RenderGraphIssue`, `RenderGraphIssueCode`, `RenderGraphIssueSeverity`, `RenderGraphPass`, `RenderPass`, `RenderPassContext`, `SceneRenderPass`, `CanvasTextureOptions`, `RasterOrigin`, `RasterSource`, `PixelReader`, `PickRequest`, `PickResult`, `PickingService`, `RenderTargetFormat`, `RenderTargetOptions`, `RenderTargetTexture`, `RenderableOptions`, `SurfaceMaterial`, `RendererCapabilityDeclaration`, `RendererCapabilityName`, `RendererCapabilityShortfall`, `RendererFallbackReason`, `RendererFallbackReport`, `RendererRegistration`, `RendererResolveOptions`, `RendererSelection`, `RenderInterpolation`, `Renderer`, `RendererBackend`, `RendererCapabilities`, `RendererEventMap`, `RendererOptions`, `ResizeRecord`, `DisposedResourceKind`, `RenderStatistics`, `RenderStatisticsReporter`, `ArcOptions`, `CircleOptions`, `EllipseOptions`, `ConicGradientPaint`, `GradientStop`, `LinearGradientPaint`, `LineOptions`, `ObjectPaint`, `Paint`, `PathShapeOptions`, `PatternPaint`, `PolygonOptions`, `PolylineOptions`, `RadialGradientPaint`, `RectangleOptions`, `RegularPolygonOptions`, `RingOptions`, `SectorOptions`, `ResolvedConicGradientPaint`, `ResolvedGradientStop`, `ResolvedLinearGradientPaint`, `ResolvedObjectPaint`, `ResolvedPaint`, `ResolvedPatternPaint`, `ResolvedRadialGradientPaint`, `ResolvedShapeFill`, `ResolvedSolidPaint`, `ResolvedStrokeStyle`, `Shape2DOptions`, `ShapeFill`, `ShapePaintPlan`, `ShapePaintSupport`, `SolidPaint`, `StarOptions`, `StrokeStyle`, `SpriteFrame`, `SpriteOptions`, `SpriteTextureCarrier`, `SpriteTextureRun`, `TextureDimension`, `TextureFilter`, `TextureMapRole`, `TextureMinFilter`, `TextureSource`, `TextureWrap`, `ViewRenderListOptions`, `GpuReadbackSourceOptions`, `ShaderSourceLocation`, `ShaderSourceMap`, `ImageReadSurface`, `HostTextureOptions`, `VideoTextureSource`
+- Re-exports: `DEFAULT_MAX_BATCH_VERTICES`, `RenderBatcher`, `computeWorldBoundingSphere`, `computeWorldBoundingSphereFromBox`, `COMPUTE_WORKLOADS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `ComputeWorkloadRegistry`, `ClipPlaneAllocator`, `MAX_CLIP_PLANES`, `intersectScissor`, `scissorsEqual`, `COMPUTE_ENTRY_POINT`, `supportsCompute`, `COLOR_GRADE_DEFAULTS`, `COPY_EFFECT`, `OUTPUT_TRANSFORM_EFFECT`, `supportsScreenEffects`, `validateEffectRenderPass`, `MAX_PUNCTUAL_LIGHTS`, `collectSceneLights`, `createSceneLights`, `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `PARTICLE_COLOR_OFFSET`, `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_POSITION_OFFSET`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SIZE_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `TRAIL_COLOR_OFFSET`, `TRAIL_POSITION_OFFSET`, `TRAIL_VERTEX_FLOATS`, `isParticleDrawable`, `particleQuadGeometry`, `buildInterpolatedRenderList`, `buildRenderList`, `compareRenderItems`, `groupRenderListByPipeline`, `isLitItem`, `isNodeItem`, `isParticlesItem`, `isSkinnedLitItem`, `isSkinnedUnlitItem`, `isSpriteItem`, `isStandardItem`, `isUnlitItem`, `viewLayerMask`, `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_TEXTURES`, `SHADER_ATTRIBUTE_TYPES`, `SHADER_VALUE_COMPONENTS`, `analyzeShaderGraph`, `forEachShaderNodeReference`, `RenderGraph`, `CanvasTexture`, `supportsReadPixels`, `validateReadbackRegion`, `MAX_PICK_CANDIDATES`, `assertEncodableCandidateCount`, `collectPickCandidates`, `decodePickId`, `encodePickId`, `supportsPicking`, `RenderTarget`, `isRenderTargetTexture`, `RENDER_TARGET_COLOR_BYTES`, `RENDER_TARGET_DEPTH_RENDERBUFFER_BYTES`, `RENDER_TARGET_DEPTH_STENCIL_BYTES`, `RENDER_TARGET_DEPTH_TEXTURE_BYTES`, `RENDER_TARGET_RGBA16F_BYTES`, `RENDER_TARGET_RGBA32F_BYTES`, `RENDER_TARGET_RGBA8_BYTES`, `colorAttachmentBytesPerTexel`, `depthAttachmentBytesPerTexel`, `renderTargetByteLength`, `Renderable`, `MAX_SKINNING_JOINTS`, `Mesh`, `restoreMeshSkeleton`, `AUTO_RENDERER_ORDER`, `RENDERER_CAPABILITY_NAMES`, `RendererRegistry`, `clearRegisteredRenderers`, `missingCapabilities`, `registerRenderer`, `registeredRenderers`, `resolveRenderer`, `validateCapabilityDeclaration`, `NullRenderer`, `liveRenderTargetCount`, `liveTextureCount`, `textureMemoryBytes`, `warnDisposedInUse`, `createRenderStatistics`, `resetRenderStatistics`, `supportsRenderStatistics`, `Arc`, `Circle`, `clearRegisteredShapePaints`, `Ellipse`, `Line`, `PathShape`, `Polygon`, `Polyline`, `Rectangle`, `RegularPolygon`, `resolveShapePaintSupport`, `Ring`, `Sector`, `setShapePaintSupport`, `Shape2D`, `Star`, `registerShapePaints`, `Sprite`, `groupSpritesByTexture`, `Texture`, `buildViewRenderList`, `sortRenderListByDepth`, `GpuReadbackSource`, `isGpuReadbackSource`, `DEFAULT_RASTER_MAXIMUM_BYTES`, `createShaderSourceMap`, `ImageBitmapTexture`, `VideoTexture`, `BatchableItem`, `BatchableMaterial`, `RenderBatch`, `RenderBatchOptions`, `BoundingSphere`, `ComputeWorkloadFactory`, `ClipScope`, `RenderItemClip`, `RenderItemStencil`, `ScissorRect`, `ComputeBinding`, `ComputeBindingAccess`, `ComputeBuffer`, `ComputeDispatcher`, `ComputePassDescriptor`, `ColorGradeEffect`, `CopyEffect`, `EffectDestinationRect`, `EffectRenderPass`, `GraphEffect`, `OutputTransformEffect`, `ScreenEffect`, `ScreenEffectKind`, `ScreenEffectRenderer`, `AmbientLightSource`, `DirectionalLightSource`, `DirectionalShadowSource`, `HemisphereLightSource`, `PointLightSource`, `PunctualLightSource`, `PunctualLightSourceBase`, `SceneLights`, `SpotLightSource`, `ParticleDrawable`, `LitRenderItem`, `NodeRenderItem`, `ParticleRenderItem`, `RenderItem`, `RenderItemKind`, `SkinnedLitRenderItem`, `SkinnedUnlitRenderItem`, `SpriteRenderItem`, `StandardRenderItem`, `UnlitRenderItem`, `ShaderAttributeName`, `ShaderBinaryOp`, `ShaderDomain`, `ShaderGraph`, `ShaderGraphAnalysis`, `ShaderNode`, `ShaderNodeId`, `ShaderReflection`, `ShaderTextureReflection`, `ShaderUnaryOp`, `ShaderUniformReflection`, `ShaderValueType`, `AddPassOptions`, `CustomRenderPass`, `RenderGraphIssue`, `RenderGraphIssueCode`, `RenderGraphIssueSeverity`, `RenderGraphPass`, `RenderPass`, `RenderPassContext`, `SceneRenderPass`, `CanvasTextureOptions`, `RasterOrigin`, `RasterSource`, `PixelReader`, `PickRequest`, `PickResult`, `PickingService`, `RenderTargetFormat`, `RenderTargetOptions`, `RenderTargetTexture`, `RenderableOptions`, `SurfaceMaterial`, `RendererCapabilityDeclaration`, `RendererCapabilityName`, `RendererCapabilityShortfall`, `RendererFallbackReason`, `RendererFallbackReport`, `RendererRegistration`, `RendererResolveOptions`, `RendererSelection`, `RenderInterpolation`, `Renderer`, `RendererBackend`, `RendererCapabilities`, `RendererEventMap`, `RendererOptions`, `ResizeRecord`, `DisposedResourceKind`, `RenderStatistics`, `RenderStatisticsReporter`, `ArcOptions`, `CircleOptions`, `EllipseOptions`, `ConicGradientPaint`, `GradientStop`, `LinearGradientPaint`, `LineOptions`, `ObjectPaint`, `Paint`, `PathShapeOptions`, `PatternPaint`, `PolygonOptions`, `PolylineOptions`, `RadialGradientPaint`, `RectangleOptions`, `RegularPolygonOptions`, `RingOptions`, `SectorOptions`, `ResolvedConicGradientPaint`, `ResolvedGradientStop`, `ResolvedLinearGradientPaint`, `ResolvedObjectPaint`, `ResolvedPaint`, `ResolvedPatternPaint`, `ResolvedRadialGradientPaint`, `ResolvedShapeFill`, `ResolvedSolidPaint`, `ResolvedStrokeStyle`, `Shape2DOptions`, `ShapeFill`, `ShapePaintPlan`, `ShapePaintSupport`, `SolidPaint`, `StarOptions`, `StrokeStyle`, `SpriteFrame`, `SpriteOptions`, `SpriteTextureCarrier`, `SpriteTextureRun`, `TextureDimension`, `TextureFilter`, `TextureMapRole`, `TextureMinFilter`, `TextureSource`, `TextureWrap`, `ViewRenderListOptions`, `GpuReadbackSourceOptions`, `ShaderSourceLocation`, `ShaderSourceMap`, `ImageReadSurface`, `HostTextureOptions`, `VideoTextureSource`
 
 ---
 
@@ -4162,7 +4316,7 @@ graph LR
 
 | Package             | Import                                                                                |
 | ------------------- | ------------------------------------------------------------------------------------- |
-| `@fourjs/core`      | `Disposable`                                                                          |
+| `@fourjs/core`      | `FourError, Disposable`                                                               |
 | `@fourjs/materials` | `MaterialTextureFilter, MaterialTextureMinFilter, MaterialTextureWrap, SpriteTexture` |
 | `@fourjs/math`      | `ColorSpace, Rectangle2`                                                              |
 
@@ -4179,7 +4333,7 @@ graph LR
 - Classes: `Texture`
 - Interfaces: `TextureSource`
 - Types: `TextureFilter`, `TextureMinFilter`, `TextureWrap`, `TextureDimension`, `TextureMapRole`
-- Functions: `textureChainBytes`, `validateTextureSource`
+- Functions: `validateTextureSource`
 
 ---
 
@@ -4433,23 +4587,23 @@ graph LR
 | ------------------- | ------------------------------------------------ |
 | `@fourjs/geometry`  | `BufferGeometry`                                 |
 | `@fourjs/materials` | `MaterialTexture, SpriteMaterial, UnlitMaterial` |
-| `@fourjs/math`      | `Matrix3, ColorRGBA`                             |
+| `@fourjs/math`      | `ColorRGBA`                                      |
 | `@fourjs/scene`     | `ALL_LAYERS, LayerMask`                          |
 
 **Internal Dependencies:**
 
-| File               | Imports                                                                            | Type               |
-| ------------------ | ---------------------------------------------------------------------------------- | ------------------ |
-| `./clip.js`        | `RenderItemClip`                                                                   | Import (type-only) |
-| `./scissor.js`     | `scissorsEqual, ScissorRect`                                                       | Import             |
-| `./render-list.js` | `LitRenderItem, RenderItem, SpriteRenderItem, StandardRenderItem, UnlitRenderItem` | Import (type-only) |
+| File               | Imports                                         | Type               |
+| ------------------ | ----------------------------------------------- | ------------------ |
+| `./clip.js`        | `RenderItemClip`                                | Import (type-only) |
+| `./scissor.js`     | `scissorsEqual, ScissorRect`                    | Import             |
+| `./render-list.js` | `RenderItem, SpriteRenderItem, UnlitRenderItem` | Import (type-only) |
 
 **Exports:**
 
 - Classes: `RenderBatcher`
-- Interfaces: `RenderBatchOptions`, `RenderBatch`, `InstancedRun`
-- Types: `BatchableMaterial`, `BatchableItem`, `InstanceableItem`
-- Constants: `DEFAULT_MAX_BATCH_VERTICES`, `INSTANCE_FLOATS`
+- Interfaces: `RenderBatchOptions`, `RenderBatch`
+- Types: `BatchableMaterial`, `BatchableItem`
+- Constants: `DEFAULT_MAX_BATCH_VERTICES`
 
 ---
 
@@ -4697,24 +4851,18 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package         | Import                                  |
-| --------------- | --------------------------------------- |
-| `@fourjs/core`  | `DEV, DEV_WARNING_PREFIX, devWarnOnce`  |
-| `@fourjs/math`  | `Matrix4, Vector3`                      |
-| `@fourjs/scene` | `ALL_LAYERS, LayerMask, Node, Viewport` |
-
-**Internal Dependencies:**
-
-| File               | Imports         | Type   |
-| ------------------ | --------------- | ------ |
-| `./render-list.js` | `viewLayerMask` | Import |
+| Package         | Import                                 |
+| --------------- | -------------------------------------- |
+| `@fourjs/core`  | `DEV, DEV_WARNING_PREFIX, devWarnOnce` |
+| `@fourjs/math`  | `Matrix4, Vector3`                     |
+| `@fourjs/scene` | `Node`                                 |
 
 **Exports:**
 
 - Interfaces: `DirectionalLightSource`, `DirectionalShadowSource`, `PunctualLightSourceBase`, `PointLightSource`, `SpotLightSource`, `AmbientLightSource`, `HemisphereLightSource`, `SceneLights`
 - Types: `PunctualLightSource`
-- Functions: `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `createSceneLights`, `collectSceneLights`, `unionViewLayerMask`
-- Constants: `MAX_PUNCTUAL_LIGHTS`, `MAX_DIRECTIONAL_LIGHTS`, `MAX_LIGHT_SLOTS`, `EXTRA_DIRECTIONAL_FLAG`
+- Functions: `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `createSceneLights`, `collectSceneLights`
+- Constants: `MAX_PUNCTUAL_LIGHTS`
 
 ---
 
@@ -4938,7 +5086,6 @@ graph LR
 | File                 | Imports                                  | Type   |
 | -------------------- | ---------------------------------------- | ------ |
 | `./webgpu-device.js` | `GPU_BUFFER_USAGE, GpuBuffer, GpuDevice` | Import |
-| `./wgpu-staging.js`  | `WgpuStagingRing`                        | Import |
 
 **Exports:**
 
@@ -4988,12 +5135,11 @@ graph LR
 | `./wgpu-bindings.js`            | `DRAW_COLOR_OFFSET, DRAW_MODEL_OFFSET, DRAW_NORMAL_OFFSET, DRAW_UNIFORM_BYTES, DRAW_UNIFORM_FLOATS, DRAW_UNIFORM_WGSL, DRAW_VIEW_PROJECTION_OFFSET, MAP_BINDING_WGSL, MAP_BIND_GROUP_INDEX, MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING, SURFACE_EMISSIVE_BINDING, SURFACE_MR_BINDING, SURFACE_NORMAL_BINDING, SURFACE_OCCLUSION_BINDING, SURFACE_SAMPLER_BINDING, createDrawBindGroupLayout, createSurfaceBindGroupLayout, createTextureBindGroupLayout`                                                                                                                                                                                                                                                                                                                              | Re-export             |
 | `./wgpu-surface-group.js`       | `WgpuSurfaceGroupCache`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Re-export             |
 | `./wgpu-geometry.js`            | `WgpuGeometryCache`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
-| `./wgpu-staging.js`             | `STAGING_DIRECT_THRESHOLD, STAGING_RING_FRAMES, WgpuStagingRing`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
 | `./wgpu-pipeline-cache.js`      | `blendStateFor, pipelineKey, stencilStateFor, WgpuPipelineCache`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
 | `./wgpu-batch.js`               | `WgpuBatching, batchVertexBufferLayout, createWgpuBatching`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
 | `./wgpu-sprite.js`              | `SPRITE_MODEL_OFFSET, SPRITE_SHADER_SOURCE, SPRITE_TINT_OFFSET, SPRITE_UNIFORM_BYTES, SPRITE_UNIFORM_WGSL, SPRITE_VIEW_PROJECTION_OFFSET, createSpriteBindGroupLayout`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Re-export             |
 | `./wgpu-texture.js`             | `MIPMAP_SHADER_SOURCE, WgpuTextureCache, mipLevelCount, samplerKey, textureByteLength`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Re-export             |
-| `./wgpu-unlit.js`               | `CLEAR_SHADER_SOURCE, CLEAR_VERTEX_COUNT, COLOR_BUFFER_LAYOUT, COLOR_SHADER_LOCATION, DRAW_MORPH_WEIGHT_OFFSET, DRAW_MORPH_WEIGHTS_OFFSET, MORPH_N_DRAW_UNIFORM_WGSL, morphHasNormals, morphTargetCount, morphVariant, morphVertexBufferLayouts, FRAGMENT_ENTRY_POINT, MORPH_DRAW_UNIFORM_WGSL, MORPH_WEIGHT_WGSL, NORMAL1_BUFFER_LAYOUT, NORMAL1_SHADER_LOCATION, POSITION1_BUFFER_LAYOUT, POSITION1_SHADER_LOCATION, POSITION_BUFFER_LAYOUT, POSITION_SHADER_LOCATION, UV_BUFFER_LAYOUT, UV_SHADER_LOCATION, VERTEX_ENTRY_POINT, unlitShaderSource, unlitVertexBufferLayouts, unlitFragmentStageWgsl, WgpuMorph`                                                                                                                                                                  | Re-export             |
+| `./wgpu-unlit.js`               | `CLEAR_SHADER_SOURCE, CLEAR_VERTEX_COUNT, COLOR_BUFFER_LAYOUT, COLOR_SHADER_LOCATION, DRAW_MORPH_WEIGHT_OFFSET, FRAGMENT_ENTRY_POINT, MORPH_DRAW_UNIFORM_WGSL, MORPH_WEIGHT_WGSL, NORMAL1_BUFFER_LAYOUT, NORMAL1_SHADER_LOCATION, POSITION1_BUFFER_LAYOUT, POSITION1_SHADER_LOCATION, POSITION_BUFFER_LAYOUT, POSITION_SHADER_LOCATION, UV_BUFFER_LAYOUT, UV_SHADER_LOCATION, VERTEX_ENTRY_POINT, unlitShaderSource, unlitVertexBufferLayouts, unlitFragmentStageWgsl, WgpuMorph`                                                                                                                                                                                                                                                                                                   | Re-export             |
 | `./wgpu-lights.js`              | `LIGHTS_BIND_GROUP_INDEX, LIGHT_AMBIENT_OFFSET, LIGHT_CAMERA_OFFSET, LIGHT_COLOR_OFFSET, LIGHT_COUNTS_OFFSET, LIGHT_DIRECTION_OFFSET, LIGHT_PUNCTUAL_COLOR_OFFSET, LIGHT_PUNCTUAL_DIRECTION_OFFSET, LIGHT_PUNCTUAL_PARAMS_OFFSET, LIGHT_PUNCTUAL_POSITION_OFFSET, HEMISPHERE_GROUND_OFFSET, HEMISPHERE_IRRADIANCE_WGSL, HEMISPHERE_SKY_OFFSET, HEMISPHERE_UNIFORM_MEMBERS_WGSL, HEMISPHERE_UP_OFFSET, LIGHT_BINDING_BYTES, LIGHT_UNIFORM_BYTES, LIGHT_UNIFORM_FLOATS, LIGHT_UNIFORM_MEMBERS_WGSL, LIGHT_UNIFORM_STRIDE_BYTES, LIGHT_UNIFORM_STRIDE_FLOATS, LIGHT_UNIFORM_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BINDING_WGSL, SHADED_MAP_BIND_GROUP_INDEX, SHADED_MR_BINDING_WGSL, SHADED_MR_BIND_GROUP_INDEX, createLightsBindGroupLayout, shadedMrBindingWgsl, writeLightUniforms` | Re-export             |
 | `./wgpu-lit.js`                 | `NORMAL_BUFFER_LAYOUT, NORMAL_MATRIX_WGSL, NORMAL_SHADER_LOCATION, litShaderSource, shadedVertexBufferLayouts, shadedVertexStageWgsl, litFragmentStageWgsl`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
 | `./wgpu-render-target.js`       | `RENDER_TARGET_COLOR_FORMAT, RENDER_TARGET_DEPTH_FORMAT, RENDER_TARGET_DEPTH_STENCIL_FORMAT, RENDER_TARGET_DEPTH_TEXTURE_FORMAT, WgpuRenderTargetCache, renderTargetDepthFormat`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
@@ -5004,7 +5150,7 @@ graph LR
 | `./wgpu-particle-simulation.js` | `PARTICLE_SIMULATION_SCRATCH_BYTES, PARTICLE_SIMULATION_VECTOR_BYTES, WgpuParticleSimulation`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
 | `./wgpu-shadow.js`              | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_BYTES, SHADOW_LIGHT_UNIFORM_WGSL, SHADOW_MAP_BINDING, SHADOW_MATRIX_OFFSET, SHADOW_PARAMS_OFFSET, SHADOW_SAMPLER_BINDING, SHADOW_SHADER_SOURCE, SHADOW_UNIFORM_SPARE_BYTES, createShadowLightsBindGroupLayout, createShadowSampler, writeShadowUniforms`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export             |
 | `./wgpu-stencil.js`             | `CLEAR_STENCIL, STENCIL_ALL_BITS, applyStencilReference, frameWantsStencil, stencilDescriptor`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
-| `./wgpu-standard.js`            | `MORPH_N_STANDARD_UNIFORM_WGSL, MORPH_STANDARD_UNIFORM_WGSL, STANDARD_MORPH_WEIGHTS_OFFSET, NO_SURFACE_MAPS, SURFACE_DEFAULT_TEXELS, STANDARD_BASE_COLOR_OFFSET, STANDARD_EMISSIVE_OFFSET, STANDARD_MODEL_OFFSET, STANDARD_NORMAL_OFFSET, STANDARD_SURFACE_OFFSET, STANDARD_UNIFORM_BYTES, STANDARD_UNIFORM_WGSL, STANDARD_VIEW_PROJECTION_OFFSET, createStandardBindGroupLayout, standardShaderSource`                                                                                                                                                                                                                                                                                                                                                                             | Re-export             |
+| `./wgpu-standard.js`            | `MORPH_STANDARD_UNIFORM_WGSL, NO_SURFACE_MAPS, SURFACE_DEFAULT_TEXELS, STANDARD_BASE_COLOR_OFFSET, STANDARD_EMISSIVE_OFFSET, STANDARD_MODEL_OFFSET, STANDARD_NORMAL_OFFSET, STANDARD_SURFACE_OFFSET, STANDARD_UNIFORM_BYTES, STANDARD_UNIFORM_WGSL, STANDARD_VIEW_PROJECTION_OFFSET, createStandardBindGroupLayout, standardShaderSource`                                                                                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
 | `./wgpu-node-registry.js`       | `clearRegisteredWebgpuNodeMaterialPipeline, resolveWebgpuNodeMaterialPipelineFactory, setWebgpuNodeMaterialPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
 | `./wgpu-node-program.js`        | `NODE_SCREEN_BLOCK_BASE_BYTES, NODE_SCREEN_TEXTURE_GROUP, NODE_SURFACE_BLOCK_BASE_BYTES, NODE_SURFACE_BLOCK_GROUP, NODE_SURFACE_TEXTURE_GROUP, WgpuNodePipelineStore, emitShaderGraphWgsl, registerWebgpuNodeMaterialPipeline`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
 | `./wgpu-picking-registry.js`    | `clearRegisteredPickingPipeline, resolvePickingServiceFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
@@ -5033,7 +5179,7 @@ graph LR
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `GPU_BUFFER_USAGE`, `GPU_MAP_MODE`, `GPU_SHADER_STAGE`, `GPU_TEXTURE_USAGE`, `UNIFORM_STRIDE_BYTES`, `hostGpu`, `WebgpuRenderer`, `isWebgpuSupported`, `registerWebgpuRenderer`, `DRAW_COLOR_OFFSET`, `DRAW_MODEL_OFFSET`, `DRAW_NORMAL_OFFSET`, `DRAW_UNIFORM_BYTES`, `DRAW_UNIFORM_FLOATS`, `DRAW_UNIFORM_WGSL`, `DRAW_VIEW_PROJECTION_OFFSET`, `MAP_BINDING_WGSL`, `MAP_BIND_GROUP_INDEX`, `MAP_SAMPLER_BINDING`, `MAP_TEXTURE_BINDING`, `SURFACE_EMISSIVE_BINDING`, `SURFACE_MR_BINDING`, `SURFACE_NORMAL_BINDING`, `SURFACE_OCCLUSION_BINDING`, `SURFACE_SAMPLER_BINDING`, `createDrawBindGroupLayout`, `createSurfaceBindGroupLayout`, `createTextureBindGroupLayout`, `WgpuSurfaceGroupCache`, `WgpuGeometryCache`, `STAGING_DIRECT_THRESHOLD`, `STAGING_RING_FRAMES`, `WgpuStagingRing`, `blendStateFor`, `pipelineKey`, `stencilStateFor`, `WgpuPipelineCache`, `WgpuBatching`, `batchVertexBufferLayout`, `createWgpuBatching`, `SPRITE_MODEL_OFFSET`, `SPRITE_SHADER_SOURCE`, `SPRITE_TINT_OFFSET`, `SPRITE_UNIFORM_BYTES`, `SPRITE_UNIFORM_WGSL`, `SPRITE_VIEW_PROJECTION_OFFSET`, `createSpriteBindGroupLayout`, `MIPMAP_SHADER_SOURCE`, `WgpuTextureCache`, `mipLevelCount`, `samplerKey`, `textureByteLength`, `CLEAR_SHADER_SOURCE`, `CLEAR_VERTEX_COUNT`, `COLOR_BUFFER_LAYOUT`, `COLOR_SHADER_LOCATION`, `DRAW_MORPH_WEIGHT_OFFSET`, `DRAW_MORPH_WEIGHTS_OFFSET`, `MORPH_N_DRAW_UNIFORM_WGSL`, `morphHasNormals`, `morphTargetCount`, `morphVariant`, `morphVertexBufferLayouts`, `FRAGMENT_ENTRY_POINT`, `MORPH_DRAW_UNIFORM_WGSL`, `MORPH_WEIGHT_WGSL`, `NORMAL1_BUFFER_LAYOUT`, `NORMAL1_SHADER_LOCATION`, `POSITION1_BUFFER_LAYOUT`, `POSITION1_SHADER_LOCATION`, `POSITION_BUFFER_LAYOUT`, `POSITION_SHADER_LOCATION`, `UV_BUFFER_LAYOUT`, `UV_SHADER_LOCATION`, `VERTEX_ENTRY_POINT`, `unlitShaderSource`, `unlitVertexBufferLayouts`, `unlitFragmentStageWgsl`, `WgpuMorph`, `LIGHTS_BIND_GROUP_INDEX`, `LIGHT_AMBIENT_OFFSET`, `LIGHT_CAMERA_OFFSET`, `LIGHT_COLOR_OFFSET`, `LIGHT_COUNTS_OFFSET`, `LIGHT_DIRECTION_OFFSET`, `LIGHT_PUNCTUAL_COLOR_OFFSET`, `LIGHT_PUNCTUAL_DIRECTION_OFFSET`, `LIGHT_PUNCTUAL_PARAMS_OFFSET`, `LIGHT_PUNCTUAL_POSITION_OFFSET`, `HEMISPHERE_GROUND_OFFSET`, `HEMISPHERE_IRRADIANCE_WGSL`, `HEMISPHERE_SKY_OFFSET`, `HEMISPHERE_UNIFORM_MEMBERS_WGSL`, `HEMISPHERE_UP_OFFSET`, `LIGHT_BINDING_BYTES`, `LIGHT_UNIFORM_BYTES`, `LIGHT_UNIFORM_FLOATS`, `LIGHT_UNIFORM_MEMBERS_WGSL`, `LIGHT_UNIFORM_STRIDE_BYTES`, `LIGHT_UNIFORM_STRIDE_FLOATS`, `LIGHT_UNIFORM_WGSL`, `PUNCTUAL_LIGHT_WGSL`, `SHADED_MAP_BINDING_WGSL`, `SHADED_MAP_BIND_GROUP_INDEX`, `SHADED_MR_BINDING_WGSL`, `SHADED_MR_BIND_GROUP_INDEX`, `createLightsBindGroupLayout`, `shadedMrBindingWgsl`, `writeLightUniforms`, `NORMAL_BUFFER_LAYOUT`, `NORMAL_MATRIX_WGSL`, `NORMAL_SHADER_LOCATION`, `litShaderSource`, `shadedVertexBufferLayouts`, `shadedVertexStageWgsl`, `litFragmentStageWgsl`, `RENDER_TARGET_COLOR_FORMAT`, `RENDER_TARGET_DEPTH_FORMAT`, `RENDER_TARGET_DEPTH_STENCIL_FORMAT`, `RENDER_TARGET_DEPTH_TEXTURE_FORMAT`, `WgpuRenderTargetCache`, `renderTargetDepthFormat`, `EFFECT_BIND_GROUP_INDEX`, `EFFECT_GRADE_OFFSET`, `EFFECT_PASS_VERTEX_COUNT`, `EFFECT_UNIFORM_BYTES`, `EFFECT_UNIFORM_WGSL`, `createEffectBindGroupLayout`, `effectShaderSource`, `READBACK_ROW_ALIGNMENT`, `readTexturePixels`, `readbackBytesPerRow`, `COMPUTE_ENTRY_POINT`, `PARTICLE_INTEGRATOR_SHADER_SOURCE`, `PARTICLE_INTEGRATOR_WORKGROUP_SIZE`, `PARTICLE_SIMULATION_PARAMS_FLOATS`, `WgpuComputeBuffer`, `WgpuComputeCache`, `createComputeBuffer`, `particleIntegratorWorkgroups`, `readComputeBufferBytes`, `writeComputeBuffer`, `writeParticleSimulationParams`, `PARTICLE_GPU_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_GPU_POSITION_BUFFER_LAYOUT`, `PARTICLE_GPU_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_APPEARANCE_SHADER_SOURCE`, `PARTICLE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_INSTANCE_STRIDE_BYTES`, `PARTICLE_MODEL_OFFSET`, `PARTICLE_PROJECTION_OFFSET`, `PARTICLE_SHADER_SOURCE`, `PARTICLE_WIDE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_WIDE_INSTANCE_STRIDE_BYTES`, `PARTICLE_UNIFORM_BYTES`, `PARTICLE_UNIFORM_WGSL`, `PARTICLE_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_VIEW_OFFSET`, `WgpuParticleCache`, `createParticleBindGroupLayout`, `PARTICLE_SIMULATION_SCRATCH_BYTES`, `PARTICLE_SIMULATION_VECTOR_BYTES`, `WgpuParticleSimulation`, `SHADOW_FACTOR_WGSL`, `SHADOW_LIGHT_UNIFORM_BYTES`, `SHADOW_LIGHT_UNIFORM_WGSL`, `SHADOW_MAP_BINDING`, `SHADOW_MATRIX_OFFSET`, `SHADOW_PARAMS_OFFSET`, `SHADOW_SAMPLER_BINDING`, `SHADOW_SHADER_SOURCE`, `SHADOW_UNIFORM_SPARE_BYTES`, `createShadowLightsBindGroupLayout`, `createShadowSampler`, `writeShadowUniforms`, `CLEAR_STENCIL`, `STENCIL_ALL_BITS`, `applyStencilReference`, `frameWantsStencil`, `stencilDescriptor`, `MORPH_N_STANDARD_UNIFORM_WGSL`, `MORPH_STANDARD_UNIFORM_WGSL`, `STANDARD_MORPH_WEIGHTS_OFFSET`, `NO_SURFACE_MAPS`, `SURFACE_DEFAULT_TEXELS`, `STANDARD_BASE_COLOR_OFFSET`, `STANDARD_EMISSIVE_OFFSET`, `STANDARD_MODEL_OFFSET`, `STANDARD_NORMAL_OFFSET`, `STANDARD_SURFACE_OFFSET`, `STANDARD_UNIFORM_BYTES`, `STANDARD_UNIFORM_WGSL`, `STANDARD_VIEW_PROJECTION_OFFSET`, `createStandardBindGroupLayout`, `standardShaderSource`, `clearRegisteredWebgpuNodeMaterialPipeline`, `resolveWebgpuNodeMaterialPipelineFactory`, `setWebgpuNodeMaterialPipelineFactory`, `NODE_SCREEN_BLOCK_BASE_BYTES`, `NODE_SCREEN_TEXTURE_GROUP`, `NODE_SURFACE_BLOCK_BASE_BYTES`, `NODE_SURFACE_BLOCK_GROUP`, `NODE_SURFACE_TEXTURE_GROUP`, `WgpuNodePipelineStore`, `emitShaderGraphWgsl`, `registerWebgpuNodeMaterialPipeline`, `clearRegisteredPickingPipeline`, `resolvePickingServiceFactory`, `ID_MODEL_OFFSET`, `ID_PICK_OFFSET`, `ID_SHADER_SOURCE`, `ID_UNIFORM_BYTES`, `ID_VIEW_PROJECTION_OFFSET`, `PARTICLE_ID_MODEL_OFFSET`, `PARTICLE_ID_PICK_OFFSET`, `PARTICLE_ID_PROJECTION_OFFSET`, `PARTICLE_ID_SHADER_SOURCE`, `PARTICLE_ID_UNIFORM_BYTES`, `PARTICLE_ID_VIEW_OFFSET`, `SKINNED_ID_PALETTE_BYTES`, `SKINNED_ID_SHADER_SOURCE`, `WebgpuPickingService`, `registerPickingPipeline`, `clearRegisteredSkinningPipeline`, `resolveSkinningPipelineFactory`, `JOINTS_BUFFER_LAYOUT`, `JOINTS_SHADER_LOCATION`, `JOINT_PALETTE_BINDING`, `JOINT_PALETTE_BYTES`, `JOINT_PALETTE_FLOATS`, `WEIGHTS_BUFFER_LAYOUT`, `WEIGHTS_SHADER_LOCATION`, `createJointPaletteBindGroupLayout`, `registerSkinningPipeline`, `SKINNED_SHADOW_SHADER_SOURCE`, `SKINNED_SHADOW_VERTEX_BUFFER_LAYOUTS`, `skinnedLitShaderSource`, `skinnedLitVertexBufferLayouts`, `skinnedPaletteBindGroupIndex`, `skinnedShadowShaderSource`, `skinnedUnlitShaderSource`, `skinnedUnlitVertexBufferLayouts`, `skinningWgsl`, `Gpu`, `GpuAdapter`, `GpuStencilFaceState`, `GpuBindGroup`, `GpuBindGroupEntry`, `GpuBindGroupLayout`, `GpuBindGroupLayoutEntry`, `GpuBlendComponent`, `GpuBlendState`, `GpuBuffer`, `GpuBufferDescriptor`, `GpuCanvasContext`, `GpuCommandBuffer`, `GpuCommandEncoder`, `GpuComputePassEncoder`, `GpuComputePipeline`, `GpuComputePipelineDescriptor`, `GpuDevice`, `GpuDeviceLostInfo`, `GpuPipelineLayout`, `GpuQuerySet`, `GpuQueue`, `GpuRenderPassDescriptor`, `GpuRenderPassEncoder`, `GpuRenderPipeline`, `GpuBufferBinding`, `GpuRenderPipelineDescriptor`, `GpuSampler`, `GpuSamplerDescriptor`, `GpuShaderModule`, `GpuTexture`, `GpuTextureDescriptor`, `GpuTextureView`, `GpuTextureViewDescriptor`, `GpuVertexBufferLayout`, `WebgpuCanvas`, `SurfaceSources`, `CacheableGeometry`, `WgpuGeometryRecord`, `WgpuBatchStream`, `WgpuPipelineDescriptor`, `WgpuPipelineKind`, `WgpuStencilDescriptor`, `WgpuRenderBatching`, `ResolvedSamplerState`, `WgpuCacheableTexture`, `WgpuTextureRecord`, `WgpuCacheableRenderTarget`, `WgpuRenderTargetRecord`, `WgpuEffectKind`, `ComputeBinding`, `ComputeBindingAccess`, `ComputeBufferOptions`, `ComputePassDescriptor`, `ParticleSimulationFieldParams`, `WgpuParticleRecord`, `WgpuParticleSimulationOptions`, `WgpuStencilSource`, `SurfaceMaps`, `WgpuNodeFrameState`, `WgpuNodeItemMaterial`, `WgpuNodeMaterialPipelineFactory`, `WgpuNodeMaterialPipelines`, `WgpuNodePipelineHost`, `EmittedWgslNodeShader`, `PickingRendererHost`, `PickingServiceFactory`, `SkinningPipelineFactory`, `SkinningPipelineHost`, `SkinnedLitPipeline`, `SkinnedPrograms`, `SkinnedUnlitPipeline`, `WgpuSkinnedDrawDescriptor`, `WgpuSkinnedShadowDescriptor`
+- Re-exports: `GPU_BUFFER_USAGE`, `GPU_MAP_MODE`, `GPU_SHADER_STAGE`, `GPU_TEXTURE_USAGE`, `UNIFORM_STRIDE_BYTES`, `hostGpu`, `WebgpuRenderer`, `isWebgpuSupported`, `registerWebgpuRenderer`, `DRAW_COLOR_OFFSET`, `DRAW_MODEL_OFFSET`, `DRAW_NORMAL_OFFSET`, `DRAW_UNIFORM_BYTES`, `DRAW_UNIFORM_FLOATS`, `DRAW_UNIFORM_WGSL`, `DRAW_VIEW_PROJECTION_OFFSET`, `MAP_BINDING_WGSL`, `MAP_BIND_GROUP_INDEX`, `MAP_SAMPLER_BINDING`, `MAP_TEXTURE_BINDING`, `SURFACE_EMISSIVE_BINDING`, `SURFACE_MR_BINDING`, `SURFACE_NORMAL_BINDING`, `SURFACE_OCCLUSION_BINDING`, `SURFACE_SAMPLER_BINDING`, `createDrawBindGroupLayout`, `createSurfaceBindGroupLayout`, `createTextureBindGroupLayout`, `WgpuSurfaceGroupCache`, `WgpuGeometryCache`, `blendStateFor`, `pipelineKey`, `stencilStateFor`, `WgpuPipelineCache`, `WgpuBatching`, `batchVertexBufferLayout`, `createWgpuBatching`, `SPRITE_MODEL_OFFSET`, `SPRITE_SHADER_SOURCE`, `SPRITE_TINT_OFFSET`, `SPRITE_UNIFORM_BYTES`, `SPRITE_UNIFORM_WGSL`, `SPRITE_VIEW_PROJECTION_OFFSET`, `createSpriteBindGroupLayout`, `MIPMAP_SHADER_SOURCE`, `WgpuTextureCache`, `mipLevelCount`, `samplerKey`, `textureByteLength`, `CLEAR_SHADER_SOURCE`, `CLEAR_VERTEX_COUNT`, `COLOR_BUFFER_LAYOUT`, `COLOR_SHADER_LOCATION`, `DRAW_MORPH_WEIGHT_OFFSET`, `FRAGMENT_ENTRY_POINT`, `MORPH_DRAW_UNIFORM_WGSL`, `MORPH_WEIGHT_WGSL`, `NORMAL1_BUFFER_LAYOUT`, `NORMAL1_SHADER_LOCATION`, `POSITION1_BUFFER_LAYOUT`, `POSITION1_SHADER_LOCATION`, `POSITION_BUFFER_LAYOUT`, `POSITION_SHADER_LOCATION`, `UV_BUFFER_LAYOUT`, `UV_SHADER_LOCATION`, `VERTEX_ENTRY_POINT`, `unlitShaderSource`, `unlitVertexBufferLayouts`, `unlitFragmentStageWgsl`, `WgpuMorph`, `LIGHTS_BIND_GROUP_INDEX`, `LIGHT_AMBIENT_OFFSET`, `LIGHT_CAMERA_OFFSET`, `LIGHT_COLOR_OFFSET`, `LIGHT_COUNTS_OFFSET`, `LIGHT_DIRECTION_OFFSET`, `LIGHT_PUNCTUAL_COLOR_OFFSET`, `LIGHT_PUNCTUAL_DIRECTION_OFFSET`, `LIGHT_PUNCTUAL_PARAMS_OFFSET`, `LIGHT_PUNCTUAL_POSITION_OFFSET`, `HEMISPHERE_GROUND_OFFSET`, `HEMISPHERE_IRRADIANCE_WGSL`, `HEMISPHERE_SKY_OFFSET`, `HEMISPHERE_UNIFORM_MEMBERS_WGSL`, `HEMISPHERE_UP_OFFSET`, `LIGHT_BINDING_BYTES`, `LIGHT_UNIFORM_BYTES`, `LIGHT_UNIFORM_FLOATS`, `LIGHT_UNIFORM_MEMBERS_WGSL`, `LIGHT_UNIFORM_STRIDE_BYTES`, `LIGHT_UNIFORM_STRIDE_FLOATS`, `LIGHT_UNIFORM_WGSL`, `PUNCTUAL_LIGHT_WGSL`, `SHADED_MAP_BINDING_WGSL`, `SHADED_MAP_BIND_GROUP_INDEX`, `SHADED_MR_BINDING_WGSL`, `SHADED_MR_BIND_GROUP_INDEX`, `createLightsBindGroupLayout`, `shadedMrBindingWgsl`, `writeLightUniforms`, `NORMAL_BUFFER_LAYOUT`, `NORMAL_MATRIX_WGSL`, `NORMAL_SHADER_LOCATION`, `litShaderSource`, `shadedVertexBufferLayouts`, `shadedVertexStageWgsl`, `litFragmentStageWgsl`, `RENDER_TARGET_COLOR_FORMAT`, `RENDER_TARGET_DEPTH_FORMAT`, `RENDER_TARGET_DEPTH_STENCIL_FORMAT`, `RENDER_TARGET_DEPTH_TEXTURE_FORMAT`, `WgpuRenderTargetCache`, `renderTargetDepthFormat`, `EFFECT_BIND_GROUP_INDEX`, `EFFECT_GRADE_OFFSET`, `EFFECT_PASS_VERTEX_COUNT`, `EFFECT_UNIFORM_BYTES`, `EFFECT_UNIFORM_WGSL`, `createEffectBindGroupLayout`, `effectShaderSource`, `READBACK_ROW_ALIGNMENT`, `readTexturePixels`, `readbackBytesPerRow`, `COMPUTE_ENTRY_POINT`, `PARTICLE_INTEGRATOR_SHADER_SOURCE`, `PARTICLE_INTEGRATOR_WORKGROUP_SIZE`, `PARTICLE_SIMULATION_PARAMS_FLOATS`, `WgpuComputeBuffer`, `WgpuComputeCache`, `createComputeBuffer`, `particleIntegratorWorkgroups`, `readComputeBufferBytes`, `writeComputeBuffer`, `writeParticleSimulationParams`, `PARTICLE_GPU_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_GPU_POSITION_BUFFER_LAYOUT`, `PARTICLE_GPU_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_APPEARANCE_SHADER_SOURCE`, `PARTICLE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_INSTANCE_STRIDE_BYTES`, `PARTICLE_MODEL_OFFSET`, `PARTICLE_PROJECTION_OFFSET`, `PARTICLE_SHADER_SOURCE`, `PARTICLE_WIDE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_WIDE_INSTANCE_STRIDE_BYTES`, `PARTICLE_UNIFORM_BYTES`, `PARTICLE_UNIFORM_WGSL`, `PARTICLE_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_VIEW_OFFSET`, `WgpuParticleCache`, `createParticleBindGroupLayout`, `PARTICLE_SIMULATION_SCRATCH_BYTES`, `PARTICLE_SIMULATION_VECTOR_BYTES`, `WgpuParticleSimulation`, `SHADOW_FACTOR_WGSL`, `SHADOW_LIGHT_UNIFORM_BYTES`, `SHADOW_LIGHT_UNIFORM_WGSL`, `SHADOW_MAP_BINDING`, `SHADOW_MATRIX_OFFSET`, `SHADOW_PARAMS_OFFSET`, `SHADOW_SAMPLER_BINDING`, `SHADOW_SHADER_SOURCE`, `SHADOW_UNIFORM_SPARE_BYTES`, `createShadowLightsBindGroupLayout`, `createShadowSampler`, `writeShadowUniforms`, `CLEAR_STENCIL`, `STENCIL_ALL_BITS`, `applyStencilReference`, `frameWantsStencil`, `stencilDescriptor`, `MORPH_STANDARD_UNIFORM_WGSL`, `NO_SURFACE_MAPS`, `SURFACE_DEFAULT_TEXELS`, `STANDARD_BASE_COLOR_OFFSET`, `STANDARD_EMISSIVE_OFFSET`, `STANDARD_MODEL_OFFSET`, `STANDARD_NORMAL_OFFSET`, `STANDARD_SURFACE_OFFSET`, `STANDARD_UNIFORM_BYTES`, `STANDARD_UNIFORM_WGSL`, `STANDARD_VIEW_PROJECTION_OFFSET`, `createStandardBindGroupLayout`, `standardShaderSource`, `clearRegisteredWebgpuNodeMaterialPipeline`, `resolveWebgpuNodeMaterialPipelineFactory`, `setWebgpuNodeMaterialPipelineFactory`, `NODE_SCREEN_BLOCK_BASE_BYTES`, `NODE_SCREEN_TEXTURE_GROUP`, `NODE_SURFACE_BLOCK_BASE_BYTES`, `NODE_SURFACE_BLOCK_GROUP`, `NODE_SURFACE_TEXTURE_GROUP`, `WgpuNodePipelineStore`, `emitShaderGraphWgsl`, `registerWebgpuNodeMaterialPipeline`, `clearRegisteredPickingPipeline`, `resolvePickingServiceFactory`, `ID_MODEL_OFFSET`, `ID_PICK_OFFSET`, `ID_SHADER_SOURCE`, `ID_UNIFORM_BYTES`, `ID_VIEW_PROJECTION_OFFSET`, `PARTICLE_ID_MODEL_OFFSET`, `PARTICLE_ID_PICK_OFFSET`, `PARTICLE_ID_PROJECTION_OFFSET`, `PARTICLE_ID_SHADER_SOURCE`, `PARTICLE_ID_UNIFORM_BYTES`, `PARTICLE_ID_VIEW_OFFSET`, `SKINNED_ID_PALETTE_BYTES`, `SKINNED_ID_SHADER_SOURCE`, `WebgpuPickingService`, `registerPickingPipeline`, `clearRegisteredSkinningPipeline`, `resolveSkinningPipelineFactory`, `JOINTS_BUFFER_LAYOUT`, `JOINTS_SHADER_LOCATION`, `JOINT_PALETTE_BINDING`, `JOINT_PALETTE_BYTES`, `JOINT_PALETTE_FLOATS`, `WEIGHTS_BUFFER_LAYOUT`, `WEIGHTS_SHADER_LOCATION`, `createJointPaletteBindGroupLayout`, `registerSkinningPipeline`, `SKINNED_SHADOW_SHADER_SOURCE`, `SKINNED_SHADOW_VERTEX_BUFFER_LAYOUTS`, `skinnedLitShaderSource`, `skinnedLitVertexBufferLayouts`, `skinnedPaletteBindGroupIndex`, `skinnedShadowShaderSource`, `skinnedUnlitShaderSource`, `skinnedUnlitVertexBufferLayouts`, `skinningWgsl`, `Gpu`, `GpuAdapter`, `GpuStencilFaceState`, `GpuBindGroup`, `GpuBindGroupEntry`, `GpuBindGroupLayout`, `GpuBindGroupLayoutEntry`, `GpuBlendComponent`, `GpuBlendState`, `GpuBuffer`, `GpuBufferDescriptor`, `GpuCanvasContext`, `GpuCommandBuffer`, `GpuCommandEncoder`, `GpuComputePassEncoder`, `GpuComputePipeline`, `GpuComputePipelineDescriptor`, `GpuDevice`, `GpuDeviceLostInfo`, `GpuPipelineLayout`, `GpuQuerySet`, `GpuQueue`, `GpuRenderPassDescriptor`, `GpuRenderPassEncoder`, `GpuRenderPipeline`, `GpuBufferBinding`, `GpuRenderPipelineDescriptor`, `GpuSampler`, `GpuSamplerDescriptor`, `GpuShaderModule`, `GpuTexture`, `GpuTextureDescriptor`, `GpuTextureView`, `GpuTextureViewDescriptor`, `GpuVertexBufferLayout`, `WebgpuCanvas`, `SurfaceSources`, `CacheableGeometry`, `WgpuGeometryRecord`, `WgpuBatchStream`, `WgpuPipelineDescriptor`, `WgpuPipelineKind`, `WgpuStencilDescriptor`, `WgpuRenderBatching`, `ResolvedSamplerState`, `WgpuCacheableTexture`, `WgpuTextureRecord`, `WgpuCacheableRenderTarget`, `WgpuRenderTargetRecord`, `WgpuEffectKind`, `ComputeBinding`, `ComputeBindingAccess`, `ComputeBufferOptions`, `ComputePassDescriptor`, `ParticleSimulationFieldParams`, `WgpuParticleRecord`, `WgpuParticleSimulationOptions`, `WgpuStencilSource`, `SurfaceMaps`, `WgpuNodeFrameState`, `WgpuNodeItemMaterial`, `WgpuNodeMaterialPipelineFactory`, `WgpuNodeMaterialPipelines`, `WgpuNodePipelineHost`, `EmittedWgslNodeShader`, `PickingRendererHost`, `PickingServiceFactory`, `SkinningPipelineFactory`, `SkinningPipelineHost`, `SkinnedLitPipeline`, `SkinnedPrograms`, `SkinnedUnlitPipeline`, `WgpuSkinnedDrawDescriptor`, `WgpuSkinnedShadowDescriptor`
 
 ---
 
@@ -5219,18 +5365,18 @@ graph LR
 
 **Internal Dependencies:**
 
-| File                 | Imports                                                                                                                                                                           | Type   |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_SHADER_STAGE, GPU_TEXTURE_USAGE, GpuBindGroup, GpuBindGroupLayout, GpuDevice, GpuPipelineLayout, GpuRenderPipeline, GpuSampler, GpuShaderModule, GpuTexture, GpuTextureView` | Import |
-| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING, createTextureBindGroupLayout`                                                                                                          | Import |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, VERTEX_ENTRY_POINT`                                                                                                                                        | Import |
+| File                 | Imports                                                                                                                                                         | Type   |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_TEXTURE_USAGE, GpuBindGroup, GpuBindGroupLayout, GpuDevice, GpuPipelineLayout, GpuRenderPipeline, GpuSampler, GpuShaderModule, GpuTexture, GpuTextureView` | Import |
+| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING, createTextureBindGroupLayout`                                                                                        | Import |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, VERTEX_ENTRY_POINT`                                                                                                                      | Import |
 
 **Exports:**
 
 - Classes: `WgpuTextureCache`
 - Interfaces: `ResolvedSamplerState`, `WgpuTextureRecord`
 - Types: `WgpuCacheableTexture`
-- Functions: `mipLevelCount`, `textureByteLength`, `downsampleVolume`, `samplerKey`
+- Functions: `mipLevelCount`, `textureByteLength`, `samplerKey`
 - Constants: `MIPMAP_SHADER_SOURCE`
 
 ---
@@ -5247,8 +5393,8 @@ graph LR
 **Exports:**
 
 - Types: `WgpuMorph`
-- Functions: `morphTargetCount`, `morphHasNormals`, `morphVariant`, `morphPositionShaderLocation`, `morphNormalShaderLocation`, `morphVertexBufferLayouts`, `morphInputWgsl`, `morphSumWgsl`, `drawUniformWgslFor`, `unlitVertexBufferLayouts`, `unlitShaderSource`, `unlitFragmentStageWgsl`
-- Constants: `POSITION_SHADER_LOCATION`, `COLOR_SHADER_LOCATION`, `POSITION_BUFFER_LAYOUT`, `COLOR_BUFFER_LAYOUT`, `UV_SHADER_LOCATION`, `UV_BUFFER_LAYOUT`, `POSITION1_SHADER_LOCATION`, `NORMAL1_SHADER_LOCATION`, `POSITION1_BUFFER_LAYOUT`, `NORMAL1_BUFFER_LAYOUT`, `DRAW_MORPH_WEIGHT_OFFSET`, `MORPH_DRAW_UNIFORM_WGSL`, `DRAW_MORPH_WEIGHTS_OFFSET`, `MORPH_N_DRAW_UNIFORM_WGSL`, `MORPH_WEIGHT_WGSL`, `VERTEX_ENTRY_POINT`, `FRAGMENT_ENTRY_POINT`, `CLEAR_VERTEX_COUNT`, `CLEAR_SHADER_SOURCE`
+- Functions: `unlitVertexBufferLayouts`, `unlitShaderSource`, `unlitFragmentStageWgsl`
+- Constants: `POSITION_SHADER_LOCATION`, `COLOR_SHADER_LOCATION`, `POSITION_BUFFER_LAYOUT`, `COLOR_BUFFER_LAYOUT`, `UV_SHADER_LOCATION`, `UV_BUFFER_LAYOUT`, `POSITION1_SHADER_LOCATION`, `NORMAL1_SHADER_LOCATION`, `POSITION1_BUFFER_LAYOUT`, `NORMAL1_BUFFER_LAYOUT`, `DRAW_MORPH_WEIGHT_OFFSET`, `MORPH_DRAW_UNIFORM_WGSL`, `MORPH_WEIGHT_WGSL`, `VERTEX_ENTRY_POINT`, `FRAGMENT_ENTRY_POINT`, `CLEAR_VERTEX_COUNT`, `CLEAR_SHADER_SOURCE`
 
 ---
 
@@ -5321,9 +5467,9 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                         |
-| ---------------- | ------------------------------ |
-| `@fourjs/render` | `MAX_LIGHT_SLOTS, SceneLights` |
+| Package          | Import                             |
+| ---------------- | ---------------------------------- |
+| `@fourjs/render` | `MAX_PUNCTUAL_LIGHTS, SceneLights` |
 
 **Internal Dependencies:**
 
@@ -5379,21 +5525,6 @@ graph LR
 - Interfaces: `WgpuParticleRecord`
 - Functions: `createParticleBindGroupLayout`
 - Constants: `PARTICLE_PROJECTION_OFFSET`, `PARTICLE_VIEW_OFFSET`, `PARTICLE_MODEL_OFFSET`, `PARTICLE_UNIFORM_BYTES`, `PARTICLE_INSTANCE_STRIDE_BYTES`, `PARTICLE_UNIFORM_WGSL`, `PARTICLE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_GPU_POSITION_BUFFER_LAYOUT`, `PARTICLE_GPU_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_GPU_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_WIDE_INSTANCE_STRIDE_BYTES`, `PARTICLE_WIDE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_APPEARANCE_SHADER_SOURCE`, `PARTICLE_SHADER_SOURCE`
-
----
-
-### `packages/render-webgpu/src/wgpu-staging.ts` - Staging ring for dynamic buffer updates (§65) — WebGPU.
-
-**Internal Dependencies:**
-
-| File                 | Imports                                  | Type   |
-| -------------------- | ---------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GpuBuffer, GpuDevice` | Import |
-
-**Exports:**
-
-- Classes: `WgpuStagingRing`
-- Constants: `STAGING_DIRECT_THRESHOLD`, `STAGING_RING_FRAMES`
 
 ---
 
@@ -5520,10 +5651,10 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `FourError`                                                                                 |
-| `@fourjs/render` | `INSTANCE_FLOATS, RenderBatcher, InstancedRun, RenderBatch, RenderBatchOptions, RenderItem` |
+| Package          | Import                                                       |
+| ---------------- | ------------------------------------------------------------ |
+| `@fourjs/core`   | `FourError`                                                  |
+| `@fourjs/render` | `RenderBatcher, RenderBatch, RenderBatchOptions, RenderItem` |
 
 **Internal Dependencies:**
 
@@ -5551,13 +5682,13 @@ graph LR
 | `./wgpu-lights.js`   | `LIGHT_UNIFORM_WGSL, HEMISPHERE_IRRADIANCE_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BIND_GROUP_INDEX, SHADED_MAP_BINDING_WGSL, SHADED_MR_BIND_GROUP_INDEX, shadedMrBindingWgsl` | Import |
 | `./wgpu-lit.js`      | `shadedVertexStageWgsl`                                                                                                                                                      | Import |
 | `./wgpu-shadow.js`   | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_WGSL`                                                                                                                              | Import |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, morphTargetCount, WgpuMorph`                                                                                                                          | Import |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, WgpuMorph`                                                                                                                                            | Import |
 
 **Exports:**
 
 - Interfaces: `SurfaceMaps`
 - Functions: `surfaceBindingWgsl`, `createStandardBindGroupLayout`, `standardShaderSource`
-- Constants: `NO_SURFACE_MAPS`, `SURFACE_DEFAULT_TEXELS`, `STANDARD_VIEW_PROJECTION_OFFSET`, `STANDARD_MODEL_OFFSET`, `STANDARD_BASE_COLOR_OFFSET`, `STANDARD_NORMAL_OFFSET`, `STANDARD_EMISSIVE_OFFSET`, `STANDARD_SURFACE_OFFSET`, `STANDARD_UNIFORM_BYTES`, `STANDARD_UNIFORM_WGSL`, `MORPH_STANDARD_UNIFORM_WGSL`, `MORPH_N_STANDARD_UNIFORM_WGSL`, `STANDARD_MORPH_WEIGHTS_OFFSET`
+- Constants: `NO_SURFACE_MAPS`, `SURFACE_DEFAULT_TEXELS`, `STANDARD_VIEW_PROJECTION_OFFSET`, `STANDARD_MODEL_OFFSET`, `STANDARD_BASE_COLOR_OFFSET`, `STANDARD_NORMAL_OFFSET`, `STANDARD_EMISSIVE_OFFSET`, `STANDARD_SURFACE_OFFSET`, `STANDARD_UNIFORM_BYTES`, `STANDARD_UNIFORM_WGSL`, `MORPH_STANDARD_UNIFORM_WGSL`
 
 ---
 
@@ -5637,17 +5768,18 @@ graph LR
 
 **Internal Dependencies:**
 
-| File                 | Imports                                                                                                                                                                                                                                                                         | Type               |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./webgpu-device.js` | `GpuVertexBufferLayout`                                                                                                                                                                                                                                                         | Import (type-only) |
-| `./wgpu-lights.js`   | `HEMISPHERE_IRRADIANCE_WGSL, LIGHT_UNIFORM_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BINDING_WGSL`                                                                                                                                                                                  | Import             |
-| `./wgpu-shadow.js`   | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_WGSL`                                                                                                                                                                                                                                 | Import             |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, MORPH_WEIGHT_WGSL, drawUniformWgslFor, morphHasNormals, morphInputWgsl, morphSumWgsl, morphTargetCount, morphVertexBufferLayouts, POSITION_BUFFER_LAYOUT, POSITION_SHADER_LOCATION, UV_BUFFER_LAYOUT, UV_SHADER_LOCATION, VERTEX_ENTRY_POINT, WgpuMorph` | Import             |
+| File                 | Imports                                                                                                                                                                                                                                                                                       | Type               |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./wgpu-bindings.js` | `DRAW_UNIFORM_WGSL`                                                                                                                                                                                                                                                                           | Import             |
+| `./webgpu-device.js` | `GpuVertexBufferLayout`                                                                                                                                                                                                                                                                       | Import (type-only) |
+| `./wgpu-lights.js`   | `HEMISPHERE_IRRADIANCE_WGSL, LIGHT_UNIFORM_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BINDING_WGSL`                                                                                                                                                                                                | Import             |
+| `./wgpu-shadow.js`   | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_WGSL`                                                                                                                                                                                                                                               | Import             |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, MORPH_DRAW_UNIFORM_WGSL, MORPH_WEIGHT_WGSL, NORMAL1_BUFFER_LAYOUT, NORMAL1_SHADER_LOCATION, POSITION1_BUFFER_LAYOUT, POSITION1_SHADER_LOCATION, POSITION_BUFFER_LAYOUT, POSITION_SHADER_LOCATION, UV_BUFFER_LAYOUT, UV_SHADER_LOCATION, VERTEX_ENTRY_POINT, WgpuMorph` | Import             |
 
 **Exports:**
 
 - Functions: `shadedVertexBufferLayouts`, `shadedVertexStageWgsl`, `litShaderSource`, `litFragmentStageWgsl`
-- Constants: `NORMAL_SHADER_LOCATION`, `NORMAL_BUFFER_LAYOUT`, `INSTANCE_SHADER_LOCATION_BASE`, `INSTANCE_STRIDE_BYTES`, `INSTANCE_BUFFER_LAYOUT`, `NORMAL_MATRIX_WGSL`
+- Constants: `NORMAL_SHADER_LOCATION`, `NORMAL_BUFFER_LAYOUT`, `NORMAL_MATRIX_WGSL`
 
 ---
 
@@ -5655,12 +5787,12 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEV, EventEmitter, FourError, devWarnOnce`                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `@fourjs/math`   | `Frustum, Matrix3, Matrix4, Rectangle2`                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `@fourjs/render` | `COLOR_GRADE_DEFAULTS, RenderTarget, buildInterpolatedRenderList, buildRenderList, buildViewRenderList, MAX_SKINNING_JOINTS, collectSceneLights, unionViewLayerMask, createSceneLights, isRenderTargetTexture, isSkinnedLitItem, isSkinnedUnlitItem, intersectScissor, validateReadbackRegion, EffectRenderPass, InstancedRun, RenderBatch, PickingService, RenderInterpolation, RenderItem, RenderStatistics, Renderer, RendererCapabilities, RendererEventMap, RendererOptions, ScissorRect` |
-| `@fourjs/scene`  | `Node, Viewport`                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Package          | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@fourjs/core`   | `DEV, EventEmitter, FourError, devWarnOnce`                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `@fourjs/math`   | `Frustum, Matrix3, Matrix4, Rectangle2`                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `@fourjs/render` | `COLOR_GRADE_DEFAULTS, RenderTarget, buildInterpolatedRenderList, buildRenderList, buildViewRenderList, MAX_SKINNING_JOINTS, collectSceneLights, createSceneLights, isRenderTargetTexture, isSkinnedLitItem, isSkinnedUnlitItem, intersectScissor, validateReadbackRegion, EffectRenderPass, RenderBatch, PickingService, RenderInterpolation, RenderItem, RenderStatistics, Renderer, RendererCapabilities, RendererEventMap, RendererOptions, ScissorRect` |
+| `@fourjs/scene`  | `Node, Viewport`                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 **Internal Dependencies:**
 
@@ -5680,7 +5812,7 @@ graph LR
 | `./wgpu-pipeline-memo.js`       | `WgpuPipelineMemo, createPipelineRequest`                                                                                                                                                                                                                    | Import             |
 | `./wgpu-readback.js`            | `readTexturePixels`                                                                                                                                                                                                                                          | Import             |
 | `./wgpu-render-target.js`       | `RENDER_TARGET_COLOR_FORMAT, WgpuRenderTargetCache, WgpuRenderTargetRecord`                                                                                                                                                                                  | Import             |
-| `./wgpu-standard.js`            | `STANDARD_EMISSIVE_OFFSET, STANDARD_MORPH_WEIGHTS_OFFSET, STANDARD_SURFACE_OFFSET, STANDARD_UNIFORM_BYTES, createStandardBindGroupLayout`                                                                                                                    | Import             |
+| `./wgpu-standard.js`            | `STANDARD_EMISSIVE_OFFSET, STANDARD_SURFACE_OFFSET, STANDARD_UNIFORM_BYTES, createStandardBindGroupLayout`                                                                                                                                                   | Import             |
 | `./wgpu-sprite.js`              | `SPRITE_UNIFORM_BYTES, createSpriteBindGroupLayout`                                                                                                                                                                                                          | Import             |
 | `./wgpu-shadow.js`              | `SHADOW_LIGHT_UNIFORM_BYTES, SHADOW_MAP_BINDING, SHADOW_SAMPLER_BINDING, createShadowLightsBindGroupLayout, createShadowSampler, writeShadowUniforms`                                                                                                        | Import             |
 | `./wgpu-stencil.js`             | `CLEAR_STENCIL, applyStencilReference, frameWantsStencil, stencilDescriptor`                                                                                                                                                                                 | Import             |
@@ -5689,12 +5821,78 @@ graph LR
 | `./wgpu-picking-registry.js`    | `resolvePickingServiceFactory, PickingRendererHost`                                                                                                                                                                                                          | Import             |
 | `./wgpu-skinning-registry.js`   | `resolveSkinningPipelineFactory, SkinnedPrograms, SkinningPipelineHost, WgpuSkinnedDrawDescriptor`                                                                                                                                                           | Import             |
 | `./wgpu-surface-group.js`       | `WgpuSurfaceGroupCache, SurfaceSources`                                                                                                                                                                                                                      | Import             |
-| `./wgpu-unlit.js`               | `CLEAR_VERTEX_COUNT, DRAW_MORPH_WEIGHT_OFFSET, DRAW_MORPH_WEIGHTS_OFFSET, morphHasNormals, morphTargetCount, morphVariant, WgpuMorph`                                                                                                                        | Import             |
+| `./wgpu-unlit.js`               | `CLEAR_VERTEX_COUNT, DRAW_MORPH_WEIGHT_OFFSET`                                                                                                                                                                                                               | Import             |
 
 **Exports:**
 
 - Classes: `WebgpuRenderer`
 - Functions: `hostGpu`
+
+---
+
+<a id="packages-physics-physjs-dependencies"></a>
+
+## Packages/physics physjs Dependencies
+
+### `packages/physics-physjs/src/index.ts` - `@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102).
+
+**Internal Dependencies:**
+
+| File                  | Imports                                                                 | Type      |
+| --------------------- | ----------------------------------------------------------------------- | --------- |
+| `./physjs-adapter.js` | `PHYSJS_CAPABILITIES, PHYSJS_VERSION, PhysJSAdapter2D, PhysJSAdapter3D` | Re-export |
+| `./register.js`       | `createPhysJSAdapter, isPhysJSSupported, registerPhysJSSolver`          | Re-export |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `PHYSJS_CAPABILITIES`, `PHYSJS_VERSION`, `PhysJSAdapter2D`, `PhysJSAdapter3D`, `createPhysJSAdapter`, `isPhysJSSupported`, `registerPhysJSSolver`
+
+---
+
+### `packages/physics-physjs/src/physjs-adapter.ts` - The PhysJS solver adapters (RFC 0010, §37, §102).
+
+**External Dependencies:**
+
+| Package                 | Import    |
+| ----------------------- | --------- |
+| `@danielsimonjr/physjs` | `* as pj` |
+
+**Workspace Dependencies:**
+
+| Package           | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@fourjs/core`    | `FourError`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `@fourjs/core`    | `FourErrorCode`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `@fourjs/math`    | `Quaternion, Vector3`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `@fourjs/math`    | `Matrix3`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `@fourjs/physics` | `ALL_COLLISION_GROUPS, DEFAULT_DENSITY, DEFAULT_FRICTION, DEFAULT_RESTITUTION, DETERMINISM_LEVELS, rejectStalePhysicsHandle, resolveAngularVelocity, resolveGravity, resolveRotation, resolveSleepingConfig, passesQueryFilter, resolveQueryOptions, validateColliderDescriptor, validateJointDescriptor, validateQueryShape, validatePhysicsWorldOptions, validateRigidBodyDescriptor, widenToVector3`                                                                                                                                                                                    |
+| `@fourjs/physics` | `AngularVelocityInput, BodyType, CCDMode, ColliderDescriptor, CollisionShape, ContactPoint, JointDescriptor, OverlapHit, OverlapQuery, PhysicsBodyHandle, PhysicsCapabilities, PhysicsColliderHandle, PhysicsDimension, PhysicsEvent, PhysicsEventInterest, PhysicsJointHandle, PhysicsWorldAdapter, PhysicsWorldOptions, PointHit, PointQuery, RaycastHit, RaycastQuery, RigidBodyDescriptor, RotationInput, ShapeCastHit, ShapeCastQuery, ShippedJointType, SleepingConfig, SolverBodyAccess, SolverBodyTuningAccess, SolverJointAccess, SolverJointMotor, QueryCandidate, Vector3Input` |
+
+**Exports:**
+
+- Classes: `PhysJSAdapter2D`, `PhysJSAdapter3D`
+- Constants: `PHYSJS_VERSION`, `PHYSJS_CAPABILITIES`
+
+---
+
+### `packages/physics-physjs/src/register.ts` - This package's opt-in to §37's solver registry (RFC 0010, decision 3).
+
+**Workspace Dependencies:**
+
+| Package           | Import                                                                     |
+| ----------------- | -------------------------------------------------------------------------- |
+| `@fourjs/physics` | `registerSolver, PhysicsWorldAdapter, PhysicsWorldOptions, SolverRegistry` |
+
+**Internal Dependencies:**
+
+| File                  | Imports                            | Type   |
+| --------------------- | ---------------------------------- | ------ |
+| `./physjs-adapter.js` | `PhysJSAdapter2D, PhysJSAdapter3D` | Import |
+
+**Exports:**
+
+- Functions: `isPhysJSSupported`, `createPhysJSAdapter`, `registerPhysJSSolver`
 
 ---
 
@@ -7057,6 +7255,20 @@ graph LR
 
 ## Packages/fourjs Dependencies
 
+### `packages/fourjs/src/physics-physjs.ts` - physics-physjs module
+
+**Workspace Dependencies:**
+
+| Package                  | Import |
+| ------------------------ | ------ |
+| `@fourjs/physics-physjs` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/physics-physjs`
+
+---
+
 ### `packages/fourjs/src/physics-box2d.ts` - physics-box2d module
 
 **Workspace Dependencies:**
@@ -7599,6 +7811,7 @@ graph LR
 | `@fourjs/materials`     | `Material, MaterialTexture, SpriteMaterial, UnlitMaterial`                                                                                                                                                                                                                                                                                                         |
 | `@fourjs/motion`        | `CAMERA_SHAKE_SERIALIZER, CHARACTER_CONTROLLER_SERIALIZER, CameraShake, CharacterController, FIRST_PERSON_LOOK_SERIALIZER, FOLLOW_RIG_SERIALIZER, FirstPersonLook, FollowRig, KINEMATIC_CONTROLLER_SERIALIZER, KinematicController, LOOK_AT_CONSTRAINT_SERIALIZER, LookAtConstraint, MOTION_COMPONENT_SERIALIZER, MotionComponent, ORBIT_RIG_SERIALIZER, OrbitRig` |
 | `@fourjs/physics`       | `COLLIDER_SERIALIZER, Collider, RIGID_BODY_SERIALIZER, RigidBody, SWEPT_CHARACTER_CONTROLLER_SERIALIZER, SweptCharacterController`                                                                                                                                                                                                                                 |
+| `@fourjs/physics-soft`  | `SOFT_BODY_SERIALIZER, SoftBody`                                                                                                                                                                                                                                                                                                                                   |
 | `@fourjs/render`        | `Arc, Circle, Ellipse, Line, Mesh, PathShape, Polygon, Polyline, Rectangle, RegularPolygon, Renderable, Ring, Sector, Shape2D, Sprite, Star, resolveShapePaintSupport, restoreMeshSkeleton`                                                                                                                                                                        |
 | `@fourjs/render`        | `GradientStop, Paint, ResolvedPaint, ResolvedShapeFill, ResolvedStrokeStyle, ScissorRect`                                                                                                                                                                                                                                                                          |
 | `@fourjs/scene`         | `Bone, DirectionalLight, HemisphereLight, MORPH_WEIGHTS_SERIALIZER, MorphWeights, NODE_SPACE_SERIALIZER, NodeSpace, OrthographicCamera, PerspectiveCamera, PointLight, SCREEN_ORIGINS, SCREEN_UNITS, ScreenCamera, SpotLight, restoreNodeId, HitTestMode, Node`                                                                                                    |
@@ -7775,8 +7988,8 @@ graph LR
 | File                                             | Imports From | Exports To |
 | ------------------------------------------------ | ------------ | ---------- |
 | `packages/render/src/index`                      | 32 files     | 0 files    |
-| `packages/render-webgpu/src/webgpu-device`       | 0 files      | 30 files   |
-| `packages/render-webgpu/src/index`               | 29 files     | 0 files    |
+| `packages/render-webgpu/src/webgpu-device`       | 0 files      | 29 files   |
+| `packages/render-webgpu/src/index`               | 28 files     | 0 files    |
 | `packages/render-webgpu/src/webgpu-renderer`     | 24 files     | 2 files    |
 | `packages/physics/src/index`                     | 24 files     | 0 files    |
 | `packages/motion/src/index`                      | 23 files     | 0 files    |
@@ -7792,28 +8005,28 @@ graph LR
 | `packages/ui/src/index`                          | 14 files     | 0 files    |
 | `packages/assets/src/index`                      | 14 files     | 0 files    |
 | `packages/physics/src/descriptors`               | 4 files      | 10 files   |
+| `packages/render-webgpu/src/wgpu-bindings`       | 1 file       | 13 files   |
 | `packages/scene/src/node`                        | 4 files      | 9 files    |
-| `packages/render-webgpu/src/wgpu-bindings`       | 1 file       | 12 files   |
 | `packages/animation/src/index`                   | 13 files     | 0 files    |
 | `packages/core/src/index`                        | 13 files     | 0 files    |
 | `packages/animation/src/controller`              | 9 files      | 3 files    |
 | `packages/assets/src/texture`                    | 2 files      | 9 files    |
 | `packages/physics/src/rigid-body`                | 4 files      | 7 files    |
 | `packages/physics/src/collider`                  | 8 files      | 3 files    |
-| `packages/render/src/render-list`                | 6 files      | 5 files    |
 | `packages/render/src/render-target`              | 2 files      | 9 files    |
 | `packages/diagnostics/src/index`                 | 11 files     | 0 files    |
 | `packages/math/src/index`                        | 10 files     | 0 files    |
 | `packages/geometry/src/index`                    | 10 files     | 0 files    |
+| `packages/render/src/render-list`                | 6 files      | 4 files    |
 | `packages/render/src/renderer`                   | 5 files      | 5 files    |
 | `packages/render-webgpu/src/wgpu-shadow`         | 4 files      | 6 files    |
 | `packages/render-webgpu/src/wgpu-standard`       | 6 files      | 4 files    |
+| `packages/render-webgpu/src/wgpu-lit`            | 5 files      | 5 files    |
 | `packages/ui/src/widget`                         | 0 files      | 9 files    |
 | `packages/math/src/alloc-counter`                | 0 files      | 9 files    |
 | `packages/physics/src/serializers`               | 8 files      | 1 file     |
 | `packages/physics/src/shapes`                    | 1 file       | 8 files    |
 | `packages/render/src/raster`                     | 6 files      | 3 files    |
-| `packages/render-webgpu/src/wgpu-skinning`       | 8 files      | 1 file     |
 
 ---
 
@@ -7919,217 +8132,229 @@ graph TD
     end
 
     subgraph Packages/physics-box2d
-        N51[index]
+        N51[box2d-adapter]
+        N52[index]
+        N53[snapshot-codec]
+        N54[register]
     end
 
     subgraph Packages/scene
-        N52[transform]
-        N53[layers]
-        N54[node-space]
-        N55[index]
-        N56[skeleton]
-        N57[group]
-        N58[screen-camera]
-        N59[light]
-        N60[trackball]
-        N61[world-transforms]
-        N62[...7 more]
+        N55[transform]
+        N56[layers]
+        N57[node-space]
+        N58[index]
+        N59[skeleton]
+        N60[group]
+        N61[screen-camera]
+        N62[light]
+        N63[trackball]
+        N64[world-transforms]
+        N65[...7 more]
     end
 
     subgraph Packages/assets
-        N63[image-probe]
-        N64[gltf]
-        N65[image-memory]
-        N66[capabilities]
-        N67[index]
-        N68[texture]
-        N69[asset-manager]
-        N70[loader-registry]
-        N71[manifest]
-        N72[content-hash]
-        N73[...8 more]
+        N66[image-probe]
+        N67[gltf]
+        N68[image-memory]
+        N69[capabilities]
+        N70[index]
+        N71[texture]
+        N72[asset-manager]
+        N73[loader-registry]
+        N74[manifest]
+        N75[content-hash]
+        N76[...8 more]
     end
 
     subgraph Packages/physics-soft
-        N74[index]
+        N77[index]
+        N78[soft-body]
+        N79[pbd]
+        N80[serializers]
     end
 
     subgraph Packages/physics-rapier
-        N75[ccd]
-        N76[index]
-        N77[conversions2d]
-        N78[rapier2d-adapter]
-        N79[rapier3d-adapter]
-        N80[register]
-        N81[conversions3d]
-        N82[init]
+        N81[ccd]
+        N82[index]
+        N83[conversions2d]
+        N84[rapier2d-adapter]
+        N85[rapier3d-adapter]
+        N86[register]
+        N87[conversions3d]
+        N88[init]
     end
 
     subgraph Packages/render-webgl
-        N83[gl-render-target]
-        N84[gl-picking]
-        N85[gl-effect]
-        N86[gl-shadow-registry]
-        N87[index]
-        N88[gl-standard-registry]
-        N89[gl-skinning-glsl]
-        N90[gl-particles]
-        N91[gl-picking-registry]
-        N92[gl-geometry]
-        N93[...15 more]
+        N89[gl-render-target]
+        N90[gl-picking]
+        N91[gl-effect]
+        N92[gl-shadow-registry]
+        N93[index]
+        N94[gl-standard-registry]
+        N95[gl-skinning-glsl]
+        N96[gl-particles]
+        N97[gl-picking-registry]
+        N98[gl-geometry]
+        N99[...15 more]
     end
 
     subgraph Packages/physics
-        N94[solver-registry]
-        N95[capabilities]
-        N96[index]
-        N97[world]
-        N98[rigid-body]
-        N99[validation]
-        N100[joints]
-        N101[descriptors]
-        N102[swept-character-controller]
-        N103[physics-event-system]
-        N104[...15 more]
+        N100[solver-registry]
+        N101[capabilities]
+        N102[index]
+        N103[world]
+        N104[rigid-body]
+        N105[validation]
+        N106[joints]
+        N107[descriptors]
+        N108[swept-character-controller]
+        N109[physics-event-system]
+        N110[...15 more]
     end
 
     subgraph Packages/geometry
-        N105[index]
-        N106[tessellation]
-        N107[path-boolean]
-        N108[path]
-        N109[svg-document]
-        N110[geometry]
-        N111[primitives-3d]
-        N112[primitive-support]
-        N113[resource-memory]
-        N114[buffer-geometry]
-        N115[...3 more]
+        N111[index]
+        N112[tessellation]
+        N113[path-boolean]
+        N114[path]
+        N115[svg-document]
+        N116[geometry]
+        N117[primitives-3d]
+        N118[primitive-support]
+        N119[resource-memory]
+        N120[buffer-geometry]
+        N121[...3 more]
     end
 
     subgraph Packages/render
-        N116[read-pixels]
-        N117[shape-paint]
-        N118[scissor]
-        N119[sprite]
-        N120[capabilities]
-        N121[view-list]
-        N122[index]
-        N123[compute-workloads]
-        N124[texture]
-        N125[render-target-bytes]
-        N126[...24 more]
+        N122[read-pixels]
+        N123[shape-paint]
+        N124[scissor]
+        N125[sprite]
+        N126[capabilities]
+        N127[view-list]
+        N128[index]
+        N129[compute-workloads]
+        N130[texture]
+        N131[render-target-bytes]
+        N132[...24 more]
     end
 
     subgraph Packages/input
-        N127[pick]
-        N128[index]
-        N129[keyboard-input]
-        N130[key-events]
-        N131[pointer-events]
-        N132[pointer-input]
-        N133[drag]
-        N134[keyboard-state]
-        N135[propagation]
+        N133[pick]
+        N134[index]
+        N135[keyboard-input]
+        N136[key-events]
+        N137[pointer-events]
+        N138[pointer-input]
+        N139[drag]
+        N140[keyboard-state]
+        N141[propagation]
     end
 
     subgraph Packages/render-webgpu
-        N136[wgpu-geometry]
-        N137[webgpu-device]
-        N138[wgpu-effect]
-        N139[index]
-        N140[wgpu-bindings]
-        N141[wgpu-skinning]
-        N142[wgpu-node-program]
-        N143[wgpu-shadow]
-        N144[wgpu-gpu-timer]
-        N145[wgpu-readback]
-        N146[...22 more]
+        N142[wgpu-geometry]
+        N143[webgpu-device]
+        N144[wgpu-effect]
+        N145[index]
+        N146[wgpu-bindings]
+        N147[wgpu-skinning]
+        N148[wgpu-node-program]
+        N149[wgpu-shadow]
+        N150[wgpu-gpu-timer]
+        N151[wgpu-readback]
+        N152[...21 more]
+    end
+
+    subgraph Packages/physics-physjs
+        N153[index]
+        N154[physjs-adapter]
+        N155[register]
     end
 
     subgraph Packages/render-canvas
-        N147[index]
-        N148[project]
-        N149[canvas2d-renderer]
-        N150[register]
+        N156[index]
+        N157[project]
+        N158[canvas2d-renderer]
+        N159[register]
     end
 
     subgraph Packages/motion
-        N151[systems]
-        N152[ik]
-        N153[capabilities]
-        N154[character-controller]
-        N155[clock]
-        N156[index]
-        N157[waypoint-graph-planner]
-        N158[kinematic-controller]
-        N159[scheduler]
-        N160[steering]
-        N161[...14 more]
+        N160[systems]
+        N161[ik]
+        N162[capabilities]
+        N163[character-controller]
+        N164[clock]
+        N165[index]
+        N166[waypoint-graph-planner]
+        N167[kinematic-controller]
+        N168[scheduler]
+        N169[steering]
+        N170[...14 more]
     end
 
     subgraph Packages/animation
-        N162[tween]
-        N163[timeline]
-        N164[animation-system]
-        N165[index]
-        N166[when]
-        N167[track]
-        N168[binding]
-        N169[mixer]
-        N170[blend-tree]
-        N171[values]
-        N172[...4 more]
+        N171[tween]
+        N172[timeline]
+        N173[animation-system]
+        N174[index]
+        N175[when]
+        N176[track]
+        N177[binding]
+        N178[mixer]
+        N179[blend-tree]
+        N180[values]
+        N181[...4 more]
     end
 
     subgraph Packages/diagnostics
-        N173[checksum]
-        N174[leak-registry]
-        N175[index]
-        N176[validation]
-        N177[replay-format]
-        N178[recorder]
-        N179[stats]
-        N180[rollback]
-        N181[replay-player]
-        N182[debug-draw]
-        N183[...2 more]
+        N182[checksum]
+        N183[leak-registry]
+        N184[index]
+        N185[validation]
+        N186[replay-format]
+        N187[recorder]
+        N188[stats]
+        N189[rollback]
+        N190[replay-player]
+        N191[debug-draw]
+        N192[...2 more]
     end
 
     subgraph Packages/core
-        N184[units]
-        N185[leak-registry]
-        N186[index]
-        N187[disposable]
-        N188[conventions]
-        N189[dev]
-        N190[plugin]
-        N191[events]
-        N192[space]
-        N193[random]
-        N194[...4 more]
+        N193[units]
+        N194[leak-registry]
+        N195[index]
+        N196[disposable]
+        N197[conventions]
+        N198[dev]
+        N199[plugin]
+        N200[events]
+        N201[space]
+        N202[random]
+        N203[...4 more]
     end
 
     subgraph Packages/fourjs
-        N195[physics-box2d]
-        N196[gltf]
-        N197[application]
-        N198[capabilities]
-        N199[plugins]
-        N200[physics]
-        N201[compute-pass]
-        N202[index]
-        N203[core]
-        N204[render-webgpu]
-        N205[...25 more]
+        N204[physics-physjs]
+        N205[physics-box2d]
+        N206[gltf]
+        N207[application]
+        N208[capabilities]
+        N209[plugins]
+        N210[physics]
+        N211[compute-pass]
+        N212[index]
+        N213[core]
+        N214[...26 more]
     end
 
     subgraph Packages/serialization
-        N206[capabilities]
-        N207[migration]
-        N208[index]
-        N209[format]
-        N210[serializer]
+        N215[capabilities]
+        N216[migration]
+        N217[index]
+        N218[format]
+        N219[serializer]
     end
 
     N0 --> N1
@@ -8217,15 +8442,15 @@ graph TD
 
 | Category                | Count  |
 | ----------------------- | ------ |
-| Total TypeScript Files  | 353    |
-| Total Modules           | 24     |
-| Total Lines of Code     | 170669 |
-| Total Exports           | 3619   |
-| Total Re-exports        | 2268   |
-| Total Classes           | 217    |
-| Total Interfaces        | 660    |
-| Total Functions         | 614    |
-| Total Type Guards       | 32     |
+| Total TypeScript Files  | 362    |
+| Total Modules           | 25     |
+| Total Lines of Code     | 174956 |
+| Total Exports           | 3601   |
+| Total Re-exports        | 2258   |
+| Total Classes           | 224    |
+| Total Interfaces        | 669    |
+| Total Functions         | 610    |
+| Total Type Guards       | 34     |
 | Total Enums             | 0      |
 | Type-only Imports       | 456    |
 | Runtime Circular Deps   | 0      |

@@ -68,14 +68,14 @@ import { DEFAULT_DETERMINISM_LEVEL, DETERMINISM_LEVELS } from "./types.js";
 import type { PhysicsWorldAdapter } from "./world.js";
 
 /**
- * The solver packages §102 names, as selection strings.
+ * The solver packages §102 names (plus `"physjs"`, RFC 0010), as selection strings.
  *
  * Closed, like `RendererBackend` (§62) and `ShippedJointType` (§28): a typo is
  * a compile error rather than an empty registry at runtime. A solver outside
  * §102 is added the same way a sixth rendering backend would be — by widening
  * this union in a packet that also has a reason to.
  */
-export type SolverName = "rapier" | "box2d" | "soft";
+export type SolverName = "rapier" | "box2d" | "soft" | "physjs";
 
 /** What a world may ask for (§20, §37): `"auto"`, or one solver by name. */
 export type SolverSelection = "auto" | SolverName;

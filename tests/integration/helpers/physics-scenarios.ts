@@ -42,6 +42,11 @@ import {
   type PhysicsWorldAdapter,
   type WorldPhysicsEvent,
 } from "@fourjs/physics";
+import {
+  PHYSJS_CAPABILITIES,
+  PhysJSAdapter2D,
+  PhysJSAdapter3D,
+} from "@fourjs/physics-physjs";
 import { Rapier2dAdapter, Rapier3dAdapter } from "@fourjs/physics-rapier";
 import { Group, type Node } from "@fourjs/scene";
 import { Application } from "fourJS/application";
@@ -542,3 +547,91 @@ export function renderPose(
     ? RENDER_POSITION
     : undefined;
 }
+
+// --- adapter parameterisation (RFC 0010 decisions 7-8, wave 9) ----------------
+
+/** The solver adapters the conformance suites can run against. */
+export type SolverId = "rapier" | "physjs";
+
+/** Every solver, Rapier first. */
+export const SOLVER_IDS: readonly SolverId[] = ["rapier", "physjs"];
+
+/** A {@link DimensionKit} that remembers which solver it builds. */
+export interface SolverKit extends DimensionKit {
+  readonly solver: SolverId;
+}
+
+/**
+ * What a solver can express, read from its capability record where one exists
+ * and stated here (with the refusal's reason) where `PhysicsCapabilities` has no
+ * field for it. Scenarios `skipIf` on these so a skip always carries a reason.
+ */
+export interface SolverSupport {
+  /** Sensor (trigger-volume) colliders. */
+  readonly sensors: boolean;
+  /** Collider local offsets / rotations (needs a compound hull). */
+  readonly colliderOffsets: boolean;
+  /** `capabilities.queries.shapeCast`. */
+  readonly shapeCast: boolean;
+  /** `capabilities.jointTypes`. */
+  readonly jointTypes: readonly string[];
+  /** `capabilities.ccdModes` includes `"swept"`. */
+  readonly sweptCcd: boolean;
+  /** Per-joint limits and motors (PhysJS 0.5.0 has neither). */
+  readonly jointLimitsMotors: boolean;
+  /** Why unsupported things are unsupported, for skip messages. */
+  readonly why: string;
+}
+
+/** Support record per solver. */
+export const SOLVER_SUPPORT: Readonly<Record<SolverId, SolverSupport>> = {
+  rapier: {
+    sensors: true,
+    colliderOffsets: true,
+    shapeCast: true,
+    jointTypes: [
+      "fixed",
+      "spring",
+      "revolute",
+      "spherical",
+      "prismatic",
+      "rope",
+    ],
+    sweptCcd: true,
+    jointLimitsMotors: true,
+    why: "",
+  },
+  physjs: {
+    sensors: false,
+    colliderOffsets: false,
+    shapeCast: PHYSJS_CAPABILITIES.queries.shapeCast,
+    jointTypes: PHYSJS_CAPABILITIES.jointTypes,
+    sweptCcd: PHYSJS_CAPABILITIES.ccdModes.includes("swept"),
+    jointLimitsMotors: false,
+    why: "PhysJS 0.5.0 (RFC 0010 decision 5): no trigger volumes, no collider offsets, no shape casts, no swept CCD, no joint limits/motors, no prismatic/rope",
+  },
+};
+
+/** Builds the 2D or 3D kit for a solver. */
+export function kitFor(
+  solver: SolverId,
+  dimension: PhysicsDimension,
+): SolverKit {
+  const base = dimension === "2d" ? KIT_2D : KIT_3D;
+  if (solver === "rapier") {
+    return { ...base, solver };
+  }
+  return {
+    ...base,
+    solver,
+    adapterName: dimension === "2d" ? "physjs2d" : "physjs3d",
+    createAdapter(): PhysicsWorldAdapter {
+      return dimension === "2d" ? new PhysJSAdapter2D() : new PhysJSAdapter3D();
+    },
+  };
+}
+
+/** Every solver x dimension kit, grouped by solver then 2D first. */
+export const SOLVER_KITS: readonly SolverKit[] = SOLVER_IDS.flatMap(
+  (solver) => [kitFor(solver, "2d"), kitFor(solver, "3d")],
+);
