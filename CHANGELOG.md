@@ -30,9 +30,17 @@ specification; until then, entries are grouped by date under **Unreleased**.
     and the smoothness spec asserts every page-reported mid-step frame is drawn mid-step;
     `blending` reports `data-presses` and the spec re-issues a click only when the page
     provably never received the press. No threshold lowered, no retries.
+- **Program wave 4 (2026-11-04) — RFC residues.**
+  - `@fourjs/assets`: `createBoundedWebpDecoder`, `createBoundedAvifDecoder` and `probeAvif`
+    over a raw codec ABI (application supplies libwebp/libavif; no dependency, no pin).
+  - `@fourjs/render-webgpu` samples `normalMap`, `occlusionMap` and `emissiveMap` (five-entry
+    surface group, 1x1 defaults) with WGSL parity to the WebGL shader.
+  - `@fourjs/render-webgpu` draws one-target GPU morph on the unlit, lit and standard families.
 
 ### Changed
 
+- Decided: mesh batching stays opt-in (+1.87-2.08 kB gzip per WebglRenderer bundle; see
+  `docs/benchmarks/batching-default-on.md`).
 - Per-step and per-frame work removed (all outputs bit-identical, verified by oracle tests):
   `buildInterpolatedRenderList` composes each ancestor once per build; `CpuSkinning.update`
   returns early on an unchanged palette; `pick()` rejects by a conservative world-space
@@ -46,6 +54,8 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Fixed
 
+- WebGPU: a particle draw following a morph draw was mis-keyed (introduced and fixed within
+  this branch, never released).
 - `tools/apply-publish-names.mjs`: the staged quoted-name residue check read raw text and
   failed a clean release on a JSDoc comment that merely quoted a package name; it now reads
   comment-stripped code like the line scan. The rest of `tools/` was read through for the

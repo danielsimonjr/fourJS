@@ -44,3 +44,18 @@ copies, row flipping, or total process memory. PNG CRC/framing and real allocato
 failures are tested; APNG and other formats are refused. See the
 [security guide](../../docs/guides/security-and-untrusted-content.md#image-decoder-heap-limits)
 for complete accounting, trusted-code setup, native callback behavior, and CSP.
+
+## Bounded WebP and AVIF decoding (§96)
+
+`createBoundedWebpDecoder` and `createBoundedAvifDecoder` take the same options
+as the JPEG one (`wasmBinary`, `maximumWorkingBytes`, `maximumDecodedBytes`,
+`maximumExpansionRatio`) and return the same strict `TexelDecodeLike`: heap cap
+pinned before init, complete header preflight (`probeWebp` VP8/VP8L/VP8X;
+`probeAvif` requires an `avif`/`avis` `ftyp` brand and reads the largest `ispe`),
+finite output/expansion limits, and fail-closed poisoning after a codec trap.
+No runtime dependency and no version pin: the application supplies the wasm bytes.
+The codec lineage is libwebp / libavif (the codecs behind `@jsquash/webp` and
+`@jsquash/avif`), but those packages ship Emscripten that cannot be bounded host-side, so the bytes must be a build of the same
+codec to the glue-free raw ABI (no imports; exports `memory`, `malloc(len)`,
+`free(ptr,len)`, `decode(ptr,len,infoPtr) -> outPtr`, writing u32 LE width and
+height at `infoPtr` and RGBA8 at `outPtr`). Tests use a hand-assembled stand-in.

@@ -78,9 +78,17 @@ export {
   MAP_BIND_GROUP_INDEX,
   MAP_SAMPLER_BINDING,
   MAP_TEXTURE_BINDING,
+  SURFACE_EMISSIVE_BINDING,
+  SURFACE_MR_BINDING,
+  SURFACE_NORMAL_BINDING,
+  SURFACE_OCCLUSION_BINDING,
+  SURFACE_SAMPLER_BINDING,
   createDrawBindGroupLayout,
+  createSurfaceBindGroupLayout,
   createTextureBindGroupLayout,
 } from "./wgpu-bindings.js";
+export type { SurfaceSources } from "./wgpu-surface-group.js";
+export { WgpuSurfaceGroupCache } from "./wgpu-surface-group.js";
 export type { CacheableGeometry, WgpuGeometryRecord } from "./wgpu-geometry.js";
 export { WgpuGeometryCache } from "./wgpu-geometry.js";
 export type {
@@ -127,7 +135,14 @@ export {
   CLEAR_VERTEX_COUNT,
   COLOR_BUFFER_LAYOUT,
   COLOR_SHADER_LOCATION,
+  DRAW_MORPH_WEIGHT_OFFSET,
   FRAGMENT_ENTRY_POINT,
+  MORPH_DRAW_UNIFORM_WGSL,
+  MORPH_WEIGHT_WGSL,
+  NORMAL1_BUFFER_LAYOUT,
+  NORMAL1_SHADER_LOCATION,
+  POSITION1_BUFFER_LAYOUT,
+  POSITION1_SHADER_LOCATION,
   POSITION_BUFFER_LAYOUT,
   POSITION_SHADER_LOCATION,
   UV_BUFFER_LAYOUT,
@@ -136,6 +151,7 @@ export {
   unlitShaderSource,
   unlitVertexBufferLayouts,
   unlitFragmentStageWgsl,
+  type WgpuMorph,
 } from "./wgpu-unlit.js";
 export {
   LIGHTS_BIND_GROUP_INDEX,
@@ -273,7 +289,11 @@ export {
   frameWantsStencil,
   stencilDescriptor,
 } from "./wgpu-stencil.js";
+export type { SurfaceMaps } from "./wgpu-standard.js";
 export {
+  MORPH_STANDARD_UNIFORM_WGSL,
+  NO_SURFACE_MAPS,
+  SURFACE_DEFAULT_TEXELS,
   STANDARD_BASE_COLOR_OFFSET,
   STANDARD_EMISSIVE_OFFSET,
   STANDARD_MODEL_OFFSET,
