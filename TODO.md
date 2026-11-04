@@ -1644,8 +1644,10 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
 - [ ] **RFC 0003 residue (staged in source, 2026-08-28):** ~~GPU morph path (the
       extra-vertex-stream layout decision, stated in `mesh.ts`/`render-list.ts`/§54)~~
       **DONE 2026-10-05** (one-target WebGL: `positions1`/`normals1` at 6/7,
-      `JOINTS_1`/`WEIGHTS_1` at 8/9, spec revision 1.19; WebGPU skips morph
-      draws; further targets staged);
+      `JOINTS_1`/`WEIGHTS_1` at 8/9, spec revision 1.19; ~~WebGPU skips morph
+      draws~~ **DONE 2026-11-04** (one-target morph on unlit/lit/standard:
+      `positions1`/`normals1` at 6/7, weight in the draw uniform's spare word
+      at byte 156; further targets staged);
       ~~skinned shadow caster program (the §69 pass skips skinned draws — a bind-pose
       shadow is a different picture)~~ **DONE 2026-09-09** (WebGL
       `SkinnedShadowProgram` via `acquireShadow()` on the first skinned
@@ -1658,7 +1660,7 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       RFC 0005 skinned id lives in `wgpu-picking.ts`);
       ~~CPU skinning~~ **DONE 2026-09-11** (`CpuSkinning` + `Mesh.skinningMode`,
       interpolated geometry, bounds/picking and serialization, same-runtime golden);
-      bone-texture palette (unbounds
+      bone-texture palette (still open; unbounds
       `MAX_SKINNING_JOINTS = 48`; needs a render-target format union +
       vertex texture fetch); ~~§43-interpolated palettes (today the palette
       is the last resolved pose)~~ **DONE 2026-09-09**
@@ -1710,7 +1712,7 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       forward-plus. Shadows (§69 — directional tier shipped 2026-08-09;
       cascades, point/spot maps, the atlas, transparent masks and contact
       shadows remain),
-      §59 StandardMaterial/PBR rest (`normalMap` / `occlusionMap` WebGL DONE 2026-09-11, WebGPU open;
+      §59 StandardMaterial/PBR rest (`normalMap` / `occlusionMap` WebGL DONE 2026-09-11, WebGPU DONE 2026-11-04;
       IBL / PhysicalMaterial extensions absent), §60a tone-mapping operator
       (sRGB encode + `ColorGradeEffect` shipped; operator waits on float
       targets),
@@ -1726,7 +1728,9 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       2026-09-09** (unit 3, glTF factor × texture; WebGPU unsampled —
       groups 2/3 already hold albedo/MR). Remaining: extra directionals /
       area / clustered, cascades, PBR rest, tone-map operator,
-      light layers, WebGPU `normalMap` / `occlusionMap` and emissive.
+      light layers; ~~WebGPU `normalMap` / `occlusionMap` and emissive~~
+      **DONE 2026-11-04** (five-entry surface group at 3 behind albedo else 2,
+      1x1 defaults, `wgpu-surface-group.ts`; WGSL parity with the GLSL).
 - [x] Spec-revisit note (2026-08-04) — **done, spec revision 1.8 (2026-08-08)**: §57's
       family list now names `LitMaterial`
 - [x] First publish (§94 0.1): Changesets release workflow + the
@@ -2077,7 +2081,11 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       2026-09-10** (`#canSkipUpload` per slot; `contentVersion === 0`
       always uploads). ~~Making batching the
       default still needs A-4's build-time pipeline-selection seam (the opt-in
-      seam already costs every bundle +0.17 kB).~~ **CORRECTED 2026-09-16 — there is
+      seam already costs every bundle +0.17 kB).~~ **DECIDED 2026-11-04: stays
+      opt-in** (+1.87-2.08 kB gzip per WebglRenderer bundle, particles-demo would
+      bust its 46 kB budget; wins only on thousands of like unlit items; see
+      `docs/benchmarks/batching-default-on.md`; R-22 instanced shaded and atlas
+      grouping stay open). **CORRECTED 2026-09-16 — there is
       no such blocker.** A-4 shipped `__FOUR_DEV__`, a build *mode* flag and the only
       build-time define in the repository; `dev.ts`'s contract bars anything that
       changes a number the engine computes from riding it, and batching turns 13 draws
@@ -2422,7 +2430,9 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
 - [ ] **§96 residue:** image heap enforcement **implemented 2026-09-12** via
       `createBoundedPngDecoder` and strict image/texture/glTF `maximumWorkingBytes`.
       Native browser decoders cannot be capped and are refused in strict mode;
-      JPEG/WebP/AVIF have no bounded adapter yet. Texture decoding and raw gzip
+      JPEG shipped 2026-10-05; ~~WebP/AVIF bounded decoders~~ **DONE 2026-11-04**
+      (`createBoundedWebpDecoder`/`createBoundedAvifDecoder` over a raw codec ABI
+      the application supplies; no dependency, no pin). Texture decoding and raw gzip
       output also have absolute decoded-size and expansion-ratio limits, and
       shader/plugin trust boundaries remain implemented. Separate Draco/Basis
       work exists in local roadmap commit `b1240b4` but is not on this branch, so

@@ -4810,3 +4810,35 @@ is what makes alternating alphas safe.
 **Flake rows.** Both browser gates now assert on page-published counters
 (`data-mid-frames`, `data-presses`); the only re-issue is a click the page
 provably never received. Blanket retries remain forbidden.
+
+### 2026-11-04 — program wave 4 (RFC residues)
+
+**Surface bind group (WebGPU standard family).** One five-entry group (metallic-roughness,
+one shared sampler, normal, occlusion, emissive) at group 3 behind an albedo map, else
+group 2. Absent slots bind 1x1 default texels (`SURFACE_DEFAULT_TEXELS`), created lazily
+with the first group. Groups are cached in a four-deep `WeakMap` chain keyed by the
+resolved texture views (no allocation after first draw). Invalidation contract: a
+re-uploaded texture gets a new view, so its stale groups become unreachable and are
+collected; the sampler is the first present map's (a pure function of §77 state) and is not
+part of the key. Pipeline/module keys gain `|nm` / `|oc` / `|em` for standard only;
+existing keys are byte-identical. `normalScale - 1` / `occlusionStrength - 1` ride the
+standard uniform.
+
+**One-target GPU morph (WebGPU).** The weight lives in the draw uniform's spare padding
+word at byte offset 156; `positions1`/`normals1` are vertex locations 6/7 (lazy upload in
+the geometry cache). Pipeline descriptor, memo and module keys carry `|mo:<morph>` only
+when morph is set (morph-free keys unchanged). Covers unlit, lit and standard; further
+targets and the bone-texture palette stay open. A particle draw after a morph draw was
+mis-keyed (flags not reset in the particle/mask/sprite request arms) - introduced and fixed
+inside this branch.
+
+**Raw codec ABI (WebP/AVIF).** jSquash's WebP/AVIF builds are Emscripten embind glue that
+cannot be heap-bounded host-side, so `createBoundedWebpDecoder` / `createBoundedAvifDecoder`
+(shared `createBoundedRawDecoder`, `probeAvif` header preflight) run over a documented raw
+ABI: the application supplies libwebp / libavif compiled to it. No dependency, no version
+pin. Draco/Basis remain open.
+
+**D5: batching stays opt-in (2026-11-04).** Measured +1.87-2.08 kB gzip per WebglRenderer
+bundle (particles-demo would exceed its 46 kB budget); draw-call wins only on thousands of
+like consecutive unlit items; lit meshes do not batch yet (R-22). Evidence:
+`docs/benchmarks/batching-default-on.md`.
