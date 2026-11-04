@@ -31,17 +31,18 @@ This document provides a comprehensive dependency graph of all files, components
 17. [Packages/render Dependencies](#packages-render-dependencies)
 18. [Packages/input Dependencies](#packages-input-dependencies)
 19. [Packages/render webgpu Dependencies](#packages-render-webgpu-dependencies)
-20. [Packages/render canvas Dependencies](#packages-render-canvas-dependencies)
-21. [Packages/motion Dependencies](#packages-motion-dependencies)
-22. [Packages/animation Dependencies](#packages-animation-dependencies)
-23. [Packages/diagnostics Dependencies](#packages-diagnostics-dependencies)
-24. [Packages/core Dependencies](#packages-core-dependencies)
-25. [Packages/fourjs Dependencies](#packages-fourjs-dependencies)
-26. [Packages/serialization Dependencies](#packages-serialization-dependencies)
-27. [Dependency Matrix](#dependency-matrix)
-28. [Circular Dependency Analysis](#circular-dependency-analysis)
-29. [Visual Dependency Graph](#visual-dependency-graph)
-30. [Summary Statistics](#summary-statistics)
+20. [Packages/physics physjs Dependencies](#packages-physics-physjs-dependencies)
+21. [Packages/render canvas Dependencies](#packages-render-canvas-dependencies)
+22. [Packages/motion Dependencies](#packages-motion-dependencies)
+23. [Packages/animation Dependencies](#packages-animation-dependencies)
+24. [Packages/diagnostics Dependencies](#packages-diagnostics-dependencies)
+25. [Packages/core Dependencies](#packages-core-dependencies)
+26. [Packages/fourjs Dependencies](#packages-fourjs-dependencies)
+27. [Packages/serialization Dependencies](#packages-serialization-dependencies)
+28. [Dependency Matrix](#dependency-matrix)
+29. [Circular Dependency Analysis](#circular-dependency-analysis)
+30. [Visual Dependency Graph](#visual-dependency-graph)
+31. [Summary Statistics](#summary-statistics)
 
 ---
 
@@ -68,12 +69,13 @@ The codebase is organized into the following modules:
 - **packages/render**: 34 files
 - **packages/input**: 9 files
 - **packages/render-webgpu**: 31 files
+- **packages/physics-physjs**: 3 files
 - **packages/render-canvas**: 4 files
 - **packages/motion**: 24 files
 - **packages/animation**: 14 files
 - **packages/diagnostics**: 12 files
 - **packages/core**: 14 files
-- **packages/fourjs**: 35 files
+- **packages/fourjs**: 36 files
 - **packages/serialization**: 5 files
 
 ---
@@ -82,33 +84,34 @@ The codebase is organized into the following modules:
 
 ## Package Dependencies
 
-| Package                                               | Depends On                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Files (Active) | Files (Dormant) |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | --------------- |
-| `@fourjs/particles` (`packages/particles/`)           | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 9              | 0               |
-| `@fourjs/materials` (`packages/materials/`)           | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 17             | 0               |
-| `@fourjs/ui` (`packages/ui/`)                         | `@fourjs/text`, `@fourjs/math`, `@fourjs/input`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                      | 16             | 0               |
-| `@fourjs/text` (`packages/text/`)                     | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 6              | 3               |
-| `@fourjs/math` (`packages/math/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 11             | 0               |
-| `@fourjs/render-svg` (`packages/render-svg/`)         | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`                                                                                                                                                                                                                                                                                                                                                                                                                                      | 3              | 0               |
-| `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/physics`                                                                                                                                                                                                                                                                                                                                                                                                                                     | 4              | 0               |
-| `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 17             | 0               |
-| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 18             | 0               |
-| `@fourjs/physics-soft` (`packages/physics-soft/`)     | `@fourjs/core`, `@fourjs/geometry`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                 | 4              | 0               |
-| `@fourjs/physics-rapier` (`packages/physics-rapier/`) | `@fourjs/physics`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                     | 8              | 0               |
-| `@fourjs/render-webgl` (`packages/render-webgl/`)     | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                      | 25             | 0               |
-| `@fourjs/physics` (`packages/physics/`)               | `@fourjs/core`, `@fourjs/math`, `@fourjs/motion`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 25             | 0               |
-| `@fourjs/geometry` (`packages/geometry/`)             | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 13             | 0               |
-| `@fourjs/render` (`packages/render/`)                 | `@fourjs/math`, `@fourjs/materials`, `@fourjs/geometry`, `@fourjs/core`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                              | 34             | 0               |
-| `@fourjs/input` (`packages/input/`)                   | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 9              | 0               |
-| `@fourjs/render-webgpu` (`packages/render-webgpu/`)   | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 31             | 0               |
-| `@fourjs/render-canvas` (`packages/render-canvas/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 4              | 0               |
-| `@fourjs/motion` (`packages/motion/`)                 | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 24             | 0               |
-| `@fourjs/animation` (`packages/animation/`)           | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                     | 14             | 0               |
-| `@fourjs/diagnostics` (`packages/diagnostics/`)       | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 12             | 1               |
-| `@fourjs/core` (`packages/core/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 14             | 0               |
-| `fourJS` (`packages/fourjs/`)                         | `@fourjs/physics-box2d`, `@fourjs/assets`, `@fourjs/animation`, `@fourjs/core`, `@fourjs/geometry`, `@fourjs/materials`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`, `@fourjs/diagnostics`, `@fourjs/motion`, `@fourjs/physics`, `@fourjs/serialization`, `@fourjs/ui`, `@fourjs/render-webgpu`, `@fourjs/render-svg`, `@fourjs/input`, `@fourjs/text`, `@fourjs/particles`, `@fourjs/physics-soft`, `@fourjs/render-canvas`, `@fourjs/render-webgl`, `@fourjs/physics-rapier` | 35             | 1               |
-| `@fourjs/serialization` (`packages/serialization/`)   | `@fourjs/core`, `@fourjs/scene`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 5              | 0               |
-| `@fourjs-tools/docs` (`tools/docs/`)                  | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 0              | 0               |
+| Package                                               | Depends On                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Files (Active) | Files (Dormant) |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | --------------- |
+| `@fourjs/particles` (`packages/particles/`)           | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 9              | 0               |
+| `@fourjs/materials` (`packages/materials/`)           | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 17             | 0               |
+| `@fourjs/ui` (`packages/ui/`)                         | `@fourjs/text`, `@fourjs/math`, `@fourjs/input`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                | 16             | 0               |
+| `@fourjs/text` (`packages/text/`)                     | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 6              | 3               |
+| `@fourjs/math` (`packages/math/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 11             | 0               |
+| `@fourjs/render-svg` (`packages/render-svg/`)         | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 3              | 0               |
+| `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/physics`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 4              | 0               |
+| `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 17             | 0               |
+| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 18             | 0               |
+| `@fourjs/physics-soft` (`packages/physics-soft/`)     | `@fourjs/core`, `@fourjs/geometry`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                           | 4              | 0               |
+| `@fourjs/physics-rapier` (`packages/physics-rapier/`) | `@fourjs/physics`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 8              | 0               |
+| `@fourjs/render-webgl` (`packages/render-webgl/`)     | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 25             | 0               |
+| `@fourjs/physics` (`packages/physics/`)               | `@fourjs/core`, `@fourjs/math`, `@fourjs/motion`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 25             | 0               |
+| `@fourjs/geometry` (`packages/geometry/`)             | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 13             | 0               |
+| `@fourjs/render` (`packages/render/`)                 | `@fourjs/math`, `@fourjs/materials`, `@fourjs/geometry`, `@fourjs/core`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                        | 34             | 0               |
+| `@fourjs/input` (`packages/input/`)                   | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 9              | 0               |
+| `@fourjs/render-webgpu` (`packages/render-webgpu/`)   | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 31             | 0               |
+| `@fourjs/physics-physjs` (`packages/physics-physjs/`) | `@fourjs/core`, `@fourjs/math`, `@fourjs/physics`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 3              | 0               |
+| `@fourjs/render-canvas` (`packages/render-canvas/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 4              | 0               |
+| `@fourjs/motion` (`packages/motion/`)                 | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 24             | 0               |
+| `@fourjs/animation` (`packages/animation/`)           | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 14             | 0               |
+| `@fourjs/diagnostics` (`packages/diagnostics/`)       | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 12             | 1               |
+| `@fourjs/core` (`packages/core/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 14             | 0               |
+| `fourJS` (`packages/fourjs/`)                         | `@fourjs/physics-physjs`, `@fourjs/physics-box2d`, `@fourjs/assets`, `@fourjs/animation`, `@fourjs/core`, `@fourjs/geometry`, `@fourjs/materials`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`, `@fourjs/diagnostics`, `@fourjs/motion`, `@fourjs/physics`, `@fourjs/serialization`, `@fourjs/ui`, `@fourjs/render-webgpu`, `@fourjs/render-svg`, `@fourjs/input`, `@fourjs/text`, `@fourjs/particles`, `@fourjs/physics-soft`, `@fourjs/render-canvas`, `@fourjs/render-webgl`, `@fourjs/physics-rapier` | 36             | 1               |
+| `@fourjs/serialization` (`packages/serialization/`)   | `@fourjs/core`, `@fourjs/scene`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 5              | 0               |
+| `@fourjs-tools/docs` (`tools/docs/`)                  | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 0              | 0               |
 
 ### Package Dependency Diagram
 
@@ -131,102 +134,107 @@ graph LR
     P14[packages/render]
     P15[packages/input]
     P16[packages/render-webgpu]
-    P17[packages/render-canvas]
-    P18[packages/motion]
-    P19[packages/animation]
-    P20[packages/diagnostics]
-    P21[packages/core]
-    P22[packages/fourjs]
-    P23[packages/serialization]
-    P24[tools/docs]
+    P17[packages/physics-physjs]
+    P18[packages/render-canvas]
+    P19[packages/motion]
+    P20[packages/animation]
+    P21[packages/diagnostics]
+    P22[packages/core]
+    P23[packages/fourjs]
+    P24[packages/serialization]
+    P25[tools/docs]
     P0 --> P4
     P0 --> P7
-    P0 --> P21
-    P1 --> P21
+    P0 --> P22
+    P1 --> P22
     P1 --> P4
     P2 --> P3
     P2 --> P4
     P2 --> P15
     P2 --> P7
-    P2 --> P21
-    P3 --> P21
-    P5 --> P21
+    P2 --> P22
+    P3 --> P22
+    P5 --> P22
     P5 --> P4
     P5 --> P14
-    P6 --> P21
+    P6 --> P22
     P6 --> P4
     P6 --> P12
     P7 --> P4
-    P7 --> P21
-    P8 --> P21
-    P9 --> P21
+    P7 --> P22
+    P8 --> P22
+    P9 --> P22
     P9 --> P13
     P9 --> P4
     P9 --> P7
-    P9 --> P18
+    P9 --> P19
     P10 --> P12
-    P10 --> P21
+    P10 --> P22
     P10 --> P4
     P11 --> P14
-    P11 --> P21
+    P11 --> P22
     P11 --> P4
-    P12 --> P21
+    P12 --> P22
     P12 --> P4
-    P12 --> P18
+    P12 --> P19
     P12 --> P7
     P13 --> P4
-    P13 --> P21
+    P13 --> P22
     P14 --> P4
     P14 --> P1
     P14 --> P13
-    P14 --> P21
+    P14 --> P22
     P14 --> P7
-    P15 --> P21
+    P15 --> P22
     P15 --> P4
     P15 --> P7
     P16 --> P14
-    P16 --> P21
+    P16 --> P22
     P16 --> P4
     P16 --> P7
-    P17 --> P21
+    P17 --> P22
     P17 --> P4
-    P17 --> P14
-    P17 --> P7
+    P17 --> P12
+    P18 --> P22
     P18 --> P4
+    P18 --> P14
     P18 --> P7
-    P18 --> P21
-    P19 --> P21
     P19 --> P4
     P19 --> P7
-    P19 --> P18
-    P20 --> P21
+    P19 --> P22
+    P20 --> P22
     P20 --> P4
-    P22 --> P6
-    P22 --> P8
-    P22 --> P19
-    P22 --> P21
-    P22 --> P13
-    P22 --> P1
-    P22 --> P4
-    P22 --> P14
-    P22 --> P7
-    P22 --> P20
-    P22 --> P18
-    P22 --> P12
-    P22 --> P23
-    P22 --> P2
-    P22 --> P16
-    P22 --> P5
-    P22 --> P15
-    P22 --> P3
-    P22 --> P0
-    P22 --> P9
-    P22 --> P17
-    P22 --> P11
-    P22 --> P10
-    P23 --> P21
-    P23 --> P7
+    P20 --> P7
+    P20 --> P19
+    P21 --> P22
+    P21 --> P4
+    P23 --> P17
+    P23 --> P6
+    P23 --> P8
+    P23 --> P20
+    P23 --> P22
+    P23 --> P13
+    P23 --> P1
     P23 --> P4
+    P23 --> P14
+    P23 --> P7
+    P23 --> P21
+    P23 --> P19
+    P23 --> P12
+    P23 --> P24
+    P23 --> P2
+    P23 --> P16
+    P23 --> P5
+    P23 --> P15
+    P23 --> P3
+    P23 --> P0
+    P23 --> P9
+    P23 --> P18
+    P23 --> P11
+    P23 --> P10
+    P24 --> P22
+    P24 --> P7
+    P24 --> P4
 ```
 
 ---
@@ -5822,6 +5830,72 @@ graph LR
 
 ---
 
+<a id="packages-physics-physjs-dependencies"></a>
+
+## Packages/physics physjs Dependencies
+
+### `packages/physics-physjs/src/index.ts` - `@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102).
+
+**Internal Dependencies:**
+
+| File                  | Imports                                                                 | Type      |
+| --------------------- | ----------------------------------------------------------------------- | --------- |
+| `./physjs-adapter.js` | `PHYSJS_CAPABILITIES, PHYSJS_VERSION, PhysJSAdapter2D, PhysJSAdapter3D` | Re-export |
+| `./register.js`       | `createPhysJSAdapter, isPhysJSSupported, registerPhysJSSolver`          | Re-export |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `PHYSJS_CAPABILITIES`, `PHYSJS_VERSION`, `PhysJSAdapter2D`, `PhysJSAdapter3D`, `createPhysJSAdapter`, `isPhysJSSupported`, `registerPhysJSSolver`
+
+---
+
+### `packages/physics-physjs/src/physjs-adapter.ts` - The PhysJS solver adapters (RFC 0010, §37, §102).
+
+**External Dependencies:**
+
+| Package                 | Import    |
+| ----------------------- | --------- |
+| `@danielsimonjr/physjs` | `* as pj` |
+
+**Workspace Dependencies:**
+
+| Package           | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@fourjs/core`    | `FourError`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `@fourjs/core`    | `FourErrorCode`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `@fourjs/math`    | `Quaternion, Vector3`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `@fourjs/math`    | `Matrix3`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `@fourjs/physics` | `ALL_COLLISION_GROUPS, DEFAULT_DENSITY, DEFAULT_FRICTION, DEFAULT_RESTITUTION, DETERMINISM_LEVELS, rejectStalePhysicsHandle, resolveAngularVelocity, resolveGravity, resolveRotation, resolveSleepingConfig, passesQueryFilter, resolveQueryOptions, validateColliderDescriptor, validateJointDescriptor, validateQueryShape, validatePhysicsWorldOptions, validateRigidBodyDescriptor, widenToVector3`                                                                                                                                                                                    |
+| `@fourjs/physics` | `AngularVelocityInput, BodyType, CCDMode, ColliderDescriptor, CollisionShape, ContactPoint, JointDescriptor, OverlapHit, OverlapQuery, PhysicsBodyHandle, PhysicsCapabilities, PhysicsColliderHandle, PhysicsDimension, PhysicsEvent, PhysicsEventInterest, PhysicsJointHandle, PhysicsWorldAdapter, PhysicsWorldOptions, PointHit, PointQuery, RaycastHit, RaycastQuery, RigidBodyDescriptor, RotationInput, ShapeCastHit, ShapeCastQuery, ShippedJointType, SleepingConfig, SolverBodyAccess, SolverBodyTuningAccess, SolverJointAccess, SolverJointMotor, QueryCandidate, Vector3Input` |
+
+**Exports:**
+
+- Classes: `PhysJSAdapter2D`, `PhysJSAdapter3D`
+- Constants: `PHYSJS_VERSION`, `PHYSJS_CAPABILITIES`
+
+---
+
+### `packages/physics-physjs/src/register.ts` - This package's opt-in to §37's solver registry (RFC 0010, decision 3).
+
+**Workspace Dependencies:**
+
+| Package           | Import                                                                     |
+| ----------------- | -------------------------------------------------------------------------- |
+| `@fourjs/physics` | `registerSolver, PhysicsWorldAdapter, PhysicsWorldOptions, SolverRegistry` |
+
+**Internal Dependencies:**
+
+| File                  | Imports                            | Type   |
+| --------------------- | ---------------------------------- | ------ |
+| `./physjs-adapter.js` | `PhysJSAdapter2D, PhysJSAdapter3D` | Import |
+
+**Exports:**
+
+- Functions: `isPhysJSSupported`, `createPhysJSAdapter`, `registerPhysJSSolver`
+
+---
+
 <a id="packages-render-canvas-dependencies"></a>
 
 ## Packages/render canvas Dependencies
@@ -7181,6 +7255,20 @@ graph LR
 
 ## Packages/fourjs Dependencies
 
+### `packages/fourjs/src/physics-physjs.ts` - physics-physjs module
+
+**Workspace Dependencies:**
+
+| Package                  | Import |
+| ------------------------ | ------ |
+| `@fourjs/physics-physjs` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/physics-physjs`
+
+---
+
 ### `packages/fourjs/src/physics-box2d.ts` - physics-box2d module
 
 **Workspace Dependencies:**
@@ -8178,89 +8266,95 @@ graph TD
         N152[...21 more]
     end
 
-    subgraph Packages/render-canvas
+    subgraph Packages/physics-physjs
         N153[index]
-        N154[project]
-        N155[canvas2d-renderer]
-        N156[register]
+        N154[physjs-adapter]
+        N155[register]
+    end
+
+    subgraph Packages/render-canvas
+        N156[index]
+        N157[project]
+        N158[canvas2d-renderer]
+        N159[register]
     end
 
     subgraph Packages/motion
-        N157[systems]
-        N158[ik]
-        N159[capabilities]
-        N160[character-controller]
-        N161[clock]
-        N162[index]
-        N163[waypoint-graph-planner]
-        N164[kinematic-controller]
-        N165[scheduler]
-        N166[steering]
-        N167[...14 more]
+        N160[systems]
+        N161[ik]
+        N162[capabilities]
+        N163[character-controller]
+        N164[clock]
+        N165[index]
+        N166[waypoint-graph-planner]
+        N167[kinematic-controller]
+        N168[scheduler]
+        N169[steering]
+        N170[...14 more]
     end
 
     subgraph Packages/animation
-        N168[tween]
-        N169[timeline]
-        N170[animation-system]
-        N171[index]
-        N172[when]
-        N173[track]
-        N174[binding]
-        N175[mixer]
-        N176[blend-tree]
-        N177[values]
-        N178[...4 more]
+        N171[tween]
+        N172[timeline]
+        N173[animation-system]
+        N174[index]
+        N175[when]
+        N176[track]
+        N177[binding]
+        N178[mixer]
+        N179[blend-tree]
+        N180[values]
+        N181[...4 more]
     end
 
     subgraph Packages/diagnostics
-        N179[checksum]
-        N180[leak-registry]
-        N181[index]
-        N182[validation]
-        N183[replay-format]
-        N184[recorder]
-        N185[stats]
-        N186[rollback]
-        N187[replay-player]
-        N188[debug-draw]
-        N189[...2 more]
+        N182[checksum]
+        N183[leak-registry]
+        N184[index]
+        N185[validation]
+        N186[replay-format]
+        N187[recorder]
+        N188[stats]
+        N189[rollback]
+        N190[replay-player]
+        N191[debug-draw]
+        N192[...2 more]
     end
 
     subgraph Packages/core
-        N190[units]
-        N191[leak-registry]
-        N192[index]
-        N193[disposable]
-        N194[conventions]
-        N195[dev]
-        N196[plugin]
-        N197[events]
-        N198[space]
-        N199[random]
-        N200[...4 more]
+        N193[units]
+        N194[leak-registry]
+        N195[index]
+        N196[disposable]
+        N197[conventions]
+        N198[dev]
+        N199[plugin]
+        N200[events]
+        N201[space]
+        N202[random]
+        N203[...4 more]
     end
 
     subgraph Packages/fourjs
-        N201[physics-box2d]
-        N202[gltf]
-        N203[application]
-        N204[capabilities]
-        N205[plugins]
-        N206[physics]
-        N207[compute-pass]
-        N208[index]
-        N209[core]
-        N210[render-webgpu]
-        N211[...25 more]
+        N204[physics-physjs]
+        N205[physics-box2d]
+        N206[gltf]
+        N207[application]
+        N208[capabilities]
+        N209[plugins]
+        N210[physics]
+        N211[compute-pass]
+        N212[index]
+        N213[core]
+        N214[...26 more]
     end
 
     subgraph Packages/serialization
-        N212[capabilities]
-        N213[migration]
-        N214[index]
-        N215[format]
-        N216[serializer]
+        N215[capabilities]
+        N216[migration]
+        N217[index]
+        N218[format]
+        N219[serializer]
     end
 
     N0 --> N1
@@ -8348,15 +8442,15 @@ graph TD
 
 | Category                | Count  |
 | ----------------------- | ------ |
-| Total TypeScript Files  | 358    |
-| Total Modules           | 24     |
-| Total Lines of Code     | 172466 |
-| Total Exports           | 3586   |
-| Total Re-exports        | 2250   |
-| Total Classes           | 222    |
+| Total TypeScript Files  | 362    |
+| Total Modules           | 25     |
+| Total Lines of Code     | 174956 |
+| Total Exports           | 3601   |
+| Total Re-exports        | 2258   |
+| Total Classes           | 224    |
 | Total Interfaces        | 669    |
-| Total Functions         | 607    |
-| Total Type Guards       | 33     |
+| Total Functions         | 610    |
+| Total Type Guards       | 34     |
 | Total Enums             | 0      |
 | Type-only Imports       | 456    |
 | Runtime Circular Deps   | 0      |

@@ -1,12 +1,12 @@
 {
   "generated": "2026-11-04",
-  "totalFiles": 945,
+  "totalFiles": 956,
   "byDisposition": {
-    "reachable": 310,
-    "build-entry": 48,
+    "reachable": 312,
+    "build-entry": 50,
     "test-only": 4,
     "orphan": 0,
-    "test": 547,
+    "test": 554,
     "tool": 1,
     "config": 19,
     "example": 16
@@ -14,17 +14,17 @@
   "byArea": {
     "examples": 16,
     "config": 19,
-    "src": 362,
-    "tests": 547,
+    "src": 366,
+    "tests": 554,
     "tools": 1
   },
   "byPackage": {
-    "(root)": 251,
+    "(root)": 254,
     "@fourjs/animation": 33,
     "@fourjs/assets": 36,
     "@fourjs/core": 26,
     "@fourjs/diagnostics": 27,
-    "fourJS": 53,
+    "fourJS": 54,
     "@fourjs/geometry": 25,
     "@fourjs/input": 18,
     "@fourjs/materials": 26,
@@ -32,6 +32,7 @@
     "@fourjs/motion": 44,
     "@fourjs/particles": 21,
     "@fourjs/physics-box2d": 12,
+    "@fourjs/physics-physjs": 7,
     "@fourjs/physics-rapier": 23,
     "@fourjs/physics-soft": 9,
     "@fourjs/physics": 59,
@@ -1199,7 +1200,7 @@
       "package": "fourJS",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 155
+      "loc": 161
     },
     {
       "file": "packages/fourjs/src/input.ts",
@@ -1252,6 +1253,13 @@
     },
     {
       "file": "packages/fourjs/src/physics-box2d.ts",
+      "package": "fourJS",
+      "area": "src",
+      "disposition": "build-entry",
+      "loc": 2
+    },
+    {
+      "file": "packages/fourjs/src/physics-physjs.ts",
       "package": "fourJS",
       "area": "src",
       "disposition": "build-entry",
@@ -1388,7 +1396,7 @@
       "package": "fourJS",
       "area": "tests",
       "disposition": "test",
-      "loc": 52
+      "loc": 53
     },
     {
       "file": "packages/fourjs/tests/clip-serialization.test.ts",
@@ -1486,7 +1494,7 @@
       "package": "fourJS",
       "area": "tests",
       "disposition": "test",
-      "loc": 54
+      "loc": 56
     },
     {
       "file": "packages/fourjs/tests/text-node.test.ts",
@@ -2644,6 +2652,55 @@
       "loc": 413
     },
     {
+      "file": "packages/physics-physjs/src/index.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "src",
+      "disposition": "build-entry",
+      "loc": 21
+    },
+    {
+      "file": "packages/physics-physjs/src/physjs-adapter.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 2412
+    },
+    {
+      "file": "packages/physics-physjs/src/register.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 49
+    },
+    {
+      "file": "packages/physics-physjs/tests/bodies.test.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 989
+    },
+    {
+      "file": "packages/physics-physjs/tests/joints.test.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 337
+    },
+    {
+      "file": "packages/physics-physjs/tests/physjs.test.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 157
+    },
+    {
+      "file": "packages/physics-physjs/tests/queries-snapshots.test.ts",
+      "package": "@fourjs/physics-physjs",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 525
+    },
+    {
       "file": "packages/physics-rapier/src/ccd.ts",
       "package": "@fourjs/physics-rapier",
       "area": "src",
@@ -3166,7 +3223,7 @@
       "package": "@fourjs/physics",
       "area": "tests",
       "disposition": "test",
-      "loc": 461
+      "loc": 471
     },
     {
       "file": "packages/physics/tests/stale-handle.test.ts",
@@ -6025,6 +6082,13 @@
       "loc": 166
     },
     {
+      "file": "tests/determinism/solver-determinism.test.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 90
+    },
+    {
       "file": "tests/determinism/stroke.test.ts",
       "package": "(root)",
       "area": "tests",
@@ -6204,7 +6268,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 545
+      "loc": 638
     },
     {
       "file": "tests/integration/helpers/recording-gl.ts",
@@ -6233,6 +6297,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 612
+    },
+    {
+      "file": "tests/integration/helpers/solver-joint-scenarios.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 40
     },
     {
       "file": "tests/integration/interpolated-skin-palettes.test.ts",
@@ -6324,6 +6395,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 330
+    },
+    {
+      "file": "tests/integration/physics-solvers.test.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 371
     },
     {
       "file": "tests/integration/pixel-picking.test.ts",

@@ -1207,6 +1207,16 @@
       "PACKAGE_NAME",
       "registerBox2dSolver"
     ],
+    "packages/physics-physjs": [
+      "createPhysJSAdapter",
+      "isPhysJSSupported",
+      "PACKAGE_NAME",
+      "PHYSJS_CAPABILITIES",
+      "PHYSJS_VERSION",
+      "PhysJSAdapter2D",
+      "PhysJSAdapter3D",
+      "registerPhysJSSolver"
+    ],
     "packages/physics-rapier": [
       "createRapierAdapter",
       "createRapierColliderDesc",
