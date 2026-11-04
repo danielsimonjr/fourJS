@@ -118,6 +118,7 @@ import {
   buildViewRenderList,
   MAX_SKINNING_JOINTS,
   collectSceneLights,
+  unionViewLayerMask,
   createSceneLights,
   isRenderTargetTexture,
   isSkinnedLitItem,
@@ -125,6 +126,7 @@ import {
   intersectScissor,
   validateReadbackRegion,
   type EffectRenderPass,
+  type InstancedRun,
   type RenderBatch,
   type PickingService,
   type RenderInterpolation,
@@ -229,6 +231,7 @@ import {
 } from "./wgpu-render-target.js";
 import {
   STANDARD_EMISSIVE_OFFSET,
+  STANDARD_MORPH_WEIGHTS_OFFSET,
   STANDARD_SURFACE_OFFSET,
   STANDARD_UNIFORM_BYTES,
   createStandardBindGroupLayout,
@@ -281,7 +284,15 @@ import {
   WgpuSurfaceGroupCache,
   type SurfaceSources,
 } from "./wgpu-surface-group.js";
-import { CLEAR_VERTEX_COUNT, DRAW_MORPH_WEIGHT_OFFSET } from "./wgpu-unlit.js";
+import {
+  CLEAR_VERTEX_COUNT,
+  DRAW_MORPH_WEIGHT_OFFSET,
+  DRAW_MORPH_WEIGHTS_OFFSET,
+  morphHasNormals,
+  morphTargetCount,
+  morphVariant,
+  type WgpuMorph,
+} from "./wgpu-unlit.js";
 
 /** Error code for use-after-dispose, mirroring the other two backends (§83, §89). */
 const LIFECYCLE_ERROR_CODE = "INVALID_APPLICATION_STATE";
@@ -332,6 +343,54 @@ const normalMatrixScratch = new Matrix3();
 
 /** The swap-chain format used when the host will not name a preferred one. */
 const FALLBACK_CANVAS_FORMAT = "bgra8unorm";
+
+/**
+ * The morph variant a record's loaded streams select (RFC 0003 and its
+ * further-targets residue): target count from the consecutive loaded
+ * `extraMorphBuffers` position slots, normals only when shading and every
+ * target's normal stream is present. `undefined` without `positions1`.
+ */
+function morphVariantOf(
+  record: WgpuGeometryRecord,
+  normals: boolean,
+): WgpuMorph | undefined {
+  if (record.position1Buffer === null) {
+    return undefined;
+  }
+  const extra = record.extraMorphBuffers;
+  let count = 1;
+  let withNormals = normals && record.normal1Buffer !== null;
+  for (let at = 0; at < extra.length && extra[at] !== null; at += 2) {
+    count += 1;
+    if (extra[at + 1] === null) {
+      withNormals = false;
+    }
+  }
+  return morphVariant(count, withNormals);
+}
+
+/** Binds a variant's morph streams from `slot`; returns the last slot used. */
+function setMorphVertexBuffers(
+  pass: GpuRenderPassEncoder,
+  slot: number,
+  record: WgpuGeometryRecord,
+  morph: WgpuMorph,
+): number {
+  pass.setVertexBuffer(slot, record.position1Buffer);
+  if (morphHasNormals(morph)) {
+    slot += 1;
+    pass.setVertexBuffer(slot, record.normal1Buffer);
+  }
+  for (let k = 2; k <= morphTargetCount(morph); k += 1) {
+    slot += 1;
+    pass.setVertexBuffer(slot, record.extraMorphBuffers[2 * (k - 2)]);
+    if (morphHasNormals(morph)) {
+      slot += 1;
+      pass.setVertexBuffer(slot, record.extraMorphBuffers[2 * (k - 2) + 1]);
+    }
+  }
+  return slot;
+}
 
 /** `UNIFORM_STRIDE_BYTES` in `Float32Array` elements. */
 const UNIFORM_STRIDE_FLOATS = UNIFORM_STRIDE_BYTES / 4;
@@ -1332,7 +1391,7 @@ export class WebgpuRenderer implements Renderer {
       }
     }
     if (hasLitItems) {
-      collectSceneLights(root, sceneLights);
+      collectSceneLights(root, sceneLights, unionViewLayerMask(views));
       // Sized before recording, like the draw uniforms below: one block per
       // view at most, and growth mid-pass would orphan the bound group.
       this.#growLights(device, views.length);
@@ -1836,6 +1895,22 @@ export class WebgpuRenderer implements Renderer {
           block += 1;
           continue;
         }
+        // R-22: a run of >= 2 identical lit/standard items draws as one
+        // instanced call from the first item's arm below; its other members
+        // are consumed here (every skip in the arm skips them all too, since
+        // geometry, material, clip and flags are shared by construction).
+        let instRun: InstancedRun | null = null;
+        if (
+          batching?.nextInstanced !== undefined &&
+          batching.bindInstances !== undefined &&
+          (item.kind === "lit" || item.kind === "standard") &&
+          !maskPass
+        ) {
+          instRun = batching.nextInstanced(viewItems, index);
+          if (instRun !== null) {
+            index += instRun.items - 1;
+          }
+        }
         // A shaded draw asks the cache for the normal stream too (WP-R1.5);
         // a mask does not — coverage, not shading — and every other kind
         // passes the default `false`, i.e. exactly the call it always made.
@@ -2109,15 +2184,13 @@ export class WebgpuRenderer implements Renderer {
           request.shadow = receiving;
           request.metalRoughness = useMetalRoughness;
           request.gpuInstances = false;
+          request.instanced = instRun !== null;
           request.normalMap = useNormalMap;
           request.occlusionMap = useOcclusionMap;
           request.emissiveMap = useEmissiveMap;
           const morph =
-            (item.kind === "lit" || item.kind === "standard") &&
-            record.position1Buffer !== null
-              ? normals && record.normal1Buffer !== null
-                ? "pn"
-                : "p"
+            item.kind === "lit" || item.kind === "standard"
+              ? morphVariantOf(record, normals)
               : undefined;
           request.morph = morph;
           const pipeline = this.#pipelineMemo.acquire(pipelines, request);
@@ -2144,7 +2217,7 @@ export class WebgpuRenderer implements Renderer {
             );
             this.#writeSurface(block, item.material);
             if (morph !== undefined) {
-              this.#writeMorphWeight(block, item.morphWeights);
+              this.#writeMorphWeight(block, item.morphWeights, morph, true);
             }
             pass.setPipeline(pipeline);
             pass.setBindGroup(
@@ -2164,7 +2237,7 @@ export class WebgpuRenderer implements Renderer {
               color[3] * opacity,
             );
             if (morph !== undefined) {
-              this.#writeMorphWeight(block, item.morphWeights);
+              this.#writeMorphWeight(block, item.morphWeights, morph, false);
             }
             pass.setPipeline(pipeline);
             pass.setBindGroup(
@@ -2206,12 +2279,11 @@ export class WebgpuRenderer implements Renderer {
             pass.setVertexBuffer(slot, record.uvBuffer);
           }
           if (morph !== undefined) {
-            slot += 1;
-            pass.setVertexBuffer(slot, record.position1Buffer);
-            if (morph === "pn") {
-              slot += 1;
-              pass.setVertexBuffer(slot, record.normal1Buffer);
-            }
+            slot = setMorphVertexBuffers(pass, slot + 1, record, morph);
+          }
+          const instances = instRun === null ? 1 : instRun.items;
+          if (instRun !== null) {
+            batching?.bindInstances?.(device, pass, slot + 1, instRun);
           }
           if (mapBindGroup !== null) {
             pass.setBindGroup(SHADED_MAP_BIND_GROUP_INDEX, mapBindGroup);
@@ -2233,12 +2305,18 @@ export class WebgpuRenderer implements Renderer {
           }
           if (record.indexBuffer !== null && record.indexFormat !== null) {
             pass.setIndexBuffer(record.indexBuffer, record.indexFormat);
-            pass.drawIndexed(record.count);
-          } else {
+            if (instRun === null) {
+              pass.drawIndexed(record.count);
+            } else {
+              pass.drawIndexed(record.count, instances);
+            }
+          } else if (instRun === null) {
             pass.draw(record.count);
+          } else {
+            pass.draw(record.count, instances);
           }
           if (statistics !== null) {
-            countDraw(statistics, record.topology, record.count, 1);
+            countDraw(statistics, record.topology, record.count, instances);
           }
           block += 1;
           continue;
@@ -2300,7 +2378,8 @@ export class WebgpuRenderer implements Renderer {
         request.shadow = false;
         request.metalRoughness = false;
         request.gpuInstances = false;
-        const morph = record.position1Buffer !== null ? "p" : undefined;
+        request.instanced = false;
+        const morph = morphVariantOf(record, false);
         request.morph = morph;
         request.normalMap = false;
         request.occlusionMap = false;
@@ -2326,7 +2405,7 @@ export class WebgpuRenderer implements Renderer {
           material.color[3] * opacity,
         );
         if (morph !== undefined) {
-          this.#writeMorphWeight(block, item.morphWeights);
+          this.#writeMorphWeight(block, item.morphWeights, morph, false);
         }
 
         pass.setPipeline(pipeline);
@@ -2357,8 +2436,7 @@ export class WebgpuRenderer implements Renderer {
           pass.setBindGroup(MAP_BIND_GROUP_INDEX, mapBindGroup);
         }
         if (morph !== undefined) {
-          slot += 1;
-          pass.setVertexBuffer(slot, record.position1Buffer);
+          slot = setMorphVertexBuffers(pass, slot + 1, record, morph);
         }
         if (record.indexBuffer !== null && record.indexFormat !== null) {
           pass.setIndexBuffer(record.indexBuffer, record.indexFormat);
@@ -3496,6 +3574,7 @@ export class WebgpuRenderer implements Renderer {
     request.shadow = false;
     request.metalRoughness = false;
     request.gpuInstances = false;
+    request.instanced = false;
     request.morph = undefined;
     request.normalMap = false;
     request.occlusionMap = false;
@@ -3611,6 +3690,7 @@ export class WebgpuRenderer implements Renderer {
     request.shadow = false;
     request.metalRoughness = false;
     request.gpuInstances = simulation !== null;
+    request.instanced = false;
     request.morph = undefined;
     request.normalMap = false;
     request.occlusionMap = false;
@@ -4224,10 +4304,23 @@ export class WebgpuRenderer implements Renderer {
   #writeMorphWeight(
     block: number,
     weights: Float32Array | null | undefined,
+    morph: WgpuMorph,
+    standard: boolean,
   ): void {
-    this.#uniformStaging[
-      block * UNIFORM_STRIDE_FLOATS + DRAW_MORPH_WEIGHT_OFFSET / 4
-    ] = weights?.[0] ?? 0;
+    const base = block * UNIFORM_STRIDE_FLOATS;
+    if (morphTargetCount(morph) === 1) {
+      this.#uniformStaging[base + DRAW_MORPH_WEIGHT_OFFSET / 4] =
+        weights?.[0] ?? 0;
+      return;
+    }
+    // 2..4 targets: the trailing `morphWeights` vec4 (absent lanes 0).
+    const at =
+      base +
+      (standard ? STANDARD_MORPH_WEIGHTS_OFFSET : DRAW_MORPH_WEIGHTS_OFFSET) /
+        4;
+    for (let lane = 0; lane < 4; lane += 1) {
+      this.#uniformStaging[at + lane] = weights?.[lane] ?? 0;
+    }
   }
 
   /** Packs one `DrawUniforms` block into the staging array at `block`'s stride. */

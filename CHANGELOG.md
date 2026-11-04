@@ -10,6 +10,17 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **Wave 5 render residues (2026-11-04)**: up to four directional lights
+  (`MAX_DIRECTIONAL_LIGHTS` = 4, `MAX_LIGHT_SLOTS` = 11) with per-frame light layers
+  (`unionViewLayerMask`) on WebGL and WebGPU; cube / 2D-array / 3D texture uploads
+  (`TextureSource.dimension`, `depth`) on both backends; §65 staging rings for dynamic
+  geometry (`wgpu-staging.ts`, WebGL orphaning ring); R-22 instanced shaded meshes
+  (`RenderBatcher.nextInstanced`, 25 floats per instance) drawn with one instanced call
+  on WebGL (browser gate: 10 draws → 2, 0 pixels differ) and WebGPU (fake-device gate);
+  up to four GPU morph targets (`BufferGeometry.extraMorphTargets`, `MAX_MORPH_TARGETS`,
+  attribute locations 10–15, `vec4` weights; glTF `targets[0..3]` and `weights` of
+  length 1–4; spec §54 amendment). One-light, one-target and non-instanced paths are
+  byte-identical to before.
 - **`@fourjs/physics-physjs` — a third solver adapter (2026-11-04, wave 9, RFC 0010)**:
   `PhysJSAdapter2D` / `PhysJSAdapter3D` over `@danielsimonjr/physjs` 0.5.0 and
   `registerPhysJSSolver()`; `SolverName` (and `SolverRegistry`) widened to include `"physjs"`,

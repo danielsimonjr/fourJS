@@ -76,7 +76,9 @@
 
 import { FourError } from "@fourjs/core";
 import {
+  INSTANCE_FLOATS,
   RenderBatcher,
+  type InstancedRun,
   type RenderBatch,
   type RenderBatchOptions,
   type RenderItem,
@@ -203,6 +205,29 @@ export interface WgpuRenderBatching {
    */
   draw(device: GpuDevice, pass: GpuRenderPassEncoder, batch: RenderBatch): void;
 
+  /**
+   * R-22: the instanced shaded run starting at `items[from]`, or `null`
+   * (`RenderBatcher.nextInstanced`, forwarded). Optional so a hand-written
+   * uploader that predates R-22 keeps working: absent means no instancing.
+   */
+  nextInstanced?(
+    items: readonly RenderItem[],
+    from: number,
+    layerMask?: number,
+  ): InstancedRun | null;
+
+  /**
+   * R-22: uploads `run`'s per-instance matrices into this frame's next
+   * instance slot and binds that buffer at vertex `slot` of `pass`. The
+   * caller records the `drawIndexed`/`draw` with `run.items` instances.
+   */
+  bindInstances?(
+    device: GpuDevice,
+    pass: GpuRenderPassEncoder,
+    slot: number,
+    run: InstancedRun,
+  ): void;
+
   /** Drops the GPU handles without touching the device (§61 device loss). */
   forget(): void;
 
@@ -234,6 +259,15 @@ interface BatchSlot {
   lastFloatsPerVertex: number;
 }
 
+/** One instanced run's persistent per-instance buffer. */
+interface InstanceSlot {
+  buffer: GpuBuffer;
+  /** Floats the allocation holds. */
+  floats: number;
+  lastContentVersion: number;
+  lastFloats: number;
+}
+
 /**
  * The batcher plus the per-slot GPU buffers its output is drawn from — see the
  * module header. One per renderer; holds no scene state.
@@ -249,6 +283,16 @@ export class WgpuBatching implements WgpuRenderBatching {
 
   /** Slots handed out this frame; reset by {@link WgpuBatching.beginFrame}. */
   #slot = 0;
+
+  /**
+   * R-22 instance buffers, one per instanced run of a frame — the same
+   * queue-order argument as the batch pairs: run *k*'s upload must not be
+   * overwritten by run *k+1* before run *k*'s recorded draw executes.
+   */
+  readonly #instanceSlots: InstanceSlot[] = [];
+
+  /** Instance slots handed out this frame. */
+  #instanceSlot = 0;
 
   /** Set by {@link WgpuBatching.dispose}; disposal is terminal (§83). */
   #disposed = false;
@@ -289,9 +333,62 @@ export class WgpuBatching implements WgpuRenderBatching {
     return this.#batcher.next(items, from, layerMask);
   }
 
+  nextInstanced(
+    items: readonly RenderItem[],
+    from: number,
+    layerMask?: number,
+  ): InstancedRun | null {
+    return this.#batcher.nextInstanced(items, from, layerMask);
+  }
+
   beginFrame(): void {
     this.#requireLive();
     this.#slot = 0;
+    this.#instanceSlot = 0;
+  }
+
+  bindInstances(
+    device: GpuDevice,
+    pass: GpuRenderPassEncoder,
+    slot: number,
+    run: InstancedRun,
+  ): void {
+    this.#requireLive();
+    if (this.#device !== device) {
+      this.#reset();
+      this.#device = device;
+    }
+    const floats = run.items * INSTANCE_FLOATS;
+    const index = this.#instanceSlot;
+    this.#instanceSlot += 1;
+    let entry = this.#instanceSlots[index];
+    if (entry === undefined || entry.floats < floats) {
+      // Safe mid-frame for the batch pairs' reason: the old buffer's last use
+      // was a previous, already-submitted frame.
+      entry?.buffer.destroy();
+      entry = {
+        buffer: device.createBuffer({
+          label: `fourJS:batch-instances:${String(index)}`,
+          size: run.instances.length * FLOAT_BYTES,
+          usage: GPU_BUFFER_USAGE.VERTEX | GPU_BUFFER_USAGE.COPY_DST,
+        }),
+        floats: run.instances.length,
+        lastContentVersion: 0,
+        lastFloats: -1,
+      };
+      this.#instanceSlots[index] = entry;
+    }
+    const version = run.contentVersion;
+    if (
+      version === 0 ||
+      entry.lastContentVersion !== version ||
+      entry.lastFloats !== floats
+    ) {
+      device.queue.writeBuffer(entry.buffer, 0, run.instances, 0, floats);
+      entry.lastContentVersion = version;
+      entry.lastFloats = floats;
+    }
+    pass.setVertexBuffer(slot, entry.buffer);
   }
 
   draw(
@@ -341,6 +438,9 @@ export class WgpuBatching implements WgpuRenderBatching {
       slot.vertexBuffer.destroy();
       slot.indexBuffer.destroy();
     }
+    for (const entry of this.#instanceSlots) {
+      entry.buffer.destroy();
+    }
     this.#reset();
   }
 
@@ -349,6 +449,8 @@ export class WgpuBatching implements WgpuRenderBatching {
     this.#device = null;
     this.#slots.length = 0;
     this.#slot = 0;
+    this.#instanceSlots.length = 0;
+    this.#instanceSlot = 0;
   }
 
   /**

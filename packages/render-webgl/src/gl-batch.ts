@@ -115,18 +115,26 @@
 
 import { Matrix4 } from "@fourjs/math";
 import {
+  INSTANCE_FLOATS,
   RenderBatcher,
+  type InstancedRun,
   type RenderBatch,
   type RenderBatchOptions,
   type RenderItem,
 } from "@fourjs/render";
 
 import {
+  resolveStandardPipelineFactory,
+  type StandardPipeline,
+} from "./gl-standard-registry.js";
+import {
   COLOR_ATTRIBUTE_LOCATION,
   GL,
   POSITION_ATTRIBUTE_LOCATION,
+  LitProgram,
   UV_ATTRIBUTE_LOCATION,
   type GlBuffer,
+  type GlUniformLocation,
   type GlVertexArray,
   type UnlitProgram,
   type WebglContext,
@@ -163,6 +171,134 @@ export interface BatchGlContext extends WebglContext {
 
 /** Bytes per float, named so the stride arithmetic reads as what it is. */
 const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
+
+/** What an instanced shaded draw (R-22) adds to {@link BatchGlContext}. */
+export interface InstanceGlContext extends BatchGlContext {
+  vertexAttribDivisor(index: number, divisor: number): void;
+  disableVertexAttribArray(index: number): void;
+  drawElementsInstanced(
+    mode: number,
+    count: number,
+    type: number,
+    offset: number,
+    instanceCount: number,
+  ): void;
+  drawArraysInstanced(
+    mode: number,
+    first: number,
+    count: number,
+    instanceCount: number,
+  ): void;
+}
+
+/** The geometry record fields an instanced draw reads (`GeometryRecord`'s). */
+export interface InstancedGeometryRecord {
+  readonly vertexArray: GlVertexArray;
+  readonly mode: number;
+  readonly count: number;
+  readonly indexType: number | null;
+}
+
+/** First of the four `vec4` attributes carrying the instance model matrix. */
+export const INSTANCE_MODEL_LOCATION = 8;
+
+/** First of the three `vec3` attributes carrying the instance normal matrix. */
+export const INSTANCE_NORMAL_LOCATION = 12;
+
+const INSTANCE_ATTRIBUTE_COUNT = 7;
+
+/**
+ * Rewrites a lit/standard vertex stage so `model` and `normalMatrix` come from
+ * per-instance attributes (R-22) instead of uniforms. String-level, so the
+ * shaded vertex stages stay owned by the files that define them: the rewrite
+ * applies only to a source declaring both uniforms, and any other source is
+ * returned untouched.
+ */
+export function instanceVertexSource(source: string): string {
+  const model = "uniform mat4 model;";
+  const normal = "uniform mat3 normalMatrix;";
+  if (
+    !source.includes(model) ||
+    !source.includes(normal) ||
+    !source.includes("void main() {")
+  ) {
+    return source;
+  }
+  const m = INSTANCE_MODEL_LOCATION;
+  const n = INSTANCE_NORMAL_LOCATION;
+  return source
+    .replace(
+      model,
+      [0, 1, 2, 3]
+        .map(
+          (i) =>
+            `layout(location = ${String(m + i)}) in vec4 iModel${String(i)};`,
+        )
+        .join("\n"),
+    )
+    .replace(
+      normal,
+      [0, 1, 2]
+        .map(
+          (i) =>
+            `layout(location = ${String(n + i)}) in vec3 iNormal${String(i)};`,
+        )
+        .join("\n"),
+    )
+    .replace(
+      "void main() {",
+      "void main() {\n  mat4 model = mat4(iModel0, iModel1, iModel2, iModel3);\n" +
+        "  mat3 normalMatrix = mat3(iNormal0, iNormal1, iNormal2);",
+    );
+}
+
+/** Stands in for the uniforms the rewrite removed; uploads to it are dropped. */
+const ABSENT_UNIFORM: GlUniformLocation = {};
+
+/**
+ * A view of `gl` through which the shaded program classes compile the
+ * instanced variant of their vertex stage unchanged: `shaderSource` rewrites
+ * it ({@link instanceVertexSource}), the two removed uniforms resolve to a
+ * placeholder, and `setModel`'s uploads to that placeholder are dropped.
+ */
+export function createInstanceGl(gl: WebglContext): WebglContext {
+  const cache = new Map<string | symbol, unknown>();
+  const overrides: Record<string, (...args: never[]) => unknown> = {
+    shaderSource: (shader: never, source: never) => {
+      gl.shaderSource(shader, instanceVertexSource(source));
+    },
+    getUniformLocation: (program: never, name: never) =>
+      gl.getUniformLocation(program, name) ??
+      (name === "model" || name === "normalMatrix" ? ABSENT_UNIFORM : null),
+    uniformMatrix4fv: (location: never, ...rest: never[]) => {
+      if (location !== ABSENT_UNIFORM) {
+        (gl.uniformMatrix4fv as (...a: unknown[]) => void)(location, ...rest);
+      }
+    },
+    uniformMatrix3fv: (location: never, ...rest: never[]) => {
+      if (location !== ABSENT_UNIFORM) {
+        (gl.uniformMatrix3fv as (...a: unknown[]) => void)(location, ...rest);
+      }
+    },
+  };
+  return new Proxy(gl, {
+    get(target, property) {
+      const cached = cache.get(property);
+      if (cached !== undefined) return cached;
+      const override = overrides[property as string];
+      let value: unknown = (
+        target as unknown as Record<string | symbol, unknown>
+      )[property];
+      if (override !== undefined) {
+        value = override;
+      } else if (typeof value === "function") {
+        value = (value as (...a: unknown[]) => unknown).bind(target);
+      }
+      cache.set(property, value);
+      return value;
+    },
+  });
+}
 
 /**
  * Which of the four vertex arrays draws `batch` — its interleaved layout as a
@@ -227,6 +363,26 @@ export interface RenderBatching {
     useMap: boolean,
   ): void;
 
+  /** R-22: the instanced shaded run at `items[from]`, or `null`. */
+  nextInstanced?(
+    items: readonly RenderItem[],
+    from: number,
+    layerMask?: number,
+  ): InstancedRun | null;
+
+  /** R-22: the instanced lit program for `gl`, or `null` if it will not build. */
+  instancedLit?(gl: WebglContext): LitProgram | null;
+
+  /** R-22: the instanced standard program for `gl`, or `null`. */
+  instancedStandard?(gl: WebglContext): StandardPipeline | null;
+
+  /** R-22: one instanced draw of `record` over the run's instance buffer. */
+  drawInstanced?(
+    gl: InstanceGlContext,
+    record: InstancedGeometryRecord,
+    run: InstancedRun,
+  ): void;
+
   /** Drops the GL objects without touching the context (§61 context loss). */
   forget(): void;
 
@@ -281,6 +437,26 @@ export class GlBatching implements RenderBatching {
 
   #lastIndexCount = -1;
 
+  #instanceGlFor: WebglContext | null = null;
+
+  #instanceGlView: WebglContext | null = null;
+
+  #instancedLit: LitProgram | null = null;
+
+  #instancedStandard: StandardPipeline | null = null;
+
+  #instancedLitFailed = false;
+
+  #instancedStandardFailed = false;
+
+  #instanceBuffer: GlBuffer | null = null;
+
+  #instanceCapacity = 0;
+
+  #lastInstanceVersion = 0;
+
+  #lastInstanceFloats = -1;
+
   constructor(options: RenderBatchOptions = {}) {
     this.#batcher = new RenderBatcher(options);
   }
@@ -295,6 +471,134 @@ export class GlBatching implements RenderBatching {
     // `ALL_LAYERS` stays the single definition of "no mask" without this method
     // growing a branch of its own to say so (R-8).
     return this.#batcher.next(items, from, layerMask);
+  }
+
+  nextInstanced(
+    items: readonly RenderItem[],
+    from: number,
+    layerMask?: number,
+  ): InstancedRun | null {
+    return this.#batcher.nextInstanced(items, from, layerMask);
+  }
+
+  instancedLit(gl: WebglContext): LitProgram | null {
+    if (this.#instanceGlFor !== gl) {
+      this.#resetInstanced(gl);
+    }
+    if (this.#instancedLit === null && !this.#instancedLitFailed) {
+      try {
+        this.#instancedLit = LitProgram.create(this.#instanceGl(gl));
+      } catch {
+        this.#instancedLitFailed = true;
+      }
+    }
+    return this.#instancedLit;
+  }
+
+  instancedStandard(gl: WebglContext): StandardPipeline | null {
+    if (this.#instanceGlFor !== gl) {
+      this.#resetInstanced(gl);
+    }
+    const factory = resolveStandardPipelineFactory();
+    if (
+      this.#instancedStandard === null &&
+      !this.#instancedStandardFailed &&
+      factory !== null
+    ) {
+      try {
+        this.#instancedStandard = factory.create(this.#instanceGl(gl));
+      } catch {
+        this.#instancedStandardFailed = true;
+      }
+    }
+    return this.#instancedStandard;
+  }
+
+  drawInstanced(
+    gl: InstanceGlContext,
+    record: InstancedGeometryRecord,
+    run: InstancedRun,
+  ): void {
+    if (this.#instanceGlFor !== gl) {
+      this.#resetInstanced(gl);
+    }
+    if (this.#instanceBuffer === null) {
+      this.#instanceBuffer = gl.createBuffer();
+      if (this.#instanceBuffer === null) return;
+    }
+    const floats = run.items * INSTANCE_FLOATS;
+    gl.bindVertexArray(record.vertexArray);
+    gl.bindBuffer(GL.ARRAY_BUFFER, this.#instanceBuffer);
+    const version = run.contentVersion;
+    if (
+      version === 0 ||
+      version !== this.#lastInstanceVersion ||
+      floats !== this.#lastInstanceFloats
+    ) {
+      if (this.#instanceCapacity < floats) {
+        gl.bufferData(GL.ARRAY_BUFFER, run.instances, DYNAMIC_DRAW);
+        this.#instanceCapacity = run.instances.length;
+      } else {
+        gl.bufferSubData(GL.ARRAY_BUFFER, 0, run.instances, 0, floats);
+      }
+      this.#lastInstanceVersion = version;
+      this.#lastInstanceFloats = floats;
+    }
+    const stride = INSTANCE_FLOATS * FLOAT_BYTES;
+    for (let i = 0; i < INSTANCE_ATTRIBUTE_COUNT; i += 1) {
+      const isModel = i < 4;
+      const location = isModel
+        ? INSTANCE_MODEL_LOCATION + i
+        : INSTANCE_NORMAL_LOCATION + i - 4;
+      const offset = isModel ? i * 4 : 16 + (i - 4) * 3;
+      gl.enableVertexAttribArray(location);
+      gl.vertexAttribPointer(
+        location,
+        isModel ? 4 : 3,
+        GL.FLOAT,
+        false,
+        stride,
+        offset * FLOAT_BYTES,
+      );
+      gl.vertexAttribDivisor(location, 1);
+    }
+    if (record.indexType === null) {
+      gl.drawArraysInstanced(record.mode, 0, record.count, run.items);
+    } else {
+      gl.drawElementsInstanced(
+        record.mode,
+        record.count,
+        record.indexType,
+        0,
+        run.items,
+      );
+    }
+    // The vertex array belongs to the geometry cache and is also drawn by
+    // plain programs: hand it back exactly as found.
+    for (let i = 0; i < INSTANCE_ATTRIBUTE_COUNT; i += 1) {
+      const location =
+        i < 4 ? INSTANCE_MODEL_LOCATION + i : INSTANCE_NORMAL_LOCATION + i - 4;
+      gl.vertexAttribDivisor(location, 0);
+      gl.disableVertexAttribArray(location);
+    }
+  }
+
+  #instanceGl(gl: WebglContext): WebglContext {
+    this.#instanceGlView ??= createInstanceGl(gl);
+    return this.#instanceGlView;
+  }
+
+  #resetInstanced(gl: WebglContext | null): void {
+    this.#instanceGlFor = gl;
+    this.#instanceGlView = null;
+    this.#instancedLit = null;
+    this.#instancedStandard = null;
+    this.#instancedLitFailed = false;
+    this.#instancedStandardFailed = false;
+    this.#instanceBuffer = null;
+    this.#instanceCapacity = 0;
+    this.#lastInstanceVersion = 0;
+    this.#lastInstanceFloats = -1;
   }
 
   draw(
@@ -345,6 +649,7 @@ export class GlBatching implements RenderBatching {
 
   forget(): void {
     this.#reset();
+    this.#resetInstanced(null);
   }
 
   dispose(): void {
@@ -356,7 +661,17 @@ export class GlBatching implements RenderBatching {
       if (this.#vertexBuffer !== null) gl.deleteBuffer(this.#vertexBuffer);
       if (this.#indexBuffer !== null) gl.deleteBuffer(this.#indexBuffer);
     }
+    if (this.#instanceGlFor !== null) {
+      if (this.#instanceBuffer !== null) {
+        (this.#instanceGlFor as BatchGlContext).deleteBuffer(
+          this.#instanceBuffer,
+        );
+      }
+      this.#instancedLit?.dispose();
+      this.#instancedStandard?.dispose();
+    }
     this.#reset();
+    this.#resetInstanced(null);
   }
 
   /** Forgets every handle and every capacity claim. */

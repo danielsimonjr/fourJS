@@ -75,7 +75,7 @@
  * to anything and never runs on a draw path.
  */
 
-import { FourError, type Disposable } from "@fourjs/core";
+import type { Disposable } from "@fourjs/core";
 import type {
   MaterialTextureFilter,
   MaterialTextureMinFilter,
@@ -150,9 +150,8 @@ export type TextureMinFilter = MaterialTextureMinFilter;
 export type TextureWrap = MaterialTextureWrap;
 
 /**
- * §77 texture target kinds. This tier uploads **2D** only; the other three
- * are named so a source can be refused honestly rather than silently
- * sampled as a 2D image (R-30c).
+ * §77 texture target kinds: `"2d"`, a six-face `"cube"`, a `"array"` of 2D
+ * layers, and a `"3d"` volume (R-30c, WP-W5.2).
  */
 export type TextureDimension = "2d" | "cube" | "array" | "3d";
 
@@ -232,17 +231,23 @@ export interface TextureSource {
   readonly height: number;
 
   /**
-   * §77 target kind. Defaults to `"2d"`, the only kind this tier uploads.
+   * §77 target kind. Defaults to `"2d"`.
    *
-   * `"cube"`, `"array"`, and `"3d"` are **named and refused** at
-   * construction / source assignment (the upload contract) with
-   * `FourError` `NOT_IMPLEMENTED`. Each of those changes the sampler
-   * type in every shader that reads the texture; pretending a cube
-   * uploaded as a 2D image is the silent failure R-30c exists to
-   * stop. When a later packet lands those targets it flips this
-   * refusal, not the field name.
+   * `"cube"`, `"array"` (a 2D array), and `"3d"` upload since R-30c
+   * (WP-W5.2). `data` holds the layers back to back, layer 0 first, each
+   * `width * height * 4` bytes: a cube's six faces in the order +X, -X, +Y,
+   * -Y, +Z, -Z (square only), an array's layers, a volume's z slices. Each
+   * changes the sampler type, so a backend binds one only through its explicit
+   * resource path (`acquireResource`), never as a sprite or unlit map; no
+   * material consumes them yet. Regional `markDirty` is 2D only.
    */
   readonly dimension?: TextureDimension;
+
+  /**
+   * Layer count for `"array"` (required) and `"3d"` (required: slices).
+   * `"cube"` is always 6 (omit, or pass 6); `"2d"` is always 1 (omit, or pass 1).
+   */
+  readonly depth?: number;
 
   /**
    * Tightly packed RGBA8 texels — four bytes per texel, exactly
@@ -466,6 +471,32 @@ export interface TextureSource {
 }
 
 /**
+ * Bytes of a texture and its optional mip chain, all faces/layers/slices
+ * included (§83, §84). A cube bills six faces; an array keeps its layer count
+ * at every level; a volume halves its depth per level too (GL/WebGPU 3D mips).
+ */
+export function textureChainBytes(
+  width: number,
+  height: number,
+  depth: number,
+  dimension: TextureDimension,
+  mipmaps: boolean,
+): number {
+  let w = width;
+  let h = height;
+  let d = depth;
+  let bytes = w * h * d * 4;
+  if (!mipmaps) return bytes;
+  while (w > 1 || h > 1 || (dimension === "3d" && d > 1)) {
+    w = Math.max(1, w >> 1);
+    h = Math.max(1, h >> 1);
+    if (dimension === "3d") d = Math.max(1, d >> 1);
+    bytes += w * h * d * 4;
+  }
+  return bytes;
+}
+
+/**
  * Source of texture ids. Monotonic and process-wide, exactly like `Node`'s,
  * `BufferGeometry`'s, and `UnlitMaterial`'s — §33 forbids random or
  * clock-derived identity, and a counter makes two identical construction
@@ -503,20 +534,43 @@ function validateEnum<T extends string>(
   }
 }
 
+/**
+ * Layers / faces / slices a source holds: 1 for 2D, 6 for a cube, `depth` for
+ * an array or volume. Throws `RangeError` when `depth` contradicts the kind
+ * (§85) or a cube is not square.
+ */
+function layerCount(source: TextureSource): number {
+  const kind = source.dimension ?? "2d";
+  const depth = source.depth;
+  if (kind === "2d" || kind === "cube") {
+    const fixed = kind === "2d" ? 1 : 6;
+    if (depth !== undefined && depth !== fixed) {
+      throw new RangeError(
+        `Texture depth for a ${kind} texture is ${String(fixed)}; got ` +
+          `${String(depth)} (§77, §85).`,
+      );
+    }
+    if (kind === "cube" && source.width !== source.height) {
+      throw new RangeError(
+        `A cube texture needs square faces; got ${String(source.width)}×` +
+          `${String(source.height)} (§77, §85).`,
+      );
+    }
+    return fixed;
+  }
+  if (depth === undefined || !Number.isInteger(depth) || depth < 1) {
+    throw new RangeError(
+      `A ${kind} texture needs an integer depth (layers/slices) of at least 1; ` +
+        `got ${String(depth)} (§77, §85).`,
+    );
+  }
+  return depth;
+}
+
 /** Runs the §85 checks for one source. Throws on the first violation. */
 export function validateTextureSource(source: TextureSource): void {
   if (source.dimension !== undefined) {
     validateEnum(source.dimension, DIMENSIONS, "dimension");
-    if (source.dimension !== "2d") {
-      throw new FourError(
-        "NOT_IMPLEMENTED",
-        `TextureSource.dimension ${JSON.stringify(source.dimension)} is staged ` +
-          "(§77, R-30c): this tier uploads 2D textures only. Cube, array, and " +
-          "3D targets change every sampler type and are refused rather than " +
-          "silently uploaded as 2D.",
-        { context: { dimension: source.dimension } },
-      );
-    }
   }
   if (source.colorSpace !== undefined) {
     validateColorSpace(source.colorSpace, "Texture");
@@ -566,16 +620,19 @@ export function validateTextureSource(source: TextureSource): void {
     }
   }
 
+  const layers = layerCount(source);
   const data = source.data;
   if (data === undefined) {
     return;
   }
-  const expected = source.width * source.height * 4;
+  const expected = source.width * source.height * layers * 4;
   if (data.length !== expected) {
+    const kind = source.dimension ?? "2d";
     throw new RangeError(
-      `A ${String(source.width)}×${String(source.height)} RGBA8 texture needs ` +
-        `${String(expected)} bytes; got ${String(data.length)} ` +
-        "(§77: four bytes per texel, tightly packed).",
+      `A ${String(source.width)}×${String(source.height)} RGBA8 ${kind} texture ` +
+        (kind === "2d" ? "" : `with ${String(layers)} layers/faces/slices `) +
+        `needs ${String(expected)} bytes; got ${String(data.length)} ` +
+        "(§77: four bytes per texel, tightly packed, layer 0 first).",
     );
   }
 }
@@ -604,9 +661,7 @@ export function validateTextureSource(source: TextureSource): void {
  *
  * ## Deferred from §77 (named, not dropped)
  *
- * Cube/array/3D *uploads* (the field is named — {@link TextureSource.dimension}
- * — and non-`"2d"` is refused with `NOT_IMPLEMENTED` rather than sampled as
- * 2D) and compressed containers. Render-target textures are implemented in
+ * Compressed containers. (Cube/array/3D uploads landed in WP-W5.2.) Render-target textures are implemented in
  * `render-target.ts`; host bitmap/video sources are in `host-texture.ts`, and
  * `Renderer.prepareTexture` waits for GPU completion with cache residency
  * diagnostics. Regional `markDirty` calls preserve allocations where supported.
@@ -691,11 +746,20 @@ export class Texture implements Disposable, SpriteTexture {
   }
 
   /**
-   * §77 target kind. `"2d"` when the source names none — the only
-   * kind this tier uploads. See {@link TextureSource.dimension}.
+   * §77 target kind. `"2d"` when the source names none. See {@link TextureSource.dimension}.
    */
   get dimension(): TextureDimension {
     return this.#source.dimension ?? "2d";
+  }
+
+  /**
+   * Layers, faces or slices: 1 for 2D, 6 for a cube, the authored `depth` for
+   * an array or volume.
+   */
+  get depth(): number {
+    const kind = this.#source.dimension ?? "2d";
+    if (kind === "2d") return 1;
+    return kind === "cube" ? 6 : this.#source.depth!;
   }
 
   /**
@@ -864,18 +928,13 @@ export class Texture implements Disposable, SpriteTexture {
     if (this.#disposed) {
       return 0;
     }
-    let width = this.#source.width;
-    let height = this.#source.height;
-    let bytes = width * height * 4;
-    if (!this.mipmaps) {
-      return bytes;
-    }
-    while (width > 1 || height > 1) {
-      width = Math.max(1, width >> 1);
-      height = Math.max(1, height >> 1);
-      bytes += width * height * 4;
-    }
-    return bytes;
+    return textureChainBytes(
+      this.#source.width,
+      this.#source.height,
+      this.depth,
+      this.dimension,
+      this.mipmaps,
+    );
   }
 
   /**
@@ -887,6 +946,12 @@ export class Texture implements Disposable, SpriteTexture {
    * wasteful: the version advances again and the texture re-uploads once more.
    */
   markDirty(region?: Rectangle2): void {
+    if (region !== undefined && this.dimension !== "2d") {
+      throw new RangeError(
+        `Regional markDirty is 2D only; a ${this.dimension} texture re-uploads ` +
+          "whole (§77, R-30c).",
+      );
+    }
     this.#updates.add(
       this.#version + 1,
       region ?? null,

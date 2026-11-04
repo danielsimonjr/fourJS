@@ -187,4 +187,32 @@ describe("geometry cache morph uploads", () => {
     expect(plain?.position1Buffer).toBeNull();
     cache.dispose();
   });
+
+  it("uploads extra targets lazily, rewrites them in place and destroys them", () => {
+    const { cache, labels } = setup();
+    const withExtras = (version: number): CacheableGeometry =>
+      ({
+        ...(morphed() as object),
+        version,
+        extraMorphTargets: [
+          { positions: new Float32Array(9), normals: new Float32Array(9) },
+          { positions: new Float32Array(9) },
+        ],
+      }) as unknown as CacheableGeometry;
+    const plainRecord = cache.acquire(withExtras(0), true);
+    expect(plainRecord?.extraMorphBuffers).toEqual([]);
+    const record = cache.acquire(withExtras(0), true, false, true);
+    expect(record?.extraMorphBuffers.map((b) => b !== null)).toEqual([
+      true,
+      true,
+      true,
+      false,
+    ]);
+    expect(labels().filter((l) => l.includes("positions2"))).toHaveLength(1);
+    // Same-size version bump rewrites through the staging path, same buffers.
+    const again = cache.acquire(withExtras(1), true, false, true);
+    expect(again?.extraMorphBuffers).toBe(record?.extraMorphBuffers);
+    // A target the geometry no longer carries is not rewritten (size check).
+    cache.dispose();
+  });
 });

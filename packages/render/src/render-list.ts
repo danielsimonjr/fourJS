@@ -480,9 +480,9 @@ interface RenderItemBase {
    * A **reference to the component's own array**, snapshotted like `frame` and
    * `instances`: the item is pooled and the weights may be rewritten by the
    * next fixed step, so a consumer reads them during the call that built the
-   * list. WebGL's one-target morph programs consume `morphWeights[0]` when
-   * the geometry carries `positions1` (RFC 0003 WP-SK.4); WebGPU skips those
-   * draws. Further targets remain staged.
+   * list. Both GPU backends's morph programs consume `morphWeights[0..3]` (one
+   * lane per target, up to four) when the geometry carries `positions1`
+   * (RFC 0003 WP-SK.4 and its further-targets residue).
    *
    * **Optional, and `undefined` means exactly what `null` means** — the R-23
    * move, third application: the builders always write it, the field is

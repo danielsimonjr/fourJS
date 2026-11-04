@@ -209,7 +209,7 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 - RFC 0003 residue (staged in source, 2026-08-28): WebGPU colour pair DONE 2026-09-09; WebGL shadow caster DONE 2026-09-09; WebGPU skinned id DONE 2026-09-10 (lives in `wgpu-picking.ts`); CPU skinning DONE 2026-09-11; WebGPU skinned shadow DONE 2026-09-10. ~~GPU morph~~ **DONE 2026-10-05** (one-target WebGL at 6/7; WebGPU skip). Still bone-texture.
 - RFC 0003 prototype measurements — DONE 2026-09-09 (`benchmarks/skinning-resolve.mjs`):
 - Tokens for the five absent §81 extension points — DONE 2026-09-06 (`ASSET_LOADERS`, `SHADER_OPERATORS`, `UI_CONTROLS`, `EDITOR_TOOLS`, `COMPUTE_WORKLOADS`)
-- Lighting follow-ups (MVP tier shipped 2026-08-04 — see Done): ~~point/spot multi-light~~ **DONE 2026-08-09** (R-17, 8 punctual); ~~hemisphere~~ **DONE 2026-09-10** (`HemisphereLight`, first-match, +Y sky); still multi-directional + area + clustered path, shadows (§69 — directional tier shipped; cascades, point/spot maps, the atlas, transparent masks and contact shadows remain), §59 PBR rest, §60a tone-mapping operator + IBL (sRGB encode + color grade shipped), light layers. CSS light colors + WebGL/WebGPU normal-matrix hoist DONE 2026-09-09. WebGPU `metalRoughnessMap` sampling DONE 2026-09-09. WebGL `emissiveMap` (unit 3) DONE 2026-09-09 (still open: extra directionals / area / clustered, cascades, PBR rest, tone-map operator, light layers, WebGPU `normalMap` / `occlusionMap` and emissive; WebGL normal/AO DONE 2026-09-11).
+- Lighting follow-ups (MVP tier shipped 2026-08-04 — see Done): ~~point/spot multi-light~~ **DONE 2026-08-09** (R-17, 8 punctual); ~~hemisphere~~ **DONE 2026-09-10** (`HemisphereLight`, first-match, +Y sky); still area + clustered path (multi-directional DONE 2026-11-04), shadows (§69 — directional tier shipped; cascades, point/spot maps, the atlas, transparent masks and contact shadows remain), §59 PBR rest, §60a tone-mapping operator + IBL (sRGB encode + color grade shipped), light layers. CSS light colors + WebGL/WebGPU normal-matrix hoist DONE 2026-09-09. WebGPU `metalRoughnessMap` sampling DONE 2026-09-09. WebGL `emissiveMap` (unit 3) DONE 2026-09-09 (still open: area / clustered, cascades, PBR rest, tone-map operator, light layers, WebGPU `normalMap` / `occlusionMap` and emissive; WebGL normal/AO DONE 2026-09-11).
 - First publish (§94 0.1): Changesets release workflow + the @danielsimonjr/fourjs publish-name mapping — owner step
 - Follow-ups the R-1 plan explicitly defers
 - PH-11c — character/dynamics push interaction — DONE 2026-09-06 (`pushMass` / reduced-mass impulse / wake).
@@ -221,9 +221,9 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 - §8 node-level `NodeSpace` component — DONE 2026-09-06.
 - §21 `"local-plane"` simulation frame — DONE 2026-09-06.
 - §27 field torque and field-driven waking — DONE 2026-09-06 (`sampleTorque` + per-entry `wakesSleepingBodies`).
-- Batching follow-ups (§65, after R-9's consecutive-run tier, 2026-08-09): instanced meshes for the shaded pipelines (`R-22`); texture-atlas grouping; making batching the default (A-4). Idle-cache (GL + WebGPU) + glyph batching already shipped.
+- Batching follow-ups (§65, after R-9's consecutive-run tier, 2026-08-09): ~~instanced meshes for the shaded pipelines (`R-22`)~~ DONE 2026-11-04; texture-atlas grouping; making batching the default (A-4). Idle-cache (GL + WebGPU) + glyph batching already shipped.
 - `buildRenderList` optimization — DONE 2026-09-06 (homogeneous sort skip + sprite fast path; benchmark re-recorded).
-- R-30c — the rest of §77, scoped by why each is not ordinary work: map roles DONE 2026-09-09; still cube/array/3D, compressed, video/`ImageBitmap`, async upload.
+- R-30c — the rest of §77, scoped by why each is not ordinary work: map roles DONE 2026-09-09; cube/array/3D DONE 2026-11-04; still compressed, video/`ImageBitmap`, async upload.
 - §12 character controllers + first-person look — DONE (PH-11/PH-11b 2026-08-21; `examples/character-controller` browser gate 2026-08-29).
 - Staged rigs (R-36/R-37 residue, 2026-08-09): DONE 2026-09-06 (trackball, fly snippet, `CameraShake`).
 - §44/§47 camera rigs residue — DONE 2026-09-06 (orbit/follow/spring/look-at/trackball/fly/shake).
@@ -1562,7 +1562,10 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       `JOINTS_1`/`WEIGHTS_1` at 8/9, spec revision 1.19; ~~WebGPU skips morph
       draws~~ **DONE 2026-11-04** (one-target morph on unlit/lit/standard:
       `positions1`/`normals1` at 6/7, weight in the draw uniform's spare word
-      at byte 156; further targets staged);
+      at byte 156); ~~further targets~~ **DONE 2026-11-04 (wave 5)**: up to four
+      targets (`BufferGeometry.extraMorphTargets`, locations 10–15, `vec4` weights,
+      glTF `targets[0..3]`; spec revision row dated 2026-11-04; `weights` animation
+      channels still refused — instantiation-tier wiring open);
       ~~skinned shadow caster program (the §69 pass skips skinned draws — a bind-pose
       shadow is a different picture)~~ **DONE 2026-09-09** (WebGL
       `SkinnedShadowProgram` via `acquireShadow()` on the first skinned
@@ -1622,8 +1625,10 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
 
 - [ ] Lighting follow-ups (MVP tier shipped 2026-08-04 — see Done):
       ~~point/spot multi-light~~ **DONE 2026-08-09** (R-17: `MAX_PUNCTUAL_LIGHTS`
-      = 8; one directional still wins by scene-graph order). Remaining light
-      types: extra directionals, ~~hemisphere~~ **DONE 2026-09-10**, rectangular area, clustered /
+      = 8; ~~one directional still wins by scene-graph order~~ **DONE 2026-11-04 (wave 5)**:
+      `MAX_DIRECTIONAL_LIGHTS` = 4, `MAX_LIGHT_SLOTS` = 11, per-frame light layers via
+      `unionViewLayerMask`, WebGPU light block 784 bytes / 1024 stride). Remaining light
+      types: ~~hemisphere~~ **DONE 2026-09-10**, rectangular area, clustered /
       forward-plus. Shadows (§69 — directional tier shipped 2026-08-09;
       cascades, point/spot maps, the atlas, transparent masks and contact
       shadows remain),
@@ -1769,7 +1774,8 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       declares the tier absent.
 - [ ] **Follow-ups the R-1 plan explicitly defers** (each needs its own filing): §63
       transient-target pooling and barrier scheduling (must land on both backends or
-      neither); §65's persistent-mapped/staging-ring buffers; §27 GPU fields
+      neither); ~~§65's persistent-mapped/staging-ring buffers~~ **DONE 2026-11-04
+      (wave 5: `wgpu-staging.ts` ring + WebGL orphaning ring for dynamic geometry)**; §27 GPU fields
       (radial-only stub on `simulation: "gpu"`; generic GPU field stack staged)
       and §36 `collisions: "depth-buffer"` (CPU kill-below-ground + GPU
       `y=ground` rest; true depth-texture collide-and-kill still open); ~~RFC 0005's `Rectangle2` prerequisite for a regional
@@ -1978,7 +1984,11 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       identical on SwiftShader (0/76 800 differ, 13 draws → 3); 100 k sprites → 7 draws,
       50 k shapes → 4. Two §86 rows moved from feature-blocked to half-measured.
 - [ ] Batching follow-ups (§65, after R-9's consecutive-run tier, 2026-08-09):
-      instanced meshes for the shaded pipelines (`R-22` — a baked batch has no normals);
+      ~~instanced meshes for the shaded pipelines (`R-22` — a baked batch has no normals)~~
+      **DONE 2026-11-04 (wave 5)**: `RenderBatcher.nextInstanced` (25 floats per instance,
+      model + normal matrix) draws lit/standard runs with one instanced call on WebGL
+      (divisor-1 attributes 8–14, browser gate 10 draws → 2, 0 pixels differ) and WebGPU
+      (step-mode-instance buffer, `|ins:y` pipeline key; no real-GPU pixel gate yet);
       ~~glyph batching once `R-30` → `R-28` land a `Text` node (its sprites over one atlas
       material batch as they are)~~ **DONE 2026-08-13 (R-28)** — and both the CHANGELOG and
       the code say so: _"consecutive labels sharing a material merge into one draw under
@@ -2044,7 +2054,9 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       `"color"` | `"data"`; omitted role keeps R-15 `"linear"` so goldens
       do not move; `role: "color"` defaults omitted `colorSpace` to `"srgb"`;
       authored `colorSpace` always wins; backends still read `colorSpace`
-      only). Still open: cube/array/3D uploads, compressed containers,
+      only). Still open: ~~cube/array/3D uploads~~ **DONE 2026-11-04 (wave 5:
+      `TextureSource.dimension` `"cube"` / `"2d-array"` / `"3d"` + `depth` upload on both
+      backends)**, compressed containers,
       ~~video/`ImageBitmap`, async upload~~ **DONE 2026-09-11** (host surface
       adapters + frame invalidation, explicit `prepareTexture` fences/queue completion).
 

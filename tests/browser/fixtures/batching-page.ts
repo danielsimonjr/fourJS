@@ -21,7 +21,12 @@
  */
 
 import { Vector3 } from "@fourjs/math";
-import { UnlitMaterial, SpriteMaterial } from "@fourjs/materials";
+import {
+  LitMaterial,
+  SpriteMaterial,
+  StandardMaterial,
+  UnlitMaterial,
+} from "@fourjs/materials";
 import {
   Rectangle,
   Renderable,
@@ -30,15 +35,21 @@ import {
   createRenderStatistics,
   resetRenderStatistics,
 } from "@fourjs/render";
-import { WebglRenderer, createGlBatching } from "@fourjs/render-webgl";
 import {
+  WebglRenderer,
+  createGlBatching,
+  registerStandardPipeline,
+} from "@fourjs/render-webgl";
+import {
+  DirectionalLight,
   OrthographicCamera,
+  PerspectiveCamera,
   Scene,
   createFullscreenViewport,
   type Viewport,
   resolveWorldTransforms,
 } from "@fourjs/scene";
-import { planeGeometry } from "@fourjs/geometry";
+import { boxGeometry, planeGeometry, sphereGeometry } from "@fourjs/geometry";
 
 /** Canvas size the spec creates and this file reads back. */
 const WIDTH = 320;
@@ -103,6 +114,11 @@ declare global {
       pixels: number[];
       drawCalls: number;
     };
+    /** R-22: two runs of shared-geometry shaded meshes (lit, standard). */
+    fourShadedBatchingProbe?: (instanced: boolean) => {
+      pixels: number[];
+      drawCalls: number;
+    };
   }
 }
 
@@ -154,4 +170,69 @@ void renderer.initialize({ canvas }).then(() => {
     return { pixels: Array.from(pixels), drawCalls: statistics.drawCalls };
   };
   document.body.dataset["batchingReady"] = "1";
+  installShadedProbe(gl);
 });
+
+// --- R-22: instanced shaded meshes -----------------------------------------
+
+registerStandardPipeline();
+
+/**
+ * Two rows of meshes over one geometry and one material each - a lit row of
+ * spheres and a standard row of boxes - with rotation and NON-UNIFORM scale on
+ * every instance, so a wrong per-instance normal matrix shows up as a changed
+ * shading rather than hiding behind uniform scale.
+ */
+function buildShadedScene(): Scene {
+  const shaded = new Scene();
+  shaded.add(new DirectionalLight({ intensity: 1 }));
+  shaded.ambientLight[0] =
+    shaded.ambientLight[1] =
+    shaded.ambientLight[2] =
+      0.15;
+  const litMaterial = new LitMaterial({ color: [0.9, 0.5, 0.3, 1] });
+  const sphere = sphereGeometry({ radius: 0.5 });
+  for (let i = 0; i < 5; i += 1) {
+    const mesh = new Renderable(sphere, litMaterial);
+    mesh.transform.position.set(i * 1.5 - 3, 1.1, 0);
+    mesh.transform.scale.set(1 + i * 0.12, 1.5 - i * 0.1, 0.8);
+    mesh.transform.rotation.setFromAxisAngle(AXIS_Z, i * 0.4);
+    shaded.add(mesh);
+  }
+  const standardMaterial = new StandardMaterial({
+    baseColor: [0.3, 0.6, 0.9, 1],
+    metalness: 0.2,
+    roughness: 0.4,
+  });
+  const box = boxGeometry({ width: 0.8, height: 0.8, depth: 0.8 });
+  for (let i = 0; i < 5; i += 1) {
+    const mesh = new Renderable(box, standardMaterial);
+    mesh.transform.position.set(i * 1.5 - 3, -1.1, 0);
+    mesh.transform.scale.set(1.3 - i * 0.1, 1 + i * 0.15, 0.9);
+    mesh.transform.rotation.setFromAxisAngle(AXIS_Z, 0.3 + i * 0.35);
+    shaded.add(mesh);
+  }
+  resolveWorldTransforms(shaded);
+  return shaded;
+}
+
+const shadedScene = buildShadedScene();
+const shadedCamera = new PerspectiveCamera({ aspect: WIDTH / HEIGHT });
+shadedCamera.transform.position.set(0, 0, 8);
+shadedCamera.updateProjectionMatrix();
+resolveWorldTransforms(shadedCamera);
+const shadedViews: Viewport[] = [
+  { ...createFullscreenViewport(shadedCamera), clearColor: [0, 0, 0, 1] },
+];
+
+function installShadedProbe(gl: WebGL2RenderingContext | null): void {
+  window.fourShadedBatchingProbe = (instanced: boolean) => {
+    renderer.batching = instanced ? batching : null;
+    resetRenderStatistics(statistics);
+    renderer.render(shadedScene, shadedViews);
+    const pixels = new Uint8Array(WIDTH * HEIGHT * 4);
+    gl?.readPixels(0, 0, WIDTH, HEIGHT, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    return { pixels: Array.from(pixels), drawCalls: statistics.drawCalls };
+  };
+  document.body.dataset["shadedBatchingReady"] = "1";
+}

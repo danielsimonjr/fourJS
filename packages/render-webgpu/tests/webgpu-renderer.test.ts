@@ -926,7 +926,9 @@ describe("WebgpuRenderer.render", () => {
 
     geometry.markDirty();
     harness.renderer.render(root, [createView()]);
-    expect(harness.gpu.countOf("device.createBuffer")).toBe(2);
+    // §65: a dirty geometry of unchanged layout rewrites its buffer in place.
+    expect(harness.gpu.countOf("device.createBuffer")).toBe(1);
+    expect(harness.gpu.countOf("queue.writeBuffer")).toBeGreaterThanOrEqual(2);
   });
 
   it("compiles one pipeline per distinct descriptor, and no more", () => {
@@ -4959,5 +4961,157 @@ describe("WebgpuRenderer standard-family GPU morph (WP-W4.2b)", () => {
     harness.renderer.render(root, [createView()]);
     expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n|mo:pn|nm");
     expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n");
+  });
+});
+
+describe("WebgpuRenderer instanced shaded runs (R-22)", () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await initialized();
+  });
+
+  function indexedLitTriangle(): TestGeometry {
+    const geometry = litTriangle();
+    geometry.indices = new Uint16Array([0, 1, 2]);
+    return geometry;
+  }
+
+  /** `count` nodes over one geometry and one material. */
+  function instancedScene(
+    material: TestLitMaterial | TestStandardMaterial,
+    count = 3,
+  ): Renderable {
+    const geometry = indexedLitTriangle().asGeometry;
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    for (let i = 0; i < count; i += 1) {
+      const node = new Renderable(geometry, material.asMaterial);
+      node.position.x = i;
+      root.add(node);
+    }
+    return root;
+  }
+
+  it("draws a lit run with one drawIndexed(count, instances) and an instance stream", () => {
+    harness.renderer.batching = createWgpuBatching();
+    const statistics = createRenderStatistics();
+    harness.renderer.statistics = statistics;
+    harness.renderer.render(instancedScene(new TestLitMaterial()), [
+      createView(),
+    ]);
+    const calls = harness.gpu.callsOf("pass.drawIndexed");
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.args.slice(0, 2)).toEqual([3, 3]);
+    expect(statistics.drawCalls).toBe(1);
+    expect(statistics.instances).toBe(3);
+    expect(
+      bufferLabels(harness.gpu).filter((label) =>
+        label.startsWith("fourJS:batch-instances:"),
+      ),
+    ).toHaveLength(1);
+    // The instanced pipeline is its own key and module.
+    expect(pipelineLabels(harness.gpu).some((l) => l.endsWith("|ins:y"))).toBe(
+      true,
+    );
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:lit|n|ins");
+    const descriptor = pipelineDescriptor(harness.gpu, "|ins:y") as {
+      vertex: { buffers: { stepMode: string; arrayStride: number }[] };
+    };
+    const last =
+      descriptor.vertex.buffers[descriptor.vertex.buffers.length - 1];
+    expect(last).toMatchObject({ stepMode: "instance", arrayStride: 100 });
+  });
+
+  it("uploads 25 floats per instance, reuses the buffer and skips on a still scene", () => {
+    harness.renderer.batching = createWgpuBatching();
+    const root = instancedScene(new TestStandardMaterial());
+    harness.renderer.render(root, [createView()]);
+    expect(moduleLabels(harness.gpu)).toContain("fourJS:standard|n|ins");
+    const upload = harness.gpu
+      .callsOf("queue.writeBuffer")
+      .find((call) => call.args[4] === 75);
+    expect(upload).toBeDefined();
+    harness.gpu.reset();
+    harness.renderer.render(root, [createView()]);
+    expect(harness.gpu.countOf("device.createBuffer")).toBe(0);
+    expect(
+      harness.gpu.callsOf("pass.drawIndexed")[0]?.args.slice(0, 2),
+    ).toEqual([3, 3]);
+  });
+
+  it("grows the instance buffer when a later frame's run is longer", () => {
+    harness.renderer.batching = createWgpuBatching();
+    const material = new TestLitMaterial();
+    const geometry = indexedLitTriangle().asGeometry;
+    const build = (count: number): Renderable => {
+      const root = new AmbientRoot([0.1, 0.1, 0.1]);
+      for (let i = 0; i < count; i += 1) {
+        root.add(new Renderable(geometry, material.asMaterial));
+      }
+      return root;
+    };
+    harness.renderer.render(build(2), [createView()]);
+    harness.gpu.reset();
+    harness.renderer.render(build(40), [createView()]);
+    expect(
+      harness.gpu.callsOf("pass.drawIndexed")[0]?.args.slice(0, 2),
+    ).toEqual([3, 40]);
+    expect(harness.gpu.countOf("buffer.destroy")).toBeGreaterThanOrEqual(1);
+  });
+
+  it("draws per item when batching is off, and leaves unlit items alone", () => {
+    harness.renderer.render(instancedScene(new TestLitMaterial()), [
+      createView(),
+    ]);
+    expect(harness.gpu.callsOf("pass.drawIndexed")).toHaveLength(3);
+    expect(
+      harness.gpu
+        .callsOf("pass.drawIndexed")
+        .every((c) => c.args[1] === undefined),
+    ).toBe(true);
+    expect(pipelineLabels(harness.gpu).some((l) => l.includes("|ins"))).toBe(
+      false,
+    );
+
+    const batched = harness;
+    batched.renderer.batching = createWgpuBatching();
+    batched.gpu.reset();
+    const geometry = triangle().asGeometry;
+    const unlit = new TestMaterial();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    root.add(new Renderable(geometry, unlit.asMaterial));
+    root.add(new Renderable(geometry, unlit.asMaterial));
+    batched.renderer.render(root, [createView()]);
+    expect(pipelineLabels(batched.gpu).some((l) => l.includes("|ins"))).toBe(
+      false,
+    );
+  });
+
+  it("falls back to per-item when the uploader has no instancing members", () => {
+    const real = createWgpuBatching();
+    harness.renderer.batching = {
+      next: (items, from, mask) => real.next(items, from, mask),
+      beginFrame: () => real.beginFrame(),
+      draw: (device, pass, batch) => real.draw(device, pass, batch),
+      forget: () => real.forget(),
+      dispose: () => real.dispose(),
+    };
+    harness.renderer.render(instancedScene(new TestLitMaterial()), [
+      createView(),
+    ]);
+    expect(harness.gpu.callsOf("pass.drawIndexed")).toHaveLength(3);
+  });
+
+  it("draws a non-indexed run with draw(count, instances)", () => {
+    harness.renderer.batching = createWgpuBatching();
+    const geometry = litTriangle().asGeometry;
+    const material = new TestLitMaterial();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    root.add(new Renderable(geometry, material.asMaterial));
+    root.add(new Renderable(geometry, material.asMaterial));
+    harness.renderer.render(root, [createView()]);
+    expect(
+      harness.gpu.callsOf("pass.draw").map((c) => c.args.slice(0, 2)),
+    ).toContainEqual([3, 2]);
   });
 });

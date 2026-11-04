@@ -142,11 +142,108 @@ export const NORMAL1_BUFFER_LAYOUT: GpuVertexBufferLayout = Object.freeze({
 });
 
 /**
- * Which morph streams a one-target GPU morph variant reads (RFC 0003 WP-SK.4):
- * `"p"` positions only, `"pn"` positions and normals. Lit geometry that carries
- * `normals1` selects `"pn"`; everything else `"p"`.
+ * Which morph streams a GPU morph variant reads (RFC 0003 WP-SK.4 and its
+ * further-targets residue): `"p"` / `"pn"` are the one-target variants
+ * (positions only / positions and normals); `"p2"`..`"p4"` / `"pn2"`..`"pn4"`
+ * read that many targets, each with the stream set the letters name. The
+ * string is also the pipeline-cache and memo key suffix, so counts never
+ * collide. One-target sources are byte-identical to the pre-residue ones.
  */
-export type WgpuMorph = "p" | "pn";
+export type WgpuMorph = "p" | "pn" | "p2" | "pn2" | "p3" | "pn3" | "p4" | "pn4";
+
+/** Targets a morph variant reads (1..4). */
+export function morphTargetCount(morph: WgpuMorph): number {
+  return morph.length === 1 || morph === "pn" ? 1 : Number(morph.slice(-1));
+}
+
+/** Whether a morph variant also morphs normals. */
+export function morphHasNormals(morph: WgpuMorph): boolean {
+  return morph.startsWith("pn");
+}
+
+/** The variant for `count` targets (1..4), with or without normal streams. */
+export function morphVariant(count: number, normals: boolean): WgpuMorph {
+  const base = normals ? "pn" : "p";
+  return (count === 1 ? base : `${base}${String(count)}`) as WgpuMorph;
+}
+
+/** `@location` of morph target `k`'s positions: 6, then 10, 12, 14. */
+export function morphPositionShaderLocation(k: number): number {
+  return k === 1 ? POSITION1_SHADER_LOCATION : 10 + 2 * (k - 2);
+}
+
+/** `@location` of morph target `k`'s normals: 7, then 11, 13, 15. */
+export function morphNormalShaderLocation(k: number): number {
+  return morphPositionShaderLocation(k) + 1;
+}
+
+const POSITION_K_LAYOUTS: GpuVertexBufferLayout[] = [];
+const NORMAL_K_LAYOUTS: GpuVertexBufferLayout[] = [];
+for (let k = 2; k <= 4; k += 1) {
+  for (const [list, location] of [
+    [POSITION_K_LAYOUTS, morphPositionShaderLocation(k)],
+    [NORMAL_K_LAYOUTS, morphNormalShaderLocation(k)],
+  ] as const) {
+    list[k] = Object.freeze({
+      arrayStride: 12,
+      stepMode: "vertex",
+      attributes: Object.freeze([
+        Object.freeze({
+          format: "float32x3",
+          offset: 0,
+          shaderLocation: location,
+        }),
+      ]),
+    });
+  }
+}
+
+/**
+ * Morph vertex-buffer layouts in slot order (after the base streams):
+ * `positions1`, [`normals1`], then `positions2`, [`normals2`], …
+ */
+export function morphVertexBufferLayouts(
+  morph: WgpuMorph,
+): readonly GpuVertexBufferLayout[] {
+  const out: GpuVertexBufferLayout[] = [POSITION1_BUFFER_LAYOUT];
+  const normals = morphHasNormals(morph);
+  if (normals) {
+    out.push(NORMAL1_BUFFER_LAYOUT);
+  }
+  for (let k = 2; k <= morphTargetCount(morph); k += 1) {
+    out.push(POSITION_K_LAYOUTS[k]);
+    if (normals) {
+      out.push(NORMAL_K_LAYOUTS[k]);
+    }
+  }
+  return out;
+}
+
+/** Vertex-input WGSL lines for the morph streams of a variant. */
+export function morphInputWgsl(morph: WgpuMorph, normals: boolean): string {
+  let input = "";
+  for (let k = 1; k <= morphTargetCount(morph); k += 1) {
+    input += `
+  @location(${String(morphPositionShaderLocation(k))}) position${String(k)} : vec3<f32>,`;
+    if (normals) {
+      input += `
+  @location(${String(morphNormalShaderLocation(k))}) normal${String(k)} : vec3<f32>,`;
+    }
+  }
+  return input;
+}
+
+/**
+ * Σ wᵢ(pᵢ − p) as WGSL for a 2..4-target variant (`draw.morphWeights` lanes);
+ * `name` is `position` or `normal`. One target uses GLSL's `mix` instead.
+ */
+export function morphSumWgsl(name: string, count: number): string {
+  let expr = name;
+  for (let k = 1; k <= count; k += 1) {
+    expr += ` + draw.morphWeights.${"xyzw"[k - 1]} * (${name}${String(k)} - ${name})`;
+  }
+  return expr;
+}
 
 /**
  * Byte offset of the one-target morph weight inside `DrawUniforms`: the
@@ -165,6 +262,28 @@ export const MORPH_DRAW_UNIFORM_WGSL = DRAW_UNIFORM_WGSL.replace(
   "normalMatrix : mat3x3<f32>,",
   "normalColumn0 : vec4<f32>,\n  normalColumn1 : vec4<f32>,\n  normalColumn2 : vec4<f32>,",
 );
+
+/**
+ * Byte offset of the `vec4` `morphWeights` field the 2..4-target variants
+ * append to `DrawUniforms` (after the 192 bytes the base block uses; the
+ * 256-byte stride leaves room).
+ */
+export const DRAW_MORPH_WEIGHTS_OFFSET = 192;
+
+/** {@link MORPH_DRAW_UNIFORM_WGSL} plus the trailing `morphWeights` vec4. */
+export const MORPH_N_DRAW_UNIFORM_WGSL = MORPH_DRAW_UNIFORM_WGSL.replace(
+  "\n};",
+  "\n  morphWeights : vec4<f32>,\n};",
+);
+
+/** The draw block a morph variant (or none) declares. */
+export function drawUniformWgslFor(morph: WgpuMorph | undefined): string {
+  return morph === undefined
+    ? DRAW_UNIFORM_WGSL
+    : morphTargetCount(morph) === 1
+      ? MORPH_DRAW_UNIFORM_WGSL
+      : MORPH_N_DRAW_UNIFORM_WGSL;
+}
 
 /** The WGSL expression for the morph weight in a morph variant. */
 export const MORPH_WEIGHT_WGSL = "draw.normalColumn0.w";
@@ -198,7 +317,7 @@ export function unlitVertexBufferLayouts(
     layouts.push(UV_BUFFER_LAYOUT);
   }
   if (morph !== undefined) {
-    layouts.push(POSITION1_BUFFER_LAYOUT);
+    layouts.push(...morphVertexBufferLayouts(morph));
   }
   return layouts;
 }
@@ -234,14 +353,13 @@ export function unlitShaderSource(
   @location(${String(UV_SHADER_LOCATION)}) uv : vec2<f32>,`;
   }
   if (morph !== undefined) {
-    input += `
-  @location(${String(POSITION1_SHADER_LOCATION)}) position1 : vec3<f32>,`;
+    input += morphInputWgsl(morph, false);
   }
   const color = vertexColors ? "draw.color * vertexColor" : "draw.color";
   // `map` multiplies the interpolated colour, so the tint and the per-vertex
   // colour both survive — the same expression `gl-program.ts`'s unlit fragment
   // stage writes (`result *= texture(map, vUv)`), and the same order.
-  return `${morph === undefined ? DRAW_UNIFORM_WGSL : MORPH_DRAW_UNIFORM_WGSL}${map ? `\n\n${MAP_BINDING_WGSL}` : ""}
+  return `${drawUniformWgslFor(morph)}${map ? `\n\n${MAP_BINDING_WGSL}` : ""}
 
 struct VertexOutput {
   @builtin(position) position : vec4<f32>,
@@ -261,8 +379,12 @@ ${input}
 ${
   morph === undefined
     ? ""
-    : `  // One-target GPU morph (RFC 0003): GLSL's mix(position, position1, w).
+    : morphTargetCount(morph) === 1
+      ? `  // One-target GPU morph (RFC 0003): GLSL's mix(position, position1, w).
   let morphed = mix(position, position1, ${MORPH_WEIGHT_WGSL});
+`
+      : `  // N-target GPU morph: Σ wᵢ(pᵢ − p).
+  let morphed = ${morphSumWgsl("position", morphTargetCount(morph))};
 `
 }  let clip = draw.viewProjection * draw.model * vec4<f32>(${morph === undefined ? "position" : "morphed"}, 1.0);
   // WebGL clip depth [-w, w] onto WebGPU's [0, w]; see the module header.

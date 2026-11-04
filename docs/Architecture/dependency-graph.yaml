@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 362
+  totalFiles: 363
   totalModules: 25
-  totalExports: 3601
+  totalExports: 3662
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -5669,6 +5669,8 @@ modules:
           imports:
             - GlBatching
             - createGlBatching
+            - createInstanceGl
+            - instanceVertexSource
           reExport: true
         - file: ./gl-effect-registry.js
           imports:
@@ -5717,6 +5719,8 @@ modules:
             - POSITION_ATTRIBUTE_LOCATION
             - POSITION1_ATTRIBUTE_LOCATION
             - NORMAL1_ATTRIBUTE_LOCATION
+            - morphNormalLocation
+            - morphPositionLocation
             - HEMISPHERE_LIGHT_GLSL
             - HemisphereLightUniforms
             - PUNCTUAL_LIGHT_GLSL
@@ -5813,6 +5817,8 @@ modules:
         - file: ./gl-batch.js
           imports:
             - BatchGlContext
+            - InstanceGlContext
+            - InstancedGeometryRecord
             - RenderBatching
           reExport: true
           typeOnly: true
@@ -5925,6 +5931,8 @@ modules:
       exports:
         - GlBatching
         - createGlBatching
+        - createInstanceGl
+        - instanceVertexSource
         - EFFECT_TEXTURE_UNIT
         - EFFECT_VERTEX_COUNT
         - clearRegisteredEffectPipeline
@@ -5955,6 +5963,8 @@ modules:
         - POSITION_ATTRIBUTE_LOCATION
         - POSITION1_ATTRIBUTE_LOCATION
         - NORMAL1_ATTRIBUTE_LOCATION
+        - morphNormalLocation
+        - morphPositionLocation
         - HEMISPHERE_LIGHT_GLSL
         - HemisphereLightUniforms
         - PUNCTUAL_LIGHT_GLSL
@@ -6004,6 +6014,8 @@ modules:
         - WebglRenderer
         - PACKAGE_NAME
         - BatchGlContext
+        - InstanceGlContext
+        - InstancedGeometryRecord
         - RenderBatching
         - EffectPipeline
         - EffectPipelineFactory
@@ -6053,6 +6065,8 @@ modules:
       reExported:
         - GlBatching
         - createGlBatching
+        - createInstanceGl
+        - instanceVertexSource
         - EFFECT_TEXTURE_UNIT
         - EFFECT_VERTEX_COUNT
         - clearRegisteredEffectPipeline
@@ -6083,6 +6097,8 @@ modules:
         - POSITION_ATTRIBUTE_LOCATION
         - POSITION1_ATTRIBUTE_LOCATION
         - NORMAL1_ATTRIBUTE_LOCATION
+        - morphNormalLocation
+        - morphPositionLocation
         - HEMISPHERE_LIGHT_GLSL
         - HemisphereLightUniforms
         - PUNCTUAL_LIGHT_GLSL
@@ -6131,6 +6147,8 @@ modules:
         - registerWebglRenderer
         - WebglRenderer
         - BatchGlContext
+        - InstanceGlContext
+        - InstancedGeometryRecord
         - RenderBatching
         - EffectPipeline
         - EffectPipelineFactory
@@ -6349,6 +6367,8 @@ modules:
             - POSITION1_ATTRIBUTE_LOCATION
             - UV_ATTRIBUTE_LOCATION
             - WEIGHTS_ATTRIBUTE_LOCATION
+            - morphNormalLocation
+            - morphPositionLocation
             - WebglContext
         - file: ./gl-program.js
           imports:
@@ -6365,11 +6385,16 @@ modules:
           imports:
             - warnDisposedInUse
       exports:
+        - GEOMETRY_RING_SLOTS
+        - GEOMETRY_RING_PROMOTE_AFTER
         - GeometryCache
       classes:
         - GeometryCache
       interfaces:
         - GeometryRecord
+      constants:
+        - GEOMETRY_RING_SLOTS
+        - GEOMETRY_RING_PROMOTE_AFTER
     packages/render-webgl/src/node-pipeline-registry.ts:
       description: The node-material pipeline's registration slot (§60, §62; RFC 0001, gap
       externalDependencies: []
@@ -6594,7 +6619,7 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
-            - MAX_PUNCTUAL_LIGHTS
+            - MAX_LIGHT_SLOTS
             - SceneLights
       exports:
         - GL
@@ -6618,6 +6643,8 @@ modules:
         - SHADOW_GLSL
         - LIT_FRAGMENT_SHADER_SOURCE
         - matrixScratch
+        - morphPositionLocation
+        - morphNormalLocation
         - uploadNormalMatrix
         - createLinkedProgram
         - requireUniform
@@ -6637,6 +6664,8 @@ modules:
       interfaces:
         - WebglContext
       functions:
+        - morphPositionLocation
+        - morphNormalLocation
         - uploadNormalMatrix
         - createLinkedProgram
         - requireUniform
@@ -6669,6 +6698,7 @@ modules:
       internalDependencies:
         - file: ./gl-batch.js
           imports:
+            - InstanceGlContext
             - RenderBatching
           typeOnly: true
         - file: ./gl-effect-registry.js
@@ -6764,6 +6794,7 @@ modules:
             - buildRenderList
             - buildViewRenderList
             - collectSceneLights
+            - unionViewLayerMask
             - createSceneLights
             - isLitItem
             - isNodeItem
@@ -6777,6 +6808,7 @@ modules:
             - validateReadbackRegion
             - COLOR_GRADE_DEFAULTS
             - EffectRenderPass
+            - InstancedRun
             - GraphEffect
             - PickingService
             - RenderItem
@@ -6887,13 +6919,19 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
+        - file: ./gl-standard-registry.js
+          imports:
+            - resolveStandardPipelineFactory
+            - StandardPipeline
         - file: ./gl-program.js
           imports:
             - COLOR_ATTRIBUTE_LOCATION
             - GL
             - POSITION_ATTRIBUTE_LOCATION
+            - LitProgram
             - UV_ATTRIBUTE_LOCATION
             - GlBuffer
+            - GlUniformLocation
             - GlVertexArray
             - UnlitProgram
             - WebglContext
@@ -6905,20 +6943,33 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
+            - INSTANCE_FLOATS
             - RenderBatcher
+            - InstancedRun
             - RenderBatch
             - RenderBatchOptions
             - RenderItem
       exports:
+        - INSTANCE_MODEL_LOCATION
+        - INSTANCE_NORMAL_LOCATION
+        - instanceVertexSource
+        - createInstanceGl
         - createGlBatching
         - GlBatching
       classes:
         - GlBatching
       interfaces:
         - BatchGlContext
+        - InstanceGlContext
+        - InstancedGeometryRecord
         - RenderBatching
       functions:
+        - instanceVertexSource
+        - createInstanceGl
         - createGlBatching
+      constants:
+        - INSTANCE_MODEL_LOCATION
+        - INSTANCE_NORMAL_LOCATION
     packages/render-webgl/src/gl-texture.ts:
       description: "GPU-side textures for the WebGL 2 backend: one `WebGLTexture` per"
       externalDependencies: []
@@ -9337,6 +9388,7 @@ modules:
         - file: ./buffer-geometry.js
           imports:
             - BufferGeometry
+            - MAX_MORPH_TARGETS
           reExport: true
         - file: ./geometry.js
           imports:
@@ -9401,6 +9453,7 @@ modules:
             - GeometryBounds
             - GeometryDrawMode
             - GeometryIndexArray
+            - MorphTargetStreams
           reExport: true
           typeOnly: true
         - file: ./geometry.js
@@ -9475,6 +9528,7 @@ modules:
       workspaceDependencies: []
       exports:
         - BufferGeometry
+        - MAX_MORPH_TARGETS
         - Geometry
         - capsuleGeometry
         - coneGeometry
@@ -9510,6 +9564,7 @@ modules:
         - GeometryBounds
         - GeometryDrawMode
         - GeometryIndexArray
+        - MorphTargetStreams
         - BoundingVolume
         - CapsuleGeometryOptions
         - ExtrudeGeometryOptions
@@ -9553,6 +9608,7 @@ modules:
         - StrokeMesh
       reExported:
         - BufferGeometry
+        - MAX_MORPH_TARGETS
         - Geometry
         - capsuleGeometry
         - coneGeometry
@@ -9587,6 +9643,7 @@ modules:
         - GeometryBounds
         - GeometryDrawMode
         - GeometryIndexArray
+        - MorphTargetStreams
         - BoundingVolume
         - CapsuleGeometryOptions
         - ExtrudeGeometryOptions
@@ -9919,11 +9976,15 @@ modules:
           imports:
             - Vector3
       exports:
+        - MAX_MORPH_TARGETS
         - BufferGeometry
       classes:
         - BufferGeometry
       interfaces:
         - BufferGeometryOptions
+        - MorphTargetStreams
+      constants:
+        - MAX_MORPH_TARGETS
     packages/geometry/src/cpu-skinning.ts:
       description: Reusable CPU linear-blend skinning (§54, RFC 0003).
       externalDependencies: []
@@ -10190,6 +10251,7 @@ modules:
         - file: ./batch.js
           imports:
             - DEFAULT_MAX_BATCH_VERTICES
+            - INSTANCE_FLOATS
             - RenderBatcher
           reExport: true
         - file: ./bounds.js
@@ -10232,8 +10294,12 @@ modules:
           reExport: true
         - file: ./lights.js
           imports:
+            - EXTRA_DIRECTIONAL_FLAG
+            - MAX_DIRECTIONAL_LIGHTS
+            - MAX_LIGHT_SLOTS
             - MAX_PUNCTUAL_LIGHTS
             - collectSceneLights
+            - unionViewLayerMask
             - createSceneLights
             - isDirectionalLightSource
             - isHemisphereLightSource
@@ -10407,6 +10473,8 @@ modules:
           imports:
             - BatchableItem
             - BatchableMaterial
+            - InstanceableItem
+            - InstancedRun
             - RenderBatch
             - RenderBatchOptions
           reExport: true
@@ -10676,6 +10744,7 @@ modules:
             - ShaderSourceMap
       exports:
         - DEFAULT_MAX_BATCH_VERTICES
+        - INSTANCE_FLOATS
         - RenderBatcher
         - computeWorldBoundingSphere
         - computeWorldBoundingSphereFromBox
@@ -10694,8 +10763,12 @@ modules:
         - OUTPUT_TRANSFORM_EFFECT
         - supportsScreenEffects
         - validateEffectRenderPass
+        - EXTRA_DIRECTIONAL_FLAG
+        - MAX_DIRECTIONAL_LIGHTS
+        - MAX_LIGHT_SLOTS
         - MAX_PUNCTUAL_LIGHTS
         - collectSceneLights
+        - unionViewLayerMask
         - createSceneLights
         - isDirectionalLightSource
         - isHemisphereLightSource
@@ -10805,6 +10878,8 @@ modules:
         - PACKAGE_NAME
         - BatchableItem
         - BatchableMaterial
+        - InstanceableItem
+        - InstancedRun
         - RenderBatch
         - RenderBatchOptions
         - BoundingSphere
@@ -10952,6 +11027,7 @@ modules:
         - VideoTextureSource
       reExported:
         - DEFAULT_MAX_BATCH_VERTICES
+        - INSTANCE_FLOATS
         - RenderBatcher
         - computeWorldBoundingSphere
         - computeWorldBoundingSphereFromBox
@@ -10970,8 +11046,12 @@ modules:
         - OUTPUT_TRANSFORM_EFFECT
         - supportsScreenEffects
         - validateEffectRenderPass
+        - EXTRA_DIRECTIONAL_FLAG
+        - MAX_DIRECTIONAL_LIGHTS
+        - MAX_LIGHT_SLOTS
         - MAX_PUNCTUAL_LIGHTS
         - collectSceneLights
+        - unionViewLayerMask
         - createSceneLights
         - isDirectionalLightSource
         - isHemisphereLightSource
@@ -11080,6 +11160,8 @@ modules:
         - VideoTexture
         - BatchableItem
         - BatchableMaterial
+        - InstanceableItem
+        - InstancedRun
         - RenderBatch
         - RenderBatchOptions
         - BoundingSphere
@@ -11265,7 +11347,6 @@ modules:
         - package: "@fourjs/core"
           directory: packages/core
           imports:
-            - FourError
             - Disposable
         - package: "@fourjs/materials"
           directory: packages/materials
@@ -11280,6 +11361,7 @@ modules:
             - ColorSpace
             - Rectangle2
       exports:
+        - textureChainBytes
         - validateTextureSource
         - Texture
       classes:
@@ -11287,6 +11369,7 @@ modules:
       interfaces:
         - TextureSource
       functions:
+        - textureChainBytes
         - validateTextureSource
     packages/render/src/render-target-bytes.ts:
       description: Per-texel byte accounting for {@link RenderTarget} attachments (§83, §84).
@@ -11765,8 +11848,10 @@ modules:
             - ScissorRect
         - file: ./render-list.js
           imports:
+            - LitRenderItem
             - RenderItem
             - SpriteRenderItem
+            - StandardRenderItem
             - UnlitRenderItem
           typeOnly: true
       workspaceDependencies:
@@ -11783,6 +11868,7 @@ modules:
         - package: "@fourjs/math"
           directory: packages/math
           imports:
+            - Matrix3
             - ColorRGBA
         - package: "@fourjs/scene"
           directory: packages/scene
@@ -11791,14 +11877,17 @@ modules:
             - LayerMask
       exports:
         - DEFAULT_MAX_BATCH_VERTICES
+        - INSTANCE_FLOATS
         - RenderBatcher
       classes:
         - RenderBatcher
       interfaces:
         - RenderBatchOptions
         - RenderBatch
+        - InstancedRun
       constants:
         - DEFAULT_MAX_BATCH_VERTICES
+        - INSTANCE_FLOATS
     packages/render/src/renderer.ts:
       description: The renderer interface (§61) — the seam every backend implements.
       externalDependencies: []
@@ -12264,7 +12353,10 @@ modules:
       description: Light collection (§68, §64) — scene graph in, one flat light state out.
       externalDependencies: []
       nodeDependencies: []
-      internalDependencies: []
+      internalDependencies:
+        - file: ./render-list.js
+          imports:
+            - viewLayerMask
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -12280,14 +12372,21 @@ modules:
         - package: "@fourjs/scene"
           directory: packages/scene
           imports:
+            - ALL_LAYERS
+            - LayerMask
             - Node
+            - Viewport
       exports:
         - MAX_PUNCTUAL_LIGHTS
+        - MAX_DIRECTIONAL_LIGHTS
+        - MAX_LIGHT_SLOTS
+        - EXTRA_DIRECTIONAL_FLAG
         - isDirectionalLightSource
         - isHemisphereLightSource
         - isPunctualLightSource
         - createSceneLights
         - collectSceneLights
+        - unionViewLayerMask
       interfaces:
         - DirectionalLightSource
         - DirectionalShadowSource
@@ -12303,8 +12402,12 @@ modules:
         - isPunctualLightSource
         - createSceneLights
         - collectSceneLights
+        - unionViewLayerMask
       constants:
         - MAX_PUNCTUAL_LIGHTS
+        - MAX_DIRECTIONAL_LIGHTS
+        - MAX_LIGHT_SLOTS
+        - EXTRA_DIRECTIONAL_FLAG
   packages/input:
     packages/input/src/pick.ts:
       description: Picking and hit testing (§71) — the bounds tier.
@@ -12733,6 +12836,9 @@ modules:
             - GPU_BUFFER_USAGE
             - GpuBuffer
             - GpuDevice
+        - file: ./wgpu-staging.js
+          imports:
+            - WgpuStagingRing
       workspaceDependencies:
         - package: "@fourjs/render"
           directory: packages/render
@@ -12883,6 +12989,12 @@ modules:
           imports:
             - WgpuGeometryCache
           reExport: true
+        - file: ./wgpu-staging.js
+          imports:
+            - STAGING_DIRECT_THRESHOLD
+            - STAGING_RING_FRAMES
+            - WgpuStagingRing
+          reExport: true
         - file: ./wgpu-pipeline-cache.js
           imports:
             - blendStateFor
@@ -12921,6 +13033,12 @@ modules:
             - COLOR_BUFFER_LAYOUT
             - COLOR_SHADER_LOCATION
             - DRAW_MORPH_WEIGHT_OFFSET
+            - DRAW_MORPH_WEIGHTS_OFFSET
+            - MORPH_N_DRAW_UNIFORM_WGSL
+            - morphHasNormals
+            - morphTargetCount
+            - morphVariant
+            - morphVertexBufferLayouts
             - FRAGMENT_ENTRY_POINT
             - MORPH_DRAW_UNIFORM_WGSL
             - MORPH_WEIGHT_WGSL
@@ -13071,7 +13189,9 @@ modules:
           reExport: true
         - file: ./wgpu-standard.js
           imports:
+            - MORPH_N_STANDARD_UNIFORM_WGSL
             - MORPH_STANDARD_UNIFORM_WGSL
+            - STANDARD_MORPH_WEIGHTS_OFFSET
             - NO_SURFACE_MAPS
             - SURFACE_DEFAULT_TEXELS
             - STANDARD_BASE_COLOR_OFFSET
@@ -13329,6 +13449,9 @@ modules:
         - createTextureBindGroupLayout
         - WgpuSurfaceGroupCache
         - WgpuGeometryCache
+        - STAGING_DIRECT_THRESHOLD
+        - STAGING_RING_FRAMES
+        - WgpuStagingRing
         - blendStateFor
         - pipelineKey
         - stencilStateFor
@@ -13353,6 +13476,12 @@ modules:
         - COLOR_BUFFER_LAYOUT
         - COLOR_SHADER_LOCATION
         - DRAW_MORPH_WEIGHT_OFFSET
+        - DRAW_MORPH_WEIGHTS_OFFSET
+        - MORPH_N_DRAW_UNIFORM_WGSL
+        - morphHasNormals
+        - morphTargetCount
+        - morphVariant
+        - morphVertexBufferLayouts
         - FRAGMENT_ENTRY_POINT
         - MORPH_DRAW_UNIFORM_WGSL
         - MORPH_WEIGHT_WGSL
@@ -13470,7 +13599,9 @@ modules:
         - applyStencilReference
         - frameWantsStencil
         - stencilDescriptor
+        - MORPH_N_STANDARD_UNIFORM_WGSL
         - MORPH_STANDARD_UNIFORM_WGSL
+        - STANDARD_MORPH_WEIGHTS_OFFSET
         - NO_SURFACE_MAPS
         - SURFACE_DEFAULT_TEXELS
         - STANDARD_BASE_COLOR_OFFSET
@@ -13637,6 +13768,9 @@ modules:
         - createTextureBindGroupLayout
         - WgpuSurfaceGroupCache
         - WgpuGeometryCache
+        - STAGING_DIRECT_THRESHOLD
+        - STAGING_RING_FRAMES
+        - WgpuStagingRing
         - blendStateFor
         - pipelineKey
         - stencilStateFor
@@ -13661,6 +13795,12 @@ modules:
         - COLOR_BUFFER_LAYOUT
         - COLOR_SHADER_LOCATION
         - DRAW_MORPH_WEIGHT_OFFSET
+        - DRAW_MORPH_WEIGHTS_OFFSET
+        - MORPH_N_DRAW_UNIFORM_WGSL
+        - morphHasNormals
+        - morphTargetCount
+        - morphVariant
+        - morphVertexBufferLayouts
         - FRAGMENT_ENTRY_POINT
         - MORPH_DRAW_UNIFORM_WGSL
         - MORPH_WEIGHT_WGSL
@@ -13778,7 +13918,9 @@ modules:
         - applyStencilReference
         - frameWantsStencil
         - stencilDescriptor
+        - MORPH_N_STANDARD_UNIFORM_WGSL
         - MORPH_STANDARD_UNIFORM_WGSL
+        - STANDARD_MORPH_WEIGHTS_OFFSET
         - NO_SURFACE_MAPS
         - SURFACE_DEFAULT_TEXELS
         - STANDARD_BASE_COLOR_OFFSET
@@ -14394,6 +14536,7 @@ modules:
       internalDependencies:
         - file: ./webgpu-device.js
           imports:
+            - GPU_SHADER_STAGE
             - GPU_TEXTURE_USAGE
             - GpuBindGroup
             - GpuBindGroupLayout
@@ -14430,6 +14573,7 @@ modules:
         - MIPMAP_SHADER_SOURCE
         - mipLevelCount
         - textureByteLength
+        - downsampleVolume
         - samplerKey
         - WgpuTextureCache
       classes:
@@ -14440,6 +14584,7 @@ modules:
       functions:
         - mipLevelCount
         - textureByteLength
+        - downsampleVolume
         - samplerKey
       constants:
         - MIPMAP_SHADER_SOURCE
@@ -14471,15 +14616,35 @@ modules:
         - NORMAL1_BUFFER_LAYOUT
         - DRAW_MORPH_WEIGHT_OFFSET
         - MORPH_DRAW_UNIFORM_WGSL
+        - DRAW_MORPH_WEIGHTS_OFFSET
+        - MORPH_N_DRAW_UNIFORM_WGSL
         - MORPH_WEIGHT_WGSL
         - VERTEX_ENTRY_POINT
         - FRAGMENT_ENTRY_POINT
         - CLEAR_VERTEX_COUNT
         - CLEAR_SHADER_SOURCE
+        - morphTargetCount
+        - morphHasNormals
+        - morphVariant
+        - morphPositionShaderLocation
+        - morphNormalShaderLocation
+        - morphVertexBufferLayouts
+        - morphInputWgsl
+        - morphSumWgsl
+        - drawUniformWgslFor
         - unlitVertexBufferLayouts
         - unlitShaderSource
         - unlitFragmentStageWgsl
       functions:
+        - morphTargetCount
+        - morphHasNormals
+        - morphVariant
+        - morphPositionShaderLocation
+        - morphNormalShaderLocation
+        - morphVertexBufferLayouts
+        - morphInputWgsl
+        - morphSumWgsl
+        - drawUniformWgslFor
         - unlitVertexBufferLayouts
         - unlitShaderSource
         - unlitFragmentStageWgsl
@@ -14496,6 +14661,8 @@ modules:
         - NORMAL1_BUFFER_LAYOUT
         - DRAW_MORPH_WEIGHT_OFFSET
         - MORPH_DRAW_UNIFORM_WGSL
+        - DRAW_MORPH_WEIGHTS_OFFSET
+        - MORPH_N_DRAW_UNIFORM_WGSL
         - MORPH_WEIGHT_WGSL
         - VERTEX_ENTRY_POINT
         - FRAGMENT_ENTRY_POINT
@@ -14629,7 +14796,7 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
-            - MAX_PUNCTUAL_LIGHTS
+            - MAX_LIGHT_SLOTS
             - SceneLights
       exports:
         - LIGHTS_BIND_GROUP_INDEX
@@ -14799,6 +14966,26 @@ modules:
         - PARTICLE_WIDE_INSTANCE_BUFFER_LAYOUT
         - PARTICLE_APPEARANCE_SHADER_SOURCE
         - PARTICLE_SHADER_SOURCE
+    packages/render-webgpu/src/wgpu-staging.ts:
+      description: Staging ring for dynamic buffer updates (§65) — WebGPU.
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./webgpu-device.js
+          imports:
+            - GPU_BUFFER_USAGE
+            - GpuBuffer
+            - GpuDevice
+      workspaceDependencies: []
+      exports:
+        - STAGING_DIRECT_THRESHOLD
+        - STAGING_RING_FRAMES
+        - WgpuStagingRing
+      classes:
+        - WgpuStagingRing
+      constants:
+        - STAGING_DIRECT_THRESHOLD
+        - STAGING_RING_FRAMES
     packages/render-webgpu/src/wgpu-surface-group.ts:
       description: "The standard family's surface bind groups (WP-W4.2): the five-entry group of"
       externalDependencies: []
@@ -15037,7 +15224,9 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
+            - INSTANCE_FLOATS
             - RenderBatcher
+            - InstancedRun
             - RenderBatch
             - RenderBatchOptions
             - RenderItem
@@ -15088,6 +15277,7 @@ modules:
         - file: ./wgpu-unlit.js
           imports:
             - FRAGMENT_ENTRY_POINT
+            - morphTargetCount
             - WgpuMorph
       workspaceDependencies: []
       exports:
@@ -15102,6 +15292,8 @@ modules:
         - STANDARD_UNIFORM_BYTES
         - STANDARD_UNIFORM_WGSL
         - MORPH_STANDARD_UNIFORM_WGSL
+        - MORPH_N_STANDARD_UNIFORM_WGSL
+        - STANDARD_MORPH_WEIGHTS_OFFSET
         - surfaceBindingWgsl
         - createStandardBindGroupLayout
         - standardShaderSource
@@ -15123,6 +15315,8 @@ modules:
         - STANDARD_UNIFORM_BYTES
         - STANDARD_UNIFORM_WGSL
         - MORPH_STANDARD_UNIFORM_WGSL
+        - MORPH_N_STANDARD_UNIFORM_WGSL
+        - STANDARD_MORPH_WEIGHTS_OFFSET
     packages/render-webgpu/src/wgpu-sprite.ts:
       description: The sprite pipeline in hand-written WGSL (§55, WP-R1.3), plus the uniform
       externalDependencies: []
@@ -15273,9 +15467,6 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
-        - file: ./wgpu-bindings.js
-          imports:
-            - DRAW_UNIFORM_WGSL
         - file: ./webgpu-device.js
           imports:
             - GpuVertexBufferLayout
@@ -15293,12 +15484,13 @@ modules:
         - file: ./wgpu-unlit.js
           imports:
             - FRAGMENT_ENTRY_POINT
-            - MORPH_DRAW_UNIFORM_WGSL
             - MORPH_WEIGHT_WGSL
-            - NORMAL1_BUFFER_LAYOUT
-            - NORMAL1_SHADER_LOCATION
-            - POSITION1_BUFFER_LAYOUT
-            - POSITION1_SHADER_LOCATION
+            - drawUniformWgslFor
+            - morphHasNormals
+            - morphInputWgsl
+            - morphSumWgsl
+            - morphTargetCount
+            - morphVertexBufferLayouts
             - POSITION_BUFFER_LAYOUT
             - POSITION_SHADER_LOCATION
             - UV_BUFFER_LAYOUT
@@ -15309,6 +15501,9 @@ modules:
       exports:
         - NORMAL_SHADER_LOCATION
         - NORMAL_BUFFER_LAYOUT
+        - INSTANCE_SHADER_LOCATION_BASE
+        - INSTANCE_STRIDE_BYTES
+        - INSTANCE_BUFFER_LAYOUT
         - NORMAL_MATRIX_WGSL
         - shadedVertexBufferLayouts
         - shadedVertexStageWgsl
@@ -15322,6 +15517,9 @@ modules:
       constants:
         - NORMAL_SHADER_LOCATION
         - NORMAL_BUFFER_LAYOUT
+        - INSTANCE_SHADER_LOCATION_BASE
+        - INSTANCE_STRIDE_BYTES
+        - INSTANCE_BUFFER_LAYOUT
         - NORMAL_MATRIX_WGSL
     packages/render-webgpu/src/webgpu-renderer.ts:
       description: Draws fourJS scenes with WebGPU (§61, §62 backend 1).
@@ -15425,6 +15623,7 @@ modules:
         - file: ./wgpu-standard.js
           imports:
             - STANDARD_EMISSIVE_OFFSET
+            - STANDARD_MORPH_WEIGHTS_OFFSET
             - STANDARD_SURFACE_OFFSET
             - STANDARD_UNIFORM_BYTES
             - createStandardBindGroupLayout
@@ -15473,6 +15672,11 @@ modules:
           imports:
             - CLEAR_VERTEX_COUNT
             - DRAW_MORPH_WEIGHT_OFFSET
+            - DRAW_MORPH_WEIGHTS_OFFSET
+            - morphHasNormals
+            - morphTargetCount
+            - morphVariant
+            - WgpuMorph
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -15498,6 +15702,7 @@ modules:
             - buildViewRenderList
             - MAX_SKINNING_JOINTS
             - collectSceneLights
+            - unionViewLayerMask
             - createSceneLights
             - isRenderTargetTexture
             - isSkinnedLitItem
@@ -15505,6 +15710,7 @@ modules:
             - intersectScissor
             - validateReadbackRegion
             - EffectRenderPass
+            - InstancedRun
             - RenderBatch
             - PickingService
             - RenderInterpolation
@@ -21635,6 +21841,7 @@ dependencyGraph:
         - packages/render-webgpu/src/wgpu-lights.ts
         - packages/render-webgpu/src/wgpu-pipeline-memo.ts
         - packages/render-webgpu/src/wgpu-particles.ts
+        - packages/render-webgpu/src/wgpu-staging.ts
         - packages/render-webgpu/src/wgpu-surface-group.ts
         - packages/render-webgpu/src/wgpu-particle-simulation.ts
         - packages/render-webgpu/src/wgpu-compute.ts
@@ -21776,19 +21983,19 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 362
+  totalTypeScriptFiles: 363
   totalModules: 25
-  totalLinesOfCode: 174956
-  totalExports: 3601
-  totalClasses: 224
-  totalInterfaces: 669
-  totalFunctions: 610
+  totalLinesOfCode: 177457
+  totalExports: 3662
+  totalClasses: 225
+  totalInterfaces: 673
+  totalFunctions: 626
   totalTypeGuards: 34
   totalEnums: 0
-  totalConstants: 530
-  totalReExports: 2258
+  totalConstants: 548
+  totalReExports: 2284
   totalTypeOnlyImports: 456
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10
   unusedFilesCount: 0
-  unusedExportsCount: 11
+  unusedExportsCount: 19

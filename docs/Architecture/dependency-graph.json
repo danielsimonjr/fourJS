@@ -3,9 +3,9 @@
     "name": "fourjs-monorepo",
     "version": "0.0.0",
     "lastUpdated": "2026-11-04",
-    "totalFiles": 362,
+    "totalFiles": 363,
     "totalModules": 25,
-    "totalExports": 3601
+    "totalExports": 3662
   },
   "entryPoints": [
     {
@@ -6357,7 +6357,12 @@
         "internalDependencies": [
           {
             "file": "./gl-batch.js",
-            "imports": ["GlBatching", "createGlBatching"],
+            "imports": [
+              "GlBatching",
+              "createGlBatching",
+              "createInstanceGl",
+              "instanceVertexSource"
+            ],
             "reExport": true
           },
           {
@@ -6418,6 +6423,8 @@
               "POSITION_ATTRIBUTE_LOCATION",
               "POSITION1_ATTRIBUTE_LOCATION",
               "NORMAL1_ATTRIBUTE_LOCATION",
+              "morphNormalLocation",
+              "morphPositionLocation",
               "HEMISPHERE_LIGHT_GLSL",
               "HemisphereLightUniforms",
               "PUNCTUAL_LIGHT_GLSL",
@@ -6545,7 +6552,12 @@
           },
           {
             "file": "./gl-batch.js",
-            "imports": ["BatchGlContext", "RenderBatching"],
+            "imports": [
+              "BatchGlContext",
+              "InstanceGlContext",
+              "InstancedGeometryRecord",
+              "RenderBatching"
+            ],
             "reExport": true,
             "typeOnly": true
           },
@@ -6678,6 +6690,8 @@
         "exports": [
           "GlBatching",
           "createGlBatching",
+          "createInstanceGl",
+          "instanceVertexSource",
           "EFFECT_TEXTURE_UNIT",
           "EFFECT_VERTEX_COUNT",
           "clearRegisteredEffectPipeline",
@@ -6708,6 +6722,8 @@
           "POSITION_ATTRIBUTE_LOCATION",
           "POSITION1_ATTRIBUTE_LOCATION",
           "NORMAL1_ATTRIBUTE_LOCATION",
+          "morphNormalLocation",
+          "morphPositionLocation",
           "HEMISPHERE_LIGHT_GLSL",
           "HemisphereLightUniforms",
           "PUNCTUAL_LIGHT_GLSL",
@@ -6757,6 +6773,8 @@
           "WebglRenderer",
           "PACKAGE_NAME",
           "BatchGlContext",
+          "InstanceGlContext",
+          "InstancedGeometryRecord",
           "RenderBatching",
           "EffectPipeline",
           "EffectPipelineFactory",
@@ -6807,6 +6825,8 @@
         "reExported": [
           "GlBatching",
           "createGlBatching",
+          "createInstanceGl",
+          "instanceVertexSource",
           "EFFECT_TEXTURE_UNIT",
           "EFFECT_VERTEX_COUNT",
           "clearRegisteredEffectPipeline",
@@ -6837,6 +6857,8 @@
           "POSITION_ATTRIBUTE_LOCATION",
           "POSITION1_ATTRIBUTE_LOCATION",
           "NORMAL1_ATTRIBUTE_LOCATION",
+          "morphNormalLocation",
+          "morphPositionLocation",
           "HEMISPHERE_LIGHT_GLSL",
           "HemisphereLightUniforms",
           "PUNCTUAL_LIGHT_GLSL",
@@ -6885,6 +6907,8 @@
           "registerWebglRenderer",
           "WebglRenderer",
           "BatchGlContext",
+          "InstanceGlContext",
+          "InstancedGeometryRecord",
           "RenderBatching",
           "EffectPipeline",
           "EffectPipelineFactory",
@@ -7137,6 +7161,8 @@
               "POSITION1_ATTRIBUTE_LOCATION",
               "UV_ATTRIBUTE_LOCATION",
               "WEIGHTS_ATTRIBUTE_LOCATION",
+              "morphNormalLocation",
+              "morphPositionLocation",
               "WebglContext"
             ]
           },
@@ -7158,9 +7184,14 @@
             "imports": ["warnDisposedInUse"]
           }
         ],
-        "exports": ["GeometryCache"],
+        "exports": [
+          "GEOMETRY_RING_SLOTS",
+          "GEOMETRY_RING_PROMOTE_AFTER",
+          "GeometryCache"
+        ],
         "classes": ["GeometryCache"],
-        "interfaces": ["GeometryRecord"]
+        "interfaces": ["GeometryRecord"],
+        "constants": ["GEOMETRY_RING_SLOTS", "GEOMETRY_RING_PROMOTE_AFTER"]
       },
       "packages/render-webgl/src/node-pipeline-registry.ts": {
         "description": "The node-material pipeline's registration slot (§60, §62; RFC 0001, gap",
@@ -7419,7 +7450,7 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": ["MAX_PUNCTUAL_LIGHTS", "SceneLights"]
+            "imports": ["MAX_LIGHT_SLOTS", "SceneLights"]
           }
         ],
         "exports": [
@@ -7444,6 +7475,8 @@
           "SHADOW_GLSL",
           "LIT_FRAGMENT_SHADER_SOURCE",
           "matrixScratch",
+          "morphPositionLocation",
+          "morphNormalLocation",
           "uploadNormalMatrix",
           "createLinkedProgram",
           "requireUniform",
@@ -7464,6 +7497,8 @@
         ],
         "interfaces": ["WebglContext"],
         "functions": [
+          "morphPositionLocation",
+          "morphNormalLocation",
           "uploadNormalMatrix",
           "createLinkedProgram",
           "requireUniform"
@@ -7499,7 +7534,7 @@
         "internalDependencies": [
           {
             "file": "./gl-batch.js",
-            "imports": ["RenderBatching"],
+            "imports": ["InstanceGlContext", "RenderBatching"],
             "typeOnly": true
           },
           {
@@ -7611,6 +7646,7 @@
               "buildRenderList",
               "buildViewRenderList",
               "collectSceneLights",
+              "unionViewLayerMask",
               "createSceneLights",
               "isLitItem",
               "isNodeItem",
@@ -7624,6 +7660,7 @@
               "validateReadbackRegion",
               "COLOR_GRADE_DEFAULTS",
               "EffectRenderPass",
+              "InstancedRun",
               "GraphEffect",
               "PickingService",
               "RenderItem",
@@ -7761,13 +7798,19 @@
         "nodeDependencies": [],
         "internalDependencies": [
           {
+            "file": "./gl-standard-registry.js",
+            "imports": ["resolveStandardPipelineFactory", "StandardPipeline"]
+          },
+          {
             "file": "./gl-program.js",
             "imports": [
               "COLOR_ATTRIBUTE_LOCATION",
               "GL",
               "POSITION_ATTRIBUTE_LOCATION",
+              "LitProgram",
               "UV_ATTRIBUTE_LOCATION",
               "GlBuffer",
+              "GlUniformLocation",
               "GlVertexArray",
               "UnlitProgram",
               "WebglContext"
@@ -7784,17 +7827,36 @@
             "package": "@fourjs/render",
             "directory": "packages/render",
             "imports": [
+              "INSTANCE_FLOATS",
               "RenderBatcher",
+              "InstancedRun",
               "RenderBatch",
               "RenderBatchOptions",
               "RenderItem"
             ]
           }
         ],
-        "exports": ["createGlBatching", "GlBatching"],
+        "exports": [
+          "INSTANCE_MODEL_LOCATION",
+          "INSTANCE_NORMAL_LOCATION",
+          "instanceVertexSource",
+          "createInstanceGl",
+          "createGlBatching",
+          "GlBatching"
+        ],
         "classes": ["GlBatching"],
-        "interfaces": ["BatchGlContext", "RenderBatching"],
-        "functions": ["createGlBatching"]
+        "interfaces": [
+          "BatchGlContext",
+          "InstanceGlContext",
+          "InstancedGeometryRecord",
+          "RenderBatching"
+        ],
+        "functions": [
+          "instanceVertexSource",
+          "createInstanceGl",
+          "createGlBatching"
+        ],
+        "constants": ["INSTANCE_MODEL_LOCATION", "INSTANCE_NORMAL_LOCATION"]
       },
       "packages/render-webgl/src/gl-texture.ts": {
         "description": "GPU-side textures for the WebGL 2 backend: one `WebGLTexture` per",
@@ -10571,7 +10633,7 @@
         "internalDependencies": [
           {
             "file": "./buffer-geometry.js",
-            "imports": ["BufferGeometry"],
+            "imports": ["BufferGeometry", "MAX_MORPH_TARGETS"],
             "reExport": true
           },
           {
@@ -10657,7 +10719,8 @@
               "BufferGeometryOptions",
               "GeometryBounds",
               "GeometryDrawMode",
-              "GeometryIndexArray"
+              "GeometryIndexArray",
+              "MorphTargetStreams"
             ],
             "reExport": true,
             "typeOnly": true
@@ -10751,6 +10814,7 @@
         "workspaceDependencies": [],
         "exports": [
           "BufferGeometry",
+          "MAX_MORPH_TARGETS",
           "Geometry",
           "capsuleGeometry",
           "coneGeometry",
@@ -10786,6 +10850,7 @@
           "GeometryBounds",
           "GeometryDrawMode",
           "GeometryIndexArray",
+          "MorphTargetStreams",
           "BoundingVolume",
           "CapsuleGeometryOptions",
           "ExtrudeGeometryOptions",
@@ -10830,6 +10895,7 @@
         ],
         "reExported": [
           "BufferGeometry",
+          "MAX_MORPH_TARGETS",
           "Geometry",
           "capsuleGeometry",
           "coneGeometry",
@@ -10864,6 +10930,7 @@
           "GeometryBounds",
           "GeometryDrawMode",
           "GeometryIndexArray",
+          "MorphTargetStreams",
           "BoundingVolume",
           "CapsuleGeometryOptions",
           "ExtrudeGeometryOptions",
@@ -11230,9 +11297,10 @@
             "imports": ["Vector3"]
           }
         ],
-        "exports": ["BufferGeometry"],
+        "exports": ["MAX_MORPH_TARGETS", "BufferGeometry"],
         "classes": ["BufferGeometry"],
-        "interfaces": ["BufferGeometryOptions"]
+        "interfaces": ["BufferGeometryOptions", "MorphTargetStreams"],
+        "constants": ["MAX_MORPH_TARGETS"]
       },
       "packages/geometry/src/cpu-skinning.ts": {
         "description": "Reusable CPU linear-blend skinning (§54, RFC 0003).",
@@ -11516,7 +11584,11 @@
         "internalDependencies": [
           {
             "file": "./batch.js",
-            "imports": ["DEFAULT_MAX_BATCH_VERTICES", "RenderBatcher"],
+            "imports": [
+              "DEFAULT_MAX_BATCH_VERTICES",
+              "INSTANCE_FLOATS",
+              "RenderBatcher"
+            ],
             "reExport": true
           },
           {
@@ -11570,8 +11642,12 @@
           {
             "file": "./lights.js",
             "imports": [
+              "EXTRA_DIRECTIONAL_FLAG",
+              "MAX_DIRECTIONAL_LIGHTS",
+              "MAX_LIGHT_SLOTS",
               "MAX_PUNCTUAL_LIGHTS",
               "collectSceneLights",
+              "unionViewLayerMask",
               "createSceneLights",
               "isDirectionalLightSource",
               "isHemisphereLightSource",
@@ -11779,6 +11855,8 @@
             "imports": [
               "BatchableItem",
               "BatchableMaterial",
+              "InstanceableItem",
+              "InstancedRun",
               "RenderBatch",
               "RenderBatchOptions"
             ],
@@ -12100,6 +12178,7 @@
         ],
         "exports": [
           "DEFAULT_MAX_BATCH_VERTICES",
+          "INSTANCE_FLOATS",
           "RenderBatcher",
           "computeWorldBoundingSphere",
           "computeWorldBoundingSphereFromBox",
@@ -12118,8 +12197,12 @@
           "OUTPUT_TRANSFORM_EFFECT",
           "supportsScreenEffects",
           "validateEffectRenderPass",
+          "EXTRA_DIRECTIONAL_FLAG",
+          "MAX_DIRECTIONAL_LIGHTS",
+          "MAX_LIGHT_SLOTS",
           "MAX_PUNCTUAL_LIGHTS",
           "collectSceneLights",
+          "unionViewLayerMask",
           "createSceneLights",
           "isDirectionalLightSource",
           "isHemisphereLightSource",
@@ -12229,6 +12312,8 @@
           "PACKAGE_NAME",
           "BatchableItem",
           "BatchableMaterial",
+          "InstanceableItem",
+          "InstancedRun",
           "RenderBatch",
           "RenderBatchOptions",
           "BoundingSphere",
@@ -12377,6 +12462,7 @@
         ],
         "reExported": [
           "DEFAULT_MAX_BATCH_VERTICES",
+          "INSTANCE_FLOATS",
           "RenderBatcher",
           "computeWorldBoundingSphere",
           "computeWorldBoundingSphereFromBox",
@@ -12395,8 +12481,12 @@
           "OUTPUT_TRANSFORM_EFFECT",
           "supportsScreenEffects",
           "validateEffectRenderPass",
+          "EXTRA_DIRECTIONAL_FLAG",
+          "MAX_DIRECTIONAL_LIGHTS",
+          "MAX_LIGHT_SLOTS",
           "MAX_PUNCTUAL_LIGHTS",
           "collectSceneLights",
+          "unionViewLayerMask",
           "createSceneLights",
           "isDirectionalLightSource",
           "isHemisphereLightSource",
@@ -12505,6 +12595,8 @@
           "VideoTexture",
           "BatchableItem",
           "BatchableMaterial",
+          "InstanceableItem",
+          "InstancedRun",
           "RenderBatch",
           "RenderBatchOptions",
           "BoundingSphere",
@@ -12700,7 +12792,7 @@
           {
             "package": "@fourjs/core",
             "directory": "packages/core",
-            "imports": ["FourError", "Disposable"]
+            "imports": ["Disposable"]
           },
           {
             "package": "@fourjs/materials",
@@ -12718,10 +12810,10 @@
             "imports": ["ColorSpace", "Rectangle2"]
           }
         ],
-        "exports": ["validateTextureSource", "Texture"],
+        "exports": ["textureChainBytes", "validateTextureSource", "Texture"],
         "classes": ["Texture"],
         "interfaces": ["TextureSource"],
-        "functions": ["validateTextureSource"]
+        "functions": ["textureChainBytes", "validateTextureSource"]
       },
       "packages/render/src/render-target-bytes.ts": {
         "description": "Per-texel byte accounting for {@link RenderTarget} attachments (§83, §84).",
@@ -13247,7 +13339,13 @@
           },
           {
             "file": "./render-list.js",
-            "imports": ["RenderItem", "SpriteRenderItem", "UnlitRenderItem"],
+            "imports": [
+              "LitRenderItem",
+              "RenderItem",
+              "SpriteRenderItem",
+              "StandardRenderItem",
+              "UnlitRenderItem"
+            ],
             "typeOnly": true
           }
         ],
@@ -13265,7 +13363,7 @@
           {
             "package": "@fourjs/math",
             "directory": "packages/math",
-            "imports": ["ColorRGBA"]
+            "imports": ["Matrix3", "ColorRGBA"]
           },
           {
             "package": "@fourjs/scene",
@@ -13273,10 +13371,14 @@
             "imports": ["ALL_LAYERS", "LayerMask"]
           }
         ],
-        "exports": ["DEFAULT_MAX_BATCH_VERTICES", "RenderBatcher"],
+        "exports": [
+          "DEFAULT_MAX_BATCH_VERTICES",
+          "INSTANCE_FLOATS",
+          "RenderBatcher"
+        ],
         "classes": ["RenderBatcher"],
-        "interfaces": ["RenderBatchOptions", "RenderBatch"],
-        "constants": ["DEFAULT_MAX_BATCH_VERTICES"]
+        "interfaces": ["RenderBatchOptions", "RenderBatch", "InstancedRun"],
+        "constants": ["DEFAULT_MAX_BATCH_VERTICES", "INSTANCE_FLOATS"]
       },
       "packages/render/src/renderer.ts": {
         "description": "The renderer interface (§61) — the seam every backend implements.",
@@ -13788,7 +13890,12 @@
         "description": "Light collection (§68, §64) — scene graph in, one flat light state out.",
         "externalDependencies": [],
         "nodeDependencies": [],
-        "internalDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./render-list.js",
+            "imports": ["viewLayerMask"]
+          }
+        ],
         "workspaceDependencies": [
           {
             "package": "@fourjs/core",
@@ -13803,16 +13910,20 @@
           {
             "package": "@fourjs/scene",
             "directory": "packages/scene",
-            "imports": ["Node"]
+            "imports": ["ALL_LAYERS", "LayerMask", "Node", "Viewport"]
           }
         ],
         "exports": [
           "MAX_PUNCTUAL_LIGHTS",
+          "MAX_DIRECTIONAL_LIGHTS",
+          "MAX_LIGHT_SLOTS",
+          "EXTRA_DIRECTIONAL_FLAG",
           "isDirectionalLightSource",
           "isHemisphereLightSource",
           "isPunctualLightSource",
           "createSceneLights",
-          "collectSceneLights"
+          "collectSceneLights",
+          "unionViewLayerMask"
         ],
         "interfaces": [
           "DirectionalLightSource",
@@ -13829,9 +13940,15 @@
           "isHemisphereLightSource",
           "isPunctualLightSource",
           "createSceneLights",
-          "collectSceneLights"
+          "collectSceneLights",
+          "unionViewLayerMask"
         ],
-        "constants": ["MAX_PUNCTUAL_LIGHTS"]
+        "constants": [
+          "MAX_PUNCTUAL_LIGHTS",
+          "MAX_DIRECTIONAL_LIGHTS",
+          "MAX_LIGHT_SLOTS",
+          "EXTRA_DIRECTIONAL_FLAG"
+        ]
       }
     },
     "packages/input": {
@@ -14294,6 +14411,10 @@
           {
             "file": "./webgpu-device.js",
             "imports": ["GPU_BUFFER_USAGE", "GpuBuffer", "GpuDevice"]
+          },
+          {
+            "file": "./wgpu-staging.js",
+            "imports": ["WgpuStagingRing"]
           }
         ],
         "workspaceDependencies": [
@@ -14461,6 +14582,15 @@
             "reExport": true
           },
           {
+            "file": "./wgpu-staging.js",
+            "imports": [
+              "STAGING_DIRECT_THRESHOLD",
+              "STAGING_RING_FRAMES",
+              "WgpuStagingRing"
+            ],
+            "reExport": true
+          },
+          {
             "file": "./wgpu-pipeline-cache.js",
             "imports": [
               "blendStateFor",
@@ -14511,6 +14641,12 @@
               "COLOR_BUFFER_LAYOUT",
               "COLOR_SHADER_LOCATION",
               "DRAW_MORPH_WEIGHT_OFFSET",
+              "DRAW_MORPH_WEIGHTS_OFFSET",
+              "MORPH_N_DRAW_UNIFORM_WGSL",
+              "morphHasNormals",
+              "morphTargetCount",
+              "morphVariant",
+              "morphVertexBufferLayouts",
               "FRAGMENT_ENTRY_POINT",
               "MORPH_DRAW_UNIFORM_WGSL",
               "MORPH_WEIGHT_WGSL",
@@ -14694,7 +14830,9 @@
           {
             "file": "./wgpu-standard.js",
             "imports": [
+              "MORPH_N_STANDARD_UNIFORM_WGSL",
               "MORPH_STANDARD_UNIFORM_WGSL",
+              "STANDARD_MORPH_WEIGHTS_OFFSET",
               "NO_SURFACE_MAPS",
               "SURFACE_DEFAULT_TEXELS",
               "STANDARD_BASE_COLOR_OFFSET",
@@ -15000,6 +15138,9 @@
           "createTextureBindGroupLayout",
           "WgpuSurfaceGroupCache",
           "WgpuGeometryCache",
+          "STAGING_DIRECT_THRESHOLD",
+          "STAGING_RING_FRAMES",
+          "WgpuStagingRing",
           "blendStateFor",
           "pipelineKey",
           "stencilStateFor",
@@ -15024,6 +15165,12 @@
           "COLOR_BUFFER_LAYOUT",
           "COLOR_SHADER_LOCATION",
           "DRAW_MORPH_WEIGHT_OFFSET",
+          "DRAW_MORPH_WEIGHTS_OFFSET",
+          "MORPH_N_DRAW_UNIFORM_WGSL",
+          "morphHasNormals",
+          "morphTargetCount",
+          "morphVariant",
+          "morphVertexBufferLayouts",
           "FRAGMENT_ENTRY_POINT",
           "MORPH_DRAW_UNIFORM_WGSL",
           "MORPH_WEIGHT_WGSL",
@@ -15141,7 +15288,9 @@
           "applyStencilReference",
           "frameWantsStencil",
           "stencilDescriptor",
+          "MORPH_N_STANDARD_UNIFORM_WGSL",
           "MORPH_STANDARD_UNIFORM_WGSL",
+          "STANDARD_MORPH_WEIGHTS_OFFSET",
           "NO_SURFACE_MAPS",
           "SURFACE_DEFAULT_TEXELS",
           "STANDARD_BASE_COLOR_OFFSET",
@@ -15309,6 +15458,9 @@
           "createTextureBindGroupLayout",
           "WgpuSurfaceGroupCache",
           "WgpuGeometryCache",
+          "STAGING_DIRECT_THRESHOLD",
+          "STAGING_RING_FRAMES",
+          "WgpuStagingRing",
           "blendStateFor",
           "pipelineKey",
           "stencilStateFor",
@@ -15333,6 +15485,12 @@
           "COLOR_BUFFER_LAYOUT",
           "COLOR_SHADER_LOCATION",
           "DRAW_MORPH_WEIGHT_OFFSET",
+          "DRAW_MORPH_WEIGHTS_OFFSET",
+          "MORPH_N_DRAW_UNIFORM_WGSL",
+          "morphHasNormals",
+          "morphTargetCount",
+          "morphVariant",
+          "morphVertexBufferLayouts",
           "FRAGMENT_ENTRY_POINT",
           "MORPH_DRAW_UNIFORM_WGSL",
           "MORPH_WEIGHT_WGSL",
@@ -15450,7 +15608,9 @@
           "applyStencilReference",
           "frameWantsStencil",
           "stencilDescriptor",
+          "MORPH_N_STANDARD_UNIFORM_WGSL",
           "MORPH_STANDARD_UNIFORM_WGSL",
+          "STANDARD_MORPH_WEIGHTS_OFFSET",
           "NO_SURFACE_MAPS",
           "SURFACE_DEFAULT_TEXELS",
           "STANDARD_BASE_COLOR_OFFSET",
@@ -16158,6 +16318,7 @@
           {
             "file": "./webgpu-device.js",
             "imports": [
+              "GPU_SHADER_STAGE",
               "GPU_TEXTURE_USAGE",
               "GpuBindGroup",
               "GpuBindGroupLayout",
@@ -16204,12 +16365,18 @@
           "MIPMAP_SHADER_SOURCE",
           "mipLevelCount",
           "textureByteLength",
+          "downsampleVolume",
           "samplerKey",
           "WgpuTextureCache"
         ],
         "classes": ["WgpuTextureCache"],
         "interfaces": ["ResolvedSamplerState", "WgpuTextureRecord"],
-        "functions": ["mipLevelCount", "textureByteLength", "samplerKey"],
+        "functions": [
+          "mipLevelCount",
+          "textureByteLength",
+          "downsampleVolume",
+          "samplerKey"
+        ],
         "constants": ["MIPMAP_SHADER_SOURCE"]
       },
       "packages/render-webgpu/src/wgpu-unlit.ts": {
@@ -16245,16 +16412,36 @@
           "NORMAL1_BUFFER_LAYOUT",
           "DRAW_MORPH_WEIGHT_OFFSET",
           "MORPH_DRAW_UNIFORM_WGSL",
+          "DRAW_MORPH_WEIGHTS_OFFSET",
+          "MORPH_N_DRAW_UNIFORM_WGSL",
           "MORPH_WEIGHT_WGSL",
           "VERTEX_ENTRY_POINT",
           "FRAGMENT_ENTRY_POINT",
           "CLEAR_VERTEX_COUNT",
           "CLEAR_SHADER_SOURCE",
+          "morphTargetCount",
+          "morphHasNormals",
+          "morphVariant",
+          "morphPositionShaderLocation",
+          "morphNormalShaderLocation",
+          "morphVertexBufferLayouts",
+          "morphInputWgsl",
+          "morphSumWgsl",
+          "drawUniformWgslFor",
           "unlitVertexBufferLayouts",
           "unlitShaderSource",
           "unlitFragmentStageWgsl"
         ],
         "functions": [
+          "morphTargetCount",
+          "morphHasNormals",
+          "morphVariant",
+          "morphPositionShaderLocation",
+          "morphNormalShaderLocation",
+          "morphVertexBufferLayouts",
+          "morphInputWgsl",
+          "morphSumWgsl",
+          "drawUniformWgslFor",
           "unlitVertexBufferLayouts",
           "unlitShaderSource",
           "unlitFragmentStageWgsl"
@@ -16272,6 +16459,8 @@
           "NORMAL1_BUFFER_LAYOUT",
           "DRAW_MORPH_WEIGHT_OFFSET",
           "MORPH_DRAW_UNIFORM_WGSL",
+          "DRAW_MORPH_WEIGHTS_OFFSET",
+          "MORPH_N_DRAW_UNIFORM_WGSL",
           "MORPH_WEIGHT_WGSL",
           "VERTEX_ENTRY_POINT",
           "FRAGMENT_ENTRY_POINT",
@@ -16428,7 +16617,7 @@
           {
             "package": "@fourjs/render",
             "directory": "packages/render",
-            "imports": ["MAX_PUNCTUAL_LIGHTS", "SceneLights"]
+            "imports": ["MAX_LIGHT_SLOTS", "SceneLights"]
           }
         ],
         "exports": [
@@ -16617,6 +16806,25 @@
           "PARTICLE_APPEARANCE_SHADER_SOURCE",
           "PARTICLE_SHADER_SOURCE"
         ]
+      },
+      "packages/render-webgpu/src/wgpu-staging.ts": {
+        "description": "Staging ring for dynamic buffer updates (§65) — WebGPU.",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./webgpu-device.js",
+            "imports": ["GPU_BUFFER_USAGE", "GpuBuffer", "GpuDevice"]
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": [
+          "STAGING_DIRECT_THRESHOLD",
+          "STAGING_RING_FRAMES",
+          "WgpuStagingRing"
+        ],
+        "classes": ["WgpuStagingRing"],
+        "constants": ["STAGING_DIRECT_THRESHOLD", "STAGING_RING_FRAMES"]
       },
       "packages/render-webgpu/src/wgpu-surface-group.ts": {
         "description": "The standard family's surface bind groups (WP-W4.2): the five-entry group of",
@@ -16906,7 +17114,9 @@
             "package": "@fourjs/render",
             "directory": "packages/render",
             "imports": [
+              "INSTANCE_FLOATS",
               "RenderBatcher",
+              "InstancedRun",
               "RenderBatch",
               "RenderBatchOptions",
               "RenderItem"
@@ -16963,7 +17173,7 @@
           },
           {
             "file": "./wgpu-unlit.js",
-            "imports": ["FRAGMENT_ENTRY_POINT", "WgpuMorph"]
+            "imports": ["FRAGMENT_ENTRY_POINT", "morphTargetCount", "WgpuMorph"]
           }
         ],
         "workspaceDependencies": [],
@@ -16979,6 +17189,8 @@
           "STANDARD_UNIFORM_BYTES",
           "STANDARD_UNIFORM_WGSL",
           "MORPH_STANDARD_UNIFORM_WGSL",
+          "MORPH_N_STANDARD_UNIFORM_WGSL",
+          "STANDARD_MORPH_WEIGHTS_OFFSET",
           "surfaceBindingWgsl",
           "createStandardBindGroupLayout",
           "standardShaderSource"
@@ -17000,7 +17212,9 @@
           "STANDARD_SURFACE_OFFSET",
           "STANDARD_UNIFORM_BYTES",
           "STANDARD_UNIFORM_WGSL",
-          "MORPH_STANDARD_UNIFORM_WGSL"
+          "MORPH_STANDARD_UNIFORM_WGSL",
+          "MORPH_N_STANDARD_UNIFORM_WGSL",
+          "STANDARD_MORPH_WEIGHTS_OFFSET"
         ]
       },
       "packages/render-webgpu/src/wgpu-sprite.ts": {
@@ -17185,10 +17399,6 @@
         "nodeDependencies": [],
         "internalDependencies": [
           {
-            "file": "./wgpu-bindings.js",
-            "imports": ["DRAW_UNIFORM_WGSL"]
-          },
-          {
             "file": "./webgpu-device.js",
             "imports": ["GpuVertexBufferLayout"],
             "typeOnly": true
@@ -17210,12 +17420,13 @@
             "file": "./wgpu-unlit.js",
             "imports": [
               "FRAGMENT_ENTRY_POINT",
-              "MORPH_DRAW_UNIFORM_WGSL",
               "MORPH_WEIGHT_WGSL",
-              "NORMAL1_BUFFER_LAYOUT",
-              "NORMAL1_SHADER_LOCATION",
-              "POSITION1_BUFFER_LAYOUT",
-              "POSITION1_SHADER_LOCATION",
+              "drawUniformWgslFor",
+              "morphHasNormals",
+              "morphInputWgsl",
+              "morphSumWgsl",
+              "morphTargetCount",
+              "morphVertexBufferLayouts",
               "POSITION_BUFFER_LAYOUT",
               "POSITION_SHADER_LOCATION",
               "UV_BUFFER_LAYOUT",
@@ -17229,6 +17440,9 @@
         "exports": [
           "NORMAL_SHADER_LOCATION",
           "NORMAL_BUFFER_LAYOUT",
+          "INSTANCE_SHADER_LOCATION_BASE",
+          "INSTANCE_STRIDE_BYTES",
+          "INSTANCE_BUFFER_LAYOUT",
           "NORMAL_MATRIX_WGSL",
           "shadedVertexBufferLayouts",
           "shadedVertexStageWgsl",
@@ -17244,6 +17458,9 @@
         "constants": [
           "NORMAL_SHADER_LOCATION",
           "NORMAL_BUFFER_LAYOUT",
+          "INSTANCE_SHADER_LOCATION_BASE",
+          "INSTANCE_STRIDE_BYTES",
+          "INSTANCE_BUFFER_LAYOUT",
           "NORMAL_MATRIX_WGSL"
         ]
       },
@@ -17377,6 +17594,7 @@
             "file": "./wgpu-standard.js",
             "imports": [
               "STANDARD_EMISSIVE_OFFSET",
+              "STANDARD_MORPH_WEIGHTS_OFFSET",
               "STANDARD_SURFACE_OFFSET",
               "STANDARD_UNIFORM_BYTES",
               "createStandardBindGroupLayout"
@@ -17437,7 +17655,15 @@
           },
           {
             "file": "./wgpu-unlit.js",
-            "imports": ["CLEAR_VERTEX_COUNT", "DRAW_MORPH_WEIGHT_OFFSET"]
+            "imports": [
+              "CLEAR_VERTEX_COUNT",
+              "DRAW_MORPH_WEIGHT_OFFSET",
+              "DRAW_MORPH_WEIGHTS_OFFSET",
+              "morphHasNormals",
+              "morphTargetCount",
+              "morphVariant",
+              "WgpuMorph"
+            ]
           }
         ],
         "workspaceDependencies": [
@@ -17462,6 +17688,7 @@
               "buildViewRenderList",
               "MAX_SKINNING_JOINTS",
               "collectSceneLights",
+              "unionViewLayerMask",
               "createSceneLights",
               "isRenderTargetTexture",
               "isSkinnedLitItem",
@@ -17469,6 +17696,7 @@
               "intersectScissor",
               "validateReadbackRegion",
               "EffectRenderPass",
+              "InstancedRun",
               "RenderBatch",
               "PickingService",
               "RenderInterpolation",
@@ -24288,6 +24516,7 @@
           "packages/render-webgpu/src/wgpu-lights.ts",
           "packages/render-webgpu/src/wgpu-pipeline-memo.ts",
           "packages/render-webgpu/src/wgpu-particles.ts",
+          "packages/render-webgpu/src/wgpu-staging.ts",
           "packages/render-webgpu/src/wgpu-surface-group.ts",
           "packages/render-webgpu/src/wgpu-particle-simulation.ts",
           "packages/render-webgpu/src/wgpu-compute.ts",
@@ -24457,21 +24686,21 @@
     ]
   },
   "statistics": {
-    "totalTypeScriptFiles": 362,
+    "totalTypeScriptFiles": 363,
     "totalModules": 25,
-    "totalLinesOfCode": 174956,
-    "totalExports": 3601,
-    "totalClasses": 224,
-    "totalInterfaces": 669,
-    "totalFunctions": 610,
+    "totalLinesOfCode": 177457,
+    "totalExports": 3662,
+    "totalClasses": 225,
+    "totalInterfaces": 673,
+    "totalFunctions": 626,
     "totalTypeGuards": 34,
     "totalEnums": 0,
-    "totalConstants": 530,
-    "totalReExports": 2258,
+    "totalConstants": 548,
+    "totalReExports": 2284,
     "totalTypeOnlyImports": 456,
     "runtimeCircularDeps": 0,
     "typeOnlyCircularDeps": 10,
     "unusedFilesCount": 0,
-    "unusedExportsCount": 11
+    "unusedExportsCount": 19
   }
 }

@@ -4866,6 +4866,44 @@ like consecutive unlit items; lit meshes do not batch yet (R-22). Evidence:
   the umbrella legitimately depends on and re-exports; it remains only for the two physics stubs.
 - `registrationAdvice` in `render` now names `registerCanvasRenderer()` / `registerSvgRenderer()`.
 
+## 2026-11-04 — program wave 5 (render residues)
+
+- **Light slots:** `MAX_DIRECTIONAL_LIGHTS` = 4 ahead of the 8 punctual slots (`MAX_LIGHT_SLOTS`
+  = 11). The WebGPU light block is 784 bytes at a 1024-byte stride; the one-light path writes
+  the same bytes as before. Light layers are unioned per frame (`unionViewLayerMask`), never
+  per draw, so a light that no view can see costs nothing.
+- **Texture dimensions:** `TextureSource.dimension` `"cube"` / `"2d-array"` / `"3d"` with
+  `depth`; cube faces are six slices in +X −X +Y −Y +Z −Z order. §77 residue now: compressed
+  containers only.
+- **Staging rings (§65):** WebGPU dynamic geometry goes through `wgpu-staging.ts` (ring of
+  mapped staging buffers, one slot per frame in flight); WebGL orphans with `bufferData`
+  before `bufferSubData`. No pixel change by construction; a geometry with extra morph targets
+  never joins the ring.
+- **R-22 instanced shaded:** `RenderBatcher.nextInstanced` groups consecutive lit/standard
+  items (same geometry, material, kind, clip, scissor, layers, receiveShadow) and packs
+  model (16) + normal matrix (9) per instance. WebGL rewrites the vertex stage at string
+  level (divisor-1 attributes at 8–14, `drawElementsInstanced`, VAO state restored, link
+  failure → per-item draws). WebGPU uses a step-mode-instance buffer pool reset per frame
+  (`|ins:y` pipeline key); it has **no real-GPU pixel gate** because the batching browser
+  fixture is not backend-parametrised — open item. Locations 8–14 cannot collide with morph
+  or joints because `nextInstanced` refuses morph items and skinned items take their own arm.
+- **Four morph targets:** target k at locations 6/7, 10/11, 12/13, 14/15; joints/weights
+  keep 8/9. Blend is `p + Σ wᵢ(pᵢ − p)` for 2–4 targets and the old `mix` for one target, so
+  one-target output is byte-identical. WebGPU appends `morphWeights: vec4` at draw-block
+  offset 192 / standard-block offset 224 inside the 256-byte stride. glTF `weights`
+  animation channels stay refused: the loader's tracks are node-indexed while `MorphWeights`
+  lives on the mesh node, so wiring belongs to the instantiation tier (`fourjs/src/gltf.ts`).
+- **Size budgets re-based (+3 kB on the three tight WebGL-renderer examples: first-3d-scene and
+  particles-demo 46 → 49 kB, ui-demo 54.5 → 57.5 kB).** Wave 5 adds about 2.5 kB gzip to every
+  bundle that carries `WebglRenderer` — the four-directional-light shader branches, the morph
+  program generator for 2–4 targets and the instanced vertex-stage rewriter all live in the
+  renderer module and cannot be tree-shaken per feature. These are shipped §54/§65/§68 features,
+  not an optional mode, which is the distinction the 2026-11-04 batching decision drew (batching
+  stays opt-in because it is a mode most scenes never use). The 2026-09-13 budgets were measured
+  size plus headroom; the new ones keep roughly the same headroom over the measured
+  45.1 / 47.0 / 54.8 kB. The soft-body example (wave 10, merged the same day) grew by the same
+  delta and moved 41.5 → 46 kB over its measured 43.8 kB. Nothing else moved.
+
 ## 2026-11-04 — wave 9: RFC 0010 PhysJS adapter
 
 - **Package:** `@fourjs/physics-physjs` (`PhysJSAdapter2D`/`3D`, `registerPhysJSSolver()`), PhysJS pinned

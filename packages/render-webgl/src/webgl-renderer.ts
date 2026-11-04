@@ -44,6 +44,7 @@ import {
   buildRenderList,
   buildViewRenderList,
   collectSceneLights,
+  unionViewLayerMask,
   createSceneLights,
   isLitItem,
   isNodeItem,
@@ -57,6 +58,7 @@ import {
   validateReadbackRegion,
   COLOR_GRADE_DEFAULTS,
   type EffectRenderPass,
+  type InstancedRun,
   type GraphEffect,
   type PickingService,
   type RenderItem,
@@ -76,7 +78,7 @@ import {
 // (see `WebglRenderer.batching` and `gl-batch.ts`'s header). The context this
 // backend narrows to (`ParticleGlContext`) already satisfies the batcher's own
 // `BatchGlContext` structurally, so no second narrowing is needed either.
-import type { RenderBatching } from "./gl-batch.js";
+import type { InstanceGlContext, RenderBatching } from "./gl-batch.js";
 import {
   EFFECT_TEXTURE_UNIT,
   EFFECT_VERTEX_COUNT,
@@ -1524,6 +1526,15 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
   #morphUnlit: UnlitProgram | null = null;
   #morphLit: LitProgram | null = null;
   #morphProgramsFailed = false;
+  /** 2..4-target morph pairs by target count (index 0/1 unused). */
+  readonly #morphMulti: ({ unlit: UnlitProgram; lit: LitProgram } | null)[] = [
+    null,
+    null,
+    null,
+    null,
+    null,
+  ];
+  readonly #morphMultiFailed: boolean[] = [false, false, false, false, false];
 
   /**
    * Whether the skinned caster compile failed on the current context — a
@@ -1690,6 +1701,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#morphUnlit = null;
     this.#morphLit = null;
     this.#morphProgramsFailed = false;
+    this.#morphMulti.fill(null);
+    this.#morphMultiFailed.fill(false);
     this.#skinnedShadowFailed = false;
     // §60's node-program cache (RFC 0001) died with the context too; the
     // next node-material draw re-creates it and recompiles per graph.
@@ -2066,7 +2079,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         }
       }
       if (hasLitItems) {
-        collectSceneLights(root, sceneLights);
+        collectSceneLights(root, sceneLights, unionViewLayerMask(views));
       }
 
       // §69's shadow map (R-18), rendered **before** the view loop: §63's own
@@ -2139,8 +2152,15 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         | "particle-trail"
         | "particle-appearance"
         | "unlit-morph"
-        | "lit-morph" = "unlit";
+        | "lit-morph"
+        | "unlit-morph-n"
+        | "lit-morph-n"
+        | "lit-instanced"
+        | "standard-instanced" = "unlit";
       let particleTrailActive = false;
+      // The 2..4-target morph program in use while `activeKind` is a
+      // `*-morph-n` kind (counts share a kind, not a program).
+      let activeMorphN: UnlitProgram | LitProgram | null = null;
       // The GL state mirror starts where `#applyFixedState` and GL's own defaults
       // left it; every draw below moves it only where its material asks.
       resetGlState(state);
@@ -2219,10 +2239,15 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         let particleViewUploaded = false;
         let litViewUploaded = false;
         let standardViewUploaded = false;
+        let instLitViewUploaded = false;
+        let instStandardViewUploaded = false;
         let skinnedUnlitViewUploaded = false;
         let skinnedLitViewUploaded = false;
         let morphUnlitViewUploaded = false;
         let morphLitViewUploaded = false;
+        // Bit `2 * (count - 2) + (lit ? 1 : 0)`: per-count view uploads of the
+        // 2..4-target morph programs.
+        let morphNViewMask = 0;
 
         // §64 stages 2–3, per view (R-8, 2026-08-09). The frame's list is built
         // once, above; this derives *this view's* draws from it — §46's layer
@@ -2750,20 +2775,37 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             item.geometry.positions1 !== undefined &&
             (item.kind === "unlit" || isLitItem(item))
           ) {
-            const morph = this.#acquireMorphPrograms(gl);
+            const morphCount =
+              1 + (item.geometry.extraMorphTargets?.length ?? 0);
+            const morph = this.#acquireMorphPrograms(gl, morphCount);
             if (morph === null) {
               continue;
             }
             const weight = item.morphWeights?.[0] ?? 0;
+            const multi = morphCount > 1;
             if (item.kind === "unlit") {
               const morphUnlit = morph.unlit;
-              if (activeKind !== "unlit-morph") {
+              const kind = multi ? "unlit-morph-n" : "unlit-morph";
+              if (
+                activeKind !== kind ||
+                (multi && activeMorphN !== morphUnlit)
+              ) {
                 morphUnlit.use();
-                activeKind = "unlit-morph";
+                activeKind = kind;
+                activeMorphN = multi ? morphUnlit : null;
               }
-              if (!morphUnlitViewUploaded) {
+              const viewBit = 1 << (2 * (morphCount - 2));
+              if (
+                multi
+                  ? (morphNViewMask & viewBit) === 0
+                  : !morphUnlitViewUploaded
+              ) {
                 morphUnlit.setViewProjection(viewProjection);
-                morphUnlitViewUploaded = true;
+                if (multi) {
+                  morphNViewMask |= viewBit;
+                } else {
+                  morphUnlitViewUploaded = true;
+                }
               }
               const map = mapOf(item.material);
               const texture =
@@ -2797,7 +2839,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 unlitColorBlends(item.material),
                 item.clip ?? null,
               );
-              morphUnlit.setMorphWeight(weight);
+              if (multi) {
+                morphUnlit.setMorphWeights(item.morphWeights ?? null);
+              } else {
+                morphUnlit.setMorphWeight(weight);
+              }
               morphUnlit.setModel(item.worldMatrix);
               morphUnlit.setColor(
                 item.material.color,
@@ -2805,11 +2851,18 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               );
             } else {
               const morphLit = morph.lit;
-              if (activeKind !== "lit-morph") {
+              const kind = multi ? "lit-morph-n" : "lit-morph";
+              if (activeKind !== kind || (multi && activeMorphN !== morphLit)) {
                 morphLit.use();
-                activeKind = "lit-morph";
+                activeKind = kind;
+                activeMorphN = multi ? morphLit : null;
               }
-              if (!morphLitViewUploaded) {
+              const litViewBit = 1 << (2 * (morphCount - 2) + 1);
+              if (
+                multi
+                  ? (morphNViewMask & litViewBit) === 0
+                  : !morphLitViewUploaded
+              ) {
                 morphLit.setViewProjection(viewProjection);
                 morphLit.setAmbientLight(sceneLights.ambientColor);
                 morphLit.setHemisphereLight(sceneLights);
@@ -2819,7 +2872,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 );
                 morphLit.setPunctualLights(sceneLights);
                 morphLit.setShadow(sceneLights);
-                morphLitViewUploaded = true;
+                if (multi) {
+                  morphNViewMask |= litViewBit;
+                } else {
+                  morphLitViewUploaded = true;
+                }
               }
               const litMap = mapOf(item.material);
               const litTexture =
@@ -2856,7 +2913,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 item.clip ?? null,
               );
               morphLit.setReceivesShadow(shadowActive && item.receiveShadow);
-              morphLit.setMorphWeight(weight);
+              if (multi) {
+                morphLit.setMorphWeights(item.morphWeights ?? null);
+              } else {
+                morphLit.setMorphWeight(weight);
+              }
               morphLit.setModel(item.worldMatrix);
               morphLit.setColor(item.material.color, opacityOf(item.material));
             }
@@ -2870,6 +2931,31 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               countDraw(statistics, record.mode, record.count, 1);
             }
             continue;
+          }
+
+          // R-22: a run of consecutive lit/standard items sharing geometry and
+          // material draws as one instanced call through the batcher's
+          // instanced program variant. `null` for everything else, and always
+          // `null` when no batcher was assigned.
+          let instRun: InstancedRun | null = null;
+          let instLit: LitProgram | null = null;
+          let instStandard: StandardPipeline | null = null;
+          if (batching?.nextInstanced !== undefined) {
+            instRun = batching.nextInstanced(viewItems, index);
+            if (instRun !== null) {
+              if (instRun.kind === "lit") {
+                instLit = batching.instancedLit?.(gl) ?? null;
+                if (instLit === null) instRun = null;
+              } else {
+                instStandard = batching.instancedStandard?.(gl) ?? null;
+                if (
+                  instStandard === null ||
+                  this.#acquireStandardProgram(gl) === null
+                ) {
+                  instRun = null;
+                }
+              }
+            }
           }
 
           if (isSpriteItem(item)) {
@@ -2916,9 +3002,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             // and opaque unless its material says otherwise (§57) — which, at
             // the default `transparent: false`, is every material that predates
             // the flag.
-            if (activeKind !== "lit") {
-              litProgram.use();
-              activeKind = "lit";
+            const lp = instLit ?? litProgram;
+            const litKind = instLit === null ? "lit" : "lit-instanced";
+            if (activeKind !== litKind) {
+              lp.use();
+              activeKind = litKind;
             }
             applyMaterialState(
               gl,
@@ -2927,28 +3015,29 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               false,
               item.clip ?? null,
             );
-            if (!litViewUploaded) {
+            if (instLit === null ? !litViewUploaded : !instLitViewUploaded) {
               // The view-projection and the frame's lights, once per view —
               // uniforms live in the program object, so they hold for every lit
               // draw into this view even if other pipelines run in between. The
               // lights were collected before the view loop; a frame with no
               // directional light uploads black `lightColor`, which zeroes the
               // Lambert term in the shader (no variants, no branch here).
-              litProgram.setViewProjection(viewProjection);
-              litProgram.setAmbientLight(sceneLights.ambientColor);
-              litProgram.setHemisphereLight(sceneLights);
-              litProgram.setDirectionalLight(
+              lp.setViewProjection(viewProjection);
+              lp.setAmbientLight(sceneLights.ambientColor);
+              lp.setHemisphereLight(sceneLights);
+              lp.setDirectionalLight(
                 sceneLights.direction,
                 sceneLights.directionalColor,
               );
               // §68's point and spot lights (R-17). A scene with none issues
               // no call here at all — see `PunctualLightUniforms`.
-              litProgram.setPunctualLights(sceneLights);
+              lp.setPunctualLights(sceneLights);
               // §69's shadow matrix, biases and tap size (R-18). A frame in
               // which nothing casts issues no call here at all — see
               // `ShadowUniforms`.
-              litProgram.setShadow(sceneLights);
-              litViewUploaded = true;
+              lp.setShadow(sceneLights);
+              if (instLit === null) litViewUploaded = true;
+              else instLitViewUploaded = true;
             }
             // §57's `map` (R-19): an albedo texture, bound and switched on for
             // this draw and switched off again by the next draw that has none.
@@ -2975,15 +3064,15 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               }
               textureBound = true;
             }
-            litProgram.setFeatures(litTexture !== null);
+            lp.setFeatures(litTexture !== null);
             // §49's `receiveShadow` (§69, R-18), folded together with "does
             // anything cast at all": both are reasons this draw is not
             // shadowed, and one mirrored uniform says so. `false` on every
             // draw of a shadowless frame, which is the mirror's initial value,
             // so no call is issued.
-            litProgram.setReceivesShadow(shadowActive && item.receiveShadow);
-            litProgram.setModel(item.worldMatrix);
-            litProgram.setColor(item.material.color, opacityOf(item.material));
+            lp.setReceivesShadow(shadowActive && item.receiveShadow);
+            lp.setModel(item.worldMatrix);
+            lp.setColor(item.material.color, opacityOf(item.material));
           } else if (isStandardItem(item)) {
             // §59's metallic-roughness pipeline (R-13). Structurally the lit
             // branch above — same lights, same albedo map, same §57 render
@@ -2993,13 +3082,16 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             // since 2026-09-11: unregistered or refused, the draw is skipped
             // with one warning (a Lambert stand-in would be a different
             // picture).
-            const standardProgram = this.#acquireStandardProgram(gl);
-            if (standardProgram === null) {
+            const baseStandard = this.#acquireStandardProgram(gl);
+            if (baseStandard === null) {
               continue;
             }
-            if (activeKind !== "standard") {
+            const standardProgram = instStandard ?? baseStandard;
+            const standardKind =
+              instStandard === null ? "standard" : "standard-instanced";
+            if (activeKind !== standardKind) {
               standardProgram.use();
-              activeKind = "standard";
+              activeKind = standardKind;
             }
             applyMaterialState(
               gl,
@@ -3008,7 +3100,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               false,
               item.clip ?? null,
             );
-            if (!standardViewUploaded) {
+            if (
+              instStandard === null
+                ? !standardViewUploaded
+                : !instStandardViewUploaded
+            ) {
               // Per-view state: uniforms live in the program object, so one
               // upload holds for every standard draw into this view even when
               // other pipelines run in between.
@@ -3032,7 +3128,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 cameraElements[13],
                 cameraElements[14],
               );
-              standardViewUploaded = true;
+              if (instStandard === null) standardViewUploaded = true;
+              else instStandardViewUploaded = true;
             }
             const standardMap = mapOf(item.material);
             const standardTexture =
@@ -3191,6 +3288,16 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             program.setColor(item.material.color, opacityOf(item.material));
           }
 
+          if (instRun !== null && batching?.drawInstanced !== undefined) {
+            // R-22: the whole run in one instanced call; the state above was
+            // set for its first item and holds for all of them.
+            batching.drawInstanced(gl as InstanceGlContext, record, instRun);
+            if (statistics !== null) {
+              countDraw(statistics, record.mode, record.count, instRun.items);
+            }
+            index += instRun.items - 1;
+            continue;
+          }
           gl.bindVertexArray(record.vertexArray);
           if (record.indexType === null) {
             gl.drawArrays(record.mode, 0, record.count);
@@ -3763,6 +3870,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       this.#skinnedPrograms?.dispose();
       this.#morphUnlit?.dispose();
       this.#morphLit?.dispose();
+      for (const pair of this.#morphMulti) {
+        pair?.unlit.dispose();
+        pair?.lit.dispose();
+      }
       this.#nodePrograms?.dispose();
       this.#geometries?.dispose();
       this.#textures?.dispose();
@@ -3783,6 +3894,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#skinnedPrograms = null;
     this.#morphUnlit = null;
     this.#morphLit = null;
+    this.#morphMulti.fill(null);
     this.#nodePrograms = null;
     // The one `RenderTarget` this renderer created for itself (R-18), so the
     // one it owes a `dispose()` to (§83) — its bytes leave the process-wide
@@ -4138,10 +4250,16 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
    * carries `positions1` (RFC 0003 WP-SK.4). A compile failure skips morphing
    * draws for this context (§61), never the frame.
    */
-  #acquireMorphPrograms(gl: ParticleGlContext): {
+  #acquireMorphPrograms(
+    gl: ParticleGlContext,
+    count = 1,
+  ): {
     unlit: UnlitProgram;
     lit: LitProgram;
   } | null {
+    if (count > 1) {
+      return this.#acquireMorphMulti(gl, count);
+    }
     if (this.#morphUnlit !== null && this.#morphLit !== null) {
       return { unlit: this.#morphUnlit, lit: this.#morphLit };
     }
@@ -4163,6 +4281,38 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           "webgl-morph-compile-failed",
           "§54: the one-target GPU morph pipeline failed to compile on this " +
             `context; morphing draws are skipped (§61, §89). ${String(error)}`,
+        );
+      }
+      return null;
+    }
+  }
+
+  /** 2..4-target morph pair for `count`, compiled on first use. */
+  #acquireMorphMulti(
+    gl: ParticleGlContext,
+    count: number,
+  ): { unlit: UnlitProgram; lit: LitProgram } | null {
+    const cached = this.#morphMulti[count];
+    if (cached !== null) {
+      return cached;
+    }
+    if (this.#morphMultiFailed[count]) {
+      return null;
+    }
+    let unlit: UnlitProgram | null = null;
+    try {
+      unlit = UnlitProgram.createMorph(gl, count);
+      const pair = { unlit, lit: LitProgram.createMorph(gl, count) };
+      this.#morphMulti[count] = pair;
+      return pair;
+    } catch (error: unknown) {
+      this.#morphMultiFailed[count] = true;
+      unlit?.dispose();
+      if (DEV) {
+        devWarnOnce(
+          `webgl-morph-compile-failed-${String(count)}`,
+          `§54: the ${String(count)}-target GPU morph pipeline failed to ` +
+            `compile on this context; morphing draws are skipped (§61, §89). ${String(error)}`,
         );
       }
       return null;

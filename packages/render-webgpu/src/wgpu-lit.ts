@@ -45,7 +45,6 @@
  *    kept exported for grep/docs — it is not spliced into the live modules.
  */
 
-import { DRAW_UNIFORM_WGSL } from "./wgpu-bindings.js";
 import type { GpuVertexBufferLayout } from "./webgpu-device.js";
 import {
   HEMISPHERE_IRRADIANCE_WGSL,
@@ -59,12 +58,13 @@ import {
 } from "./wgpu-shadow.js";
 import {
   FRAGMENT_ENTRY_POINT,
-  MORPH_DRAW_UNIFORM_WGSL,
   MORPH_WEIGHT_WGSL,
-  NORMAL1_BUFFER_LAYOUT,
-  NORMAL1_SHADER_LOCATION,
-  POSITION1_BUFFER_LAYOUT,
-  POSITION1_SHADER_LOCATION,
+  drawUniformWgslFor,
+  morphHasNormals,
+  morphInputWgsl,
+  morphSumWgsl,
+  morphTargetCount,
+  morphVertexBufferLayouts,
   POSITION_BUFFER_LAYOUT,
   POSITION_SHADER_LOCATION,
   UV_BUFFER_LAYOUT,
@@ -98,6 +98,51 @@ export const NORMAL_BUFFER_LAYOUT: GpuVertexBufferLayout = Object.freeze({
 });
 
 /**
+ * R-22: the first of seven consecutive `@location`s the instanced variant's
+ * per-instance stream occupies (8..14). Instanced runs never carry morph
+ * targets (`RenderBatcher.nextInstanced` rejects them), so the morph stream
+ * range is free in that variant; the total (position, normal, uv + 7) stays
+ * inside WebGPU's default 16-attribute budget.
+ */
+export const INSTANCE_SHADER_LOCATION_BASE = 8;
+
+/** Bytes per instance: the planner's 25 floats (16 model + 9 normal). */
+export const INSTANCE_STRIDE_BYTES = 25 * 4;
+
+/**
+ * The per-instance vertex buffer: model matrix as four `float32x4` columns,
+ * then the normal matrix as three `float32x3` columns, in the exact 25-float
+ * order `InstancedRun.instances` is packed in, so the planner's array uploads
+ * unchanged.
+ */
+export const INSTANCE_BUFFER_LAYOUT: GpuVertexBufferLayout = Object.freeze({
+  arrayStride: INSTANCE_STRIDE_BYTES,
+  stepMode: "instance",
+  attributes: Object.freeze(
+    [0, 1, 2, 3, 4, 5, 6].map((index) =>
+      Object.freeze({
+        format: index < 4 ? "float32x4" : "float32x3",
+        offset: index < 4 ? index * 16 : 64 + (index - 4) * 12,
+        shaderLocation: INSTANCE_SHADER_LOCATION_BASE + index,
+      }),
+    ),
+  ),
+});
+
+const INSTANCE_INPUT_WGSL = `
+  @location(8) instanceModel0 : vec4<f32>,
+  @location(9) instanceModel1 : vec4<f32>,
+  @location(10) instanceModel2 : vec4<f32>,
+  @location(11) instanceModel3 : vec4<f32>,
+  @location(12) instanceNormal0 : vec3<f32>,
+  @location(13) instanceNormal1 : vec3<f32>,
+  @location(14) instanceNormal2 : vec3<f32>,`;
+
+const INSTANCE_MATRICES_WGSL = `  let instanceModel = mat4x4<f32>(instanceModel0, instanceModel1, instanceModel2, instanceModel3);
+  let instanceNormal = mat3x3<f32>(instanceNormal0, instanceNormal1, instanceNormal2);
+`;
+
+/**
  * Vertex layouts for a shaded pipeline, **in slot order**: position always,
  * then normals if the variant shades with them, then uvs if it samples.
  *
@@ -111,6 +156,7 @@ export function shadedVertexBufferLayouts(
   normals: boolean,
   map: boolean,
   morph?: WgpuMorph,
+  instanced = false,
 ): readonly GpuVertexBufferLayout[] {
   const layouts: GpuVertexBufferLayout[] = [POSITION_BUFFER_LAYOUT];
   if (normals) {
@@ -120,10 +166,10 @@ export function shadedVertexBufferLayouts(
     layouts.push(UV_BUFFER_LAYOUT);
   }
   if (morph !== undefined) {
-    layouts.push(POSITION1_BUFFER_LAYOUT);
-    if (morph === "pn") {
-      layouts.push(NORMAL1_BUFFER_LAYOUT);
-    }
+    layouts.push(...morphVertexBufferLayouts(morph));
+  }
+  if (instanced) {
+    layouts.push(INSTANCE_BUFFER_LAYOUT);
   }
   return layouts;
 }
@@ -169,6 +215,7 @@ export function shadedVertexStageWgsl(
   normals: boolean,
   map: boolean,
   morph?: WgpuMorph,
+  instanced = false,
 ): string {
   let input = `  @location(${String(POSITION_SHADER_LOCATION)}) position : vec3<f32>,`;
   if (normals) {
@@ -180,29 +227,39 @@ export function shadedVertexStageWgsl(
   @location(${String(UV_SHADER_LOCATION)}) uv : vec2<f32>,`;
   }
   if (morph !== undefined) {
-    input += `
-  @location(${String(POSITION1_SHADER_LOCATION)}) position1 : vec3<f32>,`;
-    if (morph === "pn") {
-      input += `
-  @location(${String(NORMAL1_SHADER_LOCATION)}) normal1 : vec3<f32>,`;
-    }
+    input += morphInputWgsl(morph, morphHasNormals(morph));
   }
-  // One-target GPU morph (RFC 0003): GLSL's mix(position, position1, w), and
-  // likewise the normal when both normal streams are present.
+  // GPU morph (RFC 0003): one target is GLSL's mix(position, position1, w),
+  // and likewise the normal when both normal streams are present; 2..4
+  // targets use Σ wᵢ(pᵢ − p) over `draw.morphWeights`.
+  const count = morph === undefined ? 0 : morphTargetCount(morph);
+  const morphNormals = morph !== undefined && morphHasNormals(morph) && normals;
   const morphed =
     morph === undefined
       ? ""
-      : `  let morphedPosition = mix(position, position1, ${MORPH_WEIGHT_WGSL});
+      : count === 1
+        ? `  let morphedPosition = mix(position, position1, ${MORPH_WEIGHT_WGSL});
 ${
-  normals && morph === "pn"
+  morphNormals
     ? `  let morphedNormal = mix(normal, normal1, ${MORPH_WEIGHT_WGSL});
+`
+    : ""
+}`
+        : `  let morphedPosition = ${morphSumWgsl("position", count)};
+${
+  morphNormals
+    ? `  let morphedNormal = ${morphSumWgsl("normal", count)};
 `
     : ""
 }`;
   const positionName = morph === undefined ? "position" : "morphedPosition";
-  const normalName = morph === "pn" && normals ? "morphedNormal" : "normal";
-  const normalMatrix =
-    morph === undefined
+  const normalName = morphNormals ? "morphedNormal" : "normal";
+  if (instanced) {
+    input += INSTANCE_INPUT_WGSL;
+  }
+  const normalMatrix = instanced
+    ? "instanceNormal"
+    : morph === undefined
       ? "draw.normalMatrix"
       : "mat3x3<f32>(draw.normalColumn0.xyz, draw.normalColumn1.xyz, draw.normalColumn2.xyz)";
   return `struct VertexOutput {
@@ -221,7 +278,7 @@ fn ${VERTEX_ENTRY_POINT}(
 ${input}
 ) -> VertexOutput {
   var output : VertexOutput;
-${morphed}  let world = draw.model * vec4<f32>(${positionName}, 1.0);
+${morphed}${instanced ? INSTANCE_MATRICES_WGSL : ""}  let world = ${instanced ? "instanceModel" : "draw.model"} * vec4<f32>(${positionName}, 1.0);
   output.worldPosition = world.xyz;
   output.normal = ${
     normals ? `${normalMatrix} * ${normalName}` : "vec3<f32>(0.0, 0.0, 0.0)"
@@ -262,8 +319,9 @@ export function litShaderSource(
   map: boolean,
   shadow = false,
   morph?: WgpuMorph,
+  instanced = false,
 ): string {
-  return `${morph === undefined ? DRAW_UNIFORM_WGSL : MORPH_DRAW_UNIFORM_WGSL}
+  return `${drawUniformWgslFor(morph)}
 
 ${shadow ? SHADOW_LIGHT_UNIFORM_WGSL : LIGHT_UNIFORM_WGSL}${
     map
@@ -273,7 +331,7 @@ ${SHADED_MAP_BINDING_WGSL}`
       : ""
   }
 
-${shadedVertexStageWgsl(normals, map, morph)}
+${shadedVertexStageWgsl(normals, map, morph, instanced)}
 
 ${PUNCTUAL_LIGHT_WGSL}
 

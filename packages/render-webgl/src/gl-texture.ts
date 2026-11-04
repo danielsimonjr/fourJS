@@ -191,6 +191,17 @@ export interface TextureRecord {
 
   /** `Texture.version` this record was uploaded from. */
   readonly version: number;
+
+  /** The GL bind target: `TEXTURE_2D`, `TEXTURE_CUBE_MAP`, `TEXTURE_2D_ARRAY` or `TEXTURE_3D`. */
+  readonly target: number;
+}
+
+/** The GL bind target for a texture's §77 dimension. */
+function glTarget(dimension: string | undefined): number {
+  if (dimension === "cube") return GL.TEXTURE_CUBE_MAP;
+  if (dimension === "array") return GL.TEXTURE_2D_ARRAY;
+  if (dimension === "3d") return GL.TEXTURE_3D;
+  return GL.TEXTURE_2D;
 }
 
 /**
@@ -259,7 +270,23 @@ export class TextureCache {
    * so it skips the object rather than unwinding the frame.
    */
   acquire(texture: CacheableTexture): TextureRecord | null {
+    return this.#acquire(texture, false);
+  }
+
+  /**
+   * Like {@link TextureCache.acquire}, but also uploads `"cube"`, `"array"`
+   * and `"3d"` textures (§77, R-30c); the record's `target` says what to bind.
+   * `acquire` stays 2D-only because its callers bind `TEXTURE_2D` and a cube
+   * bound there would be a GL error. Returns `null` when the context lacks
+   * `texImage3D` for an array or volume.
+   */
+  acquireResource(texture: CacheableTexture): TextureRecord | null {
+    return this.#acquire(texture, true);
+  }
+
+  #acquire(texture: CacheableTexture, any: boolean): TextureRecord | null {
     if (this.#disposed) return null;
+    if (!any && glTarget(texture.dimension) !== GL.TEXTURE_2D) return null;
     const existing = this.#records.get(texture.id);
     if (existing !== undefined) {
       if (existing.version === texture.version) {
@@ -348,7 +375,7 @@ export class TextureCache {
         "NOT_IMPLEMENTED",
         "Asynchronous texture preparation requires WebGL sync objects.",
       );
-    const record = this.acquire(texture);
+    const record = this.#acquire(texture, true);
     if (record === null) return null;
     const sync = gl.fenceSync(0x9117, 0);
     if (sync === null)
@@ -493,20 +520,64 @@ export class TextureCache {
       return null;
     }
 
+    const target = glTarget(texture.dimension);
+    if (
+      (target === GL.TEXTURE_2D_ARRAY || target === GL.TEXTURE_3D) &&
+      gl.texImage3D === undefined
+    ) {
+      gl.deleteTexture(handle);
+      return null;
+    }
+
     const mipmaps = texture.mipmaps === true && gl.generateMipmap !== undefined;
 
-    gl.bindTexture(GL.TEXTURE_2D, handle);
-    gl.texImage2D(
-      GL.TEXTURE_2D,
-      0,
-      (texture.colorSpace ?? "linear") === "srgb" ? GL.SRGB8_ALPHA8 : GL.RGBA8,
-      texture.width,
-      texture.height,
-      0,
-      GL.RGBA,
-      GL.UNSIGNED_BYTE,
-      texture.data,
-    );
+    gl.bindTexture(target, handle);
+    const internal =
+      (texture.colorSpace ?? "linear") === "srgb" ? GL.SRGB8_ALPHA8 : GL.RGBA8;
+    if (target === GL.TEXTURE_2D) {
+      gl.texImage2D(
+        GL.TEXTURE_2D,
+        0,
+        internal,
+        texture.width,
+        texture.height,
+        0,
+        GL.RGBA,
+        GL.UNSIGNED_BYTE,
+        texture.data,
+      );
+    } else if (target === GL.TEXTURE_CUBE_MAP) {
+      // Six faces, +X -X +Y -Y +Z -Z, each a `width * height * 4` slice.
+      const faceBytes = texture.width * texture.height * 4;
+      for (let face = 0; face < 6; face += 1) {
+        gl.texImage2D(
+          GL.TEXTURE_CUBE_MAP_POSITIVE_X + face,
+          0,
+          internal,
+          texture.width,
+          texture.height,
+          0,
+          GL.RGBA,
+          GL.UNSIGNED_BYTE,
+          texture.data === null
+            ? null
+            : texture.data.subarray(face * faceBytes, (face + 1) * faceBytes),
+        );
+      }
+    } else {
+      gl.texImage3D?.(
+        target,
+        0,
+        internal,
+        texture.width,
+        texture.height,
+        texture.depth ?? 1,
+        0,
+        GL.RGBA,
+        GL.UNSIGNED_BYTE,
+        texture.data,
+      );
+    }
     // R-30: the arguments are the texture's own, defaulting to the pair this
     // module hard-coded before 2026-08-13 — the same four calls in the same
     // order with the same enums for every texture that names neither.
@@ -514,32 +585,27 @@ export class TextureCache {
       // R-30b: before the sampler state, because the chain has to exist by the
       // time a mip-choosing min filter is written — and because `generateMipmap`
       // reads the level-0 image this call just uploaded.
-      gl.generateMipmap?.(GL.TEXTURE_2D);
+      gl.generateMipmap?.(target);
     }
     const wrap = glWrap(texture.wrap);
     gl.texParameteri(
-      GL.TEXTURE_2D,
+      target,
       GL.TEXTURE_MIN_FILTER,
       glMinFilter(texture.minFilter, texture.filter, mipmaps),
     );
-    gl.texParameteri(
-      GL.TEXTURE_2D,
-      GL.TEXTURE_MAG_FILTER,
-      glFilter(texture.filter),
-    );
-    gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, wrap);
-    gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, wrap);
+    gl.texParameteri(target, GL.TEXTURE_MAG_FILTER, glFilter(texture.filter));
+    gl.texParameteri(target, GL.TEXTURE_WRAP_S, wrap);
+    gl.texParameteri(target, GL.TEXTURE_WRAP_T, wrap);
+    if (target === GL.TEXTURE_CUBE_MAP || target === GL.TEXTURE_3D) {
+      gl.texParameteri(target, GL.TEXTURE_WRAP_R, wrap);
+    }
     const anisotropy = this.#resolveAnisotropy(texture.anisotropy ?? 1);
     if (anisotropy > 1) {
-      gl.texParameteri(
-        GL.TEXTURE_2D,
-        GL.TEXTURE_MAX_ANISOTROPY_EXT,
-        anisotropy,
-      );
+      gl.texParameteri(target, GL.TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
     }
-    gl.bindTexture(GL.TEXTURE_2D, null);
+    gl.bindTexture(target, null);
 
-    return { texture: handle, version: texture.version };
+    return { texture: handle, version: texture.version, target };
   }
 }
 
@@ -548,6 +614,8 @@ function textureState(texture: CacheableTexture): string {
   return [
     texture.width,
     texture.height,
+    texture.dimension,
+    texture.depth,
     texture.colorSpace,
     texture.filter,
     texture.minFilter,

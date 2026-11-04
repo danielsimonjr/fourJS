@@ -76,6 +76,8 @@ import {
   POSITION1_ATTRIBUTE_LOCATION,
   UV_ATTRIBUTE_LOCATION,
   WEIGHTS_ATTRIBUTE_LOCATION,
+  morphNormalLocation,
+  morphPositionLocation,
   type WebglContext,
 } from "./gl-program.js";
 import type { GlBuffer, GlVertexArray } from "./gl-program.js";
@@ -154,6 +156,15 @@ export interface GeometryRecord {
    */
   readonly normal1Buffer: GlBuffer | null;
 
+  /**
+   * Buffers for morph targets 2..4 (`extraMorphTargets`), flattened
+   * `[p2, n2, p3, n3, p4, n4]`; `null` where a stream is absent. Empty for
+   * geometries without extra targets. Bound at locations 10..15 (spec 1.19+).
+   * Geometries carrying extras never join the dynamic ring (they refresh via
+   * `bufferData`).
+   */
+  readonly extraMorphBuffers: readonly (GlBuffer | null)[];
+
   /** Index buffer, or `null` for a non-indexed geometry. */
   readonly indexBuffer: GlBuffer | null;
 
@@ -190,10 +201,71 @@ type AllocatingGeometryRecord = {
   -readonly [Key in keyof GeometryRecord]: GeometryRecord[Key];
 };
 
+/** `GL_DYNAMIC_DRAW` — the hint ring buffers upload with. */
+const DYNAMIC_DRAW = 0x88e8;
+
+/** VBOs per stream once a geometry is promoted to the dynamic ring (§65). */
+export const GEOMETRY_RING_SLOTS = 3;
+
+/** Refreshes after which a geometry counts as per-frame dynamic (§65). */
+export const GEOMETRY_RING_PROMOTE_AFTER = 2;
+
+/**
+ * Streams in ring order: position first, then {@link OPTIONAL_ATTRIBUTES}.
+ * `[geometry key, record field, attribute location, components, GL type]`.
+ */
+const RING_STREAMS = [
+  ["positions", "positionBuffer", POSITION_ATTRIBUTE_LOCATION, 3, GL.FLOAT],
+  ["normals", "normalBuffer", NORMAL_ATTRIBUTE_LOCATION, 3, GL.FLOAT],
+  ["uvs", "uvBuffer", UV_ATTRIBUTE_LOCATION, 2, GL.FLOAT],
+  ["colors", "colorBuffer", COLOR_ATTRIBUTE_LOCATION, 4, GL.FLOAT],
+  ["joints", "jointBuffer", JOINTS_ATTRIBUTE_LOCATION, 4, GL.UNSIGNED_SHORT],
+  ["weights", "weightBuffer", WEIGHTS_ATTRIBUTE_LOCATION, 4, GL.FLOAT],
+  ["positions1", "position1Buffer", POSITION1_ATTRIBUTE_LOCATION, 3, GL.FLOAT],
+  ["normals1", "normal1Buffer", NORMAL1_ATTRIBUTE_LOCATION, 3, GL.FLOAT],
+] as const;
+
+/** The `bufferSubData` entry point, optional on structural test contexts. */
+interface SubDataContext {
+  bufferSubData?(target: number, offset: number, data: ArrayBufferView): void;
+}
+
+/**
+ * Per-geometry ring of VBOs per stream (§65). Slot `cursor` is written on each
+ * refresh; with `GEOMETRY_RING_SLOTS` slots the one written was last drawn that
+ * many frames ago, so `bufferSubData` into it never waits on in-flight work.
+ */
+interface GeometryRing {
+  /** `slots[stream][slot]`; `null` rows for absent streams. */
+  readonly slots: (GlBuffer[] | null)[];
+  /** `capacity[stream][slot]` in bytes; `-1` = never sized (orphan first). */
+  readonly capacity: number[][];
+  cursor: number;
+}
+
 /** Private cache metadata; callers still receive only a GeometryRecord. */
 interface GeometryCacheEntry {
   record: GeometryRecord;
   readonly layout: number;
+  /** Version bumps seen; promotes the entry at {@link GEOMETRY_RING_PROMOTE_AFTER}. */
+  refreshes: number;
+  ring: GeometryRing | null;
+}
+
+/** Presence bits (8..13) of the six extra-morph streams; 0 when none. */
+function extraMorphMask(geometry: CacheableGeometry): number {
+  const extra = geometry.extraMorphTargets;
+  if (extra === undefined) {
+    return 0;
+  }
+  let mask = 0;
+  for (let j = 0; j < extra.length; j += 1) {
+    mask |= 1 << (8 + 2 * j);
+    if (extra[j].normals !== undefined) {
+      mask |= 1 << (9 + 2 * j);
+    }
+  }
+  return mask;
 }
 
 /** Direct reads avoid dynamic-key iteration on every dirty acquisition. */
@@ -207,7 +279,8 @@ function attributeMask(geometry: CacheableGeometry): number {
     (+!!geometry.weights << 4) |
     (+!!geometry.positions1 << 5) |
     (+!!geometry.normals1 << 6) |
-    (+!!geometry.indices << 7)
+    (+!!geometry.indices << 7) |
+    extraMorphMask(geometry)
   );
 }
 
@@ -293,11 +366,21 @@ export class GeometryCache {
         geometry.drawCount !== 0 &&
         entry.layout === attributeMask(geometry)
       ) {
-        const record = this.#refresh(geometry, existing);
+        entry.refreshes += 1;
+        if (
+          entry.ring === null &&
+          entry.refreshes >= GEOMETRY_RING_PROMOTE_AFTER
+        ) {
+          entry.ring = this.#promote(geometry, existing);
+        }
+        const record =
+          entry.ring === null
+            ? this.#refresh(geometry, existing)
+            : this.#refreshRing(geometry, existing, entry.ring);
         entry.record = record;
         return record;
       }
-      this.#deleteRecord(existing);
+      this.#deleteEntry(entry);
       this.#records.delete(geometry.id);
     }
 
@@ -315,6 +398,8 @@ export class GeometryCache {
     this.#records.set(geometry.id, {
       record,
       layout: attributeMask(geometry),
+      refreshes: 0,
+      ring: null,
     });
     return record;
   }
@@ -340,9 +425,141 @@ export class GeometryCache {
     }
     this.#disposed = true;
     for (const entry of this.#records.values()) {
-      this.#deleteRecord(entry.record);
+      this.#deleteEntry(entry);
     }
     this.#records.clear();
+  }
+
+  /**
+   * Bytes held by dynamic rings (§65), all slots: the memory the ring costs on
+   * top of the single-buffer path. Slots never yet sized count zero.
+   */
+  get ringBytes(): number {
+    let total = 0;
+    for (const entry of this.#records.values()) {
+      if (entry.ring === null) continue;
+      for (const row of entry.ring.capacity) {
+        for (const bytes of row) total += bytes > 0 ? bytes : 0;
+      }
+    }
+    return total;
+  }
+
+  /** Whether `id` has been promoted to the dynamic ring. Diagnostics/tests. */
+  isRinged(id: string): boolean {
+    return this.#records.get(id)?.ring != null;
+  }
+
+  /** Deletes an entry's GL objects, ring included. */
+  #deleteEntry(entry: GeometryCacheEntry): void {
+    const ring = entry.ring;
+    if (ring === null) {
+      this.#deleteRecord(entry.record);
+      return;
+    }
+    // The record's live buffers are ring members; delete the ring once.
+    const gl = this.#gl;
+    gl.deleteVertexArray(entry.record.vertexArray);
+    for (const row of ring.slots) {
+      if (row === null) continue;
+      for (const buffer of row) gl.deleteBuffer(buffer);
+    }
+    if (entry.record.indexBuffer !== null) {
+      gl.deleteBuffer(entry.record.indexBuffer);
+    }
+  }
+
+  /**
+   * Builds the ring for a geometry that keeps changing: the record's current
+   * buffer becomes slot 0 and the other slots are created once. Returns `null`
+   * (staying on the `bufferData` path) when the context cannot `bufferSubData`
+   * or refuses a buffer.
+   */
+  #promote(
+    geometry: CacheableGeometry,
+    record: GeometryRecord,
+  ): GeometryRing | null {
+    const gl = this.#gl;
+    if (
+      typeof (gl as SubDataContext).bufferSubData !== "function" ||
+      geometry.extraMorphTargets !== undefined
+    ) {
+      return null;
+    }
+    const created: GlBuffer[] = [];
+    const slots: (GlBuffer[] | null)[] = [];
+    const capacity: number[][] = [];
+    for (const [key, field] of RING_STREAMS) {
+      const current = record[field];
+      if (current === null || geometry[key] === undefined) {
+        slots.push(null);
+        capacity.push([]);
+        continue;
+      }
+      const row: GlBuffer[] = [current];
+      for (let slot = 1; slot < GEOMETRY_RING_SLOTS; slot += 1) {
+        const buffer = gl.createBuffer();
+        if (buffer === null) {
+          for (const made of created) gl.deleteBuffer(made);
+          return null;
+        }
+        created.push(buffer);
+        row.push(buffer);
+      }
+      slots.push(row);
+      capacity.push(new Array<number>(GEOMETRY_RING_SLOTS).fill(-1));
+    }
+    return { slots, capacity, cursor: 0 };
+  }
+
+  /**
+   * Writes the next ring slot of every present stream and repoints the VAO at
+   * it. `bufferSubData` when the slot already has the right size (no driver
+   * allocation, no sync: that slot was last drawn `GEOMETRY_RING_SLOTS` frames
+   * ago); `bufferData` (an orphan) when the size changed. Indices stay on the
+   * `bufferData` path: they change rarely and are VAO state.
+   */
+  #refreshRing(
+    geometry: CacheableGeometry,
+    existing: GeometryRecord,
+    ring: GeometryRing,
+  ): GeometryRecord {
+    const gl = this.#gl;
+    const sub = gl as unknown as Required<SubDataContext>;
+    ring.cursor = (ring.cursor + 1) % GEOMETRY_RING_SLOTS;
+    // Mutate the cached record in place (§7b: no per-refresh allocation).
+    const record: AllocatingGeometryRecord = existing;
+    gl.bindVertexArray(existing.vertexArray);
+    for (let stream = 0; stream < RING_STREAMS.length; stream += 1) {
+      const row = ring.slots[stream];
+      if (row === null) continue;
+      const [key, field, location, components, type] = RING_STREAMS[stream];
+      const data = geometry[key];
+      const buffer = row[ring.cursor];
+      gl.bindBuffer(GL.ARRAY_BUFFER, buffer);
+      const sizes = ring.capacity[stream];
+      if (data !== undefined) {
+        if (sizes[ring.cursor] === data.byteLength) {
+          sub.bufferSubData(GL.ARRAY_BUFFER, 0, data);
+        } else {
+          gl.bufferData(GL.ARRAY_BUFFER, data, DYNAMIC_DRAW);
+          sizes[ring.cursor] = data.byteLength;
+        }
+      }
+      gl.vertexAttribPointer(location, components, type, false, 0, 0);
+      record[field] = buffer;
+    }
+    if (geometry.indices !== undefined) {
+      gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, existing.indexBuffer);
+      gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, geometry.indices, GL.STATIC_DRAW);
+    }
+    gl.bindVertexArray(null);
+    gl.bindBuffer(GL.ARRAY_BUFFER, null);
+    record.version = geometry.version;
+    record.mode = glMode(geometry.mode);
+    record.count = geometry.drawCount;
+    record.indexType = glIndexType(geometry.indices);
+    return record;
   }
 
   /**
@@ -382,6 +599,7 @@ export class GeometryCache {
       weightBuffer: null,
       position1Buffer: null,
       normal1Buffer: null,
+      extraMorphBuffers: [],
       indexBuffer: null,
       version: geometry.version,
       mode: glMode(geometry.mode),
@@ -396,6 +614,21 @@ export class GeometryCache {
           return null;
         }
         record[field] = buffer;
+      }
+    }
+    const extra = geometry.extraMorphTargets;
+    if (extra !== undefined) {
+      const made: (GlBuffer | null)[] = [];
+      record.extraMorphBuffers = made;
+      for (const target of extra) {
+        for (const data of [target.positions, target.normals]) {
+          const buffer = data === undefined ? null : gl.createBuffer();
+          if (data !== undefined && buffer === null) {
+            this.#deleteRecord(record);
+            return null;
+          }
+          made.push(buffer);
+        }
       }
     }
     if (indices !== undefined) {
@@ -501,6 +734,23 @@ export class GeometryCache {
       geometry.normals1,
       NORMAL1_ATTRIBUTE_LOCATION,
     );
+    const extra = geometry.extraMorphTargets;
+    if (extra !== undefined) {
+      for (let j = 0; j < extra.length; j += 1) {
+        this.#writeAttribute(
+          setup,
+          record.extraMorphBuffers[2 * j],
+          extra[j].positions,
+          morphPositionLocation(j + 2),
+        );
+        this.#writeAttribute(
+          setup,
+          record.extraMorphBuffers[2 * j + 1],
+          extra[j].normals,
+          morphNormalLocation(j + 2),
+        );
+      }
+    }
     if (geometry.indices !== undefined) {
       gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, record.indexBuffer);
       gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, geometry.indices, GL.STATIC_DRAW);
@@ -536,6 +786,9 @@ export class GeometryCache {
     gl.deleteBuffer(record.positionBuffer);
     for (const [, field] of OPTIONAL_ATTRIBUTES) {
       const buffer = record[field];
+      if (buffer !== null) gl.deleteBuffer(buffer);
+    }
+    for (const buffer of record.extraMorphBuffers) {
       if (buffer !== null) gl.deleteBuffer(buffer);
     }
     if (record.indexBuffer !== null) gl.deleteBuffer(record.indexBuffer);
