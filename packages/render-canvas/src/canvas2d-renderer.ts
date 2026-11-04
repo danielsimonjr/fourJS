@@ -70,6 +70,7 @@ export interface Canvas2dImageLike {
  */
 export interface Canvas2dContextLike {
   fillStyle: string;
+  globalAlpha: number;
   save(): void;
   restore(): void;
   beginPath(): void;
@@ -115,7 +116,8 @@ export interface Canvas2dRendererOptions {
   readonly canvas?: Canvas2dSurface;
   /**
    * Maps a sprite texture to a drawable image, or `null`. Default: the
-   * texture's own `image` property when it has one. A result that **is the
+   * texture's own `image` property (or a drawable, `data`-less `source`);
+   * stock `Texture`s expose neither, so sprites from them need this. A result that **is the
    * surface being rendered** is refused (RFC 0004: feedback is refused, not
    * drawn).
    */
@@ -162,11 +164,32 @@ function isContext(value: unknown): value is Canvas2dContextLike {
   );
 }
 
+function isImageLike(value: unknown): value is Canvas2dImageLike {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Canvas2dImageLike).width === "number" &&
+    typeof (value as Canvas2dImageLike).height === "number"
+  );
+}
+
+/**
+ * The default texture-to-image mapping. `@fourjs/render`'s `Texture` is a
+ * CPU-side, DOM-free resource: its public `source` is a `TextureSource`
+ * (width, height, optional RGBA8 `data` bytes), which `drawImage` cannot
+ * consume, and `CanvasTexture`/host textures keep their surface private. So
+ * the default resolves only a texture that publicly carries a drawable host
+ * image: an `image` property, or a `source` that has a size and no `data`
+ * bytes (an `ImageBitmap`-like source). Any other texture, including every
+ * stock `Texture`, needs `imageOf` (e.g. a map from texture to the canvas it
+ * was created from). The RFC 0004 feedback refusal applies to whatever this
+ * (or a custom resolver) returns.
+ */
 function defaultImageOf(texture: object): Canvas2dImageLike | null {
-  const image = (texture as { image?: unknown }).image;
-  return typeof image === "object" && image !== null
-    ? (image as Canvas2dImageLike)
-    : null;
+  const { image, source } = texture as { image?: unknown; source?: unknown };
+  if (isImageLike(image)) return image;
+  if (isImageLike(source) && !("data" in source)) return source;
+  return null;
 }
 
 /** A linear-light RGBA tuple as a CSS colour, sRGB-encoded, deterministic. */
@@ -199,6 +222,7 @@ export class Canvas2dRenderer implements Renderer {
   #disposed = false;
   #bufferWidth = 0;
   #bufferHeight = 0;
+  #pendingSize: { width: number; height: number } | null = null;
   readonly #imageOf: (texture: object) => Canvas2dImageLike | null;
   readonly #contextAttributes: object | undefined;
   readonly #items: RenderItem[] = [];
@@ -256,6 +280,13 @@ export class Canvas2dRenderer implements Renderer {
     }
     this.#surface = candidate;
     this.#context = context;
+    const pending = this.#pendingSize;
+    if (pending !== null) {
+      // A resize() issued before initialize wins over the canvas's own size.
+      candidate.width = pending.width;
+      candidate.height = pending.height;
+      this.#pendingSize = null;
+    }
     this.#bufferWidth = candidate.width;
     this.#bufferHeight = candidate.height;
   }
@@ -267,6 +298,11 @@ export class Canvas2dRenderer implements Renderer {
     if (surface !== null) {
       surface.width = this.#bufferWidth;
       surface.height = this.#bufferHeight;
+    } else {
+      this.#pendingSize = {
+        width: this.#bufferWidth,
+        height: this.#bufferHeight,
+      };
     }
   }
 
@@ -276,28 +312,44 @@ export class Canvas2dRenderer implements Renderer {
     interpolation?: RenderInterpolation,
     target?: RenderTarget | null,
   ): void {
+    if (this.#disposed) return;
     const context = this.#context;
-    if (context === null || this.#disposed || views.length === 0) return;
+    if (context === null) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "Canvas2dRenderer.render() called before initialize().",
+      );
+    }
+    if (views.length === 0) return;
     if (target != null) {
       this.#skip("render-target", "off-screen render targets");
       return;
     }
+    // Refuse before the first mark is made: a refused frame draws nothing,
+    // so every view's list is checked before any view is drawn.
     for (const view of views) {
-      const mask = viewLayerMask(view);
-      const items =
-        interpolation === undefined
-          ? buildRenderList(root, this.#items, mask)
-          : buildInterpolatedRenderList(
-              root,
-              interpolation.poseBuffer,
-              interpolation.alpha,
-              this.#items,
-              mask,
-            );
-      // Refuse before the first mark is made: a refused frame draws nothing.
-      this.#assertNoFeedback(items);
-      this.#drawView(context, view, items);
+      this.#assertNoFeedback(this.#list(root, view, interpolation));
     }
+    for (const view of views) {
+      this.#drawView(context, view, this.#list(root, view, interpolation));
+    }
+  }
+
+  #list(
+    root: Node,
+    view: Viewport,
+    interpolation: RenderInterpolation | undefined,
+  ): RenderItem[] {
+    const mask = viewLayerMask(view);
+    return interpolation === undefined
+      ? buildRenderList(root, this.#items, mask)
+      : buildInterpolatedRenderList(
+          root,
+          interpolation.poseBuffer,
+          interpolation.alpha,
+          this.#items,
+          mask,
+        );
   }
 
   dispose(): void {
@@ -350,27 +402,31 @@ export class Canvas2dRenderer implements Renderer {
     );
     const top = canvasTop(rect, this.#bufferHeight);
     context.save();
-    // Everything below, clear included, is confined to the view rectangle.
-    context.beginPath();
-    context.rect(rect.x, top, rect.width, rect.height);
-    context.clip();
-    const clear = view.clearColor;
-    if (clear !== undefined) {
-      context.clearRect(rect.x, top, rect.width, rect.height);
-      context.fillStyle = cssColor(clear[0], clear[1], clear[2], clear[3]);
-      context.fillRect(rect.x, top, rect.width, rect.height);
-    }
-    if (items.length > 0) {
-      const camera = view.camera;
-      camera.updateViewMatrix();
-      this.#viewProjection
-        .copy(camera.projectionMatrix)
-        .multiply(camera.viewMatrix);
-      for (const item of items) {
-        this.#drawItem(context, item, rect, top);
+    try {
+      // Everything below, clear included, is confined to the view rectangle.
+      context.beginPath();
+      context.rect(rect.x, top, rect.width, rect.height);
+      context.clip();
+      const clear = view.clearColor;
+      if (clear !== undefined) {
+        context.clearRect(rect.x, top, rect.width, rect.height);
+        context.fillStyle = cssColor(clear[0], clear[1], clear[2], clear[3]);
+        context.fillRect(rect.x, top, rect.width, rect.height);
       }
+      if (items.length > 0) {
+        const camera = view.camera;
+        camera.updateViewMatrix();
+        this.#viewProjection
+          .copy(camera.projectionMatrix)
+          .multiply(camera.viewMatrix);
+        for (const item of items) {
+          this.#drawItem(context, item, rect, top);
+        }
+      }
+    } finally {
+      // A throwing imageOf/drawImage must not leak the clip into later frames.
+      context.restore();
     }
-    context.restore();
   }
 
   #drawItem(
@@ -439,6 +495,7 @@ export class Canvas2dRenderer implements Renderer {
     const a = this.#a;
     const b = this.#b;
     const c = this.#c;
+    let emitted = 0;
     context.beginPath();
     for (let t = 0; t < triangles; t += 1) {
       const i0 = indices === undefined ? t * 3 : indices[t * 3];
@@ -484,11 +541,13 @@ export class Canvas2dRenderer implements Renderer {
         context.lineTo(b.x, b.y);
       }
       context.closePath();
+      emitted += 1;
     }
+    if (emitted === 0) return;
     context.fill();
     if (this.statistics !== null) {
       this.statistics.drawCalls += 1;
-      this.statistics.triangles += triangles;
+      this.statistics.triangles += emitted;
     }
   }
 
@@ -530,17 +589,25 @@ export class Canvas2dRenderer implements Renderer {
       frame === null || frame === undefined
         ? 0
         : image.height - frame.y - frame.height;
+    if (!(sw > 0) || !(sh > 0)) return;
     context.save();
-    context.setTransform(
-      (right.x - origin.x) / sw,
-      (right.y - origin.y) / sw,
-      (down.x - origin.x) / sh,
-      (down.y - origin.y) / sh,
-      origin.x,
-      origin.y,
-    );
-    context.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
-    context.restore();
+    try {
+      context.globalAlpha = Math.min(
+        1,
+        Math.max(0, item.material?.opacity ?? 1),
+      );
+      context.setTransform(
+        (right.x - origin.x) / sw,
+        (right.y - origin.y) / sw,
+        (down.x - origin.x) / sh,
+        (down.y - origin.y) / sh,
+        origin.x,
+        origin.y,
+      );
+      context.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
+    } finally {
+      context.restore();
+    }
     if (this.statistics !== null) {
       this.statistics.drawCalls += 1;
       this.statistics.triangles += 2;

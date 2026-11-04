@@ -165,16 +165,27 @@ describe("clear ordering and viewport confinement", () => {
     expect(ctx.named("rect(")).toEqual(["rect(0,0,100,80)"]);
   });
 
-  it("resize before initialize only records the size", () => {
+  it("applies a resize issued before initialize to the surface", async () => {
     const renderer = new Canvas2dRenderer();
-    expect(() => renderer.resize(10, 10)).not.toThrow();
+    expect(() => renderer.resize(40, 30, 2)).not.toThrow();
+    const surface = new FakeSurface(300, 150);
+    await renderer.initialize({ canvas: surface });
+    expect([surface.width, surface.height]).toEqual([80, 60]);
+    renderer.render(root(), [
+      view(new TestCamera(), { clearColor: [0, 0, 0, 1] }),
+    ]);
+    expect(surface.recording.named("rect(")).toEqual(["rect(0,0,80,60)"]);
   });
 
-  it("renders nothing before initialize or after dispose", async () => {
+  it("throws INVALID_APPLICATION_STATE rendering before initialize, silent after dispose", async () => {
     const renderer = new Canvas2dRenderer({ canvas: new FakeSurface() });
-    expect(() =>
-      renderer.render(root(), [view(new TestCamera())]),
-    ).not.toThrow();
+    let thrown: unknown;
+    try {
+      renderer.render(root(), [view(new TestCamera())]);
+    } catch (error: unknown) {
+      thrown = error;
+    }
+    expect((thrown as FourError).code).toBe("INVALID_APPLICATION_STATE");
     const { renderer: r2, ctx, camera } = await make();
     r2.dispose();
     r2.render(root(triangle()), [view(camera)]);
@@ -238,7 +249,7 @@ describe("projection", () => {
     camera.projectionMatrix.elements[15] = -1; // w < 0: behind the eye
     renderer.render(root(triangle()), [view(camera)]);
     expect(ctx.named("moveTo")).toEqual([]);
-    expect(ctx.named("fill(")).toHaveLength(1);
+    expect(ctx.named("fill(")).toEqual([]);
   });
 
   it("keeps one winding for clockwise and counter-clockwise triangles", async () => {
@@ -498,5 +509,167 @@ describe("dispose", () => {
 
   it("disposes a never-initialized renderer", () => {
     expect(() => new Canvas2dRenderer().dispose()).not.toThrow();
+  });
+});
+
+describe("review fixes", () => {
+  it("restores the clip when imageOf throws, so the next frame is unclipped", async () => {
+    const surface = new FakeSurface();
+    let boom = true;
+    const image = { width: 2, height: 2 };
+    const renderer = new Canvas2dRenderer({
+      canvas: surface,
+      imageOf: () => {
+        if (boom) throw new Error("boom");
+        return image;
+      },
+    });
+    await renderer.initialize();
+    const sprite = (): Sprite =>
+      new Sprite(new TestSpriteMaterial({}).asMaterial, {
+        width: 1,
+        height: 1,
+      });
+    const camera = new TestCamera();
+    // imageOf is called in the feedback pre-pass only for textured materials
+    // (none here) and again in #drawItem, inside the clipped region.
+    expect(() => renderer.render(root(sprite()), [view(camera)])).toThrow(
+      "boom",
+    );
+    const ctx = surface.recording;
+    expect(ctx.named("save")).toHaveLength(ctx.named("restore").length);
+    boom = false;
+    ctx.calls.length = 0;
+    renderer.render(root(sprite()), [view(camera)]);
+    expect(ctx.named("drawImage")).toHaveLength(1);
+    expect(ctx.named("save")).toHaveLength(ctx.named("restore").length);
+  });
+
+  it("restores the sprite save when drawImage throws", async () => {
+    const surface = new FakeSurface();
+    surface.recording.drawImage = () => {
+      throw new Error("draw");
+    };
+    const renderer = new Canvas2dRenderer({
+      canvas: surface,
+      imageOf: () => ({ width: 2, height: 2 }),
+    });
+    await renderer.initialize();
+    const s = new Sprite(new TestSpriteMaterial({}).asMaterial, {
+      width: 1,
+      height: 1,
+    });
+    expect(() => renderer.render(root(s), [view(new TestCamera())])).toThrow(
+      "draw",
+    );
+    const ctx = surface.recording;
+    expect(ctx.named("save")).toHaveLength(ctx.named("restore").length);
+  });
+
+  it("refuses feedback before any view paints", async () => {
+    const surface = new FakeSurface();
+    const renderer = new Canvas2dRenderer({
+      canvas: surface,
+      imageOf: (t) => (t as { surface?: never }).surface ?? null,
+    });
+    await renderer.initialize();
+    const own = new Sprite(new TestSpriteMaterial({ surface }).asMaterial, {
+      width: 1,
+      height: 1,
+    });
+    const mesh = new Renderable(
+      new TestGeometry(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]))
+        .asGeometry,
+      new TestMaterial([1, 1, 1, 1], { surface }).asMaterial,
+    );
+    const camera = new TestCamera();
+    // View 1 (layer 1) sees only a plain triangle; view 2 sees the feedback.
+    const plain = triangle();
+    plain.layers = 1;
+    mesh.layers = 2;
+    own.layers = 2;
+    expect(() =>
+      renderer.render(root(plain, mesh, own), [
+        view(camera, { id: "a", clearColor: [0, 0, 0, 1], layerMask: 2 }),
+        view(camera, { id: "b", layerMask: 4 }),
+      ]),
+    ).toThrow(FourError);
+    expect(surface.recording.calls).toEqual([]);
+  });
+
+  it("default imageOf: bare Texture-like sources are not drawable, image-like ones are", async () => {
+    const surface = new FakeSurface();
+    const renderer = new Canvas2dRenderer({ canvas: surface });
+    await renderer.initialize();
+    const camera = new TestCamera();
+    const mk = (tex: object): Sprite =>
+      new Sprite(new TestSpriteMaterial(tex).asMaterial, {
+        width: 1,
+        height: 1,
+      });
+    renderer.render(
+      root(
+        mk({ source: { width: 2, height: 2, data: new Uint8Array(16) } }),
+        mk({}),
+      ),
+      [view(camera)],
+    );
+    expect(surface.recording.named("drawImage")).toHaveLength(0);
+    expect(renderer.skippedItems).toBe(2);
+    renderer.render(root(mk({ source: { width: 2, height: 2 } })), [
+      view(camera),
+    ]);
+    expect(surface.recording.named("drawImage")).toHaveLength(1);
+  });
+
+  it("default imageOf keeps the RFC 0004 refusal for a self-sourced image", async () => {
+    const surface = new FakeSurface();
+    const renderer = new Canvas2dRenderer({ canvas: surface });
+    await renderer.initialize();
+    const own = new Sprite(
+      new TestSpriteMaterial({ image: surface }).asMaterial,
+      {
+        width: 1,
+        height: 1,
+      },
+    );
+    expect(() => renderer.render(root(own), [view(new TestCamera())])).toThrow(
+      FourError,
+    );
+  });
+
+  it("counts only emitted triangles and skips fill when all are culled", async () => {
+    const { renderer, ctx, camera } = await make();
+    camera.projectionMatrix.elements[15] = -1; // every w <= 0
+    renderer.render(root(triangle()), [view(camera)]);
+    expect(ctx.named("fill(")).toEqual([]);
+    expect(renderer.statistics?.drawCalls).toBe(0);
+    expect(renderer.statistics?.triangles).toBe(0);
+  });
+
+  it("skips zero-size frames and images, and applies sprite opacity", async () => {
+    const surface = new FakeSurface();
+    const renderer = new Canvas2dRenderer({
+      canvas: surface,
+      imageOf: () => ({ width: 0, height: 0 }),
+    });
+    await renderer.initialize();
+    const material = new TestSpriteMaterial({});
+    material.opacity = 0.25;
+    const s = new Sprite(material.asMaterial, { width: 1, height: 1 });
+    renderer.render(root(s), [view(new TestCamera())]);
+    expect(surface.recording.named("setTransform")).toEqual([]);
+    expect(surface.recording.calls.join("|")).not.toContain("NaN");
+
+    const surface2 = new FakeSurface();
+    const r2 = new Canvas2dRenderer({
+      canvas: surface2,
+      imageOf: () => ({ width: 2, height: 2 }),
+    });
+    await r2.initialize();
+    r2.render(root(s), [view(new TestCamera())]);
+    expect(surface2.recording.named("globalAlpha=")).toEqual([
+      "globalAlpha=0.25",
+    ]);
   });
 });

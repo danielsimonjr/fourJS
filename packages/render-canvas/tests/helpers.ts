@@ -21,6 +21,16 @@ type ItemMaterial = Extract<RenderItem, { kind: "unlit" }>["material"];
 export class RecordingContext implements Canvas2dContextLike {
   readonly calls: string[] = [];
   #fillStyle = "";
+  #globalAlpha = 1;
+
+  get globalAlpha(): number {
+    return this.#globalAlpha;
+  }
+
+  set globalAlpha(value: number) {
+    this.#globalAlpha = value;
+    this.calls.push(`globalAlpha=${String(value)}`);
+  }
 
   get fillStyle(): string {
     return this.#fillStyle;
