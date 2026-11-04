@@ -155,6 +155,20 @@ export function isOwnedTransformWrite(): boolean {
 }
 
 /**
+ * Opens an owned transform write; pair with {@link endOwnedTransformWrite} in a
+ * `finally` — the allocation-free form of {@link runOwnedTransformWrite} for
+ * per-step hot paths (§7b). Nesting counts.
+ */
+export function beginOwnedTransformWrite(): void {
+  ownedWriteDepth += 1;
+}
+
+/** Closes the write opened by the matching {@link beginOwnedTransformWrite}. */
+export function endOwnedTransformWrite(): void {
+  ownedWriteDepth -= 1;
+}
+
+/**
  * Runs `fn` as an owned transform write: {@link Transform.markDirty} will not
  * emit the application-write warning. Nesting is counted. The write still
  * lands — this is a warning skip, not a lock.
@@ -162,13 +176,16 @@ export function isOwnedTransformWrite(): boolean {
  * Call this **after** the existing `transformAuthority === writer` check, around
  * the body that actually mutates the transform. Conflicting systems that skip
  * the write never need it.
+ *
+ * Hot paths should use {@link beginOwnedTransformWrite} /
+ * {@link endOwnedTransformWrite} instead, which avoid the closure allocation.
  */
 export function runOwnedTransformWrite<T>(fn: () => T): T {
-  ownedWriteDepth += 1;
+  beginOwnedTransformWrite();
   try {
     return fn();
   } finally {
-    ownedWriteDepth -= 1;
+    endOwnedTransformWrite();
   }
 }
 

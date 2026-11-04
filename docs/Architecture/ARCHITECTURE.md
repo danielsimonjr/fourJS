@@ -253,7 +253,7 @@ reverse an edge without an owner decision (RFC/ADR per §95).
   pillar.
 
 The generated graph (24 packages, 343 files, 0 runtime cycles and
-8 type-only cycles) is in [DEPENDENCY_GRAPH.md](./DEPENDENCY_GRAPH.md) and
+10 type-only cycles) is in [DEPENDENCY_GRAPH.md](./DEPENDENCY_GRAPH.md) and
 `dependency-summary.compact.json`.
 
 ---
@@ -731,7 +731,7 @@ Regenerate: `bun run graph` · Check: `repo-tools check . --docs=docs/Architectu
 | Claim                | Value | Source                |
 | -------------------- | ----- | --------------------- |
 | runtimeCircularDeps  | 0     | dependency-graph.json |
-| typeOnlyCircularDeps | 8     | dependency-graph.json |
+| typeOnlyCircularDeps | 10    | dependency-graph.json |
 
 The gate checks only the two cycle counts. The file, export and line counts in Key Statistics
 come from `dependency-graph.json`. The gate does not check them. The gate reads more files than

@@ -75,7 +75,8 @@ import { FourError, type Component, type ComponentHost } from "@fourjs/core";
 import { Quaternion, Vector3 } from "@fourjs/math";
 import {
   resolveWorldTransform,
-  runOwnedTransformWrite,
+  beginOwnedTransformWrite,
+  endOwnedTransformWrite,
   warnAuthorityConflict,
   type Node,
 } from "@fourjs/scene";
@@ -415,7 +416,8 @@ export class ConstraintSystem implements SimulationSystem {
         warnAuthorityConflict(node, CONSTRAINT_SYSTEM_AUTHORITY);
         continue;
       }
-      runOwnedTransformWrite(() => {
+      beginOwnedTransformWrite();
+      try {
         orbit?.apply(node);
         follow?.apply(node, dt);
         aim?.apply(node, dt);
@@ -423,7 +425,9 @@ export class ConstraintSystem implements SimulationSystem {
         // wrote. Sampled at `simulationTime` so the noise is a function of the
         // physics clock, not of the step rate (§33).
         shake?.apply(node, dt, context.time.simulationTime);
-      });
+      } finally {
+        endOwnedTransformWrite();
+      }
     }
   }
 

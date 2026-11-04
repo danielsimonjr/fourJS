@@ -160,3 +160,74 @@ describe("Rectangle2 allocation counter (§7b, §83)", () => {
     expect(constructionCount()).toBe(0);
   });
 });
+
+describe("Rectangle2 intersects / intersection / union / expandByPoint", () => {
+  beforeEach(() => resetConstructionCount());
+
+  it("intersects is half-open and ignores empty rectangles", () => {
+    const a = new Rectangle2(0, 0, 4, 4);
+    expect(a.intersects(new Rectangle2(2, 2, 4, 4))).toBe(true);
+    expect(a.intersects(new Rectangle2(4, 0, 4, 4))).toBe(false); // shared edge
+    expect(a.intersects(new Rectangle2(0, 4, 4, 4))).toBe(false);
+    expect(a.intersects(new Rectangle2(-4, 0, 4, 4))).toBe(false);
+    expect(a.intersects(new Rectangle2(0, -4, 4, 4))).toBe(false);
+    expect(a.intersects(new Rectangle2(1, 1, 0, 2))).toBe(false); // empty arg
+    expect(new Rectangle2(1, 1, 2, 0).intersects(a)).toBe(false); // empty this
+  });
+
+  it("intersection clips in place and returns this", () => {
+    const a = new Rectangle2(0, 0, 4, 4);
+    let calls = 0;
+    a.onChanged = () => calls++;
+    expect(a.intersection(new Rectangle2(2, 1, 4, 2))).toBe(a);
+    expect([a.x, a.y, a.width, a.height]).toEqual([2, 1, 2, 2]);
+    expect(calls).toBe(1);
+  });
+
+  it("intersection of a disjoint pair clamps extents to 0 (isEmpty)", () => {
+    const a = new Rectangle2(0, 0, 2, 2).intersection(
+      new Rectangle2(10, 10, 2, 2),
+    );
+    expect([a.width, a.height]).toEqual([0, 0]);
+    expect(a.isEmpty()).toBe(true);
+  });
+
+  it("union bounds both, ignoring empty operands", () => {
+    const a = new Rectangle2(0, 0, 2, 2).union(new Rectangle2(3, -1, 2, 2));
+    expect([a.x, a.y, a.width, a.height]).toEqual([0, -1, 5, 3]);
+    const keep = new Rectangle2(1, 1, 2, 2);
+    let calls = 0;
+    keep.onChanged = () => calls++;
+    keep.union(new Rectangle2(9, 9, 0, 5));
+    expect([keep.x, keep.y, keep.width, keep.height]).toEqual([1, 1, 2, 2]);
+    expect(calls).toBe(1);
+    const empty = new Rectangle2(7, 7, 0, 0).union(new Rectangle2(1, 2, 3, 4));
+    expect([empty.x, empty.y, empty.width, empty.height]).toEqual([1, 2, 3, 4]);
+  });
+
+  it("expandByPoint grows to cover the point, or seeds an empty rectangle", () => {
+    const r = new Rectangle2(0, 0, 2, 2);
+    let calls = 0;
+    r.onChanged = () => calls++;
+    expect(r.expandByPoint(5, -3)).toBe(r);
+    expect([r.x, r.y, r.width, r.height]).toEqual([0, -3, 5, 5]);
+    r.expandByPoint(1, 1); // inside: unchanged
+    expect([r.x, r.y, r.width, r.height]).toEqual([0, -3, 5, 5]);
+    r.expandByPoint(-2, 9);
+    expect([r.x, r.y, r.width, r.height]).toEqual([-2, -3, 7, 12]);
+    expect(calls).toBe(3);
+    const seed = new Rectangle2().expandByPoint(3, 4);
+    expect([seed.x, seed.y, seed.width, seed.height]).toEqual([3, 4, 0, 0]);
+  });
+
+  it("allocates nothing", () => {
+    const a = new Rectangle2(0, 0, 2, 2);
+    const b = new Rectangle2(1, 1, 2, 2);
+    resetConstructionCount();
+    a.intersects(b);
+    a.intersection(b);
+    a.union(b);
+    a.expandByPoint(9, 9);
+    expect(constructionCount()).toBe(0);
+  });
+});

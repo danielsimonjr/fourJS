@@ -1044,3 +1044,48 @@ describe("Matrix allocation counter (§7b, §83)", () => {
     expect(Number.isFinite(accumulator)).toBe(true);
   });
 });
+
+describe("Matrix3 / Matrix4 equalsApprox and Matrix4.transpose", () => {
+  it("Matrix3.equalsApprox honours epsilon and element position", () => {
+    const a = new Matrix3();
+    const b = new Matrix3();
+    expect(a.equalsApprox(b)).toBe(true);
+    b.elements[8] += 1e-7;
+    expect(a.equalsApprox(b)).toBe(true);
+    b.elements[8] += 1e-3;
+    expect(a.equalsApprox(b)).toBe(false);
+    expect(a.equalsApprox(b, 1e-2)).toBe(true);
+    b.elements[0] = NaN;
+    expect(a.equalsApprox(b, 1)).toBe(false);
+  });
+
+  it("Matrix4.equalsApprox honours epsilon and element position", () => {
+    const a = new Matrix4();
+    const b = new Matrix4();
+    expect(a.equalsApprox(b)).toBe(true);
+    b.elements[15] += 1e-7;
+    expect(a.equalsApprox(b)).toBe(true);
+    b.elements[15] += 1e-3;
+    expect(a.equalsApprox(b)).toBe(false);
+    expect(a.equalsApprox(b, 1e-2)).toBe(true);
+  });
+
+  it("Matrix4.transpose swaps all six off-diagonal pairs, is an involution, fires once", () => {
+    const m = new Matrix4();
+    m.elements.set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+    let calls = 0;
+    m.onChanged = () => calls++;
+    expect(m.transpose()).toBe(m);
+    expect(Array.from(m.elements)).toEqual([
+      1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 16,
+    ]);
+    expect(calls).toBe(1);
+    m.transpose();
+    expect(Array.from(m.elements)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+    ]);
+    resetConstructionCount();
+    m.transpose();
+    expect(constructionCount()).toBe(0);
+  });
+});

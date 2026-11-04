@@ -98,8 +98,27 @@ function cellIndex(coordinate: number, cellSize: number): number {
   return Math.floor(coordinate / cellSize);
 }
 
-function cellKey(ix: number, iy: number, iz: number): string {
-  return `${ix}\0${iy}\0${iz}`;
+/** Per-axis mask: 17 bits x 3 axes = 51 bits, exact in a double. */
+const CELL_MASK = 0x1ffff;
+const CELL_SPAN = 131072;
+
+/**
+ * Numeric bucket key (allocation-free, unlike a string key). Each axis index is
+ * masked to 17 bits, so the key is an integer in `[0, 2^51)`.
+ * Wrap behaviour: cells whose indices differ by a multiple of 131072 on every
+ * axis share a bucket. That is **correct**, never lossy: every query re-checks
+ * the squared distance of each candidate and sorts matches by insertion order,
+ * so bucket composition cannot change a result's content or order.
+ */
+function cellKey(ix: number, iy: number, iz: number): number {
+  return (
+    ((ix & CELL_MASK) * CELL_SPAN + (iy & CELL_MASK)) * CELL_SPAN +
+    (iz & CELL_MASK)
+  );
+}
+
+function byOrder(a: { order: number }, b: { order: number }): number {
+  return a.order - b.order;
 }
 
 /**
@@ -117,7 +136,10 @@ export class SpatialHash<T> {
   readonly #entries = new Map<number, StoredEntry<T>>();
 
   /** Grid buckets mapping cell coordinates to entry keys. */
-  readonly #buckets = new Map<string, number[]>();
+  readonly #buckets = new Map<number, number[]>();
+
+  /** Reusable match scratch for queries; emptied before and after each use. */
+  readonly #matches: StoredEntry<T>[] = [];
 
   /** Next insertion-order ticket. */
   #nextOrder = 0;
@@ -186,11 +208,22 @@ export class SpatialHash<T> {
     if (entry.x === x && entry.y === y && entry.z === z) {
       return;
     }
-    this.#removeFromBucket(entry);
+    // Same cell (compared by index, not by wrapped key): the bucket membership
+    // is unchanged, so skip the remove + add.
+    const cs = this.cellSize;
+    const sameCell =
+      cellIndex(entry.x, cs) === cellIndex(x, cs) &&
+      cellIndex(entry.y, cs) === cellIndex(y, cs) &&
+      cellIndex(entry.z, cs) === cellIndex(z, cs);
+    if (!sameCell) {
+      this.#removeFromBucket(entry);
+    }
     entry.x = x;
     entry.y = y;
     entry.z = z;
-    this.#addToBucket(entry);
+    if (!sameCell) {
+      this.#addToBucket(entry);
+    }
   }
 
   /** Remove an entry. Returns `false` when the key was not present. */
@@ -229,7 +262,8 @@ export class SpatialHash<T> {
    *
    * `out` is cleared, then filled in insertion order. Pass `excludeKey` to omit
    * self-neighbours (typical when the query centre is an agent's own position).
-   * Returns `out` for chaining.
+   * Returns `out` for chaining. Not reentrant: it shares one internal scratch
+   * array, so it must not be called from within another query (no callbacks).
    */
   query(
     cx: number,
@@ -251,7 +285,8 @@ export class SpatialHash<T> {
     const centerIz = cellIndex(cz, cellSize);
     const cellRadius = radius === 0 ? 0 : Math.ceil(radius / cellSize);
 
-    const matches: StoredEntry<T>[] = [];
+    const matches = this.#matches;
+    matches.length = 0;
     for (let iz = centerIz - cellRadius; iz <= centerIz + cellRadius; iz += 1) {
       for (
         let iy = centerIy - cellRadius;
@@ -288,10 +323,11 @@ export class SpatialHash<T> {
       }
     }
 
-    matches.sort((a, b) => a.order - b.order);
+    matches.sort(byOrder);
     for (let i = 0; i < matches.length; i += 1) {
       out.push(matches[i].data);
     }
+    matches.length = 0;
     return out;
   }
 
@@ -321,7 +357,8 @@ export class SpatialHash<T> {
     const centerIz = cellIndex(cz, cellSize);
     const cellRadius = radius === 0 ? 0 : Math.ceil(radius / cellSize);
 
-    const matches: StoredEntry<T>[] = [];
+    const matches = this.#matches;
+    matches.length = 0;
     for (let iz = centerIz - cellRadius; iz <= centerIz + cellRadius; iz += 1) {
       for (
         let iy = centerIy - cellRadius;
@@ -358,10 +395,11 @@ export class SpatialHash<T> {
       }
     }
 
-    matches.sort((a, b) => a.order - b.order);
+    matches.sort(byOrder);
     for (let i = 0; i < matches.length; i += 1) {
       out.push(matches[i].key);
     }
+    matches.length = 0;
     return out;
   }
 

@@ -4,13 +4,13 @@
 
 # Complete File Inventory
 
-**Generated**: 2026-10-16 (by tools/create-dependency-graph)
+**Generated**: 2026-11-04 (by tools/create-dependency-graph)
 
 Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-root cross-package `tests/`, `tools/`, build/test `*.config.ts`, `examples/`, and `docs/` reference sources — tagged with a disposition. A completeness census: no `.ts` may be silently missing. The self-check gate (`verifyFileCensus`) does a MAXIMAL, location-agnostic repo walk (broader than this census’s enumerated discovery) and HARD-FAILS `npm run docs:deps` if any `.ts` on disk is unaccounted, or if any `orphan` exists.
 
 **Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every tracked `.ts` appears below with an explicit disposition.
 
-**Total files**: 894
+**Total files**: 896
 
 ## Disposition counts
 
@@ -20,11 +20,11 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `build-entry` |      48 | A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …). |
 | `test-only`   |       4 | A `src/` file not reachable from src roots but imported by a test.                                           |
 | `orphan`      |       0 | A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate).                        |
-| `test`        |     515 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
+| `test`        |     517 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
 | `tool`        |       1 | A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks).                                        |
 | `config`      |      17 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).                                |
 | `example`     |      14 | An `examples/` or `docs/` reference/illustration source.                                                     |
-| **Total**     | **894** |                                                                                                              |
+| **Total**     | **896** |                                                                                                              |
 
 ## Per-area counts
 
@@ -33,7 +33,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `config`   |    17 |
 | `examples` |    14 |
 | `src`      |   347 |
-| `tests`    |   515 |
+| `tests`    |   517 |
 | `tools`    |     1 |
 
 ## Per-package counts
@@ -50,8 +50,8 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `@fourjs/materials`      |    26 |
 | `@fourjs/math`           |    18 |
 | `@fourjs/motion`         |    44 |
-| `@fourjs/particles`      |    20 |
-| `@fourjs/physics`        |    58 |
+| `@fourjs/particles`      |    21 |
+| `@fourjs/physics`        |    59 |
 | `@fourjs/physics-box2d`  |     2 |
 | `@fourjs/physics-rapier` |    22 |
 | `@fourjs/physics-soft`   |     2 |
@@ -415,6 +415,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/particles/tests/particle-renderable.test.ts`            | @fourjs/particles      | tests    | test        |
 | `packages/particles/tests/particle-system.test.ts`                | @fourjs/particles      | tests    | test        |
 | `packages/particles/tests/pool.test.ts`                           | @fourjs/particles      | tests    | test        |
+| `packages/particles/tests/ramp-into.test.ts`                      | @fourjs/particles      | tests    | test        |
 | `packages/particles/tests/random.test.ts`                         | @fourjs/particles      | tests    | test        |
 | `packages/particles/tests/smoke.test.ts`                          | @fourjs/particles      | tests    | test        |
 | `packages/particles/tests/trail.test.ts`                          | @fourjs/particles      | tests    | test        |
@@ -497,6 +498,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/physics/tests/world-diagnostics.test.ts`                | @fourjs/physics        | tests    | test        |
 | `packages/physics/tests/world-joints.test.ts`                     | @fourjs/physics        | tests    | test        |
 | `packages/physics/tests/world-properties.test.ts`                 | @fourjs/physics        | tests    | test        |
+| `packages/physics/tests/world-sleeping-publish.test.ts`           | @fourjs/physics        | tests    | test        |
 | `packages/physics/tests/world-space-mode.test.ts`                 | @fourjs/physics        | tests    | test        |
 | `packages/physics/tests/world-transitions.test.ts`                | @fourjs/physics        | tests    | test        |
 | `packages/physics/tests/world-units.test.ts`                      | @fourjs/physics        | tests    | test        |

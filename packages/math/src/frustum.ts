@@ -209,4 +209,49 @@ export class Frustum {
     p[offset + 2] = c * inverse;
     p[offset + 3] = d * inverse;
   }
+
+  /**
+   * Whether the world-space point `p` lies inside all six planes (every signed
+   * distance is at least `0`). A `NaN` component makes the comparison false for
+   * that plane, so the answer is `true` — the same draw-when-unknown doctrine
+   * as {@link Frustum.intersectsSphere}.
+   */
+  containsPoint(p: Vector3): boolean {
+    const planes = this.planes;
+    for (let i = 0; i < 24; i += 4) {
+      if (
+        planes[i] * p.x +
+          planes[i + 1] * p.y +
+          planes[i + 2] * p.z +
+          planes[i + 3] <
+        0
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Whether the axis-aligned box `[min, max]` is at least partly inside this
+   * frustum. Per plane it tests the corner furthest along the normal (the
+   * p-vertex); if even that corner is behind the plane the box is wholly
+   * outside. Conservative near frustum corners, like the sphere test. `NaN`
+   * bounds make the comparison false, so the answer is `true`.
+   */
+  intersectsBox(min: Vector3, max: Vector3): boolean {
+    const planes = this.planes;
+    for (let i = 0; i < 24; i += 4) {
+      const nx = planes[i];
+      const ny = planes[i + 1];
+      const nz = planes[i + 2];
+      const px = nx >= 0 ? max.x : min.x;
+      const py = ny >= 0 ? max.y : min.y;
+      const pz = nz >= 0 ? max.z : min.z;
+      if (nx * px + ny * py + nz * pz + planes[i + 3] < 0) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

@@ -120,4 +120,94 @@ export class Rectangle2 {
       Math.abs(this.height - r.height) <= epsilon
     );
   }
+
+  /**
+   * Whether this rectangle overlaps `r`. Half-open like
+   * {@link Rectangle2.containsPoint}: rectangles that merely share an edge do
+   * not intersect, and an empty rectangle intersects nothing. Does not mutate.
+   */
+  intersects(r: Rectangle2): boolean {
+    if (this.isEmpty() || r.isEmpty()) {
+      return false;
+    }
+    return (
+      this.x < r.x + r.width &&
+      r.x < this.x + this.width &&
+      this.y < r.y + r.height &&
+      r.y < this.y + this.height
+    );
+  }
+
+  /**
+   * Clips this rectangle to its overlap with `r`, in place. A disjoint pair
+   * yields `width` and `height` clamped to `0` (so {@link Rectangle2.isEmpty}
+   * is true); `x`/`y` then sit at the clipped corner.
+   */
+  intersection(r: Rectangle2): this {
+    const left = Math.max(this.x, r.x);
+    const bottom = Math.max(this.y, r.y);
+    const right = Math.min(this.x + this.width, r.x + r.width);
+    const top = Math.min(this.y + this.height, r.y + r.height);
+    this.x = left;
+    this.y = bottom;
+    this.width = Math.max(0, right - left);
+    this.height = Math.max(0, top - bottom);
+    this.onChanged?.();
+    return this;
+  }
+
+  /**
+   * Grows this rectangle to the bounding box of itself and `r`, in place.
+   * Empty operands are ignored: an empty `r` leaves this unchanged, and an
+   * empty this becomes a copy of `r` (an empty rectangle has no extent to keep).
+   */
+  union(r: Rectangle2): this {
+    if (r.isEmpty()) {
+      this.onChanged?.();
+      return this;
+    }
+    if (this.isEmpty()) {
+      this.x = r.x;
+      this.y = r.y;
+      this.width = r.width;
+      this.height = r.height;
+      this.onChanged?.();
+      return this;
+    }
+    const left = Math.min(this.x, r.x);
+    const bottom = Math.min(this.y, r.y);
+    const right = Math.max(this.x + this.width, r.x + r.width);
+    const top = Math.max(this.y + this.height, r.y + r.height);
+    this.x = left;
+    this.y = bottom;
+    this.width = right - left;
+    this.height = top - bottom;
+    this.onChanged?.();
+    return this;
+  }
+
+  /**
+   * Grows this rectangle just enough to cover the point `(x, y)`, in place.
+   * Treated as a closed bound: the point lies on the far edge afterwards, so
+   * the half-open {@link Rectangle2.containsPoint} still excludes it; callers
+   * accumulating texel regions add one texel themselves. An empty rectangle
+   * becomes the zero-extent rectangle at the point.
+   */
+  expandByPoint(x: number, y: number): this {
+    if (this.isEmpty()) {
+      this.x = x;
+      this.y = y;
+      this.width = 0;
+      this.height = 0;
+    } else {
+      const right = Math.max(this.x + this.width, x);
+      const top = Math.max(this.y + this.height, y);
+      this.x = Math.min(this.x, x);
+      this.y = Math.min(this.y, y);
+      this.width = right - this.x;
+      this.height = top - this.y;
+    }
+    this.onChanged?.();
+    return this;
+  }
 }

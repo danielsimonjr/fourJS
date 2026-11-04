@@ -287,3 +287,60 @@ describe("SpatialHash steering integration (§12 flocking)", () => {
     expect(hashAli.z).toBe(bruteAli.z);
   });
 });
+
+describe("SpatialHash numeric keys and scratch reuse (H6)", () => {
+  it("same-cell update keeps insertion order and bucket membership", () => {
+    const hash = new SpatialHash<number>({ cellSize: 10 });
+    hash.insert(1, 1, 1, 1, 1);
+    hash.insert(2, 2, 2, 2, 2);
+    hash.insert(3, 3, 3, 3, 3);
+    hash.update(1, 1.5, 1.5, 1.5);
+    const keys: number[] = [];
+    hash.queryKeys(0, 0, 0, 20, keys);
+    expect(keys).toEqual([1, 2, 3]);
+    hash.update(1, 50, 50, 50);
+    hash.queryKeys(0, 0, 0, 20, keys);
+    expect(keys).toEqual([2, 3]);
+  });
+
+  it("entries 131072 cells apart share a bucket but never leak into results", () => {
+    const hash = new SpatialHash<string>({ cellSize: 1 });
+    hash.insert(1, 0.5, 0.5, 0.5, "near");
+    hash.insert(2, 131072.5, 0.5, 0.5, "wrapped");
+    const out: string[] = [];
+    hash.query(0.5, 0.5, 0.5, 2, out);
+    expect(out).toEqual(["near"]);
+    hash.query(131072.5, 0.5, 0.5, 2, out);
+    expect(out).toEqual(["wrapped"]);
+  });
+
+  it("repeated queries into the same out are identical and reuse the array", () => {
+    const hash = new SpatialHash<number>({ cellSize: 2 });
+    for (let i = 0; i < 20; i += 1) hash.insert(i, i % 5, i % 3, 0, i);
+    const out: number[] = [];
+    const first = hash.query(1, 1, 0, 3, out);
+    const snapshot = [...first];
+    const second = hash.query(1, 1, 0, 3, out);
+    expect(second).toBe(out);
+    expect(first).toBe(second);
+    expect([...second]).toEqual(snapshot);
+    const keys: number[] = [];
+    expect(hash.queryKeys(1, 1, 0, 3, keys)).toBe(keys);
+    expect([...keys]).toEqual(snapshot);
+  });
+});
+
+describe("SpatialHash update cell-change branches (H6)", () => {
+  it("moving on a single axis relocates the entry", () => {
+    const hash = new SpatialHash<number>({ cellSize: 1 });
+    hash.insert(1, 0.5, 0.5, 0.5, 1);
+    hash.update(1, 0.6, 5.5, 0.6);
+    hash.update(1, 0.6, 5.6, 5.5);
+    hash.update(1, 3.5, 5.6, 5.6);
+    const keys: number[] = [];
+    hash.queryKeys(3.5, 5.6, 5.6, 0.5, keys);
+    expect(keys).toEqual([1]);
+    hash.queryKeys(0.5, 0.5, 0.5, 0.5, keys);
+    expect(keys).toEqual([]);
+  });
+});

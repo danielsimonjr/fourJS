@@ -4,6 +4,8 @@ import {
   DEFAULT_TRANSFORM_AUTHORITY,
   Group,
   TRANSFORM_AUTHORITIES,
+  beginOwnedTransformWrite,
+  endOwnedTransformWrite,
   runOwnedTransformWrite,
   isOwnedTransformWrite,
   warnAuthorityConflict,
@@ -203,6 +205,43 @@ describe("application writes on a system-owned transform (§42 DEV)", () => {
     expect(isOwnedTransformWrite()).toBe(false);
     expect(warn).not.toHaveBeenCalled();
     expect(node.position.x).toBe(4);
+  });
+
+  it("begin/end open and close an owned write, suppressing the warning", () => {
+    const warn = spyOnWarn();
+    const node = new Group();
+    node.transformAuthority = "kinematic";
+    beginOwnedTransformWrite();
+    try {
+      expect(isOwnedTransformWrite()).toBe(true);
+      node.position.set(7, 8, 9);
+    } finally {
+      endOwnedTransformWrite();
+    }
+    expect(isOwnedTransformWrite()).toBe(false);
+    expect(warn).not.toHaveBeenCalled();
+    expect(node.position.x).toBe(7);
+  });
+
+  it("counts nested begin/end pairs", () => {
+    beginOwnedTransformWrite();
+    beginOwnedTransformWrite();
+    endOwnedTransformWrite();
+    expect(isOwnedTransformWrite()).toBe(true);
+    endOwnedTransformWrite();
+    expect(isOwnedTransformWrite()).toBe(false);
+  });
+
+  it("restores depth when end runs in finally after a throw", () => {
+    expect(() => {
+      beginOwnedTransformWrite();
+      try {
+        throw new Error("boom");
+      } finally {
+        endOwnedTransformWrite();
+      }
+    }).toThrow("boom");
+    expect(isOwnedTransformWrite()).toBe(false);
   });
 
   it("is silent when __FOUR_DEV__ is false", async () => {

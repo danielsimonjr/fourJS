@@ -304,6 +304,93 @@ describe("EventEmitter (§6b)", () => {
       emitter.emit("pong", { value: 2 });
       expect(recovered).toHaveBeenCalledTimes(1);
     });
+
+    it("drops events deferred by a dispatch that a listener aborted", () => {
+      const emitter = new TestEmitter();
+      const seen: number[] = [];
+      emitter.on("ping", (event) => {
+        seen.push(event.value);
+        if (event.value === 1) {
+          emitter.emit("ping", { value: 2 }); // deferred (rule 4)
+          throw new Error("listener failure");
+        }
+      });
+
+      expect(() => emitter.emit("ping", { value: 1 })).toThrow(
+        "listener failure",
+      );
+      expect(seen).toEqual([1]);
+
+      // The deferred `2` must not surface at the start of an unrelated emit,
+      // nor at the next `ping`.
+      const late = vi.fn();
+      emitter.on("pong", late);
+      emitter.emit("pong", { value: 9 });
+      emitter.emit("ping", { value: 3 });
+      expect(late).toHaveBeenCalledTimes(1);
+      expect(seen).toEqual([1, 3]);
+    });
+
+    it("keeps the deferred queue when an outer listener catches a nested throw", () => {
+      const emitter = new TestEmitter();
+      const seen: number[] = [];
+      emitter.on("pong", () => {
+        throw new Error("nested failure");
+      });
+      emitter.on("ping", (event) => {
+        seen.push(event.value);
+        if (event.value === 1) {
+          emitter.emit("ping", { value: 2 }); // deferred (rule 4)
+          try {
+            emitter.emit("pong", { value: 0 });
+          } catch {
+            // swallowed: the outer ping dispatch completes normally
+          }
+        }
+      });
+
+      emitter.emit("ping", { value: 1 });
+      expect(seen).toEqual([1, 2]);
+    });
+  });
+
+  describe("removeAllListeners and the deferred queue", () => {
+    it("discards every deferred event on a full teardown", () => {
+      const emitter = new TestEmitter();
+      const seen: number[] = [];
+      emitter.on("ping", (event) => {
+        seen.push(event.value);
+        emitter.emit("ping", { value: event.value + 1 }); // deferred
+        emitter.removeAllListeners();
+      });
+      emitter.emit("ping", { value: 1 });
+      expect(seen).toEqual([1]);
+
+      // Nothing leaks to a listener registered after teardown.
+      const late = vi.fn();
+      emitter.on("ping", late);
+      emitter.emit("pong", { value: 0 });
+      expect(late).not.toHaveBeenCalled();
+    });
+
+    it("discards only that type's deferred events on a per-type teardown", () => {
+      const emitter = new TestEmitter();
+      const pings: number[] = [];
+      const pongs: number[] = [];
+      emitter.on("pong", (event) => pongs.push(event.value));
+      emitter.on("ping", (event) => {
+        pings.push(event.value);
+        if (event.value === 1) {
+          emitter.emit("ping", { value: 2 }); // deferred, then discarded
+          emitter.once("pong", () => emitter.emit("pong", { value: 8 })); // defers
+          emitter.emit("pong", { value: 7 });
+          emitter.removeAllListeners("ping");
+        }
+      });
+      emitter.emit("ping", { value: 1 });
+      expect(pings).toEqual([1]);
+      expect(pongs).toEqual([7, 8]);
+    });
   });
 
   it("is usable through inheritance (plan D1: Node extends EventEmitter)", () => {

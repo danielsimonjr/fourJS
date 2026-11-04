@@ -2734,6 +2734,20 @@ leak + `pointercancel`), `A-15` (unregistered components no longer dropped on sa
       measured floor with the evidence for it. Do not simply lower the threshold or add a retry: that
       converts a signal into silence, which is what the two earlier fixes were careful to avoid.
 
+- [ ] **`tests/browser/blending.spec.ts:1036` ("RECOVER: a second click blends the chain back onto
+      its animation") failed once on CI and is green everywhere else — a RECURRENCE of the row closed
+      2026-09-06.** PR #129, head `0913c24` (a commit that changed only `docs/AUDIT-2026-11-OPTIMIZATION.md`):
+      the test's FIRST `clickWorldPoint` never flipped `data-mode` from `animated` to `ragdoll`, 114 other
+      browser tests passing. The sibling DROP test makes the identical click in the same run and passed;
+      the previous head `d236d53` (same packages, same examples build) was fully green on CI; locally the
+      spec passed 16/16 under `--repeat-each 4`. So the click was dropped between `page.mouse.click` and
+      `PointerInput`'s press/release pair on the loaded runner, not a pick or mode-transition defect: the
+      2026-09-06 fix addressed the sweep timing and the sample count, not a lost first click.
+      **To close:** make the first click observable the way the sweep clock was — poll `data-mode`
+      after the click and re-issue the click once if the page provably never saw a press (e.g. expose a
+      `data-presses` counter from the example), so a dropped platform event is told apart from a page
+      that ignored a delivered one. Do not add a blanket retry.
+
 ### Cycle 9 residue (2026-09-19) — filed out of the dogfooding narrative so they are actionable
 
 Each of these was measured during dogfood cycle 9 and then judged **not** a defect, or left

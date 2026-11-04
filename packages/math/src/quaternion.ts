@@ -17,6 +17,12 @@ import type { Vector3 } from "./vector3.js";
 const SLERP_LINEAR_THRESHOLD = 0.9995;
 
 /**
+ * Default tolerance for {@link Quaternion.equalsApprox}. See `vector2.ts` for the
+ * rationale; every type in the family uses the same value.
+ */
+const DEFAULT_EPSILON = 1e-6;
+
+/**
  * Writes the rotation described by an **orthonormal, right-handed** basis into
  * `out` and returns it, using Shepperd's method: pick the branch whose divisor
  * is largest so the square root never operates on a value near zero.
@@ -355,7 +361,7 @@ export class Quaternion {
     let bz = target.z;
     let bw = target.w;
 
-    let cosHalfTheta = ax * bx + ay * by + az * bz + aw * bw;
+    let cosHalfTheta = this.dot(target);
     if (cosHalfTheta < 0) {
       bx = -bx;
       by = -by;
@@ -432,6 +438,58 @@ export class Quaternion {
       vx + qw * tx + (qy * tz - qz * ty),
       vy + qw * ty + (qz * tx - qx * tz),
       vz + qw * tz + (qx * ty - qy * tx),
+    );
+  }
+
+  /** Four-component dot product with `q`. Does not mutate; `|dot| = 1` for equal rotations of unit quaternions. */
+  dot(q: Quaternion): number {
+    return this.x * q.x + this.y * q.y + this.z * q.z + this.w * q.w;
+  }
+
+  /**
+   * Inverts this quaternion: the conjugate divided by `lengthSq`, so it is
+   * correct for non-unit input too (unlike {@link Quaternion.conjugate}).
+   * Zero-length input becomes the identity, the same policy as
+   * {@link Quaternion.normalize}. Fires the change hook once.
+   */
+  invert(): this {
+    const lengthSquared =
+      this.x * this.x + this.y * this.y + this.z * this.z + this.w * this.w;
+    if (lengthSquared > 0) {
+      const inverseLengthSquared = 1 / lengthSquared;
+      this.x = -this.x * inverseLengthSquared;
+      this.y = -this.y * inverseLengthSquared;
+      this.z = -this.z * inverseLengthSquared;
+      this.w *= inverseLengthSquared;
+    } else {
+      this.x = 0;
+      this.y = 0;
+      this.z = 0;
+      this.w = 1;
+    }
+    this.onChanged?.();
+    return this;
+  }
+
+  /**
+   * Sign-insensitive approximate equality: true when every component matches
+   * `q` within `epsilon`, **or** every component matches `-q`, because `q` and
+   * `-q` encode the same rotation.
+   */
+  equalsApprox(q: Quaternion, epsilon: number = DEFAULT_EPSILON): boolean {
+    const direct =
+      Math.abs(this.x - q.x) <= epsilon &&
+      Math.abs(this.y - q.y) <= epsilon &&
+      Math.abs(this.z - q.z) <= epsilon &&
+      Math.abs(this.w - q.w) <= epsilon;
+    if (direct) {
+      return true;
+    }
+    return (
+      Math.abs(this.x + q.x) <= epsilon &&
+      Math.abs(this.y + q.y) <= epsilon &&
+      Math.abs(this.z + q.z) <= epsilon &&
+      Math.abs(this.w + q.w) <= epsilon
     );
   }
 }

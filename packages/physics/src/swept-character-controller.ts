@@ -246,7 +246,8 @@ import {
   type SimulationSystem,
 } from "@fourjs/motion";
 import {
-  runOwnedTransformWrite,
+  beginOwnedTransformWrite,
+  endOwnedTransformWrite,
   warnAuthorityConflict,
   type Node,
 } from "@fourjs/scene";
@@ -1412,9 +1413,12 @@ export class SweptCharacterSystem implements SimulationSystem {
         warnAuthorityConflict(node, KINEMATIC_AUTHORITY);
         continue;
       }
-      runOwnedTransformWrite(() => {
+      beginOwnedTransformWrite();
+      try {
         controller.step(node, dt);
-      });
+      } finally {
+        endOwnedTransformWrite();
+      }
     }
   }
 

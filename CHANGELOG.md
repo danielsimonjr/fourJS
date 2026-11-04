@@ -10,6 +10,46 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **2026-11-04 optimization and completion audit** (`docs/AUDIT-2026-11-OPTIMIZATION.md`):
+  a four-model pass over all 24 packages. The verified findings landed in the same PR:
+  - `@fourjs/math` fills the §7b API gaps: `Vector2`/`Vector3` `distanceTo`,
+    `distanceToSq` (`sqrt`, never `hypot`), `negate`, `multiply`, `min`, `max`, `addScaled`;
+    `Vector2.cross` (scalar); `Vector3.applyMatrix4` / `transformDirection` /
+    `applyProjection`; `Matrix4.transpose`; `equalsApprox` on `Matrix3`, `Matrix4` and
+    `Quaternion` (sign-insensitive); `Quaternion.dot` / `invert`; `Rectangle2.intersects` /
+    `intersection` / `union` / `expandByPoint`; `Frustum.containsPoint` / `intersectsBox`.
+  - `@fourjs/scene` exports `beginOwnedTransformWrite` / `endOwnedTransformWrite`, the
+    allocation-free form of `runOwnedTransformWrite` for per-step hot paths.
+  - `@fourjs/particles` exports `evaluateLifetimeRampColorInto` and `MutableParticleColor`.
+
+### Changed
+
+- `EventEmitter.totalListenerCount()` is deprecated in favour of the documented
+  `listenerCountAll()` (identical body).
+- Hot paths no longer allocate per element: `ParticleEmitter.evaluateColor` /
+  `evaluateSize` (previously three to four objects per particle per frame); the Rapier
+  adapters' collider-pair keys are numbers (`lo * 2^32 + hi`) instead of per-pair strings;
+  `AnimationMixer`, `TrackballRig`, physics publish, kinematic/constraint/motion-component
+  updates and widget layout use the begin/end owned-write pair instead of a closure.
+- `SpatialHash` keys cells numerically and reuses its match buffer, so `query` allocates
+  nothing (as its documentation already promised); `update` early-outs when the entry
+  stays in its cell.
+- `PhysicsWorld` skips the pose and velocity publish of a body that was asleep last step
+  and is still asleep, so a settled pile no longer bumps every transform version (and
+  recomputes every subtree) each fixed step. Sleep/wake transitions, teleports and
+  velocity writes still publish.
+- `WaypointGraphPlanner` measures edge length with `Vector3.distanceTo` (`sqrt`) instead
+  of `Math.hypot`, which is implementation-defined and therefore violated the planner's
+  declared `same-runtime` determinism.
+- `pick.ts` and `slider.ts` use the new `Vector3` transforms instead of private copies.
+
+### Fixed
+
+- `EventEmitter`: a listener that threw left the events it had deferred (rule 4) queued,
+  so they surfaced at the start of the next unrelated `emit()`, possibly to listeners
+  registered since. The outermost aborted dispatch now drops its deferred queue.
+  `removeAllListeners()` likewise clears the queue (wholesale, or per type in place).
+
 - The workflow `.github/workflows/doc-gates.yml` (job "Architecture docs gate") runs
   `repo-tools check . --docs=docs/Architecture` on every push and pull request to `main`.
   The job installs `@danielsimonjr/repo-tools@2.2.3` and nothing else. This workflow is

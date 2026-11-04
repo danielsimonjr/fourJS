@@ -145,7 +145,8 @@ import {
 } from "@fourjs/motion";
 import {
   PoseTarget,
-  runOwnedTransformWrite,
+  beginOwnedTransformWrite,
+  endOwnedTransformWrite,
   warnAuthorityConflict,
   type Node,
   type PoseBuffer,
@@ -626,6 +627,23 @@ interface BodyRegistration {
    * flip the mapping — the same rule `space` already documents.
    */
   readonly localPlane: boolean;
+  /**
+   * A solver-side write the sleep skip must not hide.
+   *
+   * `true` forces the next {@link PhysicsWorld} publish of this body even if it
+   * is asleep before and after the step (§32): set at registration and by every
+   * world method that rewrites the solver without waking it (teleport,
+   * velocity writes, re-typing, snapshot restore).
+   */
+  publishPending: boolean;
+  /**
+   * The node's `transformAuthority` at the last publish. An authority change
+   * is not routed through any world method (it is honoured from the next
+   * step), so the sleep skip compares against this instead: a body that fell
+   * asleep under `"manual"` or `"animation"` and is handed back to `"physics"`
+   * must be snapped to the solver pose once, even though nothing woke it.
+   */
+  publishedAuthority: TransformAuthority | null;
 }
 
 /** One registered joint: the object, its handle, and its monotonic id (§28). */
@@ -1314,6 +1332,8 @@ export class PhysicsWorld {
       colliders: [],
       tracked,
       localPlane: usesPlane,
+      publishPending: true,
+      publishedAuthority: null,
     };
 
     for (const collider of colliders) {
@@ -1736,6 +1756,7 @@ export class PhysicsWorld {
       );
     }
     const { handle } = registration;
+    registration.publishPending = true;
     if (rotation === undefined) {
       this.#adapter.getBodyTransform(
         handle,
@@ -1785,6 +1806,7 @@ export class PhysicsWorld {
       registration.body.linearVelocity,
       this.#mapLinear,
     );
+    registration.publishPending = true;
     this.#adapter.setBodyVelocities(
       registration.handle,
       this.#mapLinear,
@@ -1823,6 +1845,7 @@ export class PhysicsWorld {
       registration.body.angularVelocity,
       this.#mapAngular,
     );
+    registration.publishPending = true;
     this.#adapter.setBodyVelocities(
       registration.handle,
       this.#mapLinear,
@@ -1956,6 +1979,7 @@ export class PhysicsWorld {
       target === undefined ? 0 : this.#resolveInheritanceDelta(type, options);
 
     const wake = options.wake ?? true;
+    registration.publishPending = true;
     this.#adapter.setBodyType(registration.handle, type, wake);
     // Through the package-internal writer, not `body.type = type`: the public
     // setter warns about exactly this assignment on a registered body, and here
@@ -2618,6 +2642,9 @@ export class PhysicsWorld {
       this.#refuseConfigurationMismatch(snapshot.configuration);
     }
     this.#adapter.restoreSnapshot(snapshot.data);
+    for (const registration of this.#bodiesByNode.values()) {
+      registration.publishPending = true;
+    }
   }
 
   /**
@@ -3833,27 +3860,64 @@ export class PhysicsWorld {
    * `PoseTarget`, not its transform), so a blended kinematic or static body
    * whose transform this pass skipped would simply never move.
    *
+   * ## Sleeping bodies (§32)
+   *
+   * A dynamic, non-blended body that the solver reports asleep **and** that was
+   * already published as asleep is skipped: the solver holds exactly the pose
+   * and (zero) velocities it published on the sleep-transition step, so
+   * rewriting them would only churn `Transform.version`. Still run every step:
+   * the velocity publish, the sleep flag refresh and the pose re-track. A
+   * pose publish is forced by a sleep or wake transition (`body.sleeping`
+   * differs from the solver), by `"blended"` authority (its animation side
+   * moves while the solver sleeps), by an authority change since the last
+   * publish (`BodyRegistration.publishedAuthority`), and by
+   * `BodyRegistration.publishPending` (registration, teleport, velocity
+   * writes, re-typing, snapshot restore).
+   *
    * Every other authority behaves exactly as it did before: a dynamic body
    * writes under `"physics"` and warns-and-skips elsewhere, and a non-dynamic
    * body writes no transform at all.
    */
   #publishBody(registration: BodyRegistration): void {
     const { node, body, handle, type } = registration;
-    if (node.transformAuthority === BLENDED_AUTHORITY) {
-      runOwnedTransformWrite(() => {
-        this.#publishBlended(registration);
-      });
-    } else if (type === "dynamic") {
-      if (node.transformAuthority === PHYSICS_AUTHORITY) {
-        runOwnedTransformWrite(() => {
-          this.#publishSolverPose(registration);
-        });
-      } else {
-        warnAuthorityConflict(node, PHYSICS_AUTHORITY);
+    const sleeping = this.#adapter.isBodySleeping(handle);
+    const authority = node.transformAuthority;
+    const skip =
+      type === "dynamic" &&
+      authority !== BLENDED_AUTHORITY &&
+      authority === registration.publishedAuthority &&
+      sleeping &&
+      body.sleeping &&
+      !registration.publishPending;
+    registration.publishPending = false;
+    registration.publishedAuthority = authority;
+    if (!skip) {
+      if (authority === BLENDED_AUTHORITY) {
+        beginOwnedTransformWrite();
+        try {
+          this.#publishBlended(registration);
+        } finally {
+          endOwnedTransformWrite();
+        }
+      } else if (type === "dynamic") {
+        if (authority === PHYSICS_AUTHORITY) {
+          beginOwnedTransformWrite();
+          try {
+            this.#publishSolverPose(registration);
+          } finally {
+            endOwnedTransformWrite();
+          }
+        } else {
+          warnAuthorityConflict(node, PHYSICS_AUTHORITY);
+        }
       }
     }
+    // Velocities are published even when the pose is skipped: the solver
+    // reads cost two calls and touch no Transform.version, and §23 says the
+    // component mirrors the solver — a hand-edited `linearVelocity` on a
+    // sleeping body must still read back as zero.
     this.#publishSolverVelocities(registration);
-    setRigidBodySleeping(body, this.#adapter.isBodySleeping(handle));
+    setRigidBodySleeping(body, sleeping);
     this.#retrackPose(registration);
   }
 

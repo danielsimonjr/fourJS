@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   constructionCount,
+  Matrix4,
   resetConstructionCount,
   Vector2,
   Vector3,
@@ -516,5 +517,176 @@ describe("allocation counter (§7b, §83)", () => {
 
     expect(constructionCount()).toBe(0);
     expect(Number.isFinite(accumulator)).toBe(true);
+  });
+});
+
+/**
+ * The surface the shared-additions cases exercise on both vector types. A
+ * union of the two constructors would make every call site a `Vector2 &
+ * Vector3` parameter under TypeScript 6 (the docs compiler); `this` typing
+ * keeps each case self-consistent instead.
+ */
+interface SharedVector {
+  x: number;
+  y: number;
+  onChanged?: () => void;
+  distanceTo(v: this): number;
+  distanceToSq(v: this): number;
+  negate(): this;
+  multiply(v: this): this;
+  min(v: this): this;
+  max(v: this): this;
+  addScaled(v: this, s: number): this;
+}
+
+const SHARED_CASES: readonly [
+  name: string,
+  make: (...c: number[]) => SharedVector,
+  n: number,
+][] = [
+  ["Vector2", (...c) => new Vector2(c[0], c[1]), 2],
+  ["Vector3", (...c) => new Vector3(c[0], c[1], c[2]), 3],
+];
+
+describe.each(SHARED_CASES)("%s shared additions", (_name, make, n) => {
+  const comps = (v: SharedVector): number[] =>
+    n === 2 ? [v.x, v.y] : [v.x, v.y, (v as unknown as Vector3).z];
+
+  beforeEach(() => resetConstructionCount());
+
+  it("distanceTo / distanceToSq measure without mutating", () => {
+    const a = make(1, 2, 3);
+    const b = make(4, 6, 3);
+    expect(a.distanceToSq(b)).toBe(25);
+    expect(a.distanceTo(b)).toBe(5);
+    expect(comps(a)).toEqual([1, 2, 3].slice(0, n));
+  });
+
+  it("negate, multiply, min, max, addScaled behave and return this", () => {
+    expect(comps(make(1, -2, 3).negate())).toEqual([-1, 2, -3].slice(0, n));
+    expect(comps(make(1, 2, 3).multiply(make(2, 3, 4)))).toEqual(
+      [2, 6, 12].slice(0, n),
+    );
+    expect(comps(make(1, 5, 3).min(make(2, 4, 1)))).toEqual(
+      [1, 4, 1].slice(0, n),
+    );
+    expect(comps(make(1, 5, 3).max(make(2, 4, 1)))).toEqual(
+      [2, 5, 3].slice(0, n),
+    );
+    expect(comps(make(1, 1, 1).addScaled(make(1, 2, 3), 2))).toEqual(
+      [3, 5, 7].slice(0, n),
+    );
+    const v = make(1, 2, 3);
+    expect(v.negate()).toBe(v);
+    expect(v.multiply(v)).toBe(v);
+    expect(v.min(v)).toBe(v);
+    expect(v.max(v)).toBe(v);
+    expect(v.addScaled(v, 1)).toBe(v);
+  });
+
+  it("multiply is alias-safe (a.multiply(a) squares)", () => {
+    const a = make(2, -3, 4);
+    a.multiply(a);
+    expect(comps(a)).toEqual([4, 9, 16].slice(0, n));
+  });
+
+  it("each mutator fires the hook exactly once and none allocate", () => {
+    const v = make(1, 2, 3);
+    const w = make(3, 2, 1);
+    let calls = 0;
+    v.onChanged = () => calls++;
+    resetConstructionCount();
+    v.negate();
+    v.multiply(w);
+    v.min(w);
+    v.max(w);
+    v.addScaled(w, 0.5);
+    expect(calls).toBe(5);
+    v.distanceTo(w);
+    v.distanceToSq(w);
+    expect(calls).toBe(5);
+    expect(constructionCount()).toBe(0);
+  });
+});
+
+describe("Vector2.cross", () => {
+  it("is the signed z of the 3D cross and does not mutate", () => {
+    const a = new Vector2(1, 0);
+    const b = new Vector2(0, 1);
+    expect(a.cross(b)).toBe(1);
+    expect(b.cross(a)).toBe(-1);
+    expect(a.cross(a)).toBe(0);
+    expect([a.x, a.y]).toEqual([1, 0]);
+  });
+});
+
+describe("Vector3 matrix application", () => {
+  const translate = (x: number, y: number, z: number): Matrix4 => {
+    const m = new Matrix4();
+    m.elements[12] = x;
+    m.elements[13] = y;
+    m.elements[14] = z;
+    return m;
+  };
+
+  it("applyMatrix4 applies linear part plus translation, ignoring the homogeneous row", () => {
+    const m = translate(10, 20, 30);
+    m.elements[0] = 2;
+    m.elements[15] = 5; // ignored: affine only
+    const v = new Vector3(1, 2, 3);
+    let calls = 0;
+    v.onChanged = () => calls++;
+    expect(v.applyMatrix4(m)).toBe(v);
+    expect([v.x, v.y, v.z]).toEqual([12, 22, 33]);
+    expect(calls).toBe(1);
+  });
+
+  it("applyMatrix4 reads operands first (rotation about Z)", () => {
+    const m = new Matrix4();
+    m.elements[0] = 0;
+    m.elements[1] = 1;
+    m.elements[4] = -1;
+    m.elements[5] = 0;
+    const v = new Vector3(1, 0, 0).applyMatrix4(m);
+    expect([v.x, v.y, v.z]).toEqual([0, 1, 0]);
+  });
+
+  it("transformDirection ignores translation and is not renormalized", () => {
+    const m = translate(10, 20, 30);
+    m.elements[0] = 3;
+    const v = new Vector3(1, 0, 0);
+    let calls = 0;
+    v.onChanged = () => calls++;
+    expect(v.transformDirection(m)).toBe(v);
+    expect([v.x, v.y, v.z]).toEqual([3, 0, 0]);
+    expect(v.length()).toBe(3);
+    expect(calls).toBe(1);
+  });
+
+  it("applyProjection divides by w", () => {
+    const m = new Matrix4().setPerspective(Math.PI / 2, 1, 1, 10);
+    const v = new Vector3(0, 0, -1).applyProjection(m);
+    expect(v.x).toBeCloseTo(0, 12);
+    expect(v.z).toBeCloseTo(-1, 12); // near plane -> NDC -1
+    const w = new Vector3(0, 0, -10).applyProjection(m);
+    expect(w.z).toBeCloseTo(1, 12); // far plane -> NDC +1
+  });
+
+  it("applyProjection with w = 0 writes the origin and still fires once", () => {
+    const m = new Matrix4().setPerspective(Math.PI / 2, 1, 1, 10);
+    const v = new Vector3(3, 4, 0); // w = -z = 0
+    let calls = 0;
+    v.onChanged = () => calls++;
+    v.applyProjection(m);
+    expect([v.x, v.y, v.z]).toEqual([0, 0, 0]);
+    expect(calls).toBe(1);
+  });
+
+  it("matrix applications do not allocate", () => {
+    const v = new Vector3(1, 2, 3);
+    const m = new Matrix4();
+    resetConstructionCount();
+    v.applyMatrix4(m).transformDirection(m).applyProjection(m);
+    expect(constructionCount()).toBe(0);
   });
 });

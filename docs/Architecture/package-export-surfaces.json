@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-16",
+  "generated": "2026-11-04",
   "surfaces": {
     "packages/animation": [
       "Advanceable",
@@ -882,8 +882,10 @@
       "DEFAULT_VORTEX_MIN_DISTANCE",
       "dragField",
       "evaluateLifetimeRampColor",
+      "evaluateLifetimeRampColorInto",
       "evaluateLifetimeRampNumber",
       "FieldVolume",
+      "MutableParticleColor",
       "PACKAGE_NAME",
       "PARTICLE_DRAWS_PER_SPAWN",
       "PARTICLE_INSTANCE_FLOATS",
@@ -1941,6 +1943,7 @@
       "applyLayers",
       "assertLayerMask",
       "AuthorityNode",
+      "beginOwnedTransformWrite",
       "Bone",
       "Camera",
       "ColorRGB",
@@ -1960,6 +1963,7 @@
       "DirectionalLightOptions",
       "DirectionalLightShadow",
       "DirectionalLightShadowOptions",
+      "endOwnedTransformWrite",
       "Group",
       "HemisphereLight",
       "HemisphereLightOptions",

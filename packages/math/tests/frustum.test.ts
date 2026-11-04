@@ -268,3 +268,55 @@ describe("Frustum — allocation and reuse (§7b, plan D7)", () => {
     expect(constructionCount()).toBe(1);
   });
 });
+
+describe("Frustum containsPoint / intersectsBox", () => {
+  const frustum = (): Frustum =>
+    new Frustum().setFromViewProjection(
+      new Matrix4().setPerspective(Math.PI / 2, 1, 1, 10),
+    );
+
+  it("containsPoint accepts inside, rejects outside each side", () => {
+    const f = frustum();
+    expect(f.containsPoint(new Vector3(0, 0, -5))).toBe(true);
+    expect(f.containsPoint(new Vector3(0, 0, -0.5))).toBe(false); // near
+    expect(f.containsPoint(new Vector3(0, 0, -11))).toBe(false); // far
+    expect(f.containsPoint(new Vector3(6, 0, -5))).toBe(false);
+    expect(f.containsPoint(new Vector3(-6, 0, -5))).toBe(false);
+    expect(f.containsPoint(new Vector3(0, 6, -5))).toBe(false);
+    expect(f.containsPoint(new Vector3(0, -6, -5))).toBe(false);
+    expect(f.containsPoint(new Vector3(0, 0, 5))).toBe(false); // behind
+  });
+
+  it("containsPoint treats NaN as inside (draw when unknown)", () => {
+    expect(frustum().containsPoint(new Vector3(NaN, 0, -5))).toBe(true);
+  });
+
+  it("intersectsBox: inside, straddling, and wholly outside each side", () => {
+    const f = frustum();
+    const box = (a: number[], b: number[]): boolean =>
+      f.intersectsBox(
+        new Vector3(a[0], a[1], a[2]),
+        new Vector3(b[0], b[1], b[2]),
+      );
+    expect(box([-1, -1, -6], [1, 1, -4])).toBe(true);
+    expect(box([-100, -100, -100], [100, 100, 100])).toBe(true); // encloses
+    expect(box([4, 0, -6], [8, 1, -4])).toBe(true); // straddles right plane
+    expect(box([7, 0, -6], [9, 1, -4])).toBe(false);
+    expect(box([-9, 0, -6], [-7, 1, -4])).toBe(false);
+    expect(box([0, 7, -6], [1, 9, -4])).toBe(false);
+    expect(box([0, -9, -6], [1, -7, -4])).toBe(false);
+    expect(box([0, 0, -20], [1, 1, -12])).toBe(false); // beyond far
+    expect(box([0, 0, 2], [1, 1, 4])).toBe(false); // behind camera
+  });
+
+  it("intersectsBox treats NaN bounds as visible and allocates nothing", () => {
+    const f = frustum();
+    resetConstructionCount();
+    const lo = new Vector3(NaN, 0, -5);
+    const hi = new Vector3(1, 1, -4);
+    resetConstructionCount();
+    expect(f.intersectsBox(lo, hi)).toBe(true);
+    expect(f.containsPoint(lo)).toBe(true);
+    expect(constructionCount()).toBe(0);
+  });
+});

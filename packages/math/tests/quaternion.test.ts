@@ -739,3 +739,52 @@ describe("Quaternion allocation counter (§7b, §83)", () => {
     expect(Number.isFinite(accumulator)).toBe(true);
   });
 });
+
+describe("Quaternion dot / invert / equalsApprox", () => {
+  it("dot is the four-component product and does not mutate", () => {
+    const a = new Quaternion(1, 2, 3, 4);
+    const b = new Quaternion(5, 6, 7, 8);
+    expect(a.dot(b)).toBe(70);
+    expect([a.x, a.y, a.z, a.w]).toEqual([1, 2, 3, 4]);
+  });
+
+  it("invert round-trips multiply to identity, for non-unit input too", () => {
+    const q = new Quaternion(1, 2, 3, 4);
+    const product = q.clone().multiply(q.clone().invert());
+    expect(product.equalsApprox(new Quaternion(0, 0, 0, 1), 1e-12)).toBe(true);
+  });
+
+  it("invert of a zero quaternion is the identity; hook fires once in both branches", () => {
+    const z = new Quaternion(0, 0, 0, 0);
+    let calls = 0;
+    z.onChanged = () => calls++;
+    expect(z.invert()).toBe(z);
+    expect([z.x, z.y, z.z, z.w]).toEqual([0, 0, 0, 1]);
+    expect(calls).toBe(1);
+    const q = new Quaternion(0, 0, 0, 2);
+    q.onChanged = () => calls++;
+    q.invert();
+    expect(q.w).toBe(0.5);
+    expect(calls).toBe(2);
+  });
+
+  it("equalsApprox is sign-insensitive and respects epsilon", () => {
+    const q = new Quaternion(0.1, 0.2, 0.3, 0.9);
+    const neg = new Quaternion(-0.1, -0.2, -0.3, -0.9);
+    expect(q.equalsApprox(q.clone())).toBe(true);
+    expect(q.equalsApprox(neg)).toBe(true);
+    expect(q.equalsApprox(new Quaternion(0.1, 0.2, 0.3, 0.8))).toBe(false);
+    // Mixed signs match neither q nor -q.
+    expect(q.equalsApprox(new Quaternion(-0.1, 0.2, 0.3, 0.9))).toBe(false);
+    expect(q.equalsApprox(new Quaternion(0.1, 0.2, 0.3, 0.8), 0.2)).toBe(true);
+  });
+
+  it("the new methods allocate nothing", () => {
+    const q = new Quaternion(0, 0, 0, 1);
+    resetConstructionCount();
+    q.invert();
+    q.dot(q);
+    q.equalsApprox(q);
+    expect(constructionCount()).toBe(0);
+  });
+});

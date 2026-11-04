@@ -147,58 +147,6 @@ const localDirection = new Vector3();
 const inverseWorld = new Matrix4();
 
 /**
- * Transforms the homogeneous point `(x, y, z, 1)` by `m` and divides through by
- * the resulting `w`, writing the result into `out`.
- *
- * A `w` of exactly zero — the projected point lies at infinity, which only a
- * degenerate projection produces — yields the zero vector rather than
- * infinities, so a broken camera returns no hits instead of poisoning the
- * caller's arithmetic with `NaN` (the same philosophy as `Matrix4.invert`
- * refusing singular input).
- */
-function unprojectPoint(
-  m: Matrix4,
-  x: number,
-  y: number,
-  z: number,
-  out: Vector3,
-): void {
-  const e = m.elements;
-  const w = e[3] * x + e[7] * y + e[11] * z + e[15];
-  const inverseW = w === 0 ? 0 : 1 / w;
-  out.set(
-    (e[0] * x + e[4] * y + e[8] * z + e[12]) * inverseW,
-    (e[1] * x + e[5] * y + e[9] * z + e[13]) * inverseW,
-    (e[2] * x + e[6] * y + e[10] * z + e[14]) * inverseW,
-  );
-}
-
-/** Transforms `v` by `m` as a **point** (translation applies). Affine `m` only. */
-function transformPoint(m: Matrix4, v: Vector3, out: Vector3): void {
-  const e = m.elements;
-  const { x, y, z } = v;
-  out.set(
-    e[0] * x + e[4] * y + e[8] * z + e[12],
-    e[1] * x + e[5] * y + e[9] * z + e[13],
-    e[2] * x + e[6] * y + e[10] * z + e[14],
-  );
-}
-
-/**
- * Transforms `v` by `m` as a **direction** (translation does not apply, length
- * is not preserved — see the module header on why it must not be renormalized).
- */
-function transformDirection(m: Matrix4, v: Vector3, out: Vector3): void {
-  const e = m.elements;
-  const { x, y, z } = v;
-  out.set(
-    e[0] * x + e[4] * y + e[8] * z,
-    e[1] * x + e[5] * y + e[9] * z,
-    e[2] * x + e[6] * y + e[10] * z,
-  );
-}
-
-/**
  * Slab test of the ray `origin + t · direction` against the axis-aligned box
  * `[min, max]`, returning the smallest `t >= 0` inside the box, or
  * {@link MISS}.
@@ -323,8 +271,8 @@ export function createPickRay(
     .multiply(camera.inverseProjectionMatrix);
 
   const nearZ = depthRange === "zero-to-one" ? 0 : -1;
-  unprojectPoint(unprojection, ndcX, ndcY, nearZ, outOrigin);
-  unprojectPoint(unprojection, ndcX, ndcY, 1, farPoint);
+  outOrigin.set(ndcX, ndcY, nearZ).applyProjection(unprojection);
+  farPoint.set(ndcX, ndcY, 1).applyProjection(unprojection);
 
   outDirection.copy(farPoint).sub(outOrigin).normalize();
 }
@@ -872,8 +820,8 @@ export function pick(
       }
       inverseWorld.copy(world).invert();
 
-      transformPoint(inverseWorld, rayOrigin, localOrigin);
-      transformDirection(inverseWorld, rayDirection, localDirection);
+      localOrigin.copy(rayOrigin).applyMatrix4(inverseWorld);
+      localDirection.copy(rayDirection).transformDirection(inverseWorld);
 
       // `t` is a world-space distance despite being solved in local space —
       // the local direction is deliberately left unnormalized.
