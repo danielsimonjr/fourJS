@@ -64,7 +64,11 @@ import {
 } from "./wgpu-particles.js";
 import { SHADOW_SHADER_SOURCE } from "./wgpu-shadow.js";
 import { SPRITE_SHADER_SOURCE } from "./wgpu-sprite.js";
-import { standardShaderSource } from "./wgpu-standard.js";
+import {
+  NO_SURFACE_MAPS,
+  standardShaderSource,
+  type SurfaceMaps,
+} from "./wgpu-standard.js";
 import {
   CLEAR_SHADER_SOURCE,
   FRAGMENT_ENTRY_POINT,
@@ -336,6 +340,16 @@ export interface WgpuPipelineDescriptor {
    * label is byte-identical.
    */
   readonly morph?: WgpuMorph;
+
+  /**
+   * WP-W4.2: the standard family's surface-detail maps (normal / occlusion /
+   * emissive) as pipeline identity — each a compile-time WGSL variant flag
+   * and, when any is set, the surface bind-group layout. Appended to the key
+   * only when `true`, so every map-free key and label is byte-identical.
+   */
+  readonly normalMap?: boolean;
+  readonly occlusionMap?: boolean;
+  readonly emissiveMap?: boolean;
 }
 
 /**
@@ -402,6 +416,15 @@ export function pipelineKey(descriptor: WgpuPipelineDescriptor): string {
   }
   if (descriptor.morph !== undefined) {
     key += `|mo:${descriptor.morph}`;
+  }
+  if (descriptor.normalMap === true) {
+    key += "|nm:y";
+  }
+  if (descriptor.occlusionMap === true) {
+    key += "|oc:y";
+  }
+  if (descriptor.emissiveMap === true) {
+    key += "|em:y";
   }
   return key;
 }
@@ -485,6 +508,15 @@ export class WgpuPipelineCache {
    */
   readonly #standardLayout: (() => GpuBindGroupLayout) | undefined;
 
+  /**
+   * The surface bind-group layout provider (WP-W4.2) — reached only when a
+   * standard pipeline with a normal / occlusion / emissive map is created.
+   */
+  readonly #surfaceLayout: (() => GpuBindGroupLayout) | undefined;
+
+  /** Surface-group pipeline layouts, keyed `shadow|map` (lazy). */
+  readonly #surfaceShadedLayouts = new Map<string, GpuPipelineLayout>();
+
   /** The lit families' pipeline layouts, built with each family's first pipeline. */
   #litPipelineLayout: GpuPipelineLayout | null = null;
 
@@ -567,12 +599,14 @@ export class WgpuPipelineCache {
     effectLayout?: () => GpuBindGroupLayout,
     shadowLightsLayout?: () => GpuBindGroupLayout,
     particleLayout?: () => GpuBindGroupLayout,
+    surfaceLayout?: () => GpuBindGroupLayout,
   ) {
     this.#device = device;
     this.#textureLayout = textureLayout;
     this.#spriteLayout = spriteLayout;
     this.#lightsLayout = lightsLayout;
     this.#standardLayout = standardLayout;
+    this.#surfaceLayout = surfaceLayout;
     this.#effectLayout = effectLayout;
     this.#shadowLightsLayout = shadowLightsLayout;
     this.#particleLayout = particleLayout;
@@ -643,6 +677,7 @@ export class WgpuPipelineCache {
     this.#standardMapPipelineLayout = null;
     this.#standardMrPipelineLayout = null;
     this.#standardMapMrPipelineLayout = null;
+    this.#surfaceShadedLayouts.clear();
     this.#effectPipelineLayout = null;
     this.#effectGradePipelineLayout = null;
     this.#shadowShadedLayouts.clear();
@@ -773,6 +808,14 @@ export class WgpuPipelineCache {
       return null;
     }
     const metalRoughness = standard && descriptor.metalRoughness === true;
+    const detail =
+      standard &&
+      (descriptor.normalMap === true ||
+        descriptor.occlusionMap === true ||
+        descriptor.emissiveMap === true);
+    if (detail) {
+      return this.#surfaceShadedLayoutFor(descriptor, drawProvider, lights);
+    }
     const texture = this.#textureLayout;
     if ((descriptor.map || metalRoughness) && texture === undefined) {
       return null;
@@ -854,6 +897,46 @@ export class WgpuPipelineCache {
   }
 
   /**
+   * The standard family's layout when any of the surface-detail maps is set
+   * (WP-W4.2): draw, lights, albedo when `map`, then the five-entry surface
+   * group at `map ? 3 : 2` (it carries the metallic-roughness pair too, so
+   * `metalRoughness` does not change the layout). `null` for a missing
+   * provider, skipping the draw.
+   */
+  #surfaceShadedLayoutFor(
+    descriptor: WgpuPipelineDescriptor,
+    drawProvider: (() => GpuBindGroupLayout) | undefined,
+    lights: () => GpuBindGroupLayout,
+  ): GpuPipelineLayout | null {
+    const surface = this.#surfaceLayout;
+    const texture = this.#textureLayout;
+    if (
+      surface === undefined ||
+      drawProvider === undefined ||
+      (descriptor.map && texture === undefined)
+    ) {
+      return null;
+    }
+    const shadow = descriptor.shadow === true;
+    const key = `${shadow ? "sh" : "-"}|${descriptor.map ? "map" : "-"}`;
+    const existing = this.#surfaceShadedLayouts.get(key);
+    if (existing !== undefined) {
+      return existing;
+    }
+    const bindGroupLayouts: GpuBindGroupLayout[] = [drawProvider(), lights()];
+    if (descriptor.map && texture !== undefined) {
+      bindGroupLayouts.push(texture());
+    }
+    bindGroupLayouts.push(surface());
+    const created = this.#device.createPipelineLayout({
+      label: `fourJS:pipeline-layout:standard:surface${shadow ? ":shadow" : ""}${descriptor.map ? ":map" : ""}`,
+      bindGroupLayouts,
+    });
+    this.#surfaceShadedLayouts.set(key, created);
+    return created;
+  }
+
+  /**
    * The WGSL module `kind` compiles from. `"batch"` deliberately maps onto the
    * **unlit** module keys: a batch draws through the unlit shader family
    * (`wgpu-batch.ts`), so a frame mixing batched and unbatched unlit draws of
@@ -879,6 +962,7 @@ export class WgpuPipelineCache {
     shadow: boolean,
     metalRoughness: boolean,
     morph: WgpuMorph | undefined,
+    surface: SurfaceMaps,
   ): GpuShaderModule {
     const key =
       kind === "clear"
@@ -892,7 +976,7 @@ export class WgpuPipelineCache {
               : kind === "effect"
                 ? `effect|${effect ?? "copy"}`
                 : kind === "lit" || kind === "standard"
-                  ? `${kind}${normals ? "|n" : ""}${map ? "|map" : ""}${kind === "standard" && metalRoughness ? "|mr" : ""}${shadow ? "|sh" : ""}${kind === "lit" && morph !== undefined ? `|mo:${morph}` : ""}`
+                  ? `${kind}${normals ? "|n" : ""}${map ? "|map" : ""}${kind === "standard" && metalRoughness ? "|mr" : ""}${shadow ? "|sh" : ""}${morph !== undefined ? `|mo:${morph}` : ""}${kind === "standard" ? `${surface.normal ? "|nm" : ""}${surface.occlusion ? "|oc" : ""}${surface.emissive ? "|em" : ""}` : ""}`
                   : `unlit${vertexColors ? "|vc" : ""}${map ? "|map" : ""}${morph === undefined ? "" : `|mo:${morph}`}`;
     const existing = this.#modules.get(key);
     if (existing !== undefined) {
@@ -919,6 +1003,8 @@ export class WgpuPipelineCache {
                           map,
                           shadow,
                           metalRoughness,
+                          surface,
+                          morph,
                         )
                       : unlitShaderSource(vertexColors, map, morph),
     });
@@ -965,8 +1051,11 @@ export class WgpuPipelineCache {
         descriptor.normals === true,
         descriptor.map ||
           (descriptor.kind === "standard" &&
-            descriptor.metalRoughness === true),
-        descriptor.kind === "lit" ? descriptor.morph : undefined,
+            (descriptor.metalRoughness === true ||
+              descriptor.normalMap === true ||
+              descriptor.occlusionMap === true ||
+              descriptor.emissiveMap === true)),
+        descriptor.morph,
       );
     }
     const batch = descriptor.batch ?? null;
@@ -1000,9 +1089,18 @@ export class WgpuPipelineCache {
       descriptor.effect ?? null,
       descriptor.shadow === true,
       descriptor.metalRoughness === true,
-      descriptor.kind === "lit" || descriptor.kind === "unlit"
+      descriptor.kind === "lit" ||
+        descriptor.kind === "unlit" ||
+        descriptor.kind === "standard"
         ? descriptor.morph
         : undefined,
+      descriptor.kind === "standard"
+        ? {
+            normal: descriptor.normalMap === true,
+            occlusion: descriptor.occlusionMap === true,
+            emissive: descriptor.emissiveMap === true,
+          }
+        : NO_SURFACE_MAPS,
     );
     const blend = blendStateFor(descriptor.blend);
     return this.#device.createRenderPipeline({

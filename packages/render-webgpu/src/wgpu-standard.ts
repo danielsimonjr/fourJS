@@ -52,7 +52,7 @@
  *    128  baseColor       §59 base colour × opacity   (DrawUniforms.color's slot)
  *    144  normalMatrix    as DrawUniforms             (3 columns × vec4 stride)
  *    192  emissive        rgb (§59);                   w unused, written 0
- *    208  surface         x metalness, y roughness;    z, w unused, written 0
+ *    208  surface         x metalness, y roughness;    z normalScale - 1, w occlusionStrength - 1
  *    224  = STANDARD_UNIFORM_BYTES
  * ```
  *
@@ -132,7 +132,7 @@ import {
   SHADOW_FACTOR_WGSL,
   SHADOW_LIGHT_UNIFORM_WGSL,
 } from "./wgpu-shadow.js";
-import { FRAGMENT_ENTRY_POINT } from "./wgpu-unlit.js";
+import { FRAGMENT_ENTRY_POINT, type WgpuMorph } from "./wgpu-unlit.js";
 
 /** Which of the three surface-detail maps a standard variant samples. */
 export interface SurfaceMaps {
@@ -217,7 +217,7 @@ export const STANDARD_NORMAL_OFFSET = 144;
 /** Byte offset of `StandardUniforms.emissive` (rgb; w unused, written 0). */
 export const STANDARD_EMISSIVE_OFFSET = 192;
 
-/** Byte offset of `StandardUniforms.surface` (x metalness, y roughness; zw 0). */
+/** Byte offset of `StandardUniforms.surface` (x metalness, y roughness; z normalScale - 1, w occlusionStrength - 1). */
 export const STANDARD_SURFACE_OFFSET = 208;
 
 /**
@@ -272,6 +272,16 @@ export const STANDARD_UNIFORM_WGSL = `struct StandardUniforms {
 @group(0) @binding(0) var<uniform> draw : StandardUniforms;`;
 
 /**
+ * {@link STANDARD_UNIFORM_WGSL} with `normalMatrix` spelled as its three padded
+ * columns (`MORPH_DRAW_UNIFORM_WGSL`'s move): same layout, but column 0's pad
+ * word — the one-target morph weight — is nameable.
+ */
+export const MORPH_STANDARD_UNIFORM_WGSL = STANDARD_UNIFORM_WGSL.replace(
+  "normalMatrix : mat3x3<f32>,",
+  "normalColumn0 : vec4<f32>,\n  normalColumn1 : vec4<f32>,\n  normalColumn2 : vec4<f32>,",
+);
+
+/**
  * The standard WGSL module for one variant quadruple — the lit family's
  * (`normals`, `map`, WP-R1.7's `shadow`) plus §59's packed metallic-roughness
  * map. `metalRoughness` defaults false so every landed scalar-only module is
@@ -294,12 +304,13 @@ export function standardShaderSource(
   shadow = false,
   metalRoughness = false,
   surface: SurfaceMaps = NO_SURFACE_MAPS,
+  morph?: WgpuMorph,
 ): string {
   const detail = surface.normal || surface.occlusion || surface.emissive;
   const surfaceGroup = map
     ? SHADED_MR_BIND_GROUP_INDEX
     : SHADED_MAP_BIND_GROUP_INDEX;
-  return `${STANDARD_UNIFORM_WGSL}
+  return `${morph === undefined ? STANDARD_UNIFORM_WGSL : MORPH_STANDARD_UNIFORM_WGSL}
 
 ${shadow ? SHADOW_LIGHT_UNIFORM_WGSL : LIGHT_UNIFORM_WGSL}${
     map
@@ -323,7 +334,7 @@ ${surfaceBindingWgsl(surfaceGroup, surface, false)}`
         : ""
   }
 
-${shadedVertexStageWgsl(normals, map || metalRoughness)}
+${shadedVertexStageWgsl(normals, map || metalRoughness || detail, morph)}
 
 ${PUNCTUAL_LIGHT_WGSL}
 

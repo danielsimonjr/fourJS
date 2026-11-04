@@ -72,6 +72,10 @@ export interface WgpuPipelineRequest {
   readonly gpuInstances: boolean;
   /** One-target GPU morph variant (RFC 0003), or `undefined` for none. */
   readonly morph: WgpuMorph | undefined;
+  /** Standard-family surface-detail maps (WP-W4.2). */
+  readonly normalMap: boolean;
+  readonly occlusionMap: boolean;
+  readonly emissiveMap: boolean;
 }
 
 /**
@@ -101,6 +105,9 @@ export class WgpuPipelineMemo {
   #metalRoughness = false;
   #gpuInstances = false;
   #morph: WgpuMorph | undefined = undefined;
+  #normalMap = false;
+  #occlusionMap = false;
+  #emissiveMap = false;
 
   #hasStencil = false;
   #stencilFunc = "";
@@ -160,6 +167,9 @@ export class WgpuPipelineMemo {
       this.#metalRoughness === request.metalRoughness &&
       this.#gpuInstances === request.gpuInstances &&
       this.#morph === request.morph &&
+      this.#normalMap === request.normalMap &&
+      this.#occlusionMap === request.occlusionMap &&
+      this.#emissiveMap === request.emissiveMap &&
       this.#hasStencil === hasStencil &&
       this.#stencilFunc === stencilFunc &&
       this.#stencilReadMask === stencilReadMask &&
@@ -193,6 +203,9 @@ export class WgpuPipelineMemo {
       ...(request.metalRoughness ? { metalRoughness: true } : {}),
       ...(request.gpuInstances ? { gpuInstances: true } : {}),
       ...(request.morph === undefined ? {} : { morph: request.morph }),
+      ...(request.normalMap ? { normalMap: true } : {}),
+      ...(request.occlusionMap ? { occlusionMap: true } : {}),
+      ...(request.emissiveMap ? { emissiveMap: true } : {}),
     };
     const pipeline = cache.acquire(descriptor);
 
@@ -213,6 +226,9 @@ export class WgpuPipelineMemo {
     this.#metalRoughness = request.metalRoughness;
     this.#gpuInstances = request.gpuInstances;
     this.#morph = request.morph;
+    this.#normalMap = request.normalMap;
+    this.#occlusionMap = request.occlusionMap;
+    this.#emissiveMap = request.emissiveMap;
     this.#hasStencil = hasStencil;
     this.#stencilFunc = stencilFunc;
     this.#stencilReadMask = stencilReadMask;
@@ -247,6 +263,9 @@ export interface MutableWgpuPipelineRequest {
   metalRoughness: boolean;
   gpuInstances: boolean;
   morph: WgpuMorph | undefined;
+  normalMap: boolean;
+  occlusionMap: boolean;
+  emissiveMap: boolean;
 }
 
 /** A fresh request record at the unlit family's defaults. */
@@ -268,5 +287,8 @@ export function createPipelineRequest(): MutableWgpuPipelineRequest {
     metalRoughness: false,
     gpuInstances: false,
     morph: undefined,
+    normalMap: false,
+    occlusionMap: false,
+    emissiveMap: false,
   };
 }

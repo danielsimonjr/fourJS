@@ -78,9 +78,17 @@ export {
   MAP_BIND_GROUP_INDEX,
   MAP_SAMPLER_BINDING,
   MAP_TEXTURE_BINDING,
+  SURFACE_EMISSIVE_BINDING,
+  SURFACE_MR_BINDING,
+  SURFACE_NORMAL_BINDING,
+  SURFACE_OCCLUSION_BINDING,
+  SURFACE_SAMPLER_BINDING,
   createDrawBindGroupLayout,
+  createSurfaceBindGroupLayout,
   createTextureBindGroupLayout,
 } from "./wgpu-bindings.js";
+export type { SurfaceSources } from "./wgpu-surface-group.js";
+export { WgpuSurfaceGroupCache } from "./wgpu-surface-group.js";
 export type { CacheableGeometry, WgpuGeometryRecord } from "./wgpu-geometry.js";
 export { WgpuGeometryCache } from "./wgpu-geometry.js";
 export type {
@@ -281,7 +289,11 @@ export {
   frameWantsStencil,
   stencilDescriptor,
 } from "./wgpu-stencil.js";
+export type { SurfaceMaps } from "./wgpu-standard.js";
 export {
+  MORPH_STANDARD_UNIFORM_WGSL,
+  NO_SURFACE_MAPS,
+  SURFACE_DEFAULT_TEXELS,
   STANDARD_BASE_COLOR_OFFSET,
   STANDARD_EMISSIVE_OFFSET,
   STANDARD_MODEL_OFFSET,
