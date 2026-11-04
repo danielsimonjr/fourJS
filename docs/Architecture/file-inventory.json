@@ -1,12 +1,12 @@
 {
   "generated": "2026-11-04",
-  "totalFiles": 966,
+  "totalFiles": 977,
   "byDisposition": {
-    "reachable": 313,
+    "reachable": 316,
     "build-entry": 50,
     "test-only": 4,
     "orphan": 0,
-    "test": 563,
+    "test": 571,
     "tool": 1,
     "config": 19,
     "example": 16
@@ -14,12 +14,12 @@
   "byArea": {
     "examples": 16,
     "config": 19,
-    "src": 367,
-    "tests": 563,
+    "src": 370,
+    "tests": 571,
     "tools": 1
   },
   "byPackage": {
-    "(root)": 254,
+    "(root)": 256,
     "@fourjs/animation": 33,
     "@fourjs/assets": 36,
     "@fourjs/core": 26,
@@ -30,7 +30,7 @@
     "@fourjs/materials": 26,
     "@fourjs/math": 18,
     "@fourjs/motion": 44,
-    "@fourjs/particles": 21,
+    "@fourjs/particles": 22,
     "@fourjs/physics-box2d": 12,
     "@fourjs/physics-physjs": 7,
     "@fourjs/physics-rapier": 23,
@@ -38,9 +38,9 @@
     "@fourjs/physics": 59,
     "@fourjs/render-canvas": 7,
     "@fourjs/render-svg": 5,
-    "@fourjs/render-webgl": 38,
-    "@fourjs/render-webgpu": 60,
-    "@fourjs/render": 74,
+    "@fourjs/render-webgl": 39,
+    "@fourjs/render-webgpu": 61,
+    "@fourjs/render": 80,
     "@fourjs/scene": 35,
     "@fourjs/serialization": 11,
     "@fourjs/text": 13,
@@ -1340,7 +1340,7 @@
       "package": "fourJS",
       "area": "src",
       "disposition": "reachable",
-      "loc": 3431
+      "loc": 3568
     },
     {
       "file": "packages/fourjs/src/scene.ts",
@@ -1466,7 +1466,7 @@
       "package": "fourJS",
       "area": "tests",
       "disposition": "test",
-      "loc": 2099
+      "loc": 2227
     },
     {
       "file": "packages/fourjs/tests/scissor-serialization.test.ts",
@@ -2432,21 +2432,21 @@
       "package": "@fourjs/particles",
       "area": "src",
       "disposition": "reachable",
-      "loc": 1557
+      "loc": 1591
     },
     {
       "file": "packages/particles/src/fields.ts",
       "package": "@fourjs/particles",
       "area": "src",
       "disposition": "reachable",
-      "loc": 1111
+      "loc": 1161
     },
     {
       "file": "packages/particles/src/index.ts",
       "package": "@fourjs/particles",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 90
+      "loc": 98
     },
     {
       "file": "packages/particles/src/particle-renderable.ts",
@@ -2488,14 +2488,14 @@
       "package": "@fourjs/particles",
       "area": "src",
       "disposition": "reachable",
-      "loc": 518
+      "loc": 614
     },
     {
       "file": "packages/particles/tests/appearance.test.ts",
       "package": "@fourjs/particles",
       "area": "tests",
       "disposition": "test",
-      "loc": 214
+      "loc": 199
     },
     {
       "file": "packages/particles/tests/emitter.test.ts",
@@ -2517,6 +2517,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 1154
+    },
+    {
+      "file": "packages/particles/tests/gpu-field-stack.test.ts",
+      "package": "@fourjs/particles",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 204
     },
     {
       "file": "packages/particles/tests/gpu-simulation.test.ts",
@@ -3503,21 +3510,21 @@
       "package": "@fourjs/render-webgl",
       "area": "src",
       "disposition": "reachable",
-      "loc": 1526
+      "loc": 1532
     },
     {
       "file": "packages/render-webgl/src/gl-program.ts",
       "package": "@fourjs/render-webgl",
       "area": "src",
       "disposition": "reachable",
-      "loc": 2877
+      "loc": 3051
     },
     {
       "file": "packages/render-webgl/src/gl-render-target.ts",
       "package": "@fourjs/render-webgl",
       "area": "src",
       "disposition": "reachable",
-      "loc": 454
+      "loc": 483
     },
     {
       "file": "packages/render-webgl/src/gl-shadow-registry.ts",
@@ -3538,21 +3545,21 @@
       "package": "@fourjs/render-webgl",
       "area": "src",
       "disposition": "reachable",
-      "loc": 37
+      "loc": 75
     },
     {
       "file": "packages/render-webgl/src/gl-skinning-registry.ts",
       "package": "@fourjs/render-webgl",
       "area": "src",
       "disposition": "reachable",
-      "loc": 187
+      "loc": 197
     },
     {
       "file": "packages/render-webgl/src/gl-skinning.ts",
       "package": "@fourjs/render-webgl",
       "area": "src",
       "disposition": "reachable",
-      "loc": 795
+      "loc": 968
     },
     {
       "file": "packages/render-webgl/src/gl-standard-registry.ts",
@@ -3566,7 +3573,7 @@
       "package": "@fourjs/render-webgl",
       "area": "src",
       "disposition": "reachable",
-      "loc": 861
+      "loc": 864
     },
     {
       "file": "packages/render-webgl/src/gl-texture.ts",
@@ -3580,7 +3587,7 @@
       "package": "@fourjs/render-webgl",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 226
+      "loc": 229
     },
     {
       "file": "packages/render-webgl/src/node-pipeline-registry.ts",
@@ -3601,7 +3608,7 @@
       "package": "@fourjs/render-webgl",
       "area": "src",
       "disposition": "reachable",
-      "loc": 4742
+      "loc": 4920
     },
     {
       "file": "packages/render-webgl/tests/geometry-refresh.test.ts",
@@ -3653,6 +3660,13 @@
       "loc": 1757
     },
     {
+      "file": "packages/render-webgl/tests/gl-transient-pool.test.ts",
+      "package": "@fourjs/render-webgl",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 74
+    },
+    {
       "file": "packages/render-webgl/tests/register.test.ts",
       "package": "@fourjs/render-webgl",
       "area": "tests",
@@ -3692,14 +3706,14 @@
       "package": "@fourjs/render-webgl",
       "area": "tests",
       "disposition": "test",
-      "loc": 14530
+      "loc": 15079
     },
     {
       "file": "packages/render-webgpu/src/index.ts",
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 418
+      "loc": 442
     },
     {
       "file": "packages/render-webgpu/src/register.ts",
@@ -3720,7 +3734,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 4544
+      "loc": 4702
     },
     {
       "file": "packages/render-webgpu/src/wgpu-batch.ts",
@@ -3741,7 +3755,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 704
+      "loc": 1056
     },
     {
       "file": "packages/render-webgpu/src/wgpu-effect.ts",
@@ -3769,14 +3783,14 @@
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 489
+      "loc": 495
     },
     {
       "file": "packages/render-webgpu/src/wgpu-lit.ts",
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 392
+      "loc": 399
     },
     {
       "file": "packages/render-webgpu/src/wgpu-node-program.ts",
@@ -3797,7 +3811,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 449
+      "loc": 685
     },
     {
       "file": "packages/render-webgpu/src/wgpu-particles.ts",
@@ -3818,7 +3832,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 1501
+      "loc": 1506
     },
     {
       "file": "packages/render-webgpu/src/wgpu-pipeline-cache.ts",
@@ -3846,28 +3860,28 @@
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 425
+      "loc": 494
     },
     {
       "file": "packages/render-webgpu/src/wgpu-shadow.ts",
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 344
+      "loc": 555
     },
     {
       "file": "packages/render-webgpu/src/wgpu-skinning-registry.ts",
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 226
+      "loc": 249
     },
     {
       "file": "packages/render-webgpu/src/wgpu-skinning.ts",
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 824
+      "loc": 1074
     },
     {
       "file": "packages/render-webgpu/src/wgpu-sprite.ts",
@@ -3888,7 +3902,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "src",
       "disposition": "reachable",
-      "loc": 484
+      "loc": 489
     },
     {
       "file": "packages/render-webgpu/src/wgpu-stencil.ts",
@@ -3958,7 +3972,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "tests",
       "disposition": "test",
-      "loc": 5118
+      "loc": 5549
     },
     {
       "file": "packages/render-webgpu/tests/wgpu-batch.test.ts",
@@ -3979,7 +3993,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "tests",
       "disposition": "test",
-      "loc": 690
+      "loc": 876
     },
     {
       "file": "packages/render-webgpu/tests/wgpu-effect.test.ts",
@@ -4000,7 +4014,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "tests",
       "disposition": "test",
-      "loc": 874
+      "loc": 877
     },
     {
       "file": "packages/render-webgpu/tests/wgpu-morph-n.test.ts",
@@ -4035,7 +4049,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "tests",
       "disposition": "test",
-      "loc": 428
+      "loc": 584
     },
     {
       "file": "packages/render-webgpu/tests/wgpu-particles.test.ts",
@@ -4084,7 +4098,7 @@
       "package": "@fourjs/render-webgpu",
       "area": "tests",
       "disposition": "test",
-      "loc": 398
+      "loc": 547
     },
     {
       "file": "packages/render-webgpu/tests/wgpu-skinning.test.ts",
@@ -4113,6 +4127,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 133
+    },
+    {
+      "file": "packages/render-webgpu/tests/wgpu-transient-pool.test.ts",
+      "package": "@fourjs/render-webgpu",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 71
     },
     {
       "file": "packages/render/src/batch.ts",
@@ -4182,21 +4203,21 @@
       "package": "@fourjs/render",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 348
+      "loc": 392
     },
     {
       "file": "packages/render/src/lights.ts",
       "package": "@fourjs/render",
       "area": "src",
       "disposition": "reachable",
-      "loc": 924
+      "loc": 1282
     },
     {
       "file": "packages/render/src/mesh.ts",
       "package": "@fourjs/render",
       "area": "src",
       "disposition": "reachable",
-      "loc": 394
+      "loc": 423
     },
     {
       "file": "packages/render/src/particles.ts",
@@ -4238,28 +4259,28 @@
       "package": "@fourjs/render",
       "area": "src",
       "disposition": "reachable",
-      "loc": 865
+      "loc": 1308
     },
     {
       "file": "packages/render/src/render-list.ts",
       "package": "@fourjs/render",
       "area": "src",
       "disposition": "reachable",
-      "loc": 2043
+      "loc": 2054
     },
     {
       "file": "packages/render/src/render-target-bytes.ts",
       "package": "@fourjs/render",
       "area": "src",
       "disposition": "reachable",
-      "loc": 113
+      "loc": 114
     },
     {
       "file": "packages/render/src/render-target.ts",
       "package": "@fourjs/render",
       "area": "src",
       "disposition": "reachable",
-      "loc": 717
+      "loc": 722
     },
     {
       "file": "packages/render/src/renderable.ts",
@@ -4280,7 +4301,7 @@
       "package": "@fourjs/render",
       "area": "src",
       "disposition": "reachable",
-      "loc": 1134
+      "loc": 1196
     },
     {
       "file": "packages/render/src/resource-memory.ts",
@@ -4304,6 +4325,13 @@
       "loc": 67
     },
     {
+      "file": "packages/render/src/shadow-atlas.ts",
+      "package": "@fourjs/render",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 440
+    },
+    {
       "file": "packages/render/src/shape-paint.ts",
       "package": "@fourjs/render",
       "area": "src",
@@ -4316,6 +4344,13 @@
       "area": "src",
       "disposition": "reachable",
       "loc": 2715
+    },
+    {
+      "file": "packages/render/src/skin-palette.ts",
+      "package": "@fourjs/render",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 70
     },
     {
       "file": "packages/render/src/sprite.ts",
@@ -4344,6 +4379,13 @@
       "area": "src",
       "disposition": "reachable",
       "loc": 1001
+    },
+    {
+      "file": "packages/render/src/transient-pool.ts",
+      "package": "@fourjs/render",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 304
     },
     {
       "file": "packages/render/src/view-list.ts",
@@ -4462,7 +4504,7 @@
       "package": "@fourjs/render",
       "area": "tests",
       "disposition": "test",
-      "loc": 407
+      "loc": 492
     },
     {
       "file": "packages/render/tests/node-render-list.test.ts",
@@ -4532,7 +4574,7 @@
       "package": "@fourjs/render",
       "area": "tests",
       "disposition": "test",
-      "loc": 432
+      "loc": 443
     },
     {
       "file": "packages/render/tests/renderer-capabilities-declaration.test.ts",
@@ -4553,7 +4595,7 @@
       "package": "@fourjs/render",
       "area": "tests",
       "disposition": "test",
-      "loc": 433
+      "loc": 439
     },
     {
       "file": "packages/render/tests/resource-memory.test.ts",
@@ -4577,6 +4619,13 @@
       "loc": 169
     },
     {
+      "file": "packages/render/tests/shadow-atlas.test.ts",
+      "package": "@fourjs/render",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 473
+    },
+    {
       "file": "packages/render/tests/shape-paint.test.ts",
       "package": "@fourjs/render",
       "area": "tests",
@@ -4589,6 +4638,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 1138
+    },
+    {
+      "file": "packages/render/tests/skin-palette.test.ts",
+      "package": "@fourjs/render",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 49
     },
     {
       "file": "packages/render/tests/smoke.test.ts",
@@ -4626,6 +4682,13 @@
       "loc": 100
     },
     {
+      "file": "packages/render/tests/transient-targets.test.ts",
+      "package": "@fourjs/render",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 415
+    },
+    {
       "file": "packages/render/tests/view-list.test.ts",
       "package": "@fourjs/render",
       "area": "tests",
@@ -4658,7 +4721,7 @@
       "package": "@fourjs/scene",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 113
+      "loc": 115
     },
     {
       "file": "packages/scene/src/interpolation.ts",
@@ -4679,7 +4742,7 @@
       "package": "@fourjs/scene",
       "area": "src",
       "disposition": "reachable",
-      "loc": 938
+      "loc": 1183
     },
     {
       "file": "packages/scene/src/node-space.ts",
@@ -4798,7 +4861,7 @@
       "package": "@fourjs/scene",
       "area": "tests",
       "disposition": "test",
-      "loc": 688
+      "loc": 770
     },
     {
       "file": "packages/scene/tests/look-at.test.ts",
@@ -5484,7 +5547,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 187
+      "loc": 193
     },
     {
       "file": "tests/browser/fixtures/standard-material-maps-page.ts",
@@ -5673,7 +5736,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 188
+      "loc": 193
     },
     {
       "file": "tests/browser/smoothness.spec.ts",
@@ -5725,6 +5788,13 @@
       "loc": 832
     },
     {
+      "file": "tests/browser/webgl-shadow-atlas.spec.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 285
+    },
+    {
       "file": "tests/browser/webgpu/webgpu-clipping.spec.ts",
       "package": "(root)",
       "area": "tests",
@@ -5750,7 +5820,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 285
+      "loc": 543
     },
     {
       "file": "tests/browser/webgpu/webgpu-gpu-readback.spec.ts",
@@ -5792,7 +5862,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 680
+      "loc": 988
     },
     {
       "file": "tests/browser/webgpu/webgpu-sprites.spec.ts",
@@ -6268,7 +6338,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 413
+      "loc": 421
     },
     {
       "file": "tests/integration/examples-build-coverage.test.ts",
@@ -6530,6 +6600,13 @@
       "loc": 420
     },
     {
+      "file": "tests/integration/render-graph-transient.test.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 81
+    },
+    {
       "file": "tests/integration/render-graph.test.ts",
       "package": "(root)",
       "area": "tests",
@@ -6583,7 +6660,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 617
+      "loc": 690
     },
     {
       "file": "tests/integration/shape-paint-objects.test.ts",
