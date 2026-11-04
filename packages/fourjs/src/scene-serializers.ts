@@ -758,10 +758,9 @@ function readScissor(data: { readonly [key: string]: JsonValue }): {
  * the whole scene down with it**, because a document is data from outside and
  * §96's rule is that outside data is filtered, not trusted.
  *
- * `near` and `far` are admitted **as a pair or not at all**: their check is a
- * relation between them, so accepting one against the *other's default* is how
- * a document with a legal `near` of 200 would throw on a default `far` of 100.
- * Every document this module writes carries both.
+ * `near` and `far` are validated separately and checked against the other's
+ * default when it is absent (see `readNearFar`): the writer omits any field
+ * equal to its default, so a document may legitimately carry only one.
  */
 function readShadowOptions(value: JsonValue | undefined): {
   readonly [key: string]: number;
@@ -782,12 +781,141 @@ function readShadowOptions(value: JsonValue | undefined): {
   const extent = readFinite(data.extent);
   if (extent !== undefined && extent > 0) options.extent = extent;
 
+  readNearFar(
+    data,
+    options,
+    (referenceDirectional ??= new DirectionalLight()).shadow,
+  );
+  // §69 cascades (W6.3): the same filter-not-trust rule, field by field.
+  const cascades = readFinite(data.cascades);
+  if (
+    cascades !== undefined &&
+    Number.isInteger(cascades) &&
+    cascades >= 1 &&
+    cascades <= 4
+  ) {
+    options.cascades = cascades;
+  }
+  const cascadeLambda = readFinite(data.cascadeLambda);
+  if (cascadeLambda !== undefined && cascadeLambda >= 0 && cascadeLambda <= 1) {
+    options.cascadeLambda = cascadeLambda;
+  }
+  const cascadeDistance = readFinite(data.cascadeDistance);
+  if (cascadeDistance !== undefined && cascadeDistance > 0) {
+    options.cascadeDistance = cascadeDistance;
+  }
+  return options;
+}
+
+/**
+ * The shadow fields of a light document — `castShadow` and the `shadow`
+ * record — written **only where they differ from a fresh light's defaults**,
+ * so a document written before shadows existed re-saves byte-for-byte. The
+ * readers already restore every absent field to its default.
+ */
+function shadowFields(
+  light: DirectionalLight | PointLight | SpotLight,
+  shadowJson: (light: never) => { [key: string]: number },
+): { castShadow?: boolean; shadow?: JsonValue } {
+  const out: { castShadow?: boolean; shadow?: JsonValue } = {};
+  if (light.castShadow) out.castShadow = true;
+  const shadow = shadowJson(light as never);
+  if (Object.keys(shadow).length > 0) out.shadow = shadow;
+  return out;
+}
+
+/** Keeps only the entries of `current` that differ from `reference`. */
+function differing(
+  current: { readonly [key: string]: number },
+  reference: { readonly [key: string]: number },
+): { [key: string]: number } {
+  const out: { [key: string]: number } = {};
+  for (const key of Object.keys(current)) {
+    if (current[key] !== reference[key]) out[key] = current[key];
+  }
+  return out;
+}
+
+let referenceDirectional: DirectionalLight | undefined;
+let referencePunctual: PointLight | undefined;
+
+function directionalShadowJson(light: DirectionalLight): {
+  [key: string]: number;
+} {
+  const reference = (referenceDirectional ??= new DirectionalLight()).shadow;
+  const pick = (shadow: DirectionalLight["shadow"]) => ({
+    mapSize: shadow.mapSize,
+    bias: shadow.bias,
+    normalBias: shadow.normalBias,
+    extent: shadow.extent,
+    near: shadow.near,
+    far: shadow.far,
+    // §69 cascades (W6.3): additive — absent means one cascade.
+    cascades: shadow.cascades,
+    cascadeLambda: shadow.cascadeLambda,
+    cascadeDistance: shadow.cascadeDistance,
+  });
+  return differing(pick(light.shadow), pick(reference));
+}
+
+/** A point or spot light's §69 shadow record (W6.3): non-default fields only. */
+function punctualShadowJson(light: PointLight | SpotLight): {
+  [key: string]: number;
+} {
+  const reference = (referencePunctual ??= new PointLight()).shadow;
+  const pick = (shadow: PointLight["shadow"]) => ({
+    mapSize: shadow.mapSize,
+    bias: shadow.bias,
+    normalBias: shadow.normalBias,
+    near: shadow.near,
+    far: shadow.far,
+  });
+  return differing(pick(light.shadow), pick(reference));
+}
+
+/**
+ * `near` and `far`, each validated on its own (`near > 0`, `far > 0`): the
+ * writer omits whichever equals its default, so a document may carry just
+ * one. Planes that would not bound a volume (against the default of the
+ * absent one) are dropped, so the class never sees a relation it refuses.
+ */
+function readNearFar(
+  data: { readonly [key: string]: JsonValue | undefined },
+  options: Record<string, number>,
+  reference: { readonly near: number; readonly far: number },
+): void {
   const near = readFinite(data.near);
   const far = readFinite(data.far);
-  if (near !== undefined && far !== undefined && near > 0 && near < far) {
-    options.near = near;
-    options.far = far;
+  const validNear = near !== undefined && near > 0 ? near : undefined;
+  const validFar = far !== undefined && far > 0 ? far : undefined;
+  if ((validNear ?? reference.near) >= (validFar ?? reference.far)) {
+    return;
   }
+  if (validNear !== undefined) options.near = validNear;
+  if (validFar !== undefined) options.far = validFar;
+}
+
+/**
+ * A point or spot light's §69 shadow settings, filtered to the values
+ * `PunctualLightShadow` will accept (W6.3) — {@link readShadowOptions}'s
+ * rule: a corrupted field restores its default, `near`/`far` as a pair.
+ */
+function readPunctualShadowOptions(value: JsonValue | undefined): {
+  readonly [key: string]: number;
+} {
+  const data = record(value);
+  const options: Record<string, number> = {};
+  const mapSize = readFinite(data.mapSize);
+  if (mapSize !== undefined && Number.isInteger(mapSize) && mapSize >= 1) {
+    options.mapSize = mapSize;
+  }
+  const bias = readFinite(data.bias);
+  if (bias !== undefined) options.bias = bias;
+  const normalBias = readFinite(data.normalBias);
+  if (normalBias !== undefined && normalBias >= 0) {
+    options.normalBias = normalBias;
+  }
+  readNearFar(data, options, (referencePunctual ??= new PointLight()).shadow);
   return options;
 }
 
@@ -1473,7 +1601,9 @@ export function registerUISerializers(
  *   The `depthRange` that projection was last built with is deliberately absent
  *   — it belongs to the renderer, not the camera (§47), so a document does not
  *   pin a scene to the backend that saved it.
- * - **`DirectionalLight`** — `color` and `intensity`. Its direction is its
+ * - **`DirectionalLight`** — `color` and `intensity`, plus `castShadow` and the
+ *   §69 `shadow` record (`mapSize`, biases, volume, and since W6.3 `cascades`,
+ *   `cascadeLambda`, `cascadeDistance`). Its direction is its
  *   node's −Z axis (§68), which is the transform, not a payload.
  * - **`PointLight`** — `color`, `intensity`, and `range`. Its *position* is
  *   the node transform §79 already carries, so it is not a payload either
@@ -1481,6 +1611,9 @@ export function registerUISerializers(
  * - **`SpotLight`** — the point light's three, plus `innerConeAngle` and
  *   `outerConeAngle` in radians (§7a). Its axis is the node's −Z, like a
  *   directional light's: transform, not payload.
+ * - **Point and spot shadows** (W6.3) — both carry `castShadow` and a `shadow`
+ *   record (`mapSize`, `bias`, `normalBias`, `near`, `far`), filtered on read
+ *   field by field like the directional record.
  *
  * A restored `Renderable` accepts **whatever material its key resolves to**;
  * only a `Sprite` insists on a `"sprite"` one. The asymmetry is the classes'
@@ -1589,7 +1722,9 @@ export function registerRenderSerializers(
               materials,
               policy,
             ),
-            ...(mesh.skinningMode === "cpu" ? { skinningMode: "cpu" } : {}),
+            ...(mesh.skinningMode === "cpu" || mesh.skinningMode === "texture"
+              ? { skinningMode: mesh.skinningMode }
+              : {}),
             renderLayer: mesh.renderLayer,
             renderOrder: mesh.renderOrder,
             ...renderableFlagsJson(mesh),
@@ -1674,15 +1809,7 @@ export function registerRenderSerializers(
             // neither key; `readBoolean` answers `undefined` and the light
             // restores with `castShadow: false` and the default settings, which
             // is what that document meant.
-            castShadow: light.castShadow,
-            shadow: {
-              mapSize: light.shadow.mapSize,
-              bias: light.shadow.bias,
-              normalBias: light.shadow.normalBias,
-              extent: light.shadow.extent,
-              near: light.shadow.near,
-              far: light.shadow.far,
-            },
+            ...shadowFields(light, directionalShadowJson),
           };
         }
         if (constructor === PointLight) {
@@ -1691,6 +1818,7 @@ export function registerRenderSerializers(
             color: [light.color[0], light.color[1], light.color[2]],
             intensity: light.intensity,
             range: light.range,
+            ...shadowFields(light, punctualShadowJson),
           };
         }
         if (constructor === SpotLight) {
@@ -1701,6 +1829,7 @@ export function registerRenderSerializers(
             range: light.range,
             innerConeAngle: light.innerConeAngle,
             outerConeAngle: light.outerConeAngle,
+            ...shadowFields(light, punctualShadowJson),
           };
         }
         if (constructor === HemisphereLight) {
@@ -1759,7 +1888,9 @@ export function registerRenderSerializers(
             ...readRenderableFlags(data),
             ...readScissor(data),
           });
-          if (data.skinningMode === "cpu") mesh.skinningMode = "cpu";
+          if (data.skinningMode === "cpu" || data.skinningMode === "texture") {
+            mesh.skinningMode = data.skinningMode;
+          }
           // The skeleton record: shape-corrupt restores no skeleton (the
           // motion serializers' corrupt-field policy — a mesh without its rig
           // is a usable mesh), while a well-formed record the classes refuse
@@ -1866,13 +1997,17 @@ export function registerRenderSerializers(
         }
         if (document.type === POINT_LIGHT_NODE_TYPE) {
           const color = readColor(data.color);
+          const castShadow = readBoolean(data.castShadow);
           return new PointLight({
             ...finiteOptions(data, ["intensity", "range"]),
             ...(color !== undefined ? { color } : {}),
+            ...(castShadow !== undefined ? { castShadow } : {}),
+            shadow: readPunctualShadowOptions(data.shadow),
           });
         }
         if (document.type === SPOT_LIGHT_NODE_TYPE) {
           const color = readColor(data.color);
+          const castShadow = readBoolean(data.castShadow);
           return new SpotLight({
             ...finiteOptions(data, [
               "intensity",
@@ -1881,6 +2016,8 @@ export function registerRenderSerializers(
               "outerConeAngle",
             ]),
             ...(color !== undefined ? { color } : {}),
+            ...(castShadow !== undefined ? { castShadow } : {}),
+            shadow: readPunctualShadowOptions(data.shadow),
           });
         }
         if (document.type === HEMISPHERE_LIGHT_NODE_TYPE) {

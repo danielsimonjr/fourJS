@@ -175,29 +175,14 @@ describe("GPU mode — radial field and depth-buffer (R-31 residue)", () => {
     });
   });
 
-  it("still refuses a non-radial field on the GPU path", () => {
-    expect(
-      () =>
-        new ParticleEmitter({
-          maxParticles: 2,
-          simulation: "gpu",
-          fields: [windField(new Vector3(1, 0, 0), 1)],
-        }),
-    ).toThrow(/does not accept `fields` other than radialField/);
-  });
-
-  it("refuses a second radialField on the GPU path", () => {
-    expect(
-      () =>
-        new ParticleEmitter({
-          maxParticles: 2,
-          simulation: "gpu",
-          fields: [
-            radialField(new Vector3(), 1),
-            radialField(new Vector3(1, 0, 0), 2),
-          ],
-        }),
-    ).toThrow(/at most one radialField/);
+  it("accepts a wind field on the GPU path (the full field stack)", () => {
+    const emitter = new ParticleEmitter({
+      maxParticles: 2,
+      simulation: "gpu",
+      fields: [windField(new Vector3(1, 0, 0), 1)],
+    });
+    expect(emitter.gpuFields).toHaveLength(1);
+    expect(emitter.gpuRadial).toBeUndefined();
   });
 
   it("accepts collisions: depth-buffer with collisionPlaneY as the ground", () => {

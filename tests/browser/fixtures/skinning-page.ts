@@ -69,6 +69,8 @@ const ORANGE: [number, number, number, number] = [0.95, 0.45, 0.1, 1];
 
 declare global {
   interface Window {
+    /** Set by the spec before the bundle runs: `"texture"` = bone-texture palette. */
+    fourSkinningMode?: "gpu" | "texture";
     fourSkinningProbe?: (angle: number) => {
       pixels: number[];
       drawCalls: number;
@@ -130,6 +132,10 @@ const geometry = new BufferGeometry({
 });
 
 const mesh = new Mesh(geometry, new UnlitMaterial({ color: ORANGE }));
+// The bone-texture variant (decision D7): same fixture, same pixel gate.
+if (window.fourSkinningMode === "texture") {
+  mesh.skinningMode = "texture";
+}
 const root = new Bone();
 const elbow = new Bone();
 elbow.transform.position.set(0, ELBOW_Y, 0);

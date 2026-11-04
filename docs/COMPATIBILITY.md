@@ -203,25 +203,30 @@ generator change, not a prose edit.
      WebGPU fields) stay at the construction-time floor until a context
      exists. Those floors mean "not yet queried", not "this backend cannot". -->
 
-| Declaration                | `null`           | `canvas2d`              | `svg`                | `webgl2`               | `webgpu`                |
-| -------------------------- | ---------------- | ----------------------- | -------------------- | ---------------------- | ----------------------- |
-| Package (§98)              | `@fourjs/render` | `@fourjs/render-canvas` | `@fourjs/render-svg` | `@fourjs/render-webgl` | `@fourjs/render-webgpu` |
-| Exported class             | `NullRenderer`   | `Canvas2dRenderer`      | `SvgRenderer`        | `WebglRenderer`        | `WebgpuRenderer`        |
-| `backend`                  | `null`           | `canvas2d`              | `svg`                | `webgl2`               | `webgpu`                |
-| `maxTextureSize`           | 0                | 4096                    | 0                    | 0                      | 0                       |
-| `maxAnisotropy`            | 1                | not reported            | not reported         | not reported           | not reported            |
-| `textureFormats`           | none             | not reported            | not reported         | `rgba8`                | none                    |
-| `multisampling`            | no               | not reported            | no                   | yes                    | no                      |
-| `floatRenderTargets`       | no               | not reported            | no                   | no                     | no                      |
-| `timestampQueries`         | no               | not reported            | not reported         | no                     | no                      |
-| `storageBuffers`           | no               | not reported            | not reported         | no                     | no                      |
-| `computeShaders`           | no               | not reported            | no                   | no                     | no                      |
-| `indirectDraw`             | no               | not reported            | not reported         | no                     | no                      |
-| `compressedTextureFormats` | none             | not reported            | not reported         | none                   | none                    |
-| `shaderPrecision`          | `none`           | not reported            | `none`               | `highp`                | `none`                  |
-| `maxUniformBufferBytes`    | 0                | not reported            | not reported         | not reported           | 0                       |
-| `maxBindings`              | 0                | not reported            | not reported         | not reported           | 0                       |
-| `maximumSkinningJoints`    | 0                | not reported            | not reported         | 48                     | 48                      |
+| Declaration                     | `null`           | `canvas2d`              | `svg`                | `webgl2`               | `webgpu`                |
+| ------------------------------- | ---------------- | ----------------------- | -------------------- | ---------------------- | ----------------------- |
+| Package (§98)                   | `@fourjs/render` | `@fourjs/render-canvas` | `@fourjs/render-svg` | `@fourjs/render-webgl` | `@fourjs/render-webgpu` |
+| Exported class                  | `NullRenderer`   | `Canvas2dRenderer`      | `SvgRenderer`        | `WebglRenderer`        | `WebgpuRenderer`        |
+| `backend`                       | `null`           | `canvas2d`              | `svg`                | `webgl2`               | `webgpu`                |
+| `maxTextureSize`                | 0                | 4096                    | 0                    | 0                      | 0                       |
+| `maxAnisotropy`                 | 1                | not reported            | not reported         | not reported           | not reported            |
+| `textureFormats`                | none             | not reported            | not reported         | `rgba8`                | none                    |
+| `multisampling`                 | no               | not reported            | no                   | yes                    | no                      |
+| `floatRenderTargets`            | no               | not reported            | no                   | no                     | no                      |
+| `timestampQueries`              | no               | not reported            | not reported         | no                     | no                      |
+| `storageBuffers`                | no               | not reported            | not reported         | no                     | no                      |
+| `computeShaders`                | no               | not reported            | no                   | no                     | no                      |
+| `indirectDraw`                  | no               | not reported            | not reported         | no                     | no                      |
+| `particleDepthCollision`        | not reported     | not reported            | not reported         | no                     | not reported            |
+| `compressedTextureFormats`      | none             | not reported            | not reported         | none                   | none                    |
+| `shaderPrecision`               | `none`           | not reported            | `none`               | `highp`                | `none`                  |
+| `maxUniformBufferBytes`         | 0                | not reported            | not reported         | not reported           | 0                       |
+| `maxBindings`                   | 0                | not reported            | not reported         | not reported           | 0                       |
+| `maximumSkinningJoints`         | 0                | not reported            | not reported         | 48                     | 48                      |
+| `floatTextures`                 | no               | not reported            | not reported         | yes                    | no                      |
+| `maximumTextureSkinningJoints`  | 0                | not reported            | not reported         | 65535                  | 0                       |
+| `maximumShadowCascades`         | 0                | not reported            | not reported         | 4                      | 0                       |
+| `maximumShadowedPunctualLights` | 0                | not reported            | not reported         | 4                      | 0                       |
 
 <!-- END GENERATED: renderer-backends -->
 

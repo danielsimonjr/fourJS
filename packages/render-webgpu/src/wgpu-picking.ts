@@ -648,6 +648,11 @@ export class WebgpuPickingService implements PickingService {
       const isSkinned =
         item.kind === "skinned-unlit" || item.kind === "skinned-lit";
       if (isSkinned) {
+        // The id pass uses the uniform palette: a bone-texture rig past 48
+        // joints is skipped (unpickable) rather than overflowing it.
+        if (item.jointCount > MAX_SKINNING_JOINTS) {
+          continue;
+        }
         const skinnedCompiled = this.#acquireSkinnedPipeline(
           device,
           geometries,

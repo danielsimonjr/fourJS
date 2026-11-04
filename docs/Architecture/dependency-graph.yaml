@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 366
+  totalFiles: 369
   totalModules: 25
-  totalExports: 3729
+  totalExports: 3852
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -151,6 +151,7 @@ modules:
             - ParticleColor
             - ParticleForceField
             - ParticleGpuIntegrateExtras
+            - ParticleGpuField
             - ParticleGpuRadialField
             - ParticleGpuSimulation
             - ParticleLifetimeRamp
@@ -161,6 +162,7 @@ modules:
           typeOnly: true
         - file: ./types.js
           imports:
+            - MAX_GPU_FIELDS
             - evaluateLifetimeRampColorInto
             - evaluateLifetimeRampNumber
       workspaceDependencies:
@@ -255,6 +257,7 @@ modules:
           reExport: true
         - file: ./types.js
           imports:
+            - MAX_GPU_FIELDS
             - evaluateLifetimeRampColor
             - evaluateLifetimeRampColorInto
             - evaluateLifetimeRampNumber
@@ -299,7 +302,14 @@ modules:
             - ParticleColor
             - ParticleForceField
             - ParticleGpuIntegrateExtras
+            - ParticleGpuDragField
+            - ParticleGpuField
             - ParticleGpuRadialField
+            - ParticleGpuTurbulenceField
+            - ParticleGpuUniformField
+            - ParticleGpuVolume
+            - ParticleGpuVortexField
+            - ParticleGpuWindField
             - ParticleGpuSimulation
             - MutableParticleColor
             - ParticleLifetimeRamp
@@ -348,6 +358,7 @@ modules:
         - TRAIL_VERTEX_FLOATS
         - buildTrailRibbonMesh
         - resolveTrailOptions
+        - MAX_GPU_FIELDS
         - evaluateLifetimeRampColor
         - evaluateLifetimeRampColorInto
         - evaluateLifetimeRampNumber
@@ -370,7 +381,14 @@ modules:
         - ParticleColor
         - ParticleForceField
         - ParticleGpuIntegrateExtras
+        - ParticleGpuDragField
+        - ParticleGpuField
         - ParticleGpuRadialField
+        - ParticleGpuTurbulenceField
+        - ParticleGpuUniformField
+        - ParticleGpuVolume
+        - ParticleGpuVortexField
+        - ParticleGpuWindField
         - ParticleGpuSimulation
         - MutableParticleColor
         - ParticleLifetimeRamp
@@ -416,6 +434,7 @@ modules:
         - TRAIL_VERTEX_FLOATS
         - buildTrailRibbonMesh
         - resolveTrailOptions
+        - MAX_GPU_FIELDS
         - evaluateLifetimeRampColor
         - evaluateLifetimeRampColorInto
         - evaluateLifetimeRampNumber
@@ -437,7 +456,14 @@ modules:
         - ParticleColor
         - ParticleForceField
         - ParticleGpuIntegrateExtras
+        - ParticleGpuDragField
+        - ParticleGpuField
         - ParticleGpuRadialField
+        - ParticleGpuTurbulenceField
+        - ParticleGpuUniformField
+        - ParticleGpuVolume
+        - ParticleGpuVortexField
+        - ParticleGpuWindField
         - ParticleGpuSimulation
         - MutableParticleColor
         - ParticleLifetimeRamp
@@ -508,6 +534,7 @@ modules:
         - file: ./types.js
           imports:
             - ParticleForceField
+            - ParticleGpuVolume
           typeOnly: true
       workspaceDependencies:
         - package: "@fourjs/core"
@@ -598,12 +625,19 @@ modules:
           imports:
             - Vector3
       exports:
+        - MAX_GPU_FIELDS
         - evaluateLifetimeRampNumber
         - evaluateLifetimeRampColor
         - evaluateLifetimeRampColorInto
       interfaces:
         - ParticleForceField
         - ParticleGpuRadialField
+        - ParticleGpuVolume
+        - ParticleGpuUniformField
+        - ParticleGpuDragField
+        - ParticleGpuWindField
+        - ParticleGpuVortexField
+        - ParticleGpuTurbulenceField
         - ParticleGpuIntegrateExtras
         - ParticleGpuSimulation
         - ParticleRange
@@ -616,6 +650,8 @@ modules:
         - evaluateLifetimeRampNumber
         - evaluateLifetimeRampColor
         - evaluateLifetimeRampColorInto
+      constants:
+        - MAX_GPU_FIELDS
   packages/materials:
     packages/materials/src/capabilities.ts:
       description: This package's §81 capability token (RFC 0002).
@@ -3049,7 +3085,7 @@ modules:
       constants:
         - NODE_SPACE_SERIALIZER
     packages/scene/src/index.ts:
-      description: Package entry point for @fourjs/scene (re-exports 91 symbols)
+      description: Package entry point for @fourjs/scene (re-exports 93 symbols)
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
@@ -3121,6 +3157,7 @@ modules:
             - HemisphereLight
             - PointLight
             - PunctualLight
+            - PunctualLightShadow
             - SpotLight
           reExport: true
         - file: ./interpolation.js
@@ -3207,6 +3244,7 @@ modules:
             - LightColorInput
             - DirectionalLightShadowOptions
             - PunctualLightOptions
+            - PunctualLightShadowOptions
             - SpotLightOptions
           reExport: true
           typeOnly: true
@@ -3287,6 +3325,7 @@ modules:
         - HemisphereLight
         - PointLight
         - PunctualLight
+        - PunctualLightShadow
         - SpotLight
         - POSE_SNAPSHOT_PRIORITY
         - PoseBuffer
@@ -3323,6 +3362,7 @@ modules:
         - LightColorInput
         - DirectionalLightShadowOptions
         - PunctualLightOptions
+        - PunctualLightShadowOptions
         - SpotLightOptions
         - PoseSnapshotSystem
         - SnapshotSystemOptions
@@ -3380,6 +3420,7 @@ modules:
         - HemisphereLight
         - PointLight
         - PunctualLight
+        - PunctualLightShadow
         - SpotLight
         - POSE_SNAPSHOT_PRIORITY
         - PoseBuffer
@@ -3415,6 +3456,7 @@ modules:
         - LightColorInput
         - DirectionalLightShadowOptions
         - PunctualLightOptions
+        - PunctualLightShadowOptions
         - SpotLightOptions
         - PoseSnapshotSystem
         - SnapshotSystemOptions
@@ -3542,6 +3584,7 @@ modules:
         - DirectionalLightShadow
         - DirectionalLight
         - HemisphereLight
+        - PunctualLightShadow
         - PointLight
         - SpotLight
         - ColorRGB
@@ -3551,6 +3594,7 @@ modules:
         - DirectionalLightShadow
         - DirectionalLight
         - HemisphereLight
+        - PunctualLightShadow
         - PointLight
         - SpotLight
       interfaces:
@@ -3558,6 +3602,7 @@ modules:
         - DirectionalLightOptions
         - HemisphereLightOptions
         - PunctualLightOptions
+        - PunctualLightShadowOptions
         - SpotLightOptions
     packages/scene/src/trackball.ts:
       description: §44/§47's **trackball** rig (R-37, 2026-08-21) — the last of the seven camera
@@ -5739,11 +5784,20 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
+            - RenderTargetPool
             - warnDisposedInUse
+            - PassUsageRecord
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - DEV
+            - devWarnOnce
       exports:
         - RenderTargetCache
+        - GlTransientTargetPool
       classes:
         - RenderTargetCache
+        - GlTransientTargetPool
       interfaces:
         - RenderTargetRecord
     packages/render-webgl/src/gl-picking.ts:
@@ -5796,6 +5850,7 @@ modules:
           directory: packages/render
           imports:
             - RenderTarget
+            - MAX_SKINNING_JOINTS
             - assertEncodableCandidateCount
             - buildRenderList
             - buildViewRenderList
@@ -5968,6 +6023,7 @@ modules:
           reExport: true
         - file: ./gl-render-target.js
           imports:
+            - GlTransientTargetPool
             - RenderTargetCache
           reExport: true
         - file: ./gl-program.js
@@ -6203,6 +6259,7 @@ modules:
         - SkinnedIdProgram
         - WebglPickingService
         - registerPickingPipeline
+        - GlTransientTargetPool
         - RenderTargetCache
         - JOINTS_ATTRIBUTE_LOCATION
         - WEIGHTS_ATTRIBUTE_LOCATION
@@ -6337,6 +6394,7 @@ modules:
         - SkinnedIdProgram
         - WebglPickingService
         - registerPickingPipeline
+        - GlTransientTargetPool
         - RenderTargetCache
         - JOINTS_ATTRIBUTE_LOCATION
         - WEIGHTS_ATTRIBUTE_LOCATION
@@ -6456,10 +6514,15 @@ modules:
           directory: packages/render
           imports:
             - MAX_SKINNING_JOINTS
+            - SKIN_PALETTE_TEXTURE_WIDTH
       exports:
         - SKINNING_GLSL
+        - JOINT_TEXTURE_UNIT
+        - SKINNING_TEXTURE_GLSL
       constants:
         - SKINNING_GLSL
+        - JOINT_TEXTURE_UNIT
+        - SKINNING_TEXTURE_GLSL
     packages/render-webgl/src/gl-particles.ts:
       description: The batched particle pipeline for the WebGL 2 backend (§36, §64 stage 6,
       externalDependencies: []
@@ -6846,6 +6909,7 @@ modules:
           directory: packages/render
           imports:
             - MAX_LIGHT_SLOTS
+            - SHADOW_CUBE_FACES
             - SceneLights
       exports:
         - GL
@@ -6968,6 +7032,7 @@ modules:
             - PickingRendererHost
         - file: ./gl-render-target.js
           imports:
+            - GlTransientTargetPool
             - RenderTargetCache
             - RenderTargetRecord
         - file: ./gl-skinning-registry.js
@@ -7016,10 +7081,13 @@ modules:
           directory: packages/render
           imports:
             - MAX_SKINNING_JOINTS
+            - MAX_TEXTURE_SKINNING_JOINTS
             - RenderTarget
             - buildInterpolatedRenderList
             - buildRenderList
             - buildViewRenderList
+            - MAX_SHADOWED_PUNCTUAL_LIGHTS
+            - MAX_SHADOW_CASCADES
             - collectSceneLights
             - unionViewLayerMask
             - createSceneLights
@@ -7094,7 +7162,9 @@ modules:
       internalDependencies:
         - file: ./gl-skinning-glsl.js
           imports:
+            - JOINT_TEXTURE_UNIT
             - SKINNING_GLSL
+            - SKINNING_TEXTURE_GLSL
         - file: ./gl-program.js
           imports:
             - FRAGMENT_SHADER_SOURCE
@@ -7106,7 +7176,9 @@ modules:
             - createLinkedProgram
             - matrixScratch
             - requireUniform
+            - GL
             - GlProgramHandle
+            - GlTexture
             - GlUniformLocation
             - WebglContext
         - file: ./gl-skinning-registry.js
@@ -7128,14 +7200,22 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
+            - SKIN_PALETTE_FLOATS_PER_ROW
+            - SKIN_PALETTE_TEXTURE_WIDTH
+            - skinPaletteRows
+            - stageSkinPalette
             - SceneLights
       exports:
+        - JOINT_TEXTURE_UNIT
         - SKINNING_GLSL
+        - SKINNING_TEXTURE_GLSL
         - registerSkinningPipeline
+        - JointPaletteTextures
         - SkinnedUnlitProgram
         - SkinnedLitProgram
         - SkinnedShadowProgram
       classes:
+        - JointPaletteTextures
         - SkinnedUnlitProgram
         - SkinnedLitProgram
         - SkinnedShadowProgram
@@ -10537,6 +10617,22 @@ modules:
             - isHemisphereLightSource
             - isPunctualLightSource
           reExport: true
+        - file: ./shadow-atlas.js
+          imports:
+            - MAX_SHADOWED_PUNCTUAL_LIGHTS
+            - MAX_SHADOW_CASCADES
+            - MAX_SHADOW_TILES
+            - MAX_SPOT_SHADOW_FOV
+            - SHADOW_ATLAS_MAX_EDGE
+            - SHADOW_CUBE_FACES
+            - SHADOW_KIND_POINT
+            - SHADOW_KIND_SPOT
+            - computeAtlasGrid
+            - computeCascadeSplits
+            - fitDirectionalCascades
+            - writeCubeFaceShadowMatrix
+            - writeSpotShadowMatrix
+          reExport: true
         - file: ./particles.js
           imports:
             - PARTICLE_COLOR_OFFSET
@@ -10571,6 +10667,13 @@ modules:
         - file: ./render-graph.js
           imports:
             - RenderGraph
+          reExport: true
+        - file: ./transient-pool.js
+          imports:
+            - RenderTargetPool
+            - planTransientSlots
+            - resolveTransientSpec
+            - transientKeyString
           reExport: true
         - file: ./raster.js
           imports:
@@ -10617,6 +10720,17 @@ modules:
             - MAX_SKINNING_JOINTS
             - Mesh
             - restoreMeshSkeleton
+          reExport: true
+        - file: ./skin-palette.js
+          imports:
+            - MAX_TEXTURE_SKINNING_JOINTS
+            - SKIN_PALETTE_FLOATS_PER_ROW
+            - SKIN_PALETTE_JOINTS_PER_ROW
+            - SKIN_PALETTE_TEXELS_PER_JOINT
+            - SKIN_PALETTE_TEXTURE_FORMAT
+            - SKIN_PALETTE_TEXTURE_WIDTH
+            - skinPaletteRows
+            - stageSkinPalette
           reExport: true
         - file: ./renderer-registry.js
           imports:
@@ -10762,6 +10876,7 @@ modules:
           imports:
             - AmbientLightSource
             - DirectionalLightSource
+            - PunctualShadowSource
             - DirectionalShadowSource
             - HemisphereLightSource
             - PointLightSource
@@ -10769,6 +10884,12 @@ modules:
             - PunctualLightSourceBase
             - SceneLights
             - SpotLightSource
+          reExport: true
+          typeOnly: true
+        - file: ./shadow-atlas.js
+          imports:
+            - ShadowCubeFace
+            - ShadowFitCamera
           reExport: true
           typeOnly: true
         - file: ./particles.js
@@ -10801,6 +10922,23 @@ modules:
             - RenderPass
             - RenderPassContext
             - SceneRenderPass
+          reExport: true
+          typeOnly: true
+        - file: ./render-graph.js
+          imports:
+            - TransientPlan
+          reExport: true
+          typeOnly: true
+        - file: ./transient-pool.js
+          imports:
+            - PassUsageRecord
+            - TransientRequest
+            - TransientSlot
+            - TransientTargetKey
+            - TransientTargetPool
+            - TransientTargetSpec
+            - TransientTargetUsage
+            - UsageTransition
           reExport: true
           typeOnly: true
         - file: ./raster.js
@@ -11026,6 +11164,19 @@ modules:
         - isDirectionalLightSource
         - isHemisphereLightSource
         - isPunctualLightSource
+        - MAX_SHADOWED_PUNCTUAL_LIGHTS
+        - MAX_SHADOW_CASCADES
+        - MAX_SHADOW_TILES
+        - MAX_SPOT_SHADOW_FOV
+        - SHADOW_ATLAS_MAX_EDGE
+        - SHADOW_CUBE_FACES
+        - SHADOW_KIND_POINT
+        - SHADOW_KIND_SPOT
+        - computeAtlasGrid
+        - computeCascadeSplits
+        - fitDirectionalCascades
+        - writeCubeFaceShadowMatrix
+        - writeSpotShadowMatrix
         - PARTICLE_COLOR_OFFSET
         - PARTICLE_INSTANCE_FLOATS
         - PARTICLE_POSITION_OFFSET
@@ -11062,6 +11213,10 @@ modules:
         - forEachShaderNodeReference
         - resolveShaderSelect
         - RenderGraph
+        - RenderTargetPool
+        - planTransientSlots
+        - resolveTransientSpec
+        - transientKeyString
         - CanvasTexture
         - supportsReadPixels
         - validateReadbackRegion
@@ -11087,6 +11242,14 @@ modules:
         - MAX_SKINNING_JOINTS
         - Mesh
         - restoreMeshSkeleton
+        - MAX_TEXTURE_SKINNING_JOINTS
+        - SKIN_PALETTE_FLOATS_PER_ROW
+        - SKIN_PALETTE_JOINTS_PER_ROW
+        - SKIN_PALETTE_TEXELS_PER_JOINT
+        - SKIN_PALETTE_TEXTURE_FORMAT
+        - SKIN_PALETTE_TEXTURE_WIDTH
+        - skinPaletteRows
+        - stageSkinPalette
         - AUTO_RENDERER_ORDER
         - RENDERER_CAPABILITY_NAMES
         - RendererRegistry
@@ -11164,6 +11327,7 @@ modules:
         - ScreenEffectRenderer
         - AmbientLightSource
         - DirectionalLightSource
+        - PunctualShadowSource
         - DirectionalShadowSource
         - HemisphereLightSource
         - PointLightSource
@@ -11171,6 +11335,8 @@ modules:
         - PunctualLightSourceBase
         - SceneLights
         - SpotLightSource
+        - ShadowCubeFace
+        - ShadowFitCamera
         - ParticleDrawable
         - LitRenderItem
         - NodeRenderItem
@@ -11209,6 +11375,15 @@ modules:
         - RenderPass
         - RenderPassContext
         - SceneRenderPass
+        - TransientPlan
+        - PassUsageRecord
+        - TransientRequest
+        - TransientSlot
+        - TransientTargetKey
+        - TransientTargetPool
+        - TransientTargetSpec
+        - TransientTargetUsage
+        - UsageTransition
         - CanvasTextureOptions
         - RasterOrigin
         - RasterSource
@@ -11323,6 +11498,19 @@ modules:
         - isDirectionalLightSource
         - isHemisphereLightSource
         - isPunctualLightSource
+        - MAX_SHADOWED_PUNCTUAL_LIGHTS
+        - MAX_SHADOW_CASCADES
+        - MAX_SHADOW_TILES
+        - MAX_SPOT_SHADOW_FOV
+        - SHADOW_ATLAS_MAX_EDGE
+        - SHADOW_CUBE_FACES
+        - SHADOW_KIND_POINT
+        - SHADOW_KIND_SPOT
+        - computeAtlasGrid
+        - computeCascadeSplits
+        - fitDirectionalCascades
+        - writeCubeFaceShadowMatrix
+        - writeSpotShadowMatrix
         - PARTICLE_COLOR_OFFSET
         - PARTICLE_INSTANCE_FLOATS
         - PARTICLE_POSITION_OFFSET
@@ -11359,6 +11547,10 @@ modules:
         - forEachShaderNodeReference
         - resolveShaderSelect
         - RenderGraph
+        - RenderTargetPool
+        - planTransientSlots
+        - resolveTransientSpec
+        - transientKeyString
         - CanvasTexture
         - supportsReadPixels
         - validateReadbackRegion
@@ -11384,6 +11576,14 @@ modules:
         - MAX_SKINNING_JOINTS
         - Mesh
         - restoreMeshSkeleton
+        - MAX_TEXTURE_SKINNING_JOINTS
+        - SKIN_PALETTE_FLOATS_PER_ROW
+        - SKIN_PALETTE_JOINTS_PER_ROW
+        - SKIN_PALETTE_TEXELS_PER_JOINT
+        - SKIN_PALETTE_TEXTURE_FORMAT
+        - SKIN_PALETTE_TEXTURE_WIDTH
+        - skinPaletteRows
+        - stageSkinPalette
         - AUTO_RENDERER_ORDER
         - RENDERER_CAPABILITY_NAMES
         - RendererRegistry
@@ -11460,6 +11660,7 @@ modules:
         - ScreenEffectRenderer
         - AmbientLightSource
         - DirectionalLightSource
+        - PunctualShadowSource
         - DirectionalShadowSource
         - HemisphereLightSource
         - PointLightSource
@@ -11467,6 +11668,8 @@ modules:
         - PunctualLightSourceBase
         - SceneLights
         - SpotLightSource
+        - ShadowCubeFace
+        - ShadowFitCamera
         - ParticleDrawable
         - LitRenderItem
         - NodeRenderItem
@@ -11505,6 +11708,15 @@ modules:
         - RenderPass
         - RenderPassContext
         - SceneRenderPass
+        - TransientPlan
+        - PassUsageRecord
+        - TransientRequest
+        - TransientSlot
+        - TransientTargetKey
+        - TransientTargetPool
+        - TransientTargetSpec
+        - TransientTargetUsage
+        - UsageTransition
         - CanvasTextureOptions
         - RasterOrigin
         - RasterSource
@@ -11869,6 +12081,39 @@ modules:
         - OUTPUT_TRANSFORM_EFFECT
         - COLOR_GRADE_DEFAULTS
         - COPY_EFFECT
+    packages/render/src/transient-pool.ts:
+      description: "§63 transient render targets: the pool seam, the lifetime/aliasing planner,"
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./render-target.js
+          imports:
+            - RenderTarget
+            - RenderTargetFormat
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+      exports:
+        - transientKeyString
+        - planTransientSlots
+        - resolveTransientSpec
+        - RenderTargetPool
+      classes:
+        - RenderTargetPool
+      interfaces:
+        - TransientTargetKey
+        - TransientTargetUsage
+        - PassUsageRecord
+        - UsageTransition
+        - TransientTargetPool
+        - TransientRequest
+        - TransientSlot
+      functions:
+        - transientKeyString
+        - planTransientSlots
+        - resolveTransientSpec
     packages/render/src/raster.ts:
       description: Raster painting (§77a; RFC 0004, accepted 2026-08-21) — a surface an
       externalDependencies: []
@@ -12037,6 +12282,9 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
+        - file: ./skin-palette.js
+          imports:
+            - MAX_TEXTURE_SKINNING_JOINTS
         - file: ./renderable.js
           imports:
             - Renderable
@@ -12077,6 +12325,35 @@ modules:
         - restoreMeshSkeleton
       constants:
         - MAX_SKINNING_JOINTS
+    packages/render/src/skin-palette.ts:
+      description: The bone-texture skin palette (§54, §62; RFC 0003 residue, decision D7).
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./render-target.js
+          imports:
+            - RenderTargetFormat
+          typeOnly: true
+      workspaceDependencies: []
+      exports:
+        - SKIN_PALETTE_TEXTURE_FORMAT
+        - SKIN_PALETTE_TEXTURE_WIDTH
+        - SKIN_PALETTE_TEXELS_PER_JOINT
+        - SKIN_PALETTE_JOINTS_PER_ROW
+        - SKIN_PALETTE_FLOATS_PER_ROW
+        - MAX_TEXTURE_SKINNING_JOINTS
+        - skinPaletteRows
+        - stageSkinPalette
+      functions:
+        - skinPaletteRows
+        - stageSkinPalette
+      constants:
+        - SKIN_PALETTE_TEXTURE_FORMAT
+        - SKIN_PALETTE_TEXTURE_WIDTH
+        - SKIN_PALETTE_TEXELS_PER_JOINT
+        - SKIN_PALETTE_JOINTS_PER_ROW
+        - SKIN_PALETTE_FLOATS_PER_ROW
+        - MAX_TEXTURE_SKINNING_JOINTS
     packages/render/src/renderable.ts:
       description: "`Renderable` (§49) — the node that draws something."
       externalDependencies: []
@@ -12201,6 +12478,10 @@ modules:
           imports:
             - RenderStatistics
           typeOnly: true
+        - file: ./transient-pool.js
+          imports:
+            - RenderTargetPool
+            - TransientTargetPool
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -12323,16 +12604,33 @@ modules:
           imports:
             - isRenderTargetTexture
             - RenderTarget
+        - file: ./render-target-bytes.js
+          imports:
+            - renderTargetByteLength
         - file: ./renderer.js
           imports:
             - RenderInterpolation
             - Renderer
           typeOnly: true
+        - file: ./transient-pool.js
+          imports:
+            - RenderTargetPool
+            - planTransientSlots
+            - resolveTransientSpec
+            - transientKeyString
+            - PassUsageRecord
+            - TransientRequest
+            - TransientSlot
+            - TransientTargetPool
+            - TransientTargetSpec
+            - UsageTransition
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
           imports:
+            - DEV
             - FourError
+            - devWarnOnce
         - package: "@fourjs/scene"
           directory: packages/scene
           imports:
@@ -12348,6 +12646,7 @@ modules:
         - CustomRenderPass
         - AddPassOptions
         - RenderGraphPass
+        - TransientPlan
         - RenderGraphIssue
     packages/render/src/render-target.ts:
       description: "`RenderTarget` (§61, §48, §63, §77) — an off-screen surface a frame can be"
@@ -12645,6 +12944,19 @@ modules:
         - file: ./render-list.js
           imports:
             - viewLayerMask
+        - file: ./shadow-atlas.js
+          imports:
+            - MAX_SHADOWED_PUNCTUAL_LIGHTS
+            - MAX_SHADOW_CASCADES
+            - MAX_SHADOW_TILES
+            - SHADOW_ATLAS_MAX_EDGE
+            - SHADOW_KIND_POINT
+            - SHADOW_KIND_SPOT
+            - computeAtlasGrid
+            - fitDirectionalCascades
+            - writeCubeFaceShadowMatrix
+            - writeSpotShadowMatrix
+            - ShadowFitCamera
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -12678,6 +12990,7 @@ modules:
       interfaces:
         - DirectionalLightSource
         - DirectionalShadowSource
+        - PunctualShadowSource
         - PunctualLightSourceBase
         - PointLightSource
         - SpotLightSource
@@ -12696,6 +13009,49 @@ modules:
         - MAX_DIRECTIONAL_LIGHTS
         - MAX_LIGHT_SLOTS
         - EXTRA_DIRECTIONAL_FLAG
+    packages/render/src/shadow-atlas.ts:
+      description: §69's shadow-atlas math (W6.3, 2026-11-04) — cascade fitting, the punctual
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies: []
+      workspaceDependencies:
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix4
+            - Vector3
+      exports:
+        - MAX_SHADOW_CASCADES
+        - MAX_SHADOWED_PUNCTUAL_LIGHTS
+        - MAX_SHADOW_TILES
+        - SHADOW_ATLAS_MAX_EDGE
+        - SHADOW_KIND_SPOT
+        - SHADOW_KIND_POINT
+        - MAX_SPOT_SHADOW_FOV
+        - SHADOW_CUBE_FACES
+        - computeCascadeSplits
+        - fitDirectionalCascades
+        - writeSpotShadowMatrix
+        - writeCubeFaceShadowMatrix
+        - computeAtlasGrid
+      interfaces:
+        - ShadowCubeFace
+        - ShadowFitCamera
+      functions:
+        - computeCascadeSplits
+        - fitDirectionalCascades
+        - writeSpotShadowMatrix
+        - writeCubeFaceShadowMatrix
+        - computeAtlasGrid
+      constants:
+        - MAX_SHADOW_CASCADES
+        - MAX_SHADOWED_PUNCTUAL_LIGHTS
+        - MAX_SHADOW_TILES
+        - SHADOW_ATLAS_MAX_EDGE
+        - SHADOW_KIND_SPOT
+        - SHADOW_KIND_POINT
+        - MAX_SPOT_SHADOW_FOV
+        - SHADOW_CUBE_FACES
   packages/input:
     packages/input/src/pick.ts:
       description: Picking and hit testing (§71) — the bounds tier.
@@ -13394,7 +13750,9 @@ modules:
             - RENDER_TARGET_DEPTH_STENCIL_FORMAT
             - RENDER_TARGET_DEPTH_TEXTURE_FORMAT
             - WgpuRenderTargetCache
+            - WgpuTransientTargetPool
             - renderTargetDepthFormat
+            - transientUsageOf
           reExport: true
         - file: ./wgpu-effect.js
           imports:
@@ -13415,8 +13773,13 @@ modules:
         - file: ./wgpu-compute.js
           imports:
             - COMPUTE_ENTRY_POINT
+            - PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE
+            - PARTICLE_FIELD_KIND
             - PARTICLE_INTEGRATOR_SHADER_SOURCE
             - PARTICLE_INTEGRATOR_WORKGROUP_SIZE
+            - PARTICLE_SIMULATION_FIELD_FLOATS
+            - PARTICLE_SIMULATION_HEADER_FLOATS
+            - PARTICLE_SIMULATION_MAX_FIELDS
             - PARTICLE_SIMULATION_PARAMS_FLOATS
             - WgpuComputeBuffer
             - WgpuComputeCache
@@ -13448,13 +13811,24 @@ modules:
           reExport: true
         - file: ./wgpu-particle-simulation.js
           imports:
+            - DEFAULT_DEPTH_BIAS
             - PARTICLE_SIMULATION_SCRATCH_BYTES
             - PARTICLE_SIMULATION_VECTOR_BYTES
             - WgpuParticleSimulation
           reExport: true
         - file: ./wgpu-shadow.js
           imports:
+            - SHADOW_ATLAS_OFFSET
+            - SHADOW_CASCADE_MATRIX_OFFSET
+            - SHADOW_CASCADE_SPLITS_OFFSET
             - SHADOW_FACTOR_WGSL
+            - SHADOW_INFO_OFFSET
+            - SHADOW_LEGACY_UNIFORM_BYTES
+            - SHADOW_PUNCTUAL_PARAMS_OFFSET
+            - SHADOW_PUNCTUAL_RANGE_OFFSET
+            - SHADOW_PUNCTUAL_SLOT_OFFSET
+            - SHADOW_SPOT_MATRIX_OFFSET
+            - SHADOW_VIEW_DEPTH_OFFSET
             - SHADOW_LIGHT_UNIFORM_BYTES
             - SHADOW_LIGHT_UNIFORM_WGSL
             - SHADOW_MAP_BINDING
@@ -13651,6 +14025,7 @@ modules:
           typeOnly: true
         - file: ./wgpu-compute.js
           imports:
+            - ParticleSimulationField
             - ParticleSimulationFieldParams
           reExport: true
           typeOnly: true
@@ -13661,6 +14036,7 @@ modules:
           typeOnly: true
         - file: ./wgpu-particle-simulation.js
           imports:
+            - ParticleDepthSource
             - WgpuParticleSimulationOptions
           reExport: true
           typeOnly: true
@@ -13828,7 +14204,9 @@ modules:
         - RENDER_TARGET_DEPTH_STENCIL_FORMAT
         - RENDER_TARGET_DEPTH_TEXTURE_FORMAT
         - WgpuRenderTargetCache
+        - WgpuTransientTargetPool
         - renderTargetDepthFormat
+        - transientUsageOf
         - EFFECT_BIND_GROUP_INDEX
         - EFFECT_GRADE_OFFSET
         - EFFECT_PASS_VERTEX_COUNT
@@ -13840,8 +14218,13 @@ modules:
         - readTexturePixels
         - readbackBytesPerRow
         - COMPUTE_ENTRY_POINT
+        - PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE
+        - PARTICLE_FIELD_KIND
         - PARTICLE_INTEGRATOR_SHADER_SOURCE
         - PARTICLE_INTEGRATOR_WORKGROUP_SIZE
+        - PARTICLE_SIMULATION_FIELD_FLOATS
+        - PARTICLE_SIMULATION_HEADER_FLOATS
+        - PARTICLE_SIMULATION_MAX_FIELDS
         - PARTICLE_SIMULATION_PARAMS_FLOATS
         - WgpuComputeBuffer
         - WgpuComputeCache
@@ -13867,10 +14250,21 @@ modules:
         - PARTICLE_VIEW_OFFSET
         - WgpuParticleCache
         - createParticleBindGroupLayout
+        - DEFAULT_DEPTH_BIAS
         - PARTICLE_SIMULATION_SCRATCH_BYTES
         - PARTICLE_SIMULATION_VECTOR_BYTES
         - WgpuParticleSimulation
+        - SHADOW_ATLAS_OFFSET
+        - SHADOW_CASCADE_MATRIX_OFFSET
+        - SHADOW_CASCADE_SPLITS_OFFSET
         - SHADOW_FACTOR_WGSL
+        - SHADOW_INFO_OFFSET
+        - SHADOW_LEGACY_UNIFORM_BYTES
+        - SHADOW_PUNCTUAL_PARAMS_OFFSET
+        - SHADOW_PUNCTUAL_RANGE_OFFSET
+        - SHADOW_PUNCTUAL_SLOT_OFFSET
+        - SHADOW_SPOT_MATRIX_OFFSET
+        - SHADOW_VIEW_DEPTH_OFFSET
         - SHADOW_LIGHT_UNIFORM_BYTES
         - SHADOW_LIGHT_UNIFORM_WGSL
         - SHADOW_MAP_BINDING
@@ -14005,8 +14399,10 @@ modules:
         - ComputeBindingAccess
         - ComputeBufferOptions
         - ComputePassDescriptor
+        - ParticleSimulationField
         - ParticleSimulationFieldParams
         - WgpuParticleRecord
+        - ParticleDepthSource
         - WgpuParticleSimulationOptions
         - WgpuStencilSource
         - SurfaceMaps
@@ -14147,7 +14543,9 @@ modules:
         - RENDER_TARGET_DEPTH_STENCIL_FORMAT
         - RENDER_TARGET_DEPTH_TEXTURE_FORMAT
         - WgpuRenderTargetCache
+        - WgpuTransientTargetPool
         - renderTargetDepthFormat
+        - transientUsageOf
         - EFFECT_BIND_GROUP_INDEX
         - EFFECT_GRADE_OFFSET
         - EFFECT_PASS_VERTEX_COUNT
@@ -14159,8 +14557,13 @@ modules:
         - readTexturePixels
         - readbackBytesPerRow
         - COMPUTE_ENTRY_POINT
+        - PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE
+        - PARTICLE_FIELD_KIND
         - PARTICLE_INTEGRATOR_SHADER_SOURCE
         - PARTICLE_INTEGRATOR_WORKGROUP_SIZE
+        - PARTICLE_SIMULATION_FIELD_FLOATS
+        - PARTICLE_SIMULATION_HEADER_FLOATS
+        - PARTICLE_SIMULATION_MAX_FIELDS
         - PARTICLE_SIMULATION_PARAMS_FLOATS
         - WgpuComputeBuffer
         - WgpuComputeCache
@@ -14186,10 +14589,21 @@ modules:
         - PARTICLE_VIEW_OFFSET
         - WgpuParticleCache
         - createParticleBindGroupLayout
+        - DEFAULT_DEPTH_BIAS
         - PARTICLE_SIMULATION_SCRATCH_BYTES
         - PARTICLE_SIMULATION_VECTOR_BYTES
         - WgpuParticleSimulation
+        - SHADOW_ATLAS_OFFSET
+        - SHADOW_CASCADE_MATRIX_OFFSET
+        - SHADOW_CASCADE_SPLITS_OFFSET
         - SHADOW_FACTOR_WGSL
+        - SHADOW_INFO_OFFSET
+        - SHADOW_LEGACY_UNIFORM_BYTES
+        - SHADOW_PUNCTUAL_PARAMS_OFFSET
+        - SHADOW_PUNCTUAL_RANGE_OFFSET
+        - SHADOW_PUNCTUAL_SLOT_OFFSET
+        - SHADOW_SPOT_MATRIX_OFFSET
+        - SHADOW_VIEW_DEPTH_OFFSET
         - SHADOW_LIGHT_UNIFORM_BYTES
         - SHADOW_LIGHT_UNIFORM_WGSL
         - SHADOW_MAP_BINDING
@@ -14323,8 +14737,10 @@ modules:
         - ComputeBindingAccess
         - ComputeBufferOptions
         - ComputePassDescriptor
+        - ParticleSimulationField
         - ParticleSimulationFieldParams
         - WgpuParticleRecord
+        - ParticleDepthSource
         - WgpuParticleSimulationOptions
         - WgpuStencilSource
         - SurfaceMaps
@@ -14406,6 +14822,7 @@ modules:
           imports:
             - GPU_BUFFER_USAGE
             - GPU_SHADER_STAGE
+            - GPU_TEXTURE_USAGE
             - GpuBindGroup
             - GpuBindGroupLayout
             - GpuBuffer
@@ -14413,6 +14830,7 @@ modules:
             - GpuPipelineLayout
             - GpuRenderPipeline
             - GpuShaderModule
+            - GpuTexture
             - GpuVertexBufferLayout
         - file: ./wgpu-bindings.js
           imports:
@@ -14459,6 +14877,9 @@ modules:
           directory: packages/render
           imports:
             - MAX_SKINNING_JOINTS
+            - SKIN_PALETTE_FLOATS_PER_ROW
+            - SKIN_PALETTE_TEXTURE_FORMAT
+            - SKIN_PALETTE_TEXTURE_WIDTH
       exports:
         - JOINTS_SHADER_LOCATION
         - WEIGHTS_SHADER_LOCATION
@@ -14467,10 +14888,14 @@ modules:
         - JOINT_PALETTE_BYTES
         - JOINT_PALETTE_FLOATS
         - JOINT_PALETTE_BINDING
+        - JOINT_TEXTURE_BINDING
+        - JOINT_TEXTURE_INFO_BINDING
+        - JOINT_TEXTURE_INFO_STRIDE
         - SKINNED_SHADOW_VERTEX_BUFFER_LAYOUTS
         - SKINNED_SHADOW_SHADER_SOURCE
         - skinnedPaletteBindGroupIndex
         - createJointPaletteBindGroupLayout
+        - createJointPaletteTextureBindGroupLayout
         - skinningWgsl
         - skinnedUnlitVertexBufferLayouts
         - skinnedLitVertexBufferLayouts
@@ -14481,6 +14906,7 @@ modules:
       functions:
         - skinnedPaletteBindGroupIndex
         - createJointPaletteBindGroupLayout
+        - createJointPaletteTextureBindGroupLayout
         - skinningWgsl
         - skinnedUnlitVertexBufferLayouts
         - skinnedLitVertexBufferLayouts
@@ -14496,6 +14922,9 @@ modules:
         - JOINT_PALETTE_BYTES
         - JOINT_PALETTE_FLOATS
         - JOINT_PALETTE_BINDING
+        - JOINT_TEXTURE_BINDING
+        - JOINT_TEXTURE_INFO_BINDING
+        - JOINT_TEXTURE_INFO_STRIDE
         - SKINNED_SHADOW_VERTEX_BUFFER_LAYOUTS
         - SKINNED_SHADOW_SHADER_SOURCE
     packages/render-webgpu/src/wgpu-node-program.ts:
@@ -14629,6 +15058,7 @@ modules:
         - file: ./wgpu-lights.js
           imports:
             - LIGHTS_BIND_GROUP_INDEX
+            - LIGHT_BINDING_BYTES
             - HEMISPHERE_UNIFORM_MEMBERS_WGSL
             - LIGHT_UNIFORM_BYTES
             - LIGHT_UNIFORM_MEMBERS_WGSL
@@ -14642,10 +15072,21 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
+            - SHADOW_CUBE_FACES
             - SceneLights
       exports:
         - SHADOW_MATRIX_OFFSET
         - SHADOW_PARAMS_OFFSET
+        - SHADOW_LEGACY_UNIFORM_BYTES
+        - SHADOW_CASCADE_MATRIX_OFFSET
+        - SHADOW_SPOT_MATRIX_OFFSET
+        - SHADOW_CASCADE_SPLITS_OFFSET
+        - SHADOW_VIEW_DEPTH_OFFSET
+        - SHADOW_ATLAS_OFFSET
+        - SHADOW_INFO_OFFSET
+        - SHADOW_PUNCTUAL_SLOT_OFFSET
+        - SHADOW_PUNCTUAL_PARAMS_OFFSET
+        - SHADOW_PUNCTUAL_RANGE_OFFSET
         - SHADOW_LIGHT_UNIFORM_BYTES
         - SHADOW_MAP_BINDING
         - SHADOW_SAMPLER_BINDING
@@ -14663,6 +15104,16 @@ modules:
       constants:
         - SHADOW_MATRIX_OFFSET
         - SHADOW_PARAMS_OFFSET
+        - SHADOW_LEGACY_UNIFORM_BYTES
+        - SHADOW_CASCADE_MATRIX_OFFSET
+        - SHADOW_SPOT_MATRIX_OFFSET
+        - SHADOW_CASCADE_SPLITS_OFFSET
+        - SHADOW_VIEW_DEPTH_OFFSET
+        - SHADOW_ATLAS_OFFSET
+        - SHADOW_INFO_OFFSET
+        - SHADOW_PUNCTUAL_SLOT_OFFSET
+        - SHADOW_PUNCTUAL_PARAMS_OFFSET
+        - SHADOW_PUNCTUAL_RANGE_OFFSET
         - SHADOW_LIGHT_UNIFORM_BYTES
         - SHADOW_MAP_BINDING
         - SHADOW_SAMPLER_BINDING
@@ -15065,20 +15516,28 @@ modules:
         - package: "@fourjs/render"
           directory: packages/render
           imports:
+            - RenderTargetPool
             - warnDisposedInUse
+            - PassUsageRecord
+            - TransientTargetKey
+            - TransientTargetUsage
       exports:
         - RENDER_TARGET_COLOR_FORMAT
         - RENDER_TARGET_DEPTH_FORMAT
         - RENDER_TARGET_DEPTH_TEXTURE_FORMAT
         - RENDER_TARGET_DEPTH_STENCIL_FORMAT
         - renderTargetDepthFormat
+        - transientUsageOf
         - WgpuRenderTargetCache
+        - WgpuTransientTargetPool
       classes:
         - WgpuRenderTargetCache
+        - WgpuTransientTargetPool
       interfaces:
         - WgpuRenderTargetRecord
       functions:
         - renderTargetDepthFormat
+        - transientUsageOf
       constants:
         - RENDER_TARGET_COLOR_FORMAT
         - RENDER_TARGET_DEPTH_FORMAT
@@ -15346,10 +15805,16 @@ modules:
         - file: ./webgpu-device.js
           imports:
             - GPU_BUFFER_USAGE
+            - GPU_SHADER_STAGE
+            - GpuBindGroup
             - GpuBuffer
+            - GpuComputePipeline
             - GpuDevice
+            - GpuTextureView
         - file: ./wgpu-compute.js
           imports:
+            - COMPUTE_ENTRY_POINT
+            - PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE
             - PARTICLE_INTEGRATOR_SHADER_SOURCE
             - PARTICLE_SIMULATION_PARAMS_FLOATS
             - WgpuComputeBuffer
@@ -15358,6 +15823,7 @@ modules:
             - particleIntegratorWorkgroups
             - writeComputeBuffer
             - writeParticleSimulationParams
+            - ParticleSimulationField
             - ParticleSimulationFieldParams
       workspaceDependencies:
         - package: "@fourjs/core"
@@ -15366,14 +15832,17 @@ modules:
             - FourError
       exports:
         - PARTICLE_SIMULATION_VECTOR_BYTES
+        - DEFAULT_DEPTH_BIAS
         - PARTICLE_SIMULATION_SCRATCH_BYTES
         - WgpuParticleSimulation
       classes:
         - WgpuParticleSimulation
       interfaces:
         - WgpuParticleSimulationOptions
+        - ParticleDepthSource
       constants:
         - PARTICLE_SIMULATION_VECTOR_BYTES
+        - DEFAULT_DEPTH_BIAS
         - PARTICLE_SIMULATION_SCRATCH_BYTES
     packages/render-webgpu/src/wgpu-compute.ts:
       description: §82's GPU compute on the WebGPU backend (WP-R1.8) — compute pipelines, bind
@@ -15407,8 +15876,13 @@ modules:
       exports:
         - COMPUTE_ENTRY_POINT
         - PARTICLE_INTEGRATOR_WORKGROUP_SIZE
+        - PARTICLE_SIMULATION_MAX_FIELDS
+        - PARTICLE_SIMULATION_HEADER_FLOATS
+        - PARTICLE_SIMULATION_FIELD_FLOATS
         - PARTICLE_SIMULATION_PARAMS_FLOATS
+        - PARTICLE_FIELD_KIND
         - PARTICLE_INTEGRATOR_SHADER_SOURCE
+        - PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE
         - createComputeBuffer
         - writeComputeBuffer
         - readComputeBufferBytes
@@ -15421,6 +15895,7 @@ modules:
         - WgpuComputeCache
       interfaces:
         - ComputeBufferOptions
+        - ParticleSimulationField
         - ParticleSimulationFieldParams
       functions:
         - createComputeBuffer
@@ -15430,8 +15905,13 @@ modules:
         - particleIntegratorWorkgroups
       constants:
         - PARTICLE_INTEGRATOR_WORKGROUP_SIZE
+        - PARTICLE_SIMULATION_MAX_FIELDS
+        - PARTICLE_SIMULATION_HEADER_FLOATS
+        - PARTICLE_SIMULATION_FIELD_FLOATS
         - PARTICLE_SIMULATION_PARAMS_FLOATS
+        - PARTICLE_FIELD_KIND
         - PARTICLE_INTEGRATOR_SHADER_SOURCE
+        - PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE
     packages/render-webgpu/src/register.ts:
       description: This backend's opt-in to §62's renderer registry (R-2, A-8, WP-R1.1).
       externalDependencies: []
@@ -15909,6 +16389,7 @@ modules:
             - WgpuParticleRecord
         - file: ./wgpu-particle-simulation.js
           imports:
+            - ParticleDepthSource
             - WgpuParticleSimulation
             - WgpuParticleSimulationOptions
         - file: ./wgpu-pipeline-cache.js
@@ -15925,7 +16406,9 @@ modules:
         - file: ./wgpu-render-target.js
           imports:
             - RENDER_TARGET_COLOR_FORMAT
+            - RENDER_TARGET_DEPTH_TEXTURE_FORMAT
             - WgpuRenderTargetCache
+            - WgpuTransientTargetPool
             - WgpuRenderTargetRecord
         - file: ./wgpu-standard.js
           imports:
@@ -16009,6 +16492,11 @@ modules:
             - buildRenderList
             - buildViewRenderList
             - MAX_SKINNING_JOINTS
+            - MAX_TEXTURE_SKINNING_JOINTS
+            - SKIN_PALETTE_TEXELS_PER_JOINT
+            - SKIN_PALETTE_TEXTURE_WIDTH
+            - MAX_SHADOWED_PUNCTUAL_LIGHTS
+            - MAX_SHADOW_CASCADES
             - collectSceneLights
             - unionViewLayerMask
             - createSceneLights
@@ -22099,11 +22587,13 @@ dependencyGraph:
         - packages/render/src/render-list.ts
         - packages/render/src/host-texture.ts
         - packages/render/src/effect-pass.ts
+        - packages/render/src/transient-pool.ts
         - packages/render/src/raster.ts
         - packages/render/src/particles.ts
         - packages/render/src/gpu-readback.ts
         - packages/render/src/statistics.ts
         - packages/render/src/mesh.ts
+        - packages/render/src/skin-palette.ts
         - packages/render/src/renderable.ts
         - packages/render/src/texture-updates.ts
         - packages/render/src/batch.ts
@@ -22120,6 +22610,7 @@ dependencyGraph:
         - packages/render/src/renderer-registry.ts
         - packages/render/src/resource-warnings.ts
         - packages/render/src/lights.ts
+        - packages/render/src/shadow-atlas.ts
     - name: Packages/input
       files:
         - packages/input/src/pick.ts
@@ -22294,19 +22785,19 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 366
+  totalTypeScriptFiles: 369
   totalModules: 25
-  totalLinesOfCode: 179438
-  totalExports: 3729
-  totalClasses: 226
-  totalInterfaces: 681
-  totalFunctions: 634
+  totalLinesOfCode: 183737
+  totalExports: 3852
+  totalClasses: 231
+  totalInterfaces: 701
+  totalFunctions: 646
   totalTypeGuards: 34
   totalEnums: 0
-  totalConstants: 560
-  totalReExports: 2330
-  totalTypeOnlyImports: 460
+  totalConstants: 596
+  totalReExports: 2398
+  totalTypeOnlyImports: 464
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10
   unusedFilesCount: 0
-  unusedExportsCount: 20
+  unusedExportsCount: 25

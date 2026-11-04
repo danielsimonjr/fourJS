@@ -1776,6 +1776,117 @@ describe("registerRenderSerializers — defensive reads", () => {
     ]);
   });
 
+  it("round-trips cascades and the point/spot shadow records (W6.3)", () => {
+    const sun = new DirectionalLight({
+      castShadow: true,
+      shadow: { cascades: 3, cascadeLambda: 0.8, cascadeDistance: 60 },
+    });
+    const lamp = new PointLight({
+      castShadow: true,
+      shadow: { mapSize: 512, bias: 0.01, normalBias: 0.1, near: 0.3, far: 30 },
+    });
+    const spot = new SpotLight({ castShadow: true, shadow: { mapSize: 256 } });
+    const copy = <T>(node: DirectionalLight | PointLight | SpotLight): T =>
+      io.read.nodeFactory({
+        type: io.write.nodeTypeOf(node) as string,
+        data: JSON.parse(JSON.stringify(io.write.nodeDataOf(node))) as never,
+      }) as T;
+    const rSun = copy<DirectionalLight>(sun);
+    const rLamp = copy<PointLight>(lamp);
+    const rSpot = copy<SpotLight>(spot);
+    expect([
+      rSun.shadow.cascades,
+      rSun.shadow.cascadeLambda,
+      rSun.shadow.cascadeDistance,
+    ]).toEqual([3, 0.8, 60]);
+    expect(rLamp.castShadow).toBe(true);
+    expect([
+      rLamp.shadow.mapSize,
+      rLamp.shadow.bias,
+      rLamp.shadow.normalBias,
+      rLamp.shadow.near,
+      rLamp.shadow.far,
+    ]).toEqual([512, 0.01, 0.1, 0.3, 30]);
+    expect(rSpot.castShadow).toBe(true);
+    expect(rSpot.shadow.mapSize).toBe(256);
+  });
+
+  it("restores the default cascade and punctual shadow fields from corrupt payloads", () => {
+    const sun = io.read.nodeFactory({
+      type: DIRECTIONAL_LIGHT_NODE_TYPE,
+      data: {
+        shadow: { cascades: 9, cascadeLambda: 2, cascadeDistance: -5 },
+      },
+    }) as DirectionalLight;
+    expect([
+      sun.shadow.cascades,
+      sun.shadow.cascadeLambda,
+      sun.shadow.cascadeDistance,
+    ]).toEqual([1, 0.5, 100]);
+    const fractional = io.read.nodeFactory({
+      type: DIRECTIONAL_LIGHT_NODE_TYPE,
+      data: { shadow: { cascades: 2.5 } },
+    }) as DirectionalLight;
+    expect(fractional.shadow.cascades).toBe(1);
+    // A document from before W6.3 carries none of it.
+    const old = io.read.nodeFactory({
+      type: POINT_LIGHT_NODE_TYPE,
+      data: { intensity: 2 },
+    }) as PointLight;
+    expect(old.castShadow).toBe(false);
+    expect(old.shadow.mapSize).toBe(1024);
+    const bad = io.read.nodeFactory({
+      type: SPOT_LIGHT_NODE_TYPE,
+      data: {
+        castShadow: true,
+        shadow: { mapSize: 0.5, normalBias: -1, bias: 0.02, near: 9, far: 3 },
+      },
+    }) as SpotLight;
+    expect(bad.castShadow).toBe(true);
+    expect([
+      bad.shadow.mapSize,
+      bad.shadow.normalBias,
+      bad.shadow.bias,
+      bad.shadow.near,
+      bad.shadow.far,
+    ]).toEqual([1024, 0.02, 0.02, 0.1, 50]);
+  });
+
+  it("re-saves a default-shadow light document byte-stable and keeps a far-only record", () => {
+    const write = (node: DirectionalLight | PointLight | SpotLight): string =>
+      JSON.stringify(io.write.nodeDataOf(node));
+    const read = <T>(type: string, data: unknown): T =>
+      io.read.nodeFactory({ type, data: data as never }) as T;
+    // Old documents (no shadow keys at all) re-save with none.
+    const oldSun = '{"color":[1,1,1],"intensity":1}';
+    const sun = read<DirectionalLight>(
+      DIRECTIONAL_LIGHT_NODE_TYPE,
+      JSON.parse(oldSun),
+    );
+    expect(write(sun)).toBe(oldSun);
+    const oldLamp = JSON.stringify(JSON.parse(write(new PointLight())));
+    expect(oldLamp).not.toContain("shadow");
+    expect(oldLamp).not.toContain("castShadow");
+    expect(
+      write(read<PointLight>(POINT_LIGHT_NODE_TYPE, JSON.parse(oldLamp))),
+    ).toBe(oldLamp);
+    // Only differing fields are written, and a far-only record survives.
+    const lamp = read<PointLight>(POINT_LIGHT_NODE_TYPE, {
+      shadow: { far: 40 },
+    });
+    expect(lamp.shadow.far).toBe(40);
+    expect(JSON.parse(write(lamp)).shadow).toEqual({ far: 40 });
+    const nearOnly = read<PointLight>(POINT_LIGHT_NODE_TYPE, {
+      shadow: { near: 0.5 },
+    });
+    expect(nearOnly.shadow.near).toBe(0.5);
+    // A lone near that the default far could not bound is dropped.
+    const crossed = read<PointLight>(POINT_LIGHT_NODE_TYPE, {
+      shadow: { near: 500 },
+    });
+    expect(crossed.shadow.near).toBe(0.1);
+  });
+
   it("reads punctual payloads a build wrote in full", () => {
     const lamp = io.read.nodeFactory({
       type: POINT_LIGHT_NODE_TYPE,
@@ -2013,6 +2124,23 @@ describe("registerSceneNodeTypes — Mesh, Bone, and MorphWeights (RFC 0003)", (
     expect(restored.skinningMode).toBe("cpu");
     expect(restored.bindGeometry).toBe(skinnedPlane);
     expect(serializeScene(reloaded, io.components, io.write)).toEqual(document);
+  });
+
+  it('round-trips the bone-texture mode ("texture") and ignores an unknown mode', () => {
+    const io = registerSceneNodeTypes({ geometries, materials });
+    const scene = buildSkinnedScene();
+    const mesh = scene.children[0] as Mesh;
+    mesh.skinningMode = "texture";
+    const document = serializeScene(scene, io.components, io.write);
+    const reloaded = instantiateScene(document, io.components, io.read);
+    expect((reloaded.children[0] as Mesh).skinningMode).toBe("texture");
+    expect(serializeScene(reloaded, io.components, io.write)).toEqual(document);
+    const text = JSON.stringify(document).replace(
+      '"skinningMode":"texture"',
+      '"skinningMode":"bogus"',
+    );
+    const odd = instantiateScene(JSON.parse(text), io.components, io.read);
+    expect((odd.children[0] as Mesh).skinningMode).toBe("gpu");
   });
 
   it("is textually idempotent, skeleton included — the P11-1 gate", () => {

@@ -381,8 +381,15 @@ fn ${FRAGMENT_ENTRY_POINT}(input : VertexOutput) -> @location(0) vec4<f32> {
     let n = input.normal / len;
     let punctualCount = i32(lights.counts.x);
     for (var index = 0; index < punctualCount; index = index + 1) {
-      let punctual = punctualLight(index, input.worldPosition);
-      lighting = lighting + punctual.irradiance * max(dot(n, punctual.direction), 0.0);
+      let punctual = punctualLight(index, input.worldPosition);${
+        shadow
+          ? `
+      lighting = lighting + punctual.irradiance
+        * punctualShadowFactor(index, input.worldPosition, n)
+        * max(dot(n, punctual.direction), 0.0);`
+          : `
+      lighting = lighting + punctual.irradiance * max(dot(n, punctual.direction), 0.0);`
+      }
     }
   }
   return vec4<f32>(base.rgb * lighting, base.a);

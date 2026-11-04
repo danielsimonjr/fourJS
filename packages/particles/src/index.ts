@@ -73,7 +73,14 @@ export type {
   ParticleColor,
   ParticleForceField,
   ParticleGpuIntegrateExtras,
+  ParticleGpuDragField,
+  ParticleGpuField,
   ParticleGpuRadialField,
+  ParticleGpuTurbulenceField,
+  ParticleGpuUniformField,
+  ParticleGpuVolume,
+  ParticleGpuVortexField,
+  ParticleGpuWindField,
   ParticleGpuSimulation,
   MutableParticleColor,
   ParticleLifetimeRamp,
@@ -83,6 +90,7 @@ export type {
   ParticleTexture,
 } from "./types.js";
 export {
+  MAX_GPU_FIELDS,
   evaluateLifetimeRampColor,
   evaluateLifetimeRampColorInto,
   evaluateLifetimeRampNumber,

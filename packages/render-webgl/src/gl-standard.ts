@@ -328,6 +328,9 @@ void main() {
     for (int i = 0; i < punctualCount; i += 1) {
       vec3 pl;
       vec3 irradiance = punctualIrradiance(i, vWorldPosition, pl);
+      if (useShadow) {
+        irradiance *= punctualShadowFactor(i, vWorldPosition, n);
+      }
       float pnDotL = dot(n, pl);
       if (pnDotL > 0.0) {
         shaded += directLobe(n, v, pl, pnDotL, diffuseColor, f0, alpha2)

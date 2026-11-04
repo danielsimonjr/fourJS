@@ -35,9 +35,9 @@ import { CanvasTexture } from "./raster.js";
  * | pass enable/disable            | **shipped** — {@link RenderGraph.setPassEnabled}                        |
  * | viewport-specific pipelines    | **shipped** — every pass carries its own `views`                        |
  * | debug visualization            | **partial** — {@link RenderGraph.describe} is textual. §63 also wants the pass outputs *on screen*, which needed §70's full-screen blit; R-6 shipped it, so an on-screen view of any intermediate target is now one `{ kind: "effect", source, effect: COPY_EFFECT }` pass. Building that view — a viewport-tiled inspector — is this module's remaining follow-up, not a missing capability |
- * | transient render targets       | **staged** — targets are application-owned `RenderTarget`s passed in; a pool that allocates and aliases per frame needs a size/format key and a lifetime analysis this tier does not compute |
- * | resource lifetime              | **staged** — same reason; §83 disposal stays the application's           |
- * | barriers and state transitions | **staged** — WebGL 2 has no explicit barriers, so there is nothing for this tier to emit; the requirement is real for the WebGPU backend (§62) and lands with it |
+ * | transient render targets       | **shipped** (W6.1, 2026-11-04) — {@link AddPassOptions.transient}: a pass declares a size/format/depth instead of passing a `RenderTarget`; slots come from a backend-owned {@link TransientTargetPool}, aliased by first-fit over lifetimes (`transient-pool.ts`). Application-owned targets are untouched |
+ * | resource lifetime              | **shipped** (W6.1) — a transient lives from its producing pass to the last pass naming it in `inputs` (reading it any other way — `transientTarget(x)`, or sampling its colour texture from a custom pass or a material — requires `persistent: true` on the spec, which keeps the slot live all frame and never aliases it); slots persist across frames and are released by {@link RenderGraph.dispose}; pooled bytes are `RenderTarget.byteLength`s, so §83 already counts them |
+ * | barriers and state transitions | **shipped** (W6.1) — {@link RenderGraph.usageTransitions} derives the per-target texture/attachment list; WebGPU consults it for slot usage flags (and its passes already end/begin at every transition), WebGL 2 emits nothing and only asserts in DEV that no target is sampled while attached |
  *
  * Two reasons the linear tier is the honest stopping point rather than a
  * shortcut. First, a topological sort over declared `inputs` would produce an
@@ -91,7 +91,7 @@ import { CanvasTexture } from "./raster.js";
  *    target is reported as sampling an `"unwritten"` surface.
  */
 
-import { FourError } from "@fourjs/core";
+import { DEV, FourError, devWarnOnce } from "@fourjs/core";
 import type { Node, Viewport } from "@fourjs/scene";
 
 import {
@@ -101,7 +101,20 @@ import {
 } from "./effect-pass.js";
 import { buildRenderList, type RenderItem } from "./render-list.js";
 import { isRenderTargetTexture, type RenderTarget } from "./render-target.js";
+import { renderTargetByteLength } from "./render-target-bytes.js";
 import type { RenderInterpolation, Renderer } from "./renderer.js";
+import {
+  RenderTargetPool,
+  planTransientSlots,
+  resolveTransientSpec,
+  transientKeyString,
+  type PassUsageRecord,
+  type TransientRequest,
+  type TransientSlot,
+  type TransientTargetPool,
+  type TransientTargetSpec,
+  type UsageTransition,
+} from "./transient-pool.js";
 
 /**
  * The §89 code every structural failure in this module carries.
@@ -138,6 +151,9 @@ export interface RenderPassContext {
    * interpolated ones.
    */
   readonly interpolation: RenderInterpolation | undefined;
+
+  /** The pass's transient surface, or `null` when it declared none. */
+  readonly target: RenderTarget | null;
 }
 
 /**
@@ -251,6 +267,27 @@ export interface AddPassOptions {
    * {@link RenderGraph.setPassEnabled} for §63's enable/disable.
    */
   readonly enabled?: boolean;
+
+  /**
+   * Declares a **transient** output (§63): the graph, not the application,
+   * owns the surface this pass draws into. Mutually exclusive with the pass's
+   * own `target`. Read the physical surface with
+   * {@link RenderGraph.transientTarget} after {@link RenderGraph.compile}.
+   *
+   * The slot's lifetime ends at the last pass naming this pass in `inputs`,
+   * after which it may be aliased. A custom pass or application material that
+   * reads the transient *without* listing it in `inputs` must set
+   * `persistent: true` on the spec, or it may read another pass's pixels.
+   */
+  readonly transient?: TransientTargetSpec;
+
+  /**
+   * For an effect pass: name of an earlier pass whose transient output is
+   * this effect's source. Must also appear in `inputs`. The pass's own
+   * `source` is then ignored (supply any {@link RenderTargetTexture}); the
+   * graph substitutes the slot's colour texture at execute time.
+   */
+  readonly sourceTransient?: string;
 }
 
 /**
@@ -273,6 +310,9 @@ export interface RenderGraphPass {
 
   /** Whether {@link RenderGraph.execute} runs it. */
   readonly enabled: boolean;
+
+  /** The declared transient output, or `undefined`. */
+  readonly transient: TransientTargetSpec | undefined;
 }
 
 /** Mutable form of {@link RenderGraphPass}; never leaves this module. */
@@ -280,7 +320,40 @@ interface MutableGraphPass {
   readonly name: string;
   readonly pass: RenderPass;
   readonly inputs: readonly string[];
+  readonly transient: TransientTargetSpec | undefined;
+  readonly sourceTransient: string | undefined;
   enabled: boolean;
+}
+
+/** A compiled transient plan, valid for one (structure, renderer, size). */
+interface CompiledPlan {
+  readonly version: number;
+  readonly renderer: Renderer;
+  readonly width: number;
+  readonly height: number;
+  readonly pool: TransientTargetPool;
+  readonly slots: readonly TransientSlot[];
+  readonly slotTargets: readonly RenderTarget[];
+  readonly byName: ReadonlyMap<string, RenderTarget>;
+  readonly records: readonly PassUsageRecord[];
+  /** Per-pass reusable effect descriptors (substituted source/target), or `null`. */
+  readonly effectDescriptors: readonly (MutableEffectPass | null)[];
+}
+
+/** An {@link EffectRenderPass} the graph may rewrite in place (its own copy). */
+type MutableEffectPass = {
+  -readonly [K in keyof EffectRenderPass]: EffectRenderPass[K];
+};
+
+/** Public view of {@link RenderGraph.compile}. */
+export interface TransientPlan {
+  readonly slots: readonly TransientSlot[];
+  /** Transient name to physical slot index. */
+  readonly assignment: ReadonlyMap<string, number>;
+  /** Bytes of the physical slots (what the pool holds for this graph). */
+  readonly byteLength: number;
+  /** Bytes the same transients would cost without aliasing. */
+  readonly unaliasedByteLength: number;
 }
 
 /**
@@ -451,6 +524,14 @@ export class RenderGraph {
 
   readonly #byName = new Map<string, MutableGraphPass>();
 
+  #version = 0;
+
+  #compiled: CompiledPlan | null = null;
+
+  #fallbackPool: RenderTargetPool | null = null;
+
+  #lastViewSize: { width: number; height: number } | undefined;
+
   /**
    * The passes, in execution order (§63). A live view of the graph's own array
    * — read it, do not retain it across an {@link RenderGraph.addPass} or
@@ -514,14 +595,44 @@ export class RenderGraph {
     if (isEffectPass(pass)) {
       validateEffectRenderPass(pass);
     }
+    if (options?.transient !== undefined && targetOf(pass) !== null) {
+      throw new FourError(
+        GRAPH_ERROR_CODE,
+        `RenderGraph pass ${JSON.stringify(name)} declares both a target and a ` +
+          "transient output; choose one (§63).",
+        { context: { name } },
+      );
+    }
+    const sourceTransient = options?.sourceTransient;
+    if (sourceTransient !== undefined) {
+      if (!isEffectPass(pass) || !inputs.includes(sourceTransient)) {
+        throw new FourError(
+          GRAPH_ERROR_CODE,
+          `RenderGraph pass ${JSON.stringify(name)}: sourceTransient is only ` +
+            "valid on an effect pass and must also be listed in inputs (§63).",
+          { context: { name, sourceTransient } },
+        );
+      }
+      if (this.#byName.get(sourceTransient)?.transient === undefined) {
+        throw new FourError(
+          GRAPH_ERROR_CODE,
+          `RenderGraph pass ${JSON.stringify(name)}: sourceTransient ` +
+            `${JSON.stringify(sourceTransient)} has no transient output (§63).`,
+          { context: { name, sourceTransient } },
+        );
+      }
+    }
     const entry: MutableGraphPass = {
       name,
       pass,
       inputs: [...inputs],
+      transient: options?.transient,
+      sourceTransient,
       enabled: options?.enabled ?? true,
     };
     this.#passes.push(entry);
     this.#byName.set(name, entry);
+    this.#version += 1;
     return this;
   }
 
@@ -559,6 +670,7 @@ export class RenderGraph {
     }
     this.#passes.splice(this.#passes.indexOf(entry), 1);
     this.#byName.delete(name);
+    this.#version += 1;
     return true;
   }
 
@@ -621,20 +733,35 @@ export class RenderGraph {
    * {@link supportsScreenEffects} answers the same question without a frame.
    *
    * Allocates one context record per custom pass per call and nothing else; a
-   * graph of scene and effect passes allocates nothing at all.
+   * graph of scene and effect passes allocates nothing at all (a transient
+   * effect pass reuses one cached descriptor, rewritten in place).
    */
-  execute(renderer: Renderer, interpolation?: RenderInterpolation): number {
+  execute(
+    renderer: Renderer,
+    interpolation?: RenderInterpolation,
+    viewSize?: { readonly width: number; readonly height: number },
+  ): number {
+    const plan = this.#hasTransients()
+      ? this.#ensureCompiled(renderer, viewSize)
+      : null;
     let executed = 0;
-    for (const entry of this.#passes) {
+    const passes = this.#passes;
+    for (let index = 0; index < passes.length; index += 1) {
+      const entry = passes[index];
       if (!entry.enabled) {
         continue;
       }
       const pass = entry.pass;
+      const slot = plan === null ? null : (plan.byName.get(entry.name) ?? null);
+      if (plan !== null) {
+        plan.pool.beginPass?.(plan.records[index]);
+      }
       if (isCustomPass(pass)) {
         pass.execute(renderer, {
           name: entry.name,
           graph: this,
           interpolation,
+          target: slot,
         });
       } else if (isEffectPass(pass)) {
         if (!supportsScreenEffects(renderer)) {
@@ -647,18 +774,305 @@ export class RenderGraph {
             { context: { name: entry.name } },
           );
         }
-        renderer.renderEffect(pass);
+        if (
+          plan !== null &&
+          (slot !== null || entry.sourceTransient !== undefined)
+        ) {
+          const source =
+            entry.sourceTransient === undefined
+              ? pass.source
+              : (plan.byName.get(entry.sourceTransient)?.colorTexture ??
+                pass.source);
+          // One cached descriptor per pass (§7b): refresh the fields in place.
+          const descriptor = plan.effectDescriptors[index] ?? { ...pass };
+          descriptor.effect = pass.effect;
+          descriptor.rect = pass.rect;
+          descriptor.source = source;
+          descriptor.target = slot ?? pass.target;
+          renderer.renderEffect(descriptor);
+        } else {
+          renderer.renderEffect(pass);
+        }
       } else {
         renderer.render(
           pass.root,
           pass.views,
           interpolation,
-          pass.target ?? null,
+          slot ?? pass.target ?? null,
         );
       }
       executed += 1;
     }
     return executed;
+  }
+
+  /**
+   * Computes (or reuses) the transient plan against `renderer`'s pool and
+   * returns it, or `null` when the graph declares no transient. Idempotent:
+   * the slots persist while the pass structure, renderer and resolved sizes
+   * are unchanged, so calling it per frame allocates nothing. {@link
+   * RenderGraph.execute} calls it for you; call it directly to read
+   * {@link RenderGraph.transientTarget} before the first frame (e.g. to point
+   * a scene material at a transient's colour texture).
+   */
+  compile(
+    renderer: Renderer,
+    viewSize?: { readonly width: number; readonly height: number },
+  ): TransientPlan | null {
+    if (!this.#hasTransients()) {
+      return null;
+    }
+    const compiled = this.#ensureCompiled(renderer, viewSize);
+    return this.#describePlan(compiled.slots, compiled.byName);
+  }
+
+  /**
+   * The physical surface a transient pass draws into, valid after
+   * {@link RenderGraph.compile}/{@link RenderGraph.execute}; `undefined`
+   * before, or when `name` has no transient. Aliased passes may return the
+   * same surface — by construction never while both are live.
+   */
+  transientTarget(name: string): RenderTarget | undefined {
+    const compiled = this.#compiled;
+    if (DEV && compiled !== undefined && compiled !== null) {
+      const spec = this.#byName.get(name)?.transient;
+      if (
+        spec !== undefined &&
+        spec.persistent !== true &&
+        compiled.slots.some(
+          (slot) => slot.names.length > 1 && slot.names.includes(name),
+        )
+      ) {
+        devWarnOnce(
+          `render-graph-transient-alias:${name}`,
+          `RenderGraph.transientTarget(${JSON.stringify(name)}) reads an ` +
+            "aliased transient whose slot is reused after its last declared " +
+            "input. Reading it outside `inputs` needs `persistent: true` on " +
+            "its transient spec (§63).",
+        );
+      }
+    }
+    return compiled?.byName.get(name);
+  }
+
+  /** Bytes of the pooled slots this graph currently holds (§83); 0 if none. */
+  get transientByteLength(): number {
+    const compiled = this.#compiled;
+    if (compiled === null) {
+      return 0;
+    }
+    let total = 0;
+    for (const target of compiled.slotTargets) {
+      total += target.byteLength;
+    }
+    return total;
+  }
+
+  /**
+   * Per-pass declared resource use: targets sampled as textures (the
+   * `inputs`' outputs and an effect's source) and the target drawn into. Ids
+   * of transients read `transient:<pass>` until compiled, then the physical
+   * target id.
+   */
+  usagePlan(): readonly PassUsageRecord[] {
+    return this.#usageRecords(this.#compiled?.byName ?? null);
+  }
+
+  /**
+   * The explicit usage-transition list (§63 barriers): walking enabled passes
+   * in order, every change of one target between attachment and texture use.
+   * WebGPU consults it; WebGL 2 uses it only for the DEV assertion.
+   */
+  usageTransitions(): readonly UsageTransition[] {
+    const state = new Map<string, "attachment" | "texture">();
+    const out: UsageTransition[] = [];
+    for (const record of this.usagePlan()) {
+      if (!this.#passes[record.index].enabled) {
+        continue;
+      }
+      const step = (target: string, to: "attachment" | "texture"): void => {
+        const from = state.get(target) ?? "none";
+        if (from !== to) {
+          out.push({ pass: record.pass, target, from, to });
+          state.set(target, to);
+        }
+      };
+      for (const read of record.reads) {
+        step(read, "texture");
+      }
+      if (record.writes !== null) {
+        step(record.writes, "attachment");
+      }
+    }
+    return out;
+  }
+
+  /** Releases this graph's pooled slots; the graph stays usable (recompiles). */
+  dispose(): void {
+    this.#releaseCompiled();
+    this.#fallbackPool?.dispose();
+    this.#fallbackPool = null;
+  }
+
+  #hasTransients(): boolean {
+    return this.#passes.some((entry) => entry.transient !== undefined);
+  }
+
+  #releaseCompiled(): void {
+    const compiled = this.#compiled;
+    if (compiled !== null) {
+      for (const target of compiled.slotTargets) {
+        compiled.pool.release(target);
+      }
+      this.#compiled = null;
+    }
+  }
+
+  #requests(
+    viewSize: { readonly width: number; readonly height: number } | undefined,
+  ): TransientRequest[] {
+    const requests: TransientRequest[] = [];
+    for (const [index, entry] of this.#passes.entries()) {
+      if (entry.transient === undefined) {
+        continue;
+      }
+      let last = index;
+      if (entry.transient.persistent === true) {
+        last = this.#passes.length - 1;
+      } else {
+        for (let other = index + 1; other < this.#passes.length; other += 1) {
+          if (this.#passes[other].inputs.includes(entry.name)) {
+            last = other;
+          }
+        }
+      }
+      requests.push({
+        name: entry.name,
+        key: resolveTransientSpec(
+          entry.transient,
+          viewSize,
+          entry.name,
+          GRAPH_ERROR_CODE,
+        ),
+        first: index,
+        last,
+      });
+    }
+    return requests;
+  }
+
+  #ensureCompiled(
+    renderer: Renderer,
+    viewSize: { readonly width: number; readonly height: number } | undefined,
+  ): CompiledPlan {
+    const size = viewSize ?? this.#lastViewSize;
+    const width = size?.width ?? 0;
+    const height = size?.height ?? 0;
+    const current = this.#compiled;
+    if (
+      current !== null &&
+      current.version === this.#version &&
+      current.renderer === renderer &&
+      current.width === width &&
+      current.height === height
+    ) {
+      return current;
+    }
+    this.#releaseCompiled();
+    if (viewSize !== undefined) {
+      this.#lastViewSize = { width: viewSize.width, height: viewSize.height };
+    }
+    const requests = this.#requests(size);
+    const { slots, assignment } = planTransientSlots(requests);
+    const pool =
+      renderer.transientTargetPool?.() ??
+      (this.#fallbackPool ??= new RenderTargetPool());
+    const sampledNames = new Set<string>();
+    for (const entry of this.#passes) {
+      for (const input of entry.inputs) {
+        sampledNames.add(input);
+      }
+    }
+    const slotTargets = slots.map((slot) =>
+      pool.acquire(slot.key, {
+        sampled: slot.names.some((name) => sampledNames.has(name)),
+        attachment: true,
+      }),
+    );
+    const byName = new Map<string, RenderTarget>();
+    for (const [name, slotIndex] of assignment) {
+      byName.set(name, slotTargets[slotIndex]);
+    }
+    const compiled: CompiledPlan = {
+      version: this.#version,
+      renderer,
+      width,
+      height,
+      pool,
+      slots,
+      slotTargets,
+      byName,
+      records: this.#usageRecords(byName),
+      effectDescriptors: this.#passes.map((entry) =>
+        isEffectPass(entry.pass) ? { ...entry.pass } : null,
+      ),
+    };
+    this.#compiled = compiled;
+    return compiled;
+  }
+
+  #describePlan(
+    slots: readonly TransientSlot[],
+    byName: ReadonlyMap<string, RenderTarget>,
+  ): TransientPlan {
+    const assignment = new Map<string, number>();
+    let byteLength = 0;
+    let unaliased = 0;
+    for (const slot of slots) {
+      const bytes = renderTargetByteLength(
+        slot.key.width,
+        slot.key.height,
+        slot.key.format,
+        slot.key.depth,
+        slot.key.depthTexture,
+        false,
+        false,
+      );
+      byteLength += bytes;
+      unaliased += bytes * slot.names.length;
+      for (const name of slot.names) {
+        assignment.set(name, slot.index);
+      }
+    }
+    void byName;
+    return { slots, assignment, byteLength, unaliasedByteLength: unaliased };
+  }
+
+  #usageRecords(
+    byName: ReadonlyMap<string, RenderTarget> | null,
+  ): PassUsageRecord[] {
+    const outputId = (entry: MutableGraphPass): string | null => {
+      if (entry.transient !== undefined) {
+        return byName?.get(entry.name)?.id ?? `transient:${entry.name}`;
+      }
+      return targetOf(entry.pass)?.id ?? null;
+    };
+    return this.#passes.map((entry, index) => {
+      const reads: string[] = [];
+      for (const input of entry.inputs) {
+        const id = outputId(this.#byName.get(input) as MutableGraphPass);
+        if (id !== null && !reads.includes(id)) {
+          reads.push(id);
+        }
+      }
+      if (isEffectPass(entry.pass) && entry.sourceTransient === undefined) {
+        const id = entry.pass.source.renderTarget.id;
+        if (!reads.includes(id)) {
+          reads.push(id);
+        }
+      }
+      return { pass: entry.name, index, reads, writes: outputId(entry) };
+    });
   }
 
   /**
@@ -830,14 +1244,43 @@ export class RenderGraph {
           ? `effect ${entry.pass.effect.kind}`
           : "scene";
       const tags = entry.enabled ? kind : `${kind}, disabled`;
-      const target = targetOf(entry.pass)?.id ?? "screen";
+      const target =
+        entry.transient === undefined
+          ? (targetOf(entry.pass)?.id ?? "screen")
+          : `transient:${entry.name}`;
       const inputs =
         entry.inputs.length === 0 ? "" : ` <- ${entry.inputs.join(", ")}`;
       lines.push(
         `${String(index + 1)}. ${entry.name} [${tags}] -> ${target}${inputs}`,
       );
     }
+    if (this.#hasTransients()) {
+      this.#describeTransients(lines);
+    }
     return lines.join("\n");
+  }
+
+  #describeTransients(lines: string[]): void {
+    let requests: TransientRequest[];
+    try {
+      requests = this.#requests(this.#lastViewSize);
+    } catch {
+      lines.push(
+        "transients: unresolved (view-relative size needs a view size)",
+      );
+      return;
+    }
+    const { slots } = planTransientSlots(requests);
+    const plan = this.#describePlan(slots, new Map());
+    lines.push(
+      `transients: ${String(requests.length)} targets -> ${String(slots.length)} slots, ` +
+        `${String(plan.byteLength)} bytes (${String(plan.unaliasedByteLength)} unaliased)`,
+    );
+    for (const slot of slots) {
+      lines.push(
+        `  slot ${String(slot.index)} [${transientKeyString(slot.key)}] <- ${slot.names.join(", ")}`,
+      );
+    }
   }
 
   /**

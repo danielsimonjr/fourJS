@@ -117,6 +117,11 @@ import {
   buildRenderList,
   buildViewRenderList,
   MAX_SKINNING_JOINTS,
+  MAX_TEXTURE_SKINNING_JOINTS,
+  SKIN_PALETTE_TEXELS_PER_JOINT,
+  SKIN_PALETTE_TEXTURE_WIDTH,
+  MAX_SHADOWED_PUNCTUAL_LIGHTS,
+  MAX_SHADOW_CASCADES,
   collectSceneLights,
   unionViewLayerMask,
   createSceneLights,
@@ -212,6 +217,7 @@ import {
   type WgpuParticleRecord,
 } from "./wgpu-particles.js";
 import {
+  type ParticleDepthSource,
   WgpuParticleSimulation,
   type WgpuParticleSimulationOptions,
 } from "./wgpu-particle-simulation.js";
@@ -226,7 +232,9 @@ import {
 import { readTexturePixels } from "./wgpu-readback.js";
 import {
   RENDER_TARGET_COLOR_FORMAT,
+  RENDER_TARGET_DEPTH_TEXTURE_FORMAT,
   WgpuRenderTargetCache,
+  WgpuTransientTargetPool,
   type WgpuRenderTargetRecord,
 } from "./wgpu-render-target.js";
 import {
@@ -560,6 +568,7 @@ function readCapabilities(device: GpuDevice): RendererCapabilities {
     storageBuffers: limit("maxStorageBuffersPerShaderStage") > 0,
     computeShaders: limit("maxComputeWorkgroupSizeX") > 0,
     indirectDraw: true,
+    particleDepthCollision: limit("maxComputeWorkgroupSizeX") > 0,
     compressedTextureFormats: Object.freeze(
       [
         "texture-compression-bc",
@@ -575,6 +584,23 @@ function readCapabilities(device: GpuDevice): RendererCapabilities {
     // in to paying for the pipelines; the capability says what this
     // backend *can* do.
     maximumSkinningJoints: MAX_SKINNING_JOINTS,
+    // The bone-texture palette (`Mesh.skinningMode === "texture"`): an
+    // `rgba32float` texture `textureLoad`ed in the vertex stage needs no
+    // feature (unfilterable-float is core), only a texture at least the
+    // palette's 2048 texels wide; a double that omits `limits` reports false
+    // and draws "texture" meshes through the uniform palette.
+    floatTextures: limit("maxTextureDimension2D") >= 2048,
+    // §69 (W6.3): the atlas needs a texture at least as wide as one tile, and
+    // a spot costs one tile, a point light six; declared, like the joint limit.
+    maximumShadowCascades: MAX_SHADOW_CASCADES,
+    maximumShadowedPunctualLights: MAX_SHADOWED_PUNCTUAL_LIGHTS,
+    maximumTextureSkinningJoints:
+      limit("maxTextureDimension2D") >= 2048
+        ? Math.min(
+            MAX_TEXTURE_SKINNING_JOINTS,
+            (limit("maxTextureDimension2D") * 2048) / 4,
+          )
+        : 0,
     // WebGPU exposes no standard anisotropy limit; 16 is the clamp
     // `wgpu-texture.ts` already uses when `limits.maxAnisotropy` is absent.
     // Reading a property of the device's existing `limits` record is not a
@@ -781,6 +807,10 @@ export class WebgpuRenderer implements Renderer {
     // Declared joint limit, not a device query — same constant after
     // initialize. Registration is what compiles the pipelines.
     maximumSkinningJoints: MAX_SKINNING_JOINTS,
+    floatTextures: false,
+    maximumTextureSkinningJoints: 0,
+    maximumShadowCascades: 0,
+    maximumShadowedPunctualLights: 0,
   } satisfies RendererCapabilities);
 
   #canvas: WebgpuCanvas | null = null;
@@ -893,6 +923,11 @@ export class WebgpuRenderer implements Renderer {
    * empty map and CPU-simulated scenes stay byte-identical.
    */
   readonly #particleSimulations = new Map<string, WgpuParticleSimulation>();
+  /** Per-simulation live depth source of `bindParticleSceneDepth` (one per bound target). */
+  readonly #particleDepthSources = new WeakMap<
+    WgpuParticleSimulation,
+    ParticleDepthSource & { readonly target: RenderTarget }
+  >();
 
   /**
    * §60's registered node pipeline store (RFC 0001; WP-R1.9,
@@ -1395,6 +1430,8 @@ export class WebgpuRenderer implements Renderer {
     // block (the node block carries its own copy).
     let hasNodeLights = false;
     let skinnedCount = 0;
+    let skinnedTextureDraws = 0;
+    let skinnedTextureTexels = 0;
     for (const item of items) {
       if (item.kind === "node" && item.material.reflection.lights.length > 0) {
         hasNodeLights = true;
@@ -1408,10 +1445,22 @@ export class WebgpuRenderer implements Renderer {
       }
       if (item.kind === "skinned-unlit" || item.kind === "skinned-lit") {
         skinnedCount += 1;
+        if (item.paletteTexture === true) {
+          skinnedTextureDraws += 1;
+          skinnedTextureTexels +=
+            item.jointCount * SKIN_PALETTE_TEXELS_PER_JOINT;
+        }
       }
     }
     if (hasLitItems || hasNodeLights) {
-      collectSceneLights(root, sceneLights, unionViewLayerMask(views));
+      // W6.3: cascades are fitted to the first view's camera (§33: authored
+      // view order decides).
+      collectSceneLights(
+        root,
+        sceneLights,
+        unionViewLayerMask(views),
+        views[0]?.camera ?? null,
+      );
     }
     if (hasLitItems) {
       // Sized before recording, like the draw uniforms below: one block per
@@ -1424,6 +1473,9 @@ export class WebgpuRenderer implements Renderer {
     // allocation, call, or byte: the byte-identity contract, not an
     // optimisation.
     const frameShadow = hasLitItems && sceneLights.hasShadow;
+    // W6.3: one caster pass per atlas tile (`1` for the classic single map), so
+    // the caster blocks and palette rows scale with the tile count.
+    const shadowTiles = frameShadow ? sceneLights.shadowTileCount : 0;
 
     // §60's frame preparation (WP-R1.9): the store resolves — and on first
     // sight compiles — every node graph and grows its own strided buffer,
@@ -1454,8 +1506,20 @@ export class WebgpuRenderer implements Renderer {
     if (skinnedPrograms !== null) {
       skinnedPrograms.prepare(
         device,
-        skinnedCount * views.length + (frameShadow ? skinnedCount : 0),
+        skinnedCount * views.length + skinnedCount * shadowTiles,
       );
+      if (
+        skinnedTextureDraws > 0 &&
+        this.#capabilities.floatTextures === true
+      ) {
+        skinnedPrograms.prepareTexture(
+          device,
+          skinnedTextureDraws * views.length,
+          Math.ceil(
+            (skinnedTextureTexels * views.length) / SKIN_PALETTE_TEXTURE_WIDTH,
+          ),
+        );
+      }
     }
 
     // Sized before recording: one clear block per view plus, at worst, one
@@ -1466,7 +1530,7 @@ export class WebgpuRenderer implements Renderer {
     this.#growUniforms(
       device,
       layout,
-      views.length * (1 + items.length) + (frameShadow ? items.length : 0),
+      views.length * (1 + items.length) + items.length * shadowTiles,
     );
     const bindGroup = this.#bindGroup;
     const uniformBuffer = this.#uniformBuffer;
@@ -2950,6 +3014,56 @@ export class WebgpuRenderer implements Renderer {
   }
 
   /**
+   * Binds a scene depth to a particle simulation for `collisions:
+   * "depth-buffer"` (§36): `target` must be a `RenderTarget` created with
+   * `depthTexture: true` (its `depth32float` attachment is samplable; the
+   * backbuffer's `depth24plus` is not), already rendered to this frame;
+   * `viewProjection` is the column-major matrix of the view that drew it.
+   * Call again per frame (or `simulation.updateViewProjection`) as the
+   * camera moves; re-binding after a resize picks up the new view.
+   *
+   * Throws a `FourError`: `INVALID_APPLICATION_STATE` for an uninitialized
+   * renderer, a disposed target, or a target without a samplable depth.
+   */
+  bindParticleSceneDepth(
+    simulation: WgpuParticleSimulation,
+    target: RenderTarget,
+    viewProjection: ArrayLike<number>,
+    bias?: number,
+  ): void {
+    this.#computeDevice("bindParticleSceneDepth");
+    const record = this.#renderTargets?.acquire(target) ?? null;
+    if (
+      record === null ||
+      record.depthView === null ||
+      record.depthFormat !== RENDER_TARGET_DEPTH_TEXTURE_FORMAT
+    ) {
+      throw new FourError(
+        LIFECYCLE_ERROR_CODE,
+        "bindParticleSceneDepth needs a live RenderTarget with " +
+          "`depthTexture: true` — only that attachment (depth32float) is " +
+          "samplable (§36, §69).",
+        { context: { target: target.id } },
+      );
+    }
+    let bound = this.#particleDepthSources.get(simulation);
+    if (bound === undefined || bound.target !== target) {
+      bound = {
+        target,
+        depthView: () => {
+          const live = this.#renderTargets?.acquire(target) ?? null;
+          return live !== null &&
+            live.depthFormat === RENDER_TARGET_DEPTH_TEXTURE_FORMAT
+            ? live.depthView
+            : null;
+        },
+      };
+      this.#particleDepthSources.set(simulation, bound);
+    }
+    simulation.bindSceneDepth(bound, viewProjection, bias);
+  }
+
+  /**
    * Creates the device residency of one §36 `simulation: "gpu"` particle
    * system (R-31 wiring, 2026-08-29) — see `wgpu-particle-simulation.ts`'s
    * header for the design: flat-lane storage buffers, the WP-R1.8 integrator
@@ -3234,12 +3348,30 @@ export class WebgpuRenderer implements Renderer {
         shadedLights = shadowGroup;
       }
     }
+    // The bone-texture palette (decision D7) when the mesh asked and the
+    // device can hold it; otherwise the uniform palette, which a rig past 48
+    // joints cannot fall back to — skipped, never truncated.
+    const textured =
+      item.paletteTexture === true && this.#capabilities.floatTextures === true;
+    if (item.paletteTexture === true && !textured) {
+      if (DEV) {
+        devWarnOnce(
+          "webgpu-skinning-texture-fallback",
+          '§54: skinningMode "texture" is unavailable on this device (no ' +
+            '2048-texel texture); "texture" meshes draw as "gpu" (48 joints).',
+        );
+      }
+      if (item.jointCount > MAX_SKINNING_JOINTS) {
+        return skipped;
+      }
+    }
     const stencilRecord = frameStencil
       ? clip !== null
         ? clip.stencil
         : material.stencil
       : undefined;
     const descriptor: WgpuSkinnedDrawDescriptor = {
+      paletteTexture: textured,
       vertexColors,
       map: useMap,
       normals,
@@ -3260,8 +3392,16 @@ export class WebgpuRenderer implements Renderer {
     const pipeline = lit
       ? programs.lit.acquire(descriptor)
       : programs.unlit.acquire(descriptor);
-    const paletteGroup = programs.paletteBindGroup();
+    const paletteGroup = textured
+      ? programs.paletteTextureBindGroup()
+      : programs.paletteBindGroup();
     if (pipeline === null || paletteGroup === null) {
+      return skipped;
+    }
+    const paletteOffset = textured
+      ? programs.packTexturePalette(item.jointMatrices)
+      : programs.packPalette(item.jointMatrices);
+    if (paletteOffset < 0) {
       return skipped;
     }
     const opacity = material.opacity ?? 1;
@@ -3275,7 +3415,6 @@ export class WebgpuRenderer implements Renderer {
       color[2],
       color[3] * opacity,
     );
-    const paletteOffset = programs.packPalette(item.jointMatrices);
     pass.setPipeline(pipeline);
     pass.setBindGroup(
       0,
@@ -3401,6 +3540,13 @@ export class WebgpuRenderer implements Renderer {
     return this.#effectBindGroup;
   }
 
+  #transientPool: WgpuTransientTargetPool | null = null;
+
+  /** The renderer-owned §63 transient-target pool (W6.1); disposed with the renderer. */
+  transientTargetPool(): WgpuTransientTargetPool {
+    return (this.#transientPool ??= new WgpuTransientTargetPool());
+  }
+
   /**
    * Releases every GPU resource this renderer owns (§83).
    *
@@ -3414,6 +3560,7 @@ export class WebgpuRenderer implements Renderer {
       return;
     }
     this.#disposed = true;
+    this.#transientPool?.dispose();
     if (this.#deviceLost) {
       this.#geometries?.forget();
       this.#textures?.forget();
@@ -4084,17 +4231,19 @@ export class WebgpuRenderer implements Renderer {
     skinnedPrograms: SkinnedPrograms | null,
   ): { record: WgpuRenderTargetRecord | null; block: number } {
     let block = blockStart;
-    const size = sceneLights.shadowMapSize;
+    // W6.3: the atlas — `1 × 1` tiles of `mapSize` for the classic single map.
+    const atlasWidth = sceneLights.shadowAtlasWidth;
+    const atlasHeight = sceneLights.shadowAtlasHeight;
     let target = this.#shadowTarget;
     if (target === null) {
       target = new RenderTarget({
-        width: size,
-        height: size,
+        width: atlasWidth,
+        height: atlasHeight,
         depthTexture: true,
       });
       this.#shadowTarget = target;
-    } else if (target.width !== size) {
-      target.resize(size, size);
+    } else if (target.width !== atlasWidth || target.height !== atlasHeight) {
+      target.resize(atlasWidth, atlasHeight);
     }
 
     const record = renderTargets.acquire(target);
@@ -4114,83 +4263,141 @@ export class WebgpuRenderer implements Renderer {
         depthStoreOp: "store",
       },
     });
-    for (const item of items) {
-      // The caster filter — `wgpu-shadow.ts`'s header owns the list: §49's
-      // opt-out, sprites (a quad would cast its rectangle). Masks and
-      // particle items carry `castShadow: false` from the list builder —
-      // a §36 billboard has no surface to project, drawn (WP-R1.8) or not.
-      // Skinned casters draw through `acquireShadow()` when the colour
-      // pair is registered; unregistered or failed skips, never bind-pose.
-      // §60 (WP-R1.9): a node material with **no** displacement casts its
-      // geometry exactly — depth ignores colour, so the shared caster
-      // module is right for it — while a displacing graph would cast its
-      // *undisplaced* silhouette, a different picture, so those casters
-      // skip: GL's node-caster rule, verbatim (and like GL's,
-      // registration-independent — the caster module is this backend's own).
-      if (
-        !item.castShadow ||
-        (item.kind !== "unlit" &&
-          item.kind !== "lit" &&
-          item.kind !== "standard" &&
-          item.kind !== "node" &&
-          item.kind !== "skinned-unlit" &&
-          item.kind !== "skinned-lit") ||
-        (item.kind === "node" &&
-          item.material.graph.positionOffset !== undefined)
-      ) {
-        continue;
+    const tileCount = sceneLights.shadowTileCount;
+    const tileSize = sceneLights.shadowMapSize;
+    const columns = sceneLights.shadowAtlasColumns;
+    for (let tile = 0; tile < tileCount; tile += 1) {
+      const tileMatrix = sceneLights.shadowTileMatrices[tile];
+      if (tileCount > 1) {
+        // Each tile owns a square of the atlas, in WebGPU's top-left space.
+        const x = (tile % columns) * tileSize;
+        const y = Math.floor(tile / columns) * tileSize;
+        pass.setViewport(x, y, tileSize, tileSize, 0, 1);
+        pass.setScissorRect(x, y, tileSize, tileSize);
       }
-      if (isSkinnedUnlitItem(item) || isSkinnedLitItem(item)) {
-        if (skinnedPrograms === null) {
-          continue;
-        }
-        const geometry = geometries.acquire(item.geometry, false, true);
+      for (const item of items) {
+        // The caster filter — `wgpu-shadow.ts`'s header owns the list: §49's
+        // opt-out, sprites (a quad would cast its rectangle). Masks and
+        // particle items carry `castShadow: false` from the list builder —
+        // a §36 billboard has no surface to project, drawn (WP-R1.8) or not.
+        // Skinned casters draw through `acquireShadow()` when the colour
+        // pair is registered; unregistered or failed skips, never bind-pose.
+        // §60 (WP-R1.9): a node material with **no** displacement casts its
+        // geometry exactly — depth ignores colour, so the shared caster
+        // module is right for it — while a displacing graph would cast its
+        // *undisplaced* silhouette, a different picture, so those casters
+        // skip: GL's node-caster rule, verbatim (and like GL's,
+        // registration-independent — the caster module is this backend's own).
         if (
-          geometry === null ||
-          geometry.jointBuffer === null ||
-          geometry.weightBuffer === null
+          !item.castShadow ||
+          (item.kind !== "unlit" &&
+            item.kind !== "lit" &&
+            item.kind !== "standard" &&
+            item.kind !== "node" &&
+            item.kind !== "skinned-unlit" &&
+            item.kind !== "skinned-lit") ||
+          (item.kind === "node" &&
+            item.material.graph.positionOffset !== undefined)
         ) {
           continue;
         }
-        const depthFormat = record.depthFormat;
-        if (depthFormat === null) {
+        if (isSkinnedUnlitItem(item) || isSkinnedLitItem(item)) {
+          if (skinnedPrograms === null) {
+            continue;
+          }
+          if (item.jointCount > MAX_SKINNING_JOINTS) {
+            // Casters take the uniform palette; a bone-texture rig past 48
+            // joints would overflow it. Skipped, never a truncated silhouette.
+            if (DEV) {
+              devWarnOnce(
+                "webgpu-skinning-texture-caster",
+                "§69: a bone-texture mesh over 48 joints casts no shadow " +
+                  "(casters use the uniform palette).",
+              );
+            }
+            continue;
+          }
+          const geometry = geometries.acquire(item.geometry, false, true);
+          if (
+            geometry === null ||
+            geometry.jointBuffer === null ||
+            geometry.weightBuffer === null
+          ) {
+            continue;
+          }
+          const depthFormat = record.depthFormat;
+          if (depthFormat === null) {
+            continue;
+          }
+          const skinnedPipeline = this.#acquireSkinnedShadowPipeline(
+            skinnedPrograms,
+            {
+              topology: geometry.topology,
+              colorFormat: RENDER_TARGET_COLOR_FORMAT,
+              depthFormat,
+            },
+          );
+          if (skinnedPipeline === null) {
+            continue;
+          }
+          const paletteGroup = skinnedPrograms.paletteBindGroup();
+          if (paletteGroup === null) {
+            continue;
+          }
+          const paletteOffset = skinnedPrograms.packPalette(item.jointMatrices);
+          this.#writeBlock(block, tileMatrix, item.worldMatrix, 0, 0, 0, 0);
+          pass.setPipeline(skinnedPipeline);
+          pass.setBindGroup(
+            0,
+            bindGroup,
+            dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+          );
+          pass.setBindGroup(1, paletteGroup, dynamicOffset(paletteOffset));
+          pass.setVertexBuffer(0, geometry.positionBuffer);
+          pass.setVertexBuffer(1, geometry.jointBuffer);
+          pass.setVertexBuffer(2, geometry.weightBuffer);
+          if (geometry.indexBuffer !== null && geometry.indexFormat !== null) {
+            pass.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
+            pass.drawIndexed(geometry.count);
+          } else {
+            pass.draw(geometry.count);
+          }
+          if (statistics !== null) {
+            countDraw(statistics, geometry.topology, geometry.count, 1);
+          }
+          block += 1;
           continue;
         }
-        const skinnedPipeline = this.#acquireSkinnedShadowPipeline(
-          skinnedPrograms,
-          {
-            topology: geometry.topology,
-            colorFormat: RENDER_TARGET_COLOR_FORMAT,
-            depthFormat,
-          },
-        );
-        if (skinnedPipeline === null) {
+        const geometry = geometries.acquire(item.geometry);
+        if (geometry === null) {
           continue;
         }
-        const paletteGroup = skinnedPrograms.paletteBindGroup();
-        if (paletteGroup === null) {
+        const pipeline = pipelines.acquire({
+          kind: "shadow",
+          vertexColors: false,
+          map: false,
+          blend: "none",
+          depthTest: true,
+          depthWrite: true,
+          colorWrite: true,
+          topology: geometry.topology,
+          colorFormat: RENDER_TARGET_COLOR_FORMAT,
+          depthFormat: record.depthFormat,
+          stencil: null,
+          batch: null,
+        });
+        if (pipeline === null) {
+          // Unreachable for the reason the unlit path states; same narrowing.
           continue;
         }
-        const paletteOffset = skinnedPrograms.packPalette(item.jointMatrices);
-        this.#writeBlock(
-          block,
-          sceneLights.shadowMatrix,
-          item.worldMatrix,
-          0,
-          0,
-          0,
-          0,
-        );
-        pass.setPipeline(skinnedPipeline);
+        this.#writeBlock(block, tileMatrix, item.worldMatrix, 0, 0, 0, 0);
+        pass.setPipeline(pipeline);
         pass.setBindGroup(
           0,
           bindGroup,
           dynamicOffset(block * UNIFORM_STRIDE_BYTES),
         );
-        pass.setBindGroup(1, paletteGroup, dynamicOffset(paletteOffset));
         pass.setVertexBuffer(0, geometry.positionBuffer);
-        pass.setVertexBuffer(1, geometry.jointBuffer);
-        pass.setVertexBuffer(2, geometry.weightBuffer);
         if (geometry.indexBuffer !== null && geometry.indexFormat !== null) {
           pass.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
           pass.drawIndexed(geometry.count);
@@ -4198,61 +4405,12 @@ export class WebgpuRenderer implements Renderer {
           pass.draw(geometry.count);
         }
         if (statistics !== null) {
+          // A caster pass draw is a draw (§84) — the GL pass's counter
+          // argument, verbatim.
           countDraw(statistics, geometry.topology, geometry.count, 1);
         }
         block += 1;
-        continue;
       }
-      const geometry = geometries.acquire(item.geometry);
-      if (geometry === null) {
-        continue;
-      }
-      const pipeline = pipelines.acquire({
-        kind: "shadow",
-        vertexColors: false,
-        map: false,
-        blend: "none",
-        depthTest: true,
-        depthWrite: true,
-        colorWrite: true,
-        topology: geometry.topology,
-        colorFormat: RENDER_TARGET_COLOR_FORMAT,
-        depthFormat: record.depthFormat,
-        stencil: null,
-        batch: null,
-      });
-      if (pipeline === null) {
-        // Unreachable for the reason the unlit path states; same narrowing.
-        continue;
-      }
-      this.#writeBlock(
-        block,
-        sceneLights.shadowMatrix,
-        item.worldMatrix,
-        0,
-        0,
-        0,
-        0,
-      );
-      pass.setPipeline(pipeline);
-      pass.setBindGroup(
-        0,
-        bindGroup,
-        dynamicOffset(block * UNIFORM_STRIDE_BYTES),
-      );
-      pass.setVertexBuffer(0, geometry.positionBuffer);
-      if (geometry.indexBuffer !== null && geometry.indexFormat !== null) {
-        pass.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
-        pass.drawIndexed(geometry.count);
-      } else {
-        pass.draw(geometry.count);
-      }
-      if (statistics !== null) {
-        // A caster pass draw is a draw (§84) — the GL pass's counter
-        // argument, verbatim.
-        countDraw(statistics, geometry.topology, geometry.count, 1);
-      }
-      block += 1;
     }
     pass.end();
     return { record, block };

@@ -127,10 +127,13 @@ describe("the light uniform layout (wgpu-lights.ts)", () => {
     );
     expect(LIGHT_UNIFORM_BYTES).toBe(LIGHT_PUNCTUAL_PARAMS_OFFSET + arrayBytes);
     expect(LIGHT_UNIFORM_FLOATS).toBe(LIGHT_UNIFORM_BYTES / 4);
-    // The stride is the block rounded up to the 256-byte dynamic-offset
-    // alignment, and it really is a round-up, not a guess.
+    // The stride is a whole number of 256-byte dynamic-offset alignments that
+    // holds the unshadowed binding (W6.3 doubled it for the shadow-atlas tail,
+    // `wgpu-shadow.ts`; the landed offsets below it did not move).
     expect(LIGHT_UNIFORM_STRIDE_BYTES % 256).toBe(0);
-    expect(LIGHT_UNIFORM_STRIDE_BYTES - LIGHT_UNIFORM_BYTES).toBeLessThan(256);
+    expect(LIGHT_UNIFORM_STRIDE_BYTES).toBeGreaterThanOrEqual(
+      LIGHT_UNIFORM_BYTES,
+    );
     expect(LIGHT_UNIFORM_STRIDE_FLOATS).toBe(LIGHT_UNIFORM_STRIDE_BYTES / 4);
   });
 
@@ -250,7 +253,7 @@ describe("the light uniform layout (wgpu-lights.ts)", () => {
     expect(LIGHT_UNIFORM_BYTES).toBe(784);
     expect(HEMISPHERE_SKY_OFFSET).toBe(LIGHT_UNIFORM_BYTES + 80);
     expect(LIGHT_BINDING_BYTES).toBe(912);
-    expect(LIGHT_UNIFORM_STRIDE_BYTES).toBe(1024);
+    expect(LIGHT_UNIFORM_STRIDE_BYTES).toBe(2048);
   });
 
   it("packs extra directionals into the shared slots after the punctual set (W5.1)", () => {

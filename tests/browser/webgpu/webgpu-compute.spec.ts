@@ -28,6 +28,7 @@
 import {
   COMPUTE_ENTRY_POINT,
   PARTICLE_INTEGRATOR_SHADER_SOURCE,
+  PARTICLE_SIMULATION_PARAMS_FLOATS,
   particleIntegratorWorkgroups,
 } from "@fourjs/render-webgpu";
 import { expect, test } from "@playwright/test";
@@ -64,11 +65,13 @@ const PAGE_SCRIPT = `async (options) => {
     device.queue.writeBuffer(buffer, 0, floats);
     return buffer;
   };
-  // deltaSeconds 0.5, count 2, pad, pad, gravity (0, -2, 0, 0) — the layout
-  // writeParticleSimulationParams packs.
-  const params = storage(
-    new Float32Array([0.5, 2, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-  );
+  // deltaSeconds 0.5, count 2, pad, pad, gravity (0, -2, 0, 0) in the header
+  // lanes the writer packs; the block is sized from the exported constant
+  // (wave 6 widened it to carry the §27 field stack and the depth-collide
+  // header), never hand-counted, so this spec cannot drift from the kernel.
+  const paramFloats = new Float32Array(options.paramsFloats);
+  paramFloats.set([0.5, 2, 0, 0, 0, -2, 0, 0]);
+  const params = storage(paramFloats);
   const positions = storage(new Float32Array([0, 0, 0, 10, 20, 30, 7, 7, 7]));
   const velocities = storage(new Float32Array([1, 0, 0, 0, 0, 0, 5, 5, 5]));
 
@@ -153,6 +156,7 @@ test.describe("WebGPU compute, on a real adapter (§82, WP-R1.8)", () => {
       shader: PARTICLE_INTEGRATOR_SHADER_SOURCE,
       entryPoint: COMPUTE_ENTRY_POINT,
       workgroups: particleIntegratorWorkgroups(COUNT),
+      paramsFloats: PARTICLE_SIMULATION_PARAMS_FLOATS,
     });
     test.skip(
       !result.adapter,

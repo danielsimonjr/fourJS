@@ -169,7 +169,7 @@ interface FramedDrawable {
  */
 interface SkinnedDrawable {
   readonly skeleton?: Skeleton | null;
-  readonly skinningMode?: "gpu" | "cpu";
+  readonly skinningMode?: "gpu" | "cpu" | "texture";
   updateCpuGeometry?(worldOf?: (node: Node) => Matrix4): BufferGeometry;
   readonly morphTargetWeights?: Float32Array;
 }
@@ -516,6 +516,13 @@ interface SkinnedRenderItemBase extends RenderItemBase {
   jointMatrices: Float32Array;
   /** Number of joints in the palette; positive on every skinned item. */
   jointCount: number;
+  /**
+   * `true` when the mesh asked for the bone-texture palette
+   * (`skinningMode === "texture"`, `skin-palette.ts`); absent or `false` is the
+   * uniform palette. A backend without float vertex texture fetch draws a
+   * `true` item through the uniform path.
+   */
+  paletteTexture?: boolean;
 }
 
 /**
@@ -746,6 +753,7 @@ interface MutableRenderItem extends RenderItemBase {
   /** RFC 0003's palette; meaningful only on the two skinned arms. */
   jointMatrices: Float32Array;
   jointCount: number;
+  paletteTexture: boolean;
   /**
    * Required here though optional on the base, for `clip`'s reason: the
    * builders write it on every drawable item, so a pooled slot cannot hand a
@@ -982,6 +990,7 @@ function itemAt(
       instances: EMPTY_INSTANCES,
       jointMatrices: EMPTY_JOINT_MATRICES,
       jointCount: 0,
+      paletteTexture: false,
       morphWeights: null,
       trailVertexCount: 0,
       instanceFloats: PARTICLE_INSTANCE_FLOATS,
@@ -1562,6 +1571,8 @@ function collect(
           }
           item.jointMatrices = activeSkin.jointMatrices;
           item.jointCount = activeSkin.bones.length;
+          item.paletteTexture =
+            (node as SkinnedDrawable).skinningMode === "texture";
         }
         // The one cast in the module, and the only place the `kind`/`material`
         // correlation is established: both were just written from the same node, so

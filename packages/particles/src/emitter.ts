@@ -36,7 +36,7 @@
  * | forces                      | **ships** — gravity + §27 fields (WP-9.2 implements the fields) |
  * | colour and size over lifetime | **ships** — two-stop linear ramp            |
  * | collision                   | **MVP tier** — `collisionPlaneY` bounce, plus `collisions: "depth-buffer"` kill-below-ground |
- * | GPU compute simulation      | **integrator tier ships** (R-31 wiring, 2026-08-29): `simulation: "gpu"` + a bound {@link ParticleGpuSimulation} — CPU spawn, GPU semi-implicit Euler under constant gravity plus an optional radial field. `collisions: "depth-buffer"` is accepted; the device rests particles on `y = ground` (a documented stub — true depth-texture collide-and-kill is staged). |
+ * | GPU compute simulation      | **integrator tier ships** (R-31 wiring, 2026-08-29): `simulation: "gpu"` + a bound {@link ParticleGpuSimulation} — CPU spawn, GPU semi-implicit Euler under constant gravity plus an optional radial field. `collisions: "depth-buffer"` kills against a bound scene depth texture on WebGPU (`bindParticleSceneDepth`; `depth32float` render target), resting on `y = ground` when none is bound. |
  * | trails, attractors, custom data channels | staged (2026-08-02, P9-1): trails need a per-particle position-history channel (a ring buffer per slot) plus a ribbon render path — neither the SoA pool nor the "particles" render item carries history, and shipping a one-sample "trail" would be a lie; attractors are expressible today as a negative-strength {@link ../fields.js radialField}; custom data channels want a pool-layout extension API |
  *
  * `collisions: "depth-buffer"` is now an accepted option (R-31 residue /
@@ -66,10 +66,11 @@
  *   again). Binding is once: a driver's device dying takes the particle
  *   state with it (§34 posture in `types.ts`), so recovery is a new
  *   emitter, not a rebind.
- * - **Non-radial `fields` and bounce-only `collisionPlaneY` are refused**
- *   in GPU mode. A `radialField` (the `gpuField` brand) is applied on the
- *   device with the same inverse-square law as the CPU path. `collisions:
- *   "depth-buffer"` is accepted as the ground-rest stub above.
+ * - **Hand-written `fields`, more than `MAX_GPU_FIELDS`, and bounce-only
+ *   `collisionPlaneY` are refused** in GPU mode. Every built-in field (the
+ *   `gpuField` record) is applied on the device in declaration order with
+ *   the CPU formulas (float32). `collisions: "depth-buffer"` kills against
+ *   a bound scene depth (WebGPU) or rests on the ground plane.
  * - The step order is the CPU order with integration hoisted: one
  *   `integrate()` over the pre-expiry live count (every live particle
  *   integrates exactly once, as on the CPU, where the swap-remove re-process
@@ -194,6 +195,7 @@ import type {
   ParticleColor,
   ParticleForceField,
   ParticleGpuIntegrateExtras,
+  ParticleGpuField,
   ParticleGpuRadialField,
   ParticleGpuSimulation,
   ParticleLifetimeRamp,
@@ -203,6 +205,7 @@ import type {
   ParticleTexture,
 } from "./types.js";
 import {
+  MAX_GPU_FIELDS,
   evaluateLifetimeRampColorInto,
   evaluateLifetimeRampNumber,
 } from "./types.js";
@@ -472,6 +475,7 @@ export class ParticleEmitter {
   readonly #softness: number;
   readonly #instanceFloats: number;
   readonly #gpuRadial: ParticleGpuRadialField | undefined;
+  readonly #gpuFields: readonly ParticleGpuField[];
 
   /** §36's `simulation` option, frozen at construction. */
   readonly #simulation: ParticleSimulationMode;
@@ -560,12 +564,23 @@ export class ParticleEmitter {
         ? 10
         : 8;
 
+    // No development-build warning here: `particles` is a §33 simulation
+    // package and may not import the §85 flag (`dev-build-mode` suite). The
+    // CPU fallback for `collisions: "depth-buffer"` — kill below the ground
+    // plane — is documented in the header table and in the option's JSDoc;
+    // scene-depth collide-and-kill needs `simulation: "gpu"` on WebGPU
+    // (`capabilities.particleDepthCollision`).
     const authoredFields =
       options.fields === undefined ? [] : [...options.fields];
     let gpuRadial: ParticleGpuRadialField | undefined;
+    let gpuFields: readonly ParticleGpuField[] = [];
     if (simulation === "gpu") {
       if (authoredFields.length > 0) {
-        gpuRadial = resolveGpuRadial(authoredFields);
+        gpuFields = resolveGpuFields(authoredFields);
+        const only = gpuFields.length === 1 ? gpuFields[0] : undefined;
+        if (only?.kind === "radial" && only.volume === undefined) {
+          gpuRadial = only;
+        }
       }
       if (
         options.collisionPlaneY !== undefined &&
@@ -587,6 +602,7 @@ export class ParticleEmitter {
       }
     }
     this.#gpuRadial = gpuRadial;
+    this.#gpuFields = gpuFields;
 
     this.#emissionRate = assertFiniteAtLeast(
       options.emissionRate ?? 0,
@@ -794,7 +810,12 @@ export class ParticleEmitter {
     return this.#instanceFloats;
   }
 
-  /** The GPU-applied radial field, or `undefined`. */
+  /** The GPU-applied field stack (empty on CPU emitters), declaration order. */
+  get gpuFields(): readonly ParticleGpuField[] {
+    return this.#gpuFields;
+  }
+
+  /** The GPU-applied radial field when it is the whole stack, or `undefined`. */
   get gpuRadial(): ParticleGpuRadialField | undefined {
     return this.#gpuRadial;
   }
@@ -962,7 +983,7 @@ export class ParticleEmitter {
     }
 
     if (this.#simulation === "gpu") {
-      this.#simulateGpu(this.#requireGpu("step"), deltaSeconds);
+      this.#simulateGpu(this.#requireGpu("step"), deltaSeconds, time);
     } else {
       this.#simulate(deltaSeconds, time);
     }
@@ -1225,11 +1246,15 @@ export class ParticleEmitter {
    * only ages and lifetimes, never positions, so the order between the two
    * halves is unobservable.
    */
-  #simulateGpu(gpu: ParticleGpuSimulation, deltaSeconds: number): void {
+  #simulateGpu(
+    gpu: ParticleGpuSimulation,
+    deltaSeconds: number,
+    time: number,
+  ): void {
     const pool = this.pool;
     const live = pool.aliveCount;
     if (live > 0 && deltaSeconds > 0) {
-      const extras = this.#gpuIntegrateExtras();
+      const extras = this.#gpuIntegrateExtras(time);
       if (extras === undefined) {
         gpu.integrate(
           live,
@@ -1403,17 +1428,22 @@ export class ParticleEmitter {
    * GPU integrate extras, or `undefined` on the gravity-only path so a
    * 5-argument driver recording stays identical.
    */
-  #gpuIntegrateExtras(): ParticleGpuIntegrateExtras | undefined {
-    if (this.#gpuRadial === undefined && this.#collisions !== "depth-buffer") {
+  #gpuIntegrateExtras(time: number): ParticleGpuIntegrateExtras | undefined {
+    if (this.#gpuFields.length === 0 && this.#collisions !== "depth-buffer") {
       return undefined;
     }
     const extras: {
       radial?: ParticleGpuRadialField;
+      fields?: readonly ParticleGpuField[];
+      time?: number;
       collisionGroundY?: number;
       collisions?: ParticleCollisionMode;
     } = {};
     if (this.#gpuRadial !== undefined) {
       extras.radial = this.#gpuRadial;
+    } else if (this.#gpuFields.length > 0) {
+      extras.fields = this.#gpuFields;
+      extras.time = time;
     }
     if (this.#collisions === "depth-buffer") {
       extras.collisions = "depth-buffer";
@@ -1423,26 +1453,30 @@ export class ParticleEmitter {
   }
 }
 
-/** Extracts the single GPU-capable radial field, or refuses the rest. */
-function resolveGpuRadial(
+/**
+ * Collects the GPU-expressible field stack in declaration order (the CPU
+ * summation order), refusing hand-written fields and stacks longer than
+ * {@link MAX_GPU_FIELDS}.
+ */
+function resolveGpuFields(
   fields: readonly ParticleForceField[],
-): ParticleGpuRadialField | undefined {
-  let radial: ParticleGpuRadialField | undefined;
+): readonly ParticleGpuField[] {
+  if (fields.length > MAX_GPU_FIELDS) {
+    throw new RangeError(
+      `ParticleEmitter: simulation "gpu" accepts at most ${String(MAX_GPU_FIELDS)} fields (§27 GPU field stack); received ${String(fields.length)}`,
+    );
+  }
+  const stack: ParticleGpuField[] = [];
   for (let i = 0; i < fields.length; i += 1) {
     const gpuField = fields[i]?.gpuField;
-    if (gpuField === undefined || gpuField.kind !== "radial") {
+    if (gpuField === undefined) {
       throw new RangeError(
-        'ParticleEmitter: simulation "gpu" does not accept `fields` other than radialField (§27 GPU fields; R-31)',
+        'ParticleEmitter: simulation "gpu" does not accept a hand-written or nested-volume field; use the built-in §27 fields (radial, uniform gravity, drag, wind, vortex, turbulence, or one volumeField over them)',
       );
     }
-    if (radial !== undefined) {
-      throw new RangeError(
-        'ParticleEmitter: simulation "gpu" accepts at most one radialField',
-      );
-    }
-    radial = gpuField;
+    stack.push(gpuField);
   }
-  return radial;
+  return stack;
 }
 
 /** Rejects a non-finite option. */
