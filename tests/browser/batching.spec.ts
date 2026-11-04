@@ -191,3 +191,61 @@ test.describe("§65 batching draws the same picture (R-9)", () => {
     expect(worstDelta).toBeLessThanOrEqual(MAX_CHANNEL_DELTA);
   });
 });
+
+/** R-22: 10 shaded meshes unbatched; two instanced runs (lit, standard) batched. */
+const SHADED_UNBATCHED_DRAW_CALLS = 10;
+const SHADED_INSTANCED_DRAW_CALLS = 2;
+
+/** 0.01% of the canvas, per the R-22 equivalence gate. */
+const SHADED_MAX_DIFFERING_PIXELS = Math.round(WIDTH * HEIGHT * 0.0001);
+
+test.describe("§65 instanced shaded meshes draw the same picture (R-22)", () => {
+  test("an instanced lit + standard frame matches the unbatched one in two draw calls", async ({
+    page,
+  }) => {
+    const code = await bundleFixture();
+    await page.goto(`http://localhost:${String(PORT)}/`);
+    await page.setContent("<!doctype html><body></body>");
+    await page.addScriptTag({ content: code, type: "module" });
+    await page.waitForSelector("body[data-shaded-batching-ready='1']", {
+      timeout: 30_000,
+    });
+
+    const plain = (await page.evaluate(() =>
+      window.fourShadedBatchingProbe?.(false),
+    )) as Probe;
+    const instanced = (await page.evaluate(() =>
+      window.fourShadedBatchingProbe?.(true),
+    )) as Probe;
+
+    expect(plain.drawCalls).toBe(SHADED_UNBATCHED_DRAW_CALLS);
+    expect(instanced.drawCalls).toBe(SHADED_INSTANCED_DRAW_CALLS);
+
+    let differing = 0;
+    let drawn = 0;
+    for (let i = 0; i < instanced.pixels.length; i += 4) {
+      let delta = 0;
+      for (let c = 0; c < 4; c += 1) {
+        delta = Math.max(
+          delta,
+          Math.abs(instanced.pixels[i + c] - plain.pixels[i + c]),
+        );
+      }
+      if (delta > 0) differing += 1;
+      if (
+        plain.pixels[i] > 8 ||
+        plain.pixels[i + 1] > 8 ||
+        plain.pixels[i + 2] > 8
+      ) {
+        drawn += 1;
+      }
+    }
+    console.log(
+      `instanced vs unbatched shaded: ${String(differing)} of ${String(
+        WIDTH * HEIGHT,
+      )} pixels differ; ${String(drawn)} non-background`,
+    );
+    expect(drawn).toBeGreaterThan(WIDTH * HEIGHT * 0.05);
+    expect(differing).toBeLessThanOrEqual(SHADED_MAX_DIFFERING_PIXELS);
+  });
+});

@@ -14,8 +14,18 @@
 
 export const PACKAGE_NAME = "@fourjs/render-webgl";
 
-export type { BatchGlContext, RenderBatching } from "./gl-batch.js";
-export { GlBatching, createGlBatching } from "./gl-batch.js";
+export type {
+  BatchGlContext,
+  InstanceGlContext,
+  InstancedGeometryRecord,
+  RenderBatching,
+} from "./gl-batch.js";
+export {
+  GlBatching,
+  createGlBatching,
+  createInstanceGl,
+  instanceVertexSource,
+} from "./gl-batch.js";
 export type {
   EffectPipeline,
   EffectPipelineFactory,

@@ -101,14 +101,16 @@ import type {
   SpriteMaterial,
   UnlitMaterial,
 } from "@fourjs/materials";
-import type { ColorRGBA } from "@fourjs/math";
+import { Matrix3, type ColorRGBA } from "@fourjs/math";
 import { ALL_LAYERS, type LayerMask } from "@fourjs/scene";
 
 import type { RenderItemClip } from "./clip.js";
 import { scissorsEqual, type ScissorRect } from "./scissor.js";
 import type {
+  LitRenderItem,
   RenderItem,
   SpriteRenderItem,
+  StandardRenderItem,
   UnlitRenderItem,
 } from "./render-list.js";
 
@@ -309,6 +311,64 @@ export interface RenderBatch {
   readonly contentVersion?: number;
 }
 
+/**
+ * Floats per instance in {@link InstancedRun.instances} (R-22): the world
+ * matrix (16, column-major) then the normal matrix (9, three `vec3` columns).
+ */
+export const INSTANCE_FLOATS = 25;
+
+/** The shaded render items {@link RenderBatcher.nextInstanced} instances. */
+export type InstanceableItem = LitRenderItem | StandardRenderItem;
+
+/**
+ * One instanced draw (R-22): `items` consecutive shaded render items that
+ * share a geometry, a material instance, clip, scissor, layer mask and shadow
+ * flag, drawn as a single instanced call. Unlike {@link RenderBatch} nothing
+ * is baked: the vertex stream stays the geometry's own and each instance
+ * carries its model matrix plus the matching normal matrix, so shading is
+ * exactly the unbatched shading. Pooled like {@link RenderBatch}: valid until
+ * the next {@link RenderBatcher.nextInstanced} call.
+ */
+export interface InstancedRun {
+  /** Pipeline of every merged item. */
+  readonly kind: "lit" | "standard";
+  /** The first merged item; its geometry, material and flags speak for all. */
+  readonly first: InstanceableItem;
+  /** Consecutive items consumed (always >= 2). */
+  readonly items: number;
+  /** `INSTANCE_FLOATS` floats per item, in list order; whole staging array. */
+  readonly instances: Float32Array;
+  /** Idle-cache stamp, as {@link RenderBatch.contentVersion}; 0 = re-upload. */
+  readonly contentVersion: number;
+}
+
+interface MutableRun {
+  kind: "lit" | "standard";
+  first: InstanceableItem;
+  items: number;
+  instances: Float32Array;
+  contentVersion: number;
+}
+
+const instanceNormal = new Matrix3();
+
+/**
+ * Whether `item` is a shaded item the instanced tier can draw: lit or
+ * standard, with something to draw, and no skin or morph target (those draw
+ * through their own programs).
+ */
+function isInstanceable(item: RenderItem): item is InstanceableItem {
+  if (item.kind !== "lit" && item.kind !== "standard") {
+    return false;
+  }
+  const geometry = item.geometry;
+  return (
+    geometry.vertexCount > 0 &&
+    geometry.drawCount > 0 &&
+    geometry.positions1 === undefined
+  );
+}
+
 /** The record the batcher fills; `RenderBatch` is its read-only face. */
 interface MutableBatch {
   kind: "unlit" | "sprite";
@@ -447,8 +507,95 @@ export class RenderBatcher {
     contentVersion: 0,
   };
 
+  /** Instance staging array (R-22); grows, never shrinks. */
+  #instances = new Float32Array(0);
+
+  readonly #run: MutableRun = {
+    kind: "lit",
+    first: null as unknown as InstanceableItem,
+    items: 0,
+    instances: this.#instances,
+    contentVersion: 0,
+  };
+
   constructor(options: RenderBatchOptions = {}) {
     this.maxVertices = options.maxVertices ?? DEFAULT_MAX_BATCH_VERTICES;
+  }
+
+  /**
+   * R-22: the instanced run starting at `items[from]`, or `null`.
+   *
+   * A run is consecutive lit (or standard) items with the **same geometry
+   * instance, material instance, clip, scissor, layer mask and
+   * `receiveShadow`** — R-9's rules plus geometry identity, since an instanced
+   * draw shares the vertex stream. Nothing is reordered; frame lights are
+   * per-frame state, so every item of a run sees the same light set by
+   * construction. Allocation-free after warm-up.
+   */
+  nextInstanced(
+    items: readonly RenderItem[],
+    from: number,
+    layerMask: LayerMask = ALL_LAYERS,
+  ): InstancedRun | null {
+    const first = items[from];
+    if (
+      first === undefined ||
+      (first.layers & layerMask) === 0 ||
+      !isInstanceable(first)
+    ) {
+      return null;
+    }
+    const clip = first.clip ?? null;
+    const scissor = first.scissor ?? null;
+    let count = 1;
+    for (let i = from + 1; i < items.length; i += 1) {
+      const item = items[i];
+      if (
+        item.kind !== first.kind ||
+        item.geometry !== first.geometry ||
+        item.material !== first.material ||
+        item.layers !== first.layers ||
+        (item.layers & layerMask) === 0 ||
+        item.receiveShadow !== first.receiveShadow ||
+        (item.clip ?? null) !== clip ||
+        !scissorsEqual(item.scissor, scissor) ||
+        !isInstanceable(item)
+      ) {
+        break;
+      }
+      count += 1;
+    }
+    if (count < 2) {
+      return null;
+    }
+    const need = count * INSTANCE_FLOATS;
+    if (this.#instances.length < need) {
+      let length = Math.max(INSTANCE_FLOATS * 16, this.#instances.length);
+      while (length < need) length *= 2;
+      this.#instances = new Float32Array(length);
+    }
+    const out = this.#instances;
+    for (let i = 0; i < count; i += 1) {
+      const at = i * INSTANCE_FLOATS;
+      const model = items[from + i].worldMatrix;
+      for (let k = 0; k < 16; k += 1) {
+        out[at + k] = model.elements[k];
+      }
+      // Identity seed first: a singular model must not leak the previous
+      // instance's inverse-transpose (the same rule the per-draw upload has).
+      instanceNormal.identity();
+      instanceNormal.setNormalFromMatrix4(model);
+      for (let k = 0; k < 9; k += 1) {
+        out[at + 16 + k] = instanceNormal.elements[k];
+      }
+    }
+    const run = this.#run;
+    run.kind = first.kind;
+    run.first = first;
+    run.items = count;
+    run.instances = out;
+    run.contentVersion = contentVersionOf(items, from, count);
+    return run;
   }
 
   /**
