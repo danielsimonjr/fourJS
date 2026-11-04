@@ -184,7 +184,7 @@ Run locally on 2026-11-04 against the branch head, mirroring `ci.yml` and `doc-g
 | `repo-tools check . --docs=docs/Architecture` (`typeOnlyCircularDeps` 10, runtime 0)                 | pass                                                                                                 |
 | `bun run examples:build`, `bun run size` (all budgets)                                               | pass                                                                                                 |
 | `bun run docs` (TypeDoc)                                                                             | pass after retyping one math test helper for TypeScript 6                                            |
-| `bun run test:browser`                                                                               | run in progress at the time of this commit; result recorded in the next commit                       |
+| `bun run test:browser` (Chromium, software GPU)                                                      | 115 passed, 0 failed, 0 flaky, three visual goldens unchanged                                        |
 
 No threshold, timeout, golden or bundle budget was relaxed. No benchmark result file was
 committed; the particle and physics benchmarks are the suggested follow-up measurements
