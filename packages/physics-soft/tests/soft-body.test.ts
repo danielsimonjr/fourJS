@@ -3,12 +3,7 @@ import { Node } from "@fourjs/scene";
 import { describe, expect, it } from "vitest";
 
 import * as api from "../src/index.js";
-import {
-  PRIORITY_SOFT_BODY,
-  SoftBody,
-  SoftBodySystem,
-  type SoftBodyDescriptor,
-} from "../src/index.js";
+import { SoftBody, type SoftBodyDescriptor } from "../src/index.js";
 
 const rope: SoftBodyDescriptor = { kind: "rope", segments: 5, length: 2 };
 const cloth: SoftBodyDescriptor = {
@@ -79,19 +74,6 @@ describe("SoftBody component", () => {
     bad({ ...tetra, indices: new Uint32Array(4) });
     bad({ ...tetra, pressure: 0 });
     expect(() => new SoftBody({ ...tetra, pressure: undefined })).not.toThrow();
-  });
-});
-
-describe("SoftBodySystem", () => {
-  it("sits just after the rigid solve and refuses to step", () => {
-    const system = new SoftBodySystem();
-    expect(system.priority).toBe(PRIORITY_SOFT_BODY);
-    expect(PRIORITY_SOFT_BODY).toBe(610);
-    system.initialize({} as never);
-    expect(() => system.fixedUpdate({} as never)).toThrow(
-      expect.objectContaining({ code: "NOT_IMPLEMENTED" }),
-    );
-    system.dispose();
   });
 });
 

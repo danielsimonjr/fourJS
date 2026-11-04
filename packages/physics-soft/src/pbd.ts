@@ -1,0 +1,348 @@
+/**
+ * The CPU position-based-dynamics kernel (RFC 0011 #1-#4, #8).
+ *
+ * All state lives in typed arrays sized once at construction; `step` allocates
+ * nothing (7b). Particles and constraints are processed in index order only (8).
+ */
+
+/** A rest layout and the constraint set a descriptor expands to. */
+export interface SoftTopology {
+  /** Local-space rest positions, xyz triplets. */
+  readonly rest: Float64Array;
+  /** Constraint endpoints, `a[i]`-`b[i]`. */
+  readonly a: Uint32Array;
+  readonly b: Uint32Array;
+  /** Rest length per constraint. */
+  readonly length: Float64Array;
+  /** `1` for a stretch constraint, `0` for a bending constraint. */
+  readonly stretch: Uint8Array;
+  /** Pinned particle indices, ascending. */
+  readonly pinned: Uint32Array;
+}
+
+/** Per-body numeric tuning, already defaulted. */
+export interface PbdTuning {
+  substeps: number;
+  iterations: number;
+  stiffness: number;
+  bendingStiffness: number;
+  damping: number;
+  mass: number;
+}
+
+/** Iteration-count-independent stiffness: `1 - (1 - k)^(1/iterations)` (RFC 0011 #3). */
+export function effectiveStiffness(k: number, iterations: number): number {
+  return 1 - Math.pow(1 - k, 1 / iterations);
+}
+
+/** Builds the rope topology: a chain hanging down -Y from the origin. */
+export function ropeTopology(
+  segments: number,
+  length: number,
+  pinned: readonly number[],
+): SoftTopology {
+  const rest = new Float64Array(segments * 3);
+  const spacing = length / (segments - 1);
+  for (let i = 0; i < segments; i++) rest[i * 3 + 1] = -i * spacing;
+  const count = segments - 1 + Math.max(0, segments - 2);
+  const a = new Uint32Array(count);
+  const b = new Uint32Array(count);
+  const len = new Float64Array(count);
+  const stretch = new Uint8Array(count);
+  let k = 0;
+  for (let i = 0; i < segments - 1; i++, k++) {
+    a[k] = i;
+    b[k] = i + 1;
+    len[k] = spacing;
+    stretch[k] = 1;
+  }
+  for (let i = 0; i < segments - 2; i++, k++) {
+    a[k] = i;
+    b[k] = i + 2;
+    len[k] = spacing * 2;
+  }
+  return { rest, a, b, length: len, stretch, pinned: sortedUnique(pinned) };
+}
+
+/** Builds the cloth topology: a grid in the local XZ plane at y = 0, row 0 at -Z/2. */
+export function clothTopology(
+  columns: number,
+  rows: number,
+  width: number,
+  height: number,
+  pinned: readonly number[],
+): SoftTopology {
+  const rest = new Float64Array(columns * rows * 3);
+  const dx = width / (columns - 1);
+  const dz = height / (rows - 1);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) {
+      const i = (r * columns + c) * 3;
+      rest[i] = -width / 2 + c * dx;
+      rest[i + 2] = -height / 2 + r * dz;
+    }
+  }
+  const edges = (columns - 1) * rows + columns * (rows - 1);
+  const diagonals = 2 * (columns - 1) * (rows - 1);
+  const total = edges + diagonals;
+  const a = new Uint32Array(total);
+  const b = new Uint32Array(total);
+  const len = new Float64Array(total);
+  const stretch = new Uint8Array(total);
+  let k = 0;
+  const add = (i: number, j: number, isStretch: number): void => {
+    a[k] = i;
+    b[k] = j;
+    len[k] = Math.hypot(
+      rest[i * 3] - rest[j * 3],
+      rest[i * 3 + 2] - rest[j * 3 + 2],
+    );
+    stretch[k] = isStretch;
+    k++;
+  };
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) {
+      const i = r * columns + c;
+      if (c < columns - 1) add(i, i + 1, 1);
+      if (r < rows - 1) add(i, i + columns, 1);
+    }
+  }
+  for (let r = 0; r < rows - 1; r++) {
+    for (let c = 0; c < columns - 1; c++) {
+      const i = r * columns + c;
+      add(i, i + columns + 1, 0);
+      add(i + 1, i + columns, 0);
+    }
+  }
+  return { rest, a, b, length: len, stretch, pinned: sortedUnique(pinned) };
+}
+
+function sortedUnique(values: readonly number[]): Uint32Array {
+  return Uint32Array.from([...new Set(values)].sort((x, y) => x - y));
+}
+
+/** Particle state and the PBD loop for one body. */
+export class PbdSolver {
+  readonly count: number;
+  /** Simulation-space (world) positions, previous positions, velocities. */
+  readonly positions: Float64Array;
+  readonly previous: Float64Array;
+  readonly velocities: Float64Array;
+  readonly inverseMasses: Float64Array;
+  /** Pin targets at the start and end of the current fixed step (xyz per pin). */
+  readonly #pinFrom: Float64Array;
+  readonly #pinTo: Float64Array;
+  readonly #topology: SoftTopology;
+  readonly #tuning: PbdTuning;
+  readonly #stretchK: number;
+  readonly #bendK: number;
+  /** Counters the tests spy on. */
+  substepsRun = 0;
+  iterationsRun = 0;
+
+  constructor(topology: SoftTopology, tuning: PbdTuning) {
+    this.#topology = topology;
+    this.#tuning = tuning;
+    this.count = topology.rest.length / 3;
+    this.positions = new Float64Array(topology.rest);
+    this.previous = new Float64Array(topology.rest);
+    this.velocities = new Float64Array(this.count * 3);
+    this.inverseMasses = new Float64Array(this.count).fill(
+      this.count / tuning.mass,
+    );
+    for (const p of topology.pinned) this.inverseMasses[p] = 0;
+    this.#pinFrom = new Float64Array(topology.pinned.length * 3);
+    this.#pinTo = new Float64Array(topology.pinned.length * 3);
+    this.#stretchK = effectiveStiffness(tuning.stiffness, tuning.iterations);
+    this.#bendK = effectiveStiffness(
+      tuning.bendingStiffness,
+      tuning.iterations,
+    );
+  }
+
+  /** Places every particle at `world * rest` and zeroes the velocities. */
+  reset(world: ArrayLike<number>): void {
+    const rest = this.#topology.rest;
+    for (let i = 0; i < this.count; i++) {
+      this.#transformPoint(world, rest, i * 3, this.positions, i * 3);
+    }
+    this.previous.set(this.positions);
+    this.velocities.fill(0);
+    this.#capturePins(world, this.#pinTo);
+    this.#pinFrom.set(this.#pinTo);
+  }
+
+  #transformPoint(
+    m: ArrayLike<number>,
+    src: Float64Array,
+    si: number,
+    dst: Float64Array,
+    di: number,
+  ): void {
+    const x = src[si];
+    const y = src[si + 1];
+    const z = src[si + 2];
+    dst[di] = m[0] * x + m[4] * y + m[8] * z + m[12];
+    dst[di + 1] = m[1] * x + m[5] * y + m[9] * z + m[13];
+    dst[di + 2] = m[2] * x + m[6] * y + m[10] * z + m[14];
+  }
+
+  #capturePins(world: ArrayLike<number>, out: Float64Array): void {
+    const pinned = this.#topology.pinned;
+    for (let k = 0; k < pinned.length; k++) {
+      this.#transformPoint(
+        world,
+        this.#topology.rest,
+        pinned[k] * 3,
+        out,
+        k * 3,
+      );
+    }
+  }
+
+  /** One fixed step of `dt` seconds under gravity `(gx, gy, gz)`. */
+  step(
+    dt: number,
+    gx: number,
+    gy: number,
+    gz: number,
+    world: ArrayLike<number>,
+  ): void {
+    const { substeps, iterations, damping } = this.#tuning;
+    const h = dt / substeps;
+    const damp = Math.exp(-damping * h);
+    this.#pinFrom.set(this.#pinTo);
+    this.#capturePins(world, this.#pinTo);
+    const pos = this.positions;
+    const prev = this.previous;
+    const vel = this.velocities;
+    const w = this.inverseMasses;
+    const pinned = this.#topology.pinned;
+    for (let s = 0; s < substeps; s++) {
+      this.substepsRun++;
+      const t = (s + 1) / substeps;
+      for (let i = 0; i < this.count; i++) {
+        const j = i * 3;
+        prev[j] = pos[j]!;
+        prev[j + 1] = pos[j + 1]!;
+        prev[j + 2] = pos[j + 2]!;
+        if (w[i] === 0) continue;
+        vel[j] = (vel[j] + gx * h) * damp;
+        vel[j + 1] = (vel[j + 1] + gy * h) * damp;
+        vel[j + 2] = (vel[j + 2] + gz * h) * damp;
+        pos[j] = pos[j] + vel[j] * h;
+        pos[j + 1] = pos[j + 1] + vel[j + 1] * h;
+        pos[j + 2] = pos[j + 2] + vel[j + 2] * h;
+      }
+      for (let k = 0; k < pinned.length; k++) {
+        const j = pinned[k] * 3;
+        const f = this.#pinFrom;
+        const g = this.#pinTo;
+        pos[j] = f[k * 3] + (g[k * 3] - f[k * 3]) * t;
+        pos[j + 1] = f[k * 3 + 1] + (g[k * 3 + 1] - f[k * 3 + 1]) * t;
+        pos[j + 2] = f[k * 3 + 2] + (g[k * 3 + 2] - f[k * 3 + 2]) * t;
+      }
+      for (let it = 0; it < iterations; it++) {
+        this.iterationsRun++;
+        this.#project();
+      }
+      for (let i = 0; i < this.count; i++) {
+        if (w[i] === 0) continue;
+        const j = i * 3;
+        vel[j] = (pos[j] - prev[j]) / h;
+        vel[j + 1] = (pos[j + 1] - prev[j + 1]) / h;
+        vel[j + 2] = (pos[j + 2] - prev[j + 2]) / h;
+      }
+    }
+  }
+
+  #project(): void {
+    const { a, b, length, stretch } = this.#topology;
+    const pos = this.positions;
+    const w = this.inverseMasses;
+    for (let c = 0; c < a.length; c++) {
+      const i = a[c];
+      const k = b[c];
+      const wsum = w[i] + w[k];
+      if (wsum === 0) continue;
+      const ia = i * 3;
+      const ib = k * 3;
+      const dx = pos[ia] - pos[ib];
+      const dy = pos[ia + 1] - pos[ib + 1];
+      const dz = pos[ia + 2] - pos[ib + 2];
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (d < 1e-12) continue;
+      const stiff = stretch[c] === 1 ? this.#stretchK : this.#bendK;
+      const s = ((d - length[c]) / d / wsum) * stiff;
+      const sa = s * w[i];
+      const sb = s * w[k];
+      pos[ia] = pos[ia] - dx * sa;
+      pos[ia + 1] = pos[ia + 1] - dy * sa;
+      pos[ia + 2] = pos[ia + 2] - dz * sa;
+      pos[ib] = pos[ib] + dx * sb;
+      pos[ib + 1] = pos[ib + 1] + dy * sb;
+      pos[ib + 2] = pos[ib + 2] + dz * sb;
+    }
+  }
+
+  /** Total kinetic energy, joules (for tests and diagnostics). */
+  kineticEnergy(): number {
+    const m = this.#tuning.mass / this.count;
+    let e = 0;
+    for (let i = 0; i < this.velocities.length; i++) {
+      e += 0.5 * m * this.velocities[i] * this.velocities[i];
+    }
+    return e;
+  }
+}
+
+function accumulate(
+  n: Float32Array,
+  v: number,
+  x: number,
+  y: number,
+  z: number,
+): void {
+  n[v] = n[v] + x;
+  n[v + 1] = n[v + 1] + y;
+  n[v + 2] = n[v + 2] + z;
+}
+
+/** Area-weighted vertex normals into `normals` (no allocation). */
+export function computeNormals(
+  positions: Float32Array,
+  indices: ArrayLike<number>,
+  normals: Float32Array,
+): void {
+  normals.fill(0);
+  for (let t = 0; t < indices.length; t += 3) {
+    const i = indices[t] * 3;
+    const j = indices[t + 1] * 3;
+    const k = indices[t + 2] * 3;
+    const ux = positions[j] - positions[i];
+    const uy = positions[j + 1] - positions[i + 1];
+    const uz = positions[j + 2] - positions[i + 2];
+    const vx = positions[k] - positions[i];
+    const vy = positions[k + 1] - positions[i + 1];
+    const vz = positions[k + 2] - positions[i + 2];
+    const nx = uy * vz - uz * vy;
+    const ny = uz * vx - ux * vz;
+    const nz = ux * vy - uy * vx;
+    accumulate(normals, i, nx, ny, nz);
+    accumulate(normals, j, nx, ny, nz);
+    accumulate(normals, k, nx, ny, nz);
+  }
+  for (let v = 0; v < normals.length; v += 3) {
+    const x = normals[v];
+    const y = normals[v + 1];
+    const z = normals[v + 2];
+    const l = Math.sqrt(x * x + y * y + z * z);
+    if (l > 0) {
+      normals[v] = x / l;
+      normals[v + 1] = y / l;
+      normals[v + 2] = z / l;
+    } else {
+      normals[v + 1] = 1;
+    }
+  }
+}

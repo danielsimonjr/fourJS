@@ -5,12 +5,22 @@
  */
 import { FourError, type Component, type ComponentHost } from "@fourjs/core";
 import { BufferGeometry } from "@fourjs/geometry";
+import { Matrix4 } from "@fourjs/math";
+import { Node, resolveWorldTransform } from "@fourjs/scene";
 import {
   PRIORITY_PHYSICS_SOLVE,
   type FixedUpdateContext,
   type SimulationContext,
   type SimulationSystem,
 } from "@fourjs/motion";
+
+import {
+  PbdSolver,
+  clothTopology,
+  computeNormals,
+  ropeTopology,
+  type SoftTopology,
+} from "./pbd.js";
 
 /** Priority of {@link SoftBodySystem}: just after the rigid solve (RFC 0011 #5). */
 export const PRIORITY_SOFT_BODY = PRIORITY_PHYSICS_SOLVE + 10;
@@ -38,6 +48,8 @@ export interface RopeDescriptor extends SoftBodyTuning {
   segments: number;
   /** Rest length in metres, > 0. */
   length: number;
+  /** Indices of particles pinned to the node transform (default `[0]`, the top end). */
+  pinned?: readonly number[];
 }
 
 /** A rows x columns particle grid. */
@@ -102,6 +114,11 @@ function validate(d: SoftBodyDescriptor): void {
   if (d.kind === "rope") {
     positiveInt("segments", d.segments, 2);
     positive("length", d.length);
+    for (const i of d.pinned ?? [0]) {
+      if (!Number.isInteger(i) || i < 0 || i >= d.segments) {
+        fail(`pinned index ${i} is outside 0..${d.segments - 1}`);
+      }
+    }
   } else if (d.kind === "cloth") {
     positiveInt("columns", d.columns, 2);
     positiveInt("rows", d.rows, 2);
@@ -131,15 +148,26 @@ function particleCountOf(d: SoftBodyDescriptor): number {
   return d.positions.length / 3;
 }
 
+function topologyOf(d: RopeDescriptor | ClothDescriptor): SoftTopology {
+  return d.kind === "rope"
+    ? ropeTopology(d.segments, d.length, d.pinned ?? [0])
+    : clothTopology(d.columns, d.rows, d.width, d.height, d.pinned ?? []);
+}
+
 /** Rest geometry: line strip for ropes, triangle grid for cloth, the mesh itself for pressure. */
-function buildGeometry(d: SoftBodyDescriptor, count: number): BufferGeometry {
-  if (d.kind === "pressure") {
+function buildGeometry(
+  d: SoftBodyDescriptor,
+  count: number,
+  topology: SoftTopology | null,
+): BufferGeometry {
+  if (d.kind === "pressure" || topology === null) {
+    const p = d as PressureDescriptor;
     return new BufferGeometry({
-      positions: Float32Array.from(d.positions),
-      indices: Uint32Array.from(d.indices),
+      positions: Float32Array.from(p.positions),
+      indices: Uint32Array.from(p.indices),
     });
   }
-  const positions = new Float32Array(count * 3);
+  const positions = Float32Array.from(topology.rest);
   if (d.kind === "rope") {
     const indices = new Uint32Array((count - 1) * 2);
     for (let i = 0; i < count - 1; i++) {
@@ -160,7 +188,9 @@ function buildGeometry(d: SoftBodyDescriptor, count: number): BufferGeometry {
       k += 6;
     }
   }
-  return new BufferGeometry({ positions, indices });
+  const normals = new Float32Array(count * 3);
+  computeNormals(positions, indices, normals);
+  return new BufferGeometry({ positions, normals, indices });
 }
 
 /**
@@ -183,11 +213,27 @@ export class SoftBody implements Component {
 
   readonly #geometry: BufferGeometry;
 
+  /** The PBD solver; `null` for a (not yet implemented) pressure body. */
+  readonly solver: PbdSolver | null;
+
   constructor(descriptor: SoftBodyDescriptor) {
     validate(descriptor);
     this.descriptor = descriptor;
     this.particleCount = particleCountOf(descriptor);
-    this.#geometry = buildGeometry(descriptor, this.particleCount);
+    const topology =
+      descriptor.kind === "pressure" ? null : topologyOf(descriptor);
+    this.#geometry = buildGeometry(descriptor, this.particleCount, topology);
+    this.solver =
+      topology === null
+        ? null
+        : new PbdSolver(topology, {
+            substeps: descriptor.substeps ?? 4,
+            iterations: descriptor.iterations ?? 4,
+            stiffness: descriptor.stiffness ?? 1,
+            bendingStiffness: descriptor.bendingStiffness ?? 0.1,
+            damping: descriptor.damping ?? 0.1,
+            mass: descriptor.mass ?? 1,
+          });
   }
 
   /** The dynamic geometry the system writes each step. */
@@ -200,18 +246,128 @@ export class SoftBody implements Component {
   }
 }
 
-/** The fixed-step system that will advance every {@link SoftBody} (RFC 0011). */
+/** Anything that exposes a gravity vector, e.g. a `PhysicsWorld`. */
+export interface GravitySource {
+  readonly gravity: {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+  };
+}
+
+/** Options for {@link SoftBodySystem}. */
+export interface SoftBodySystemOptions {
+  /** Execution order key (default {@link PRIORITY_SOFT_BODY}). */
+  priority?: number;
+  /** Take gravity from this rigid world, read live each step. Wins over `gravity`. */
+  world?: GravitySource;
+  /** Gravity in m/s^2 when no world is given (default `(0, -9.81, 0)`). */
+  gravity?: { readonly x: number; readonly y: number; readonly z: number };
+}
+
+/** Default gravity, m/s^2 (Appendix A). */
+const DEFAULT_GRAVITY = { x: 0, y: -9.81, z: 0 } as const;
+
+/**
+ * The fixed-step system that advances every tracked {@link SoftBody} (RFC 0011
+ * #5): substep delta `fixedDeltaTime / substeps`, bodies in tracking order.
+ */
 export class SoftBodySystem implements SimulationSystem {
-  priority = PRIORITY_SOFT_BODY;
+  priority: number;
+
+  readonly #bodies: SoftBody[] = [];
+  readonly #world: GravitySource | undefined;
+  readonly #gravity: {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+  };
+  /** Scratch, allocated once: identity fallback and inverse world matrix. */
+  readonly #identity = new Matrix4();
+  readonly #inverse = new Matrix4();
+
+  constructor(options: SoftBodySystemOptions = {}) {
+    this.priority = options.priority ?? PRIORITY_SOFT_BODY;
+    this.#world = options.world;
+    this.#gravity = options.gravity ?? DEFAULT_GRAVITY;
+  }
+
+  /** Tracked bodies, in step order. */
+  get bodies(): readonly SoftBody[] {
+    return this.#bodies;
+  }
+
+  /**
+   * Starts stepping `body` and places its particles at the node's current world
+   * pose. @throws FourError for a pressure body (W10.3) or a double track.
+   */
+  track(body: SoftBody): SoftBody {
+    if (body.solver === null) {
+      throw new FourError(
+        "NOT_IMPLEMENTED",
+        "SoftBody pressure descriptors are not implemented yet (RFC 0011, packet W10.3).",
+      );
+    }
+    if (this.#bodies.includes(body)) {
+      throw new FourError(
+        "INVALID_APPLICATION_STATE",
+        "SoftBody is already tracked by this SoftBodySystem.",
+      );
+    }
+    body.solver.reset(this.#worldOf(body).elements);
+    this.#bodies.push(body);
+    return body;
+  }
+
+  /** Stops stepping `body`; returns whether it was tracked. */
+  untrack(body: SoftBody): boolean {
+    const i = this.#bodies.indexOf(body);
+    if (i < 0) return false;
+    this.#bodies.splice(i, 1);
+    return true;
+  }
 
   initialize(_context: SimulationContext): void {}
 
-  fixedUpdate(_context: FixedUpdateContext): void {
-    throw new FourError(
-      "NOT_IMPLEMENTED",
-      "SoftBodySystem.fixedUpdate is not implemented yet (RFC 0011, packet W10.2).",
-    );
+  fixedUpdate(context: FixedUpdateContext): void {
+    const dt = context.time.fixedDeltaTime;
+    const g = this.#world?.gravity ?? this.#gravity;
+    for (let n = 0; n < this.#bodies.length; n++) {
+      const body = this.#bodies[n];
+      const solver = body.solver!;
+      const world = this.#worldOf(body);
+      solver.step(dt, g.x, g.y, g.z, world.elements);
+      this.#inverse.copy(world).invert();
+      this.#publish(body, solver, this.#inverse.elements);
+    }
   }
 
-  dispose(): void {}
+  /** Writes particles (node-local, Float32) into the geometry, then marks it dirty once. */
+  #publish(body: SoftBody, solver: PbdSolver, inv: Float64Array): void {
+    const geometry = body.geometry;
+    const out = geometry.positions;
+    const p = solver.positions;
+    for (let i = 0; i < p.length; i += 3) {
+      const x = p[i];
+      const y = p[i + 1];
+      const z = p[i + 2];
+      out[i] = inv[0] * x + inv[4] * y + inv[8] * z + inv[12];
+      out[i + 1] = inv[1] * x + inv[5] * y + inv[9] * z + inv[13];
+      out[i + 2] = inv[2] * x + inv[6] * y + inv[10] * z + inv[14];
+    }
+    const normals = geometry.normals;
+    if (normals !== undefined && geometry.indices !== undefined) {
+      computeNormals(out, geometry.indices, normals);
+    }
+    geometry.markDirty();
+  }
+
+  #worldOf(body: SoftBody): Matrix4 {
+    const host = body.host;
+    return host instanceof Node ? resolveWorldTransform(host) : this.#identity;
+  }
+
+  dispose(): void {
+    this.#bodies.length = 0;
+  }
 }
