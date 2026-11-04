@@ -10,6 +10,13 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **`@fourjs/physics-box2d` is a real 2D solver adapter (2026-11-04, wave 8)**: `Box2dAdapter` over
+  `@box2d/core` 0.11.0 (bodies, colliders incl. capsule-as-three-fixtures, five joint types with a hard
+  motor effort cap, the four queries, float64 snapshots) and `registerBox2dSolver()`. Friction combines by
+  `sqrt`; snapshots omit warm-start impulses, so bit-identical replay holds only from a contact-free,
+  joint-unloaded snapshot. New `box2d-conformance` / `box2d-determinism` suites, a `box2d` variant of
+  `benchmarks/physics-step.mjs`, `docs/benchmarks/box2d-vs-rapier.md`; fixes a pair end/begin same-step
+  bookkeeping bug. With `physics-soft` (wave 10) also shipped the same day, no reserved stub remains.
 - **`@fourjs/physics-soft` ships (2026-11-04, wave 10, RFC 0011)**: `SoftBody` rope, cloth and
   pressure bodies on a CPU position-based-dynamics solver, `SoftBodySystem` (priority 610),
   one-way raycast coupling to a `PhysicsWorld`, and float64 snapshot/checksum for replay.

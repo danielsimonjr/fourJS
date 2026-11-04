@@ -251,32 +251,6 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 
 ## Now
 
-### One of the 24 packages is a reserved stub, and it is its own open item
-
-**These (originally four; `render-canvas` and `render-svg` shipped 2026-11-04, `physics-soft` 2026-11-04) are deliberate §102 / RFC-0004 decisions, not defects — the defect was that the fact
-lived only inside a dogfooding write-up, where it read as history and nobody actioned it.** Each
-stub is filed below as its own `- [ ]` so one can be ticked when it ships without pretending the
-other three did. Common to all four, measured from a consumer seat on 2026-09-19 (dogfood cycle 9)
-against installed tarballs, in Node and in Chrome: **one source line each, exporting only
-`PACKAGE_NAME` — 1 export apiece**. Each imports cleanly and provides nothing.
-
-- [ ] **`@fourjs/physics-box2d` is a reserved stub — 1 export, no solver.**
-      **Reserved for:** the 2D solver adapter backed by Box2D, implementing §37's
-      `PhysicsSolverAdapter` plus the `SolverBodyAccess` / `SolverJointAccess` seams, with its
-      capability differences declared per §102. The recorded motivation: Box2D could honor §28's
-      motor `maxTorque` / `maxForce` as a real hard cap, which Rapier treats as a force-based gain.
-      **Today a consumer gets:** `PACKAGE_NAME` and nothing else — no `register*` function, no
-      adapter class.
-      **Symptom on selection:** `solver: "box2d"` fails with the registry's *"no physics solver is
-      registered"* message (§37) — **not** a module error, because `fourJS/physics-box2d` imports
-      fine.
-      **Workaround:** none short of writing a full §37 adapter yourself
-      (`docs/guides/custom-solver-adapters.md` is that contract). Unlike the renderer seam, cycle 9
-      proved no consumer-side shortcut here — it had nothing to test and ran its §33/§34 battery
-      against Rapier instead, explicitly as a substitution.
-      **Closes when:** a Box2D-backed `PhysicsWorldAdapter` ships, registers, and appears in
-      `docs/COMPATIBILITY.md`'s generated solver table.
-
 - [x] **No job in any of the five workflows had `timeout-minutes`, so a wedged run could hold a
       runner to the 6-hour ceiling.** **FIXED 2026-09-16.** Planned work, not discovered — it was
       assigned directly, and it is recorded ticked because it was already complete when filed.

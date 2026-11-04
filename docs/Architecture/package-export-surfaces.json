@@ -1198,7 +1198,15 @@
       "worldToPlane",
       "worldToPlaneVec"
     ],
-    "packages/physics-box2d": ["PACKAGE_NAME"],
+    "packages/physics-box2d": [
+      "BOX2D_CAPABILITIES",
+      "BOX2D_CORE_VERSION",
+      "Box2dAdapter",
+      "createBox2dAdapter",
+      "isBox2dSupported",
+      "PACKAGE_NAME",
+      "registerBox2dSolver"
+    ],
     "packages/physics-rapier": [
       "createRapierAdapter",
       "createRapierColliderDesc",
@@ -1246,8 +1254,10 @@
       "toRapierVector3"
     ],
     "packages/physics-soft": [
+      "MAXIMUM_SOFT_BODY_ARRAY_LENGTH",
       "PACKAGE_NAME",
       "PRIORITY_SOFT_BODY",
+      "SOFT_BODY_SERIALIZER",
       "SoftBody",
       "SoftBodySystem"
     ],

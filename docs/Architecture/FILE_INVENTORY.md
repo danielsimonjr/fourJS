@@ -10,21 +10,21 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 
 **Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every tracked `.ts` appears below with an explicit disposition.
 
-**Total files**: 930
+**Total files**: 945
 
 ## Disposition counts
 
 | Disposition   |   Count | Meaning                                                                                                      |
 | ------------- | ------: | ------------------------------------------------------------------------------------------------------------ |
-| `reachable`   |     306 | A `src/` file in the module graph, reachable from a root.                                                    |
+| `reachable`   |     310 | A `src/` file in the module graph, reachable from a root.                                                    |
 | `build-entry` |      48 | A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …). |
 | `test-only`   |       4 | A `src/` file not reachable from src roots but imported by a test.                                           |
 | `orphan`      |       0 | A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate).                        |
-| `test`        |     536 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
+| `test`        |     547 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
 | `tool`        |       1 | A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks).                                        |
 | `config`      |      19 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).                                |
 | `example`     |      16 | An `examples/` or `docs/` reference/illustration source.                                                     |
-| **Total**     | **930** |                                                                                                              |
+| **Total**     | **945** |                                                                                                              |
 
 ## Per-area counts
 
@@ -32,15 +32,15 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | ---------- | ----: |
 | `config`   |    19 |
 | `examples` |    16 |
-| `src`      |   358 |
-| `tests`    |   536 |
+| `src`      |   362 |
+| `tests`    |   547 |
 | `tools`    |     1 |
 
 ## Per-package counts
 
 | Package                  | Files |
 | ------------------------ | ----: |
-| `(root)`                 |   248 |
+| `(root)`                 |   251 |
 | `@fourjs/animation`      |    33 |
 | `@fourjs/assets`         |    36 |
 | `@fourjs/core`           |    26 |
@@ -52,9 +52,9 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `@fourjs/motion`         |    44 |
 | `@fourjs/particles`      |    21 |
 | `@fourjs/physics`        |    59 |
-| `@fourjs/physics-box2d`  |     2 |
+| `@fourjs/physics-box2d`  |    12 |
 | `@fourjs/physics-rapier` |    23 |
-| `@fourjs/physics-soft`   |     7 |
+| `@fourjs/physics-soft`   |     9 |
 | `@fourjs/render`         |    72 |
 | `@fourjs/render-canvas`  |     7 |
 | `@fourjs/render-svg`     |     5 |
@@ -429,8 +429,18 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/particles/tests/random.test.ts`                         | @fourjs/particles      | tests    | test        |
 | `packages/particles/tests/smoke.test.ts`                          | @fourjs/particles      | tests    | test        |
 | `packages/particles/tests/trail.test.ts`                          | @fourjs/particles      | tests    | test        |
+| `packages/physics-box2d/src/box2d-adapter.ts`                     | @fourjs/physics-box2d  | src      | reachable   |
 | `packages/physics-box2d/src/index.ts`                             | @fourjs/physics-box2d  | src      | build-entry |
+| `packages/physics-box2d/src/register.ts`                          | @fourjs/physics-box2d  | src      | reachable   |
+| `packages/physics-box2d/src/snapshot-codec.ts`                    | @fourjs/physics-box2d  | src      | reachable   |
+| `packages/physics-box2d/tests/box2d-adapter.test.ts`              | @fourjs/physics-box2d  | tests    | test        |
+| `packages/physics-box2d/tests/capsule-and-filter.test.ts`         | @fourjs/physics-box2d  | tests    | test        |
+| `packages/physics-box2d/tests/helpers.ts`                         | @fourjs/physics-box2d  | tests    | test        |
+| `packages/physics-box2d/tests/joints.test.ts`                     | @fourjs/physics-box2d  | tests    | test        |
+| `packages/physics-box2d/tests/pair-restart.test.ts`               | @fourjs/physics-box2d  | tests    | test        |
+| `packages/physics-box2d/tests/queries.test.ts`                    | @fourjs/physics-box2d  | tests    | test        |
 | `packages/physics-box2d/tests/smoke.test.ts`                      | @fourjs/physics-box2d  | tests    | test        |
+| `packages/physics-box2d/tests/snapshots.test.ts`                  | @fourjs/physics-box2d  | tests    | test        |
 | `packages/physics-rapier/src/ccd.ts`                              | @fourjs/physics-rapier | src      | reachable   |
 | `packages/physics-rapier/src/conversions2d.ts`                    | @fourjs/physics-rapier | src      | reachable   |
 | `packages/physics-rapier/src/conversions3d.ts`                    | @fourjs/physics-rapier | src      | reachable   |
@@ -456,8 +466,10 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/physics-rapier/tests/smoke.test.ts`                     | @fourjs/physics-rapier | tests    | test        |
 | `packages/physics-soft/src/index.ts`                              | @fourjs/physics-soft   | src      | build-entry |
 | `packages/physics-soft/src/pbd.ts`                                | @fourjs/physics-soft   | src      | reachable   |
+| `packages/physics-soft/src/serializers.ts`                        | @fourjs/physics-soft   | src      | reachable   |
 | `packages/physics-soft/src/soft-body.ts`                          | @fourjs/physics-soft   | src      | reachable   |
 | `packages/physics-soft/tests/pressure-coupling.test.ts`           | @fourjs/physics-soft   | tests    | test        |
+| `packages/physics-soft/tests/serializers.test.ts`                 | @fourjs/physics-soft   | tests    | test        |
 | `packages/physics-soft/tests/smoke.test.ts`                       | @fourjs/physics-soft   | tests    | test        |
 | `packages/physics-soft/tests/soft-body.test.ts`                   | @fourjs/physics-soft   | tests    | test        |
 | `packages/physics-soft/tests/soft-solver.test.ts`                 | @fourjs/physics-soft   | tests    | test        |
@@ -867,6 +879,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `tests/browser/webgpu/webgpu-unlit.spec.ts`                       | (root)                 | tests    | test        |
 | `tests/browser/webgpu/webgpu-vertex-colors.spec.ts`               | (root)                 | tests    | test        |
 | `tests/determinism/animation-controller.test.ts`                  | (root)                 | tests    | test        |
+| `tests/determinism/box2d-determinism.test.ts`                     | (root)                 | tests    | test        |
 | `tests/determinism/camera-rigs.test.ts`                           | (root)                 | tests    | test        |
 | `tests/determinism/character-controller.test.ts`                  | (root)                 | tests    | test        |
 | `tests/determinism/event-dispatch-split.test.ts`                  | (root)                 | tests    | test        |
@@ -920,6 +933,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `tests/integration/asset-abort.test.ts`                           | (root)                 | tests    | test        |
 | `tests/integration/asset-progress.test.ts`                        | (root)                 | tests    | test        |
 | `tests/integration/backend-selection.test.ts`                     | (root)                 | tests    | test        |
+| `tests/integration/box2d-conformance.test.ts`                     | (root)                 | tests    | test        |
 | `tests/integration/camera-rigs.test.ts`                           | (root)                 | tests    | test        |
 | `tests/integration/clipping.test.ts`                              | (root)                 | tests    | test        |
 | `tests/integration/color-management.test.ts`                      | (root)                 | tests    | test        |
@@ -931,6 +945,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `tests/integration/frame-statistics.test.ts`                      | (root)                 | tests    | test        |
 | `tests/integration/gltf-scene.test.ts`                            | (root)                 | tests    | test        |
 | `tests/integration/helpers/blending-scenarios.ts`                 | (root)                 | tests    | test        |
+| `tests/integration/helpers/box2d-world.ts`                        | (root)                 | tests    | test        |
 | `tests/integration/helpers/joint-scenarios.ts`                    | (root)                 | tests    | test        |
 | `tests/integration/helpers/losable-canvas.ts`                     | (root)                 | tests    | test        |
 | `tests/integration/helpers/motion-advanced-scenarios.ts`          | (root)                 | tests    | test        |

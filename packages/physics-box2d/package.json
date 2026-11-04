@@ -18,6 +18,9 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@box2d/core": "0.11.0",
+    "@fourjs/core": "workspace:*",
+    "@fourjs/math": "workspace:*",
     "@fourjs/physics": "workspace:*"
   }
 }
