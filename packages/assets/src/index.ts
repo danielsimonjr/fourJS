@@ -96,6 +96,8 @@ export {
 export type {
   GltfAnimationRecord,
   GltfChannelPath,
+  GltfCompressedTexture,
+  GltfTexture,
   GltfChannelRecord,
   GltfLoaderOptions,
   GltfMaterialRecord,
@@ -144,6 +146,18 @@ export type {
   BasisTranscoder,
   BoundedBasisTranscoderOptions,
 } from "./bounded-basis.js";
+export {
+  DRACO_COMPONENT_CODES,
+  DRACO_INFO_BYTES,
+  DRACO_MAX_ATTRIBUTES,
+  createBoundedDracoDecoder,
+} from "./bounded-draco.js";
+export type {
+  BoundedDracoDecoderOptions,
+  DracoAttributeIds,
+  DracoDecoder,
+  DracoStreams,
+} from "./bounded-draco.js";
 export { KTX2_HEADER_BYTES, KTX2_IDENTIFIER, parseKtx2 } from "./ktx2.js";
 export type {
   Ktx2BasisCodec,

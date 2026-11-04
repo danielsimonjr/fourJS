@@ -106,6 +106,12 @@ import { ALL_LAYERS, type LayerMask } from "@fourjs/scene";
 
 import type { RenderItemClip } from "./clip.js";
 import { scissorsEqual, type ScissorRect } from "./scissor.js";
+import {
+  TextureAtlas,
+  type AtlasEntry,
+  type TextureAtlasOptions,
+  type TextureAtlasStatistics,
+} from "./texture-atlas.js";
 import type {
   LitRenderItem,
   RenderItem,
@@ -157,6 +163,35 @@ export interface RenderBatchOptions {
    * silently reinterpreted; here the extreme value keeps its literal meaning).
    */
   maxVertices?: number;
+
+  /**
+   * Opt in to §65 **atlas grouping** (W11.4): consecutive `"unlit"` / `"sprite"`
+   * items whose materials differ **only by texture** (same kind, tint or
+   * colour, opacity, blend mode, depth/colour flags, stencil, clip, scissor,
+   * layers and mode) merge into one run over a {@link TextureAtlas} page, with
+   * their UVs rewritten into the packed rectangle. Absent (the default), the
+   * batcher is exactly the consecutive-same-material tier.
+   *
+   * An item is skipped (it ends the run) when its texture is not packable
+   * ({@link TextureAtlas.canPack}: `repeat`/mirrored wrap, mip chain,
+   * anisotropy, non-2D, larger than a page), when its geometry has no uvs or
+   * uvs outside `[0, 1]` (a clamped sample would bleed into a neighbour), or
+   * when its filter or colour space differs from the run's.
+   */
+  atlas?: TextureAtlasOptions;
+}
+
+/** Counters {@link RenderBatcher.atlasStatistics} reports. */
+export interface BatchAtlasStatistics extends TextureAtlasStatistics {
+  /** Atlas runs built (cumulative since the last reset). */
+  readonly runs: number;
+  /** Items merged by those runs. */
+  readonly items: number;
+  /**
+   * Draw calls saved against the consecutive-same-material tier: per run, the
+   * number of same-material segments minus one.
+   */
+  readonly drawsSaved: number;
 }
 
 /**
@@ -309,6 +344,13 @@ export interface RenderBatch {
    * opted into versioning is bit-identical.
    */
   readonly contentVersion?: number;
+
+  /**
+   * `true` when this batch's {@link RenderBatch.texture} is an atlas page and
+   * its UVs were rewritten into packed rectangles (W11.4). Absent or `false`
+   * otherwise.
+   */
+  readonly atlased?: boolean;
 }
 
 /**
@@ -388,6 +430,7 @@ interface MutableBatch {
   vertices: Float32Array;
   indices: Uint32Array;
   contentVersion: number;
+  atlased: boolean;
 }
 
 /** FNV-1a offset basis — the idle-cache mix starts here. */
@@ -416,6 +459,7 @@ function contentVersionOf(
   items: readonly RenderItem[],
   from: number,
   count: number,
+  entries: readonly AtlasEntry[] | null = null,
 ): number {
   let hash = FNV_OFFSET;
   for (let i = 0; i < count; i += 1) {
@@ -426,6 +470,15 @@ function contentVersionOf(
     }
     hash = fnvMix(hash, item.geometry.version | 0);
     hash = fnvMix(hash, transformVersion | 0);
+    if (entries !== null) {
+      // Atlas runs: the packed rectangle is part of the vertex stream.
+      const entry = entries[i];
+      hash = fnvMix(hash, entry.pageIndex);
+      hash = fnvMix(hash, entry.x);
+      hash = fnvMix(hash, entry.y);
+      hash = fnvMix(hash, entry.width);
+      hash = fnvMix(hash, entry.height);
+    }
     const e = item.worldMatrix.elements;
     for (let k = 0; k < 16; k += 1) {
       floatBits[0] = e[k];
@@ -457,6 +510,77 @@ function isBatchable(item: RenderItem): item is BatchableItem {
     geometry.vertexCount > 0 &&
     geometry.drawCount > 0
   );
+}
+
+/** The texture an already-batchable item samples, or `null`. */
+function textureOf(item: BatchableItem): MaterialTexture | null {
+  return item.kind === "sprite"
+    ? item.material.texture
+    : (item.material.map ?? null);
+}
+
+function colorsEqual(a: ColorRGBA, b: ColorRGBA): boolean {
+  return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+}
+
+/**
+ * Whether `item` could join `first`'s run over an atlas page: the same
+ * pipeline kind and every piece of render state equal — only the texture may
+ * differ — and a texture whose sampler state (filter, colour space) matches.
+ * Read defensively like the rest of this file: a structurally typed double
+ * missing a field reports `undefined` on both sides, which compares equal.
+ */
+function atlasJoinable(
+  first: BatchableItem,
+  item: BatchableItem,
+  atlas: TextureAtlas,
+): boolean {
+  const a = first.material;
+  const b = item.material;
+  if (
+    first.kind !== item.kind ||
+    (a.opacity ?? 1) !== (b.opacity ?? 1) ||
+    a.blendMode !== b.blendMode ||
+    a.transparent !== b.transparent ||
+    a.depthTest !== b.depthTest ||
+    a.depthWrite !== b.depthWrite ||
+    a.colorWrite !== b.colorWrite ||
+    a.stencil !== b.stencil
+  ) {
+    return false;
+  }
+  if (first.kind === "sprite" && item.kind === "sprite") {
+    if (!colorsEqual(first.material.tint, item.material.tint)) return false;
+  } else if (first.kind === "unlit" && item.kind === "unlit") {
+    if (
+      !colorsEqual(first.material.color, item.material.color) ||
+      (first.material.vertexColors === true) !==
+        (item.material.vertexColors === true)
+    ) {
+      return false;
+    }
+  }
+  const ta = textureOf(first);
+  const tb = textureOf(item);
+  return (
+    ta !== null &&
+    tb !== null &&
+    (ta.filter ?? "linear") === (tb.filter ?? "linear") &&
+    (ta.colorSpace ?? "linear") === (tb.colorSpace ?? "linear") &&
+    atlas.canPack(tb)
+  );
+}
+
+/** Whether every uv of `geometry` lies in `[0, 1]` (and uvs exist). */
+function uvsInUnitRange(geometry: BufferGeometry): boolean {
+  const uvs = geometry.uvs;
+  if (uvs === undefined) return false;
+  const n = geometry.vertexCount * 2;
+  for (let i = 0; i < n; i += 1) {
+    const value = uvs[i];
+    if (!(value >= 0 && value <= 1)) return false;
+  }
+  return true;
 }
 
 /**
@@ -505,6 +629,7 @@ export class RenderBatcher {
     vertices: this.#vertices,
     indices: this.#indices,
     contentVersion: 0,
+    atlased: false,
   };
 
   /** Instance staging array (R-22); grows, never shrinks. */
@@ -518,8 +643,60 @@ export class RenderBatcher {
     contentVersion: 0,
   };
 
+  /** The §65 atlas (W11.4), or `null` when the option was not given. */
+  readonly #atlas: TextureAtlas | null;
+
+  /** Per-item atlas entries of the batch being built; grows, never shrinks. */
+  readonly #entries: AtlasEntry[] = [];
+
+  /** Distinct-texture scratch for packing; reused. */
+  readonly #textures: MaterialTexture[] = [];
+
+  #atlasRuns = 0;
+
+  #atlasItems = 0;
+
+  #drawsSaved = 0;
+
   constructor(options: RenderBatchOptions = {}) {
     this.maxVertices = options.maxVertices ?? DEFAULT_MAX_BATCH_VERTICES;
+    this.#atlas =
+      options.atlas === undefined ? null : new TextureAtlas(options.atlas);
+  }
+
+  /** The atlas this batcher packs into, or `null` when atlas grouping is off. */
+  get atlas(): TextureAtlas | null {
+    return this.#atlas;
+  }
+
+  /**
+   * Atlas counters, or `null` when atlas grouping is off: pages, packed
+   * textures, texel use, and the runs / items / draw calls saved since the
+   * last {@link RenderBatcher.resetAtlasStatistics}.
+   */
+  atlasStatistics(): BatchAtlasStatistics | null {
+    const atlas = this.#atlas;
+    if (atlas === null) return null;
+    return {
+      ...atlas.statistics(),
+      runs: this.#atlasRuns,
+      items: this.#atlasItems,
+      drawsSaved: this.#drawsSaved,
+    };
+  }
+
+  /** Zeroes the run / item / draws-saved counters (not the packing). */
+  resetAtlasStatistics(): void {
+    this.#atlasRuns = 0;
+    this.#atlasItems = 0;
+    this.#drawsSaved = 0;
+  }
+
+  /** Releases the atlas pages (§83). The batcher stays usable. */
+  dispose(): void {
+    this.#atlas?.dispose();
+    this.#entries.length = 0;
+    this.#textures.length = 0;
   }
 
   /**
@@ -685,6 +862,26 @@ export class RenderBatcher {
       indexCount += geometry.drawCount;
       count += 1;
     }
+    let atlasEntries: readonly AtlasEntry[] | null = null;
+    if (this.#atlas !== null) {
+      const extended = this.#planAtlas(
+        items,
+        from,
+        count,
+        vertexCount,
+        layerMask,
+      );
+      if (extended > 1) {
+        atlasEntries = this.#entries;
+        count = extended;
+        vertexCount = 0;
+        indexCount = 0;
+        for (let i = 0; i < count; i += 1) {
+          vertexCount += items[from + i].geometry.vertexCount;
+          indexCount += items[from + i].geometry.drawCount;
+        }
+      }
+    }
     if (count < 2) {
       return null;
     }
@@ -699,9 +896,11 @@ export class RenderBatcher {
     // nothing" and "carries no colour stream" rather than widening the layout
     // with a stream no geometry will fill.
     const texture =
-      first.kind === "sprite"
-        ? first.material.texture
-        : (first.material.map ?? null);
+      atlasEntries !== null
+        ? atlasEntries[0].page
+        : first.kind === "sprite"
+          ? first.material.texture
+          : (first.material.map ?? null);
     const hasUvs = first.kind === "sprite" || texture !== null;
     const hasColors =
       first.kind === "unlit" && first.material.vertexColors === true;
@@ -725,6 +924,7 @@ export class RenderBatcher {
         floatsPerVertex,
         hasUvs,
         hasColors,
+        atlasEntries === null ? null : atlasEntries[i],
       );
       indexOffset = this.#writeIndices(geometry, indexOffset, vertexBase);
       vertexBase += geometry.vertexCount;
@@ -751,8 +951,110 @@ export class RenderBatcher {
     batch.hasColors = hasColors;
     batch.vertices = vertices;
     batch.indices = indices;
-    batch.contentVersion = contentVersionOf(items, from, count);
+    batch.contentVersion = contentVersionOf(items, from, count, atlasEntries);
+    batch.atlased = atlasEntries !== null;
     return batch;
+  }
+
+  /**
+   * Atlas extension of the run `[from, from + sameCount)` (W11.4): returns the
+   * length of the atlas run (≥ 2, filling {@link RenderBatcher.#entries}), or
+   * `0` when the plain consecutive-same-material run stands.
+   *
+   * Called only after the same-material scan stopped; it proceeds only if the
+   * item that stopped it differs from `first` by texture alone. Packs the
+   * run's distinct textures in height/id order, then walks the items once to
+   * bind entries, truncating at the first item that is on another page, has
+   * unusable uvs, or whose texture the atlas refused.
+   */
+  #planAtlas(
+    items: readonly RenderItem[],
+    from: number,
+    sameCount: number,
+    sameVertices: number,
+    layerMask: LayerMask,
+  ): number {
+    const atlas = this.#atlas!;
+    const first = items[from] as BatchableItem;
+    const stopped = items[from + sameCount];
+    if (
+      stopped === undefined ||
+      !isBatchable(stopped) ||
+      stopped.material === first.material ||
+      (stopped.layers & layerMask) === 0 ||
+      !atlasJoinable(first, stopped, atlas) ||
+      !atlas.canPack(textureOf(first)!)
+    ) {
+      return 0;
+    }
+    const clip = first.clip ?? null;
+    const scissor = first.scissor ?? null;
+    const mode = first.geometry.mode;
+    let vertexCount = sameVertices;
+    let reach = sameCount;
+    for (let i = from + sameCount; i < items.length; i += 1) {
+      const item = items[i];
+      if (
+        (item.layers & layerMask) === 0 ||
+        (item.clip ?? null) !== clip ||
+        !scissorsEqual(item.scissor, scissor) ||
+        item.geometry.mode !== mode ||
+        !isBatchable(item) ||
+        (item.material !== first.material &&
+          !atlasJoinable(first, item, atlas)) ||
+        vertexCount + item.geometry.vertexCount > this.maxVertices
+      ) {
+        break;
+      }
+      vertexCount += item.geometry.vertexCount;
+      reach += 1;
+    }
+
+    const textures = this.#textures;
+    let distinct = 0;
+    let previous: MaterialTexture | null = null;
+    for (let i = 0; i < reach; i += 1) {
+      const texture = textureOf(items[from + i] as BatchableItem)!;
+      if (texture !== previous) {
+        textures[distinct] = texture;
+        distinct += 1;
+        previous = texture;
+      }
+    }
+    atlas.packAll(textures, distinct);
+
+    const entries = this.#entries;
+    let count = 0;
+    let segments = 0;
+    let differs = false;
+    let page: AtlasEntry["page"] | null = null;
+    let previousMaterial: BatchableMaterial | null = null;
+    for (let i = 0; i < reach; i += 1) {
+      const item = items[from + i] as BatchableItem;
+      const entry = atlas.entry(textureOf(item)!);
+      if (
+        entry === null ||
+        (page !== null && entry.page !== page) ||
+        !uvsInUnitRange(item.geometry)
+      ) {
+        break;
+      }
+      page = entry.page;
+      entries[i] = entry;
+      if (item.material !== previousMaterial) {
+        segments += 1;
+        previousMaterial = item.material;
+      }
+      differs ||= item.material !== first.material;
+      count += 1;
+    }
+    if (count < 2 || !differs) {
+      return 0;
+    }
+    this.#atlasRuns += 1;
+    this.#atlasItems += count;
+    this.#drawsSaved += segments - 1;
+    return count;
   }
 
   /**
@@ -801,6 +1103,7 @@ export class RenderBatcher {
     floatsPerVertex: number,
     hasUvs: boolean,
     hasColors: boolean,
+    entry: AtlasEntry | null,
   ): number {
     const geometry = item.geometry;
     const positions = geometry.positions;
@@ -821,6 +1124,13 @@ export class RenderBatcher {
     const m13 = e[13];
     const m14 = e[14];
     const vertices = this.#vertices;
+    // Atlas rewrite (W11.4): u' = (x + u·w) / page, v' likewise. `entry` is
+    // non-null only for a run `#planAtlas` validated, whose uvs exist.
+    const pageSize = entry === null ? 1 : entry.page.width;
+    const scaleU = entry === null ? 1 : entry.width / pageSize;
+    const scaleV = entry === null ? 1 : entry.height / pageSize;
+    const offsetU = entry === null ? 0 : entry.x / pageSize;
+    const offsetV = entry === null ? 0 : entry.y / pageSize;
     let at = offset;
     for (let v = 0; v < vertexCount; v += 1) {
       const p = v * 3;
@@ -837,8 +1147,8 @@ export class RenderBatcher {
           vertices[stream + 1] = 0;
         } else {
           const uv = v * 2;
-          vertices[stream] = uvs[uv];
-          vertices[stream + 1] = uvs[uv + 1];
+          vertices[stream] = offsetU + uvs[uv] * scaleU;
+          vertices[stream + 1] = offsetV + uvs[uv + 1] * scaleV;
         }
         stream += UV_FLOATS;
       }

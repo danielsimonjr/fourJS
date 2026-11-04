@@ -19,6 +19,8 @@ import {
   type FetchResponse,
   type GltfAsset,
   type GltfLoaderOptions,
+  type TextureAsset,
+  type BasisTranscoder,
 } from "../src/index.js";
 
 /** Standard base64 of some bytes (tests run under Node). */
@@ -2456,18 +2458,63 @@ describe("animations", () => {
     );
   });
 
-  it("refuses a morph-weight channel by name", async () => {
-    await expectRefusal(
-      load(
-        corrupt(skinnedDocument(), (c) => {
-          const animations = c["animations"] as {
-            channels: { target: { path: string } }[];
-          }[];
-          animations[0].channels[0].target.path = "weights";
-        }),
-      ),
-      /morph-weight channels are refused/,
+  it("parses a morph-weight channel (N scalars per key)", async () => {
+    const delta = new Float32Array(9).fill(1);
+    const times = new Float32Array([0, 1]);
+    const weights = new Float32Array([0, 0, 0, 0, 1, 0.5, 0.25, 0]);
+    const { bytes, offsets } = pack(
+      TRI_POSITIONS,
+      TRI_INDICES,
+      delta,
+      times,
+      weights,
     );
+    const asset = await load({
+      asset: { version: "2.0" },
+      buffers: [{ byteLength: bytes.byteLength, uri: dataUri(bytes) }],
+      bufferViews: [36, 6, 36, 8, 32].map((byteLength, i) => ({
+        buffer: 0,
+        byteOffset: offsets[i],
+        byteLength,
+      })),
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 1, componentType: 5123, count: 3, type: "SCALAR" },
+        { bufferView: 2, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 3, componentType: 5126, count: 2, type: "SCALAR" },
+        { bufferView: 4, componentType: 5126, count: 8, type: "SCALAR" },
+      ],
+      meshes: [
+        {
+          primitives: [
+            {
+              attributes: { POSITION: 0 },
+              indices: 1,
+              targets: [
+                { POSITION: 2 },
+                { POSITION: 2 },
+                { POSITION: 2 },
+                { POSITION: 2 },
+              ],
+            },
+          ],
+        },
+      ],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+      animations: [
+        {
+          samplers: [{ input: 3, output: 4 }],
+          channels: [{ sampler: 0, target: { node: 0, path: "weights" } }],
+        },
+      ],
+    });
+    const channel = asset.animations[0].channels[0];
+    expect(channel.path).toBe("weights");
+    expect(channel.node).toBe(0);
+    expect(Array.from(channel.values)).toEqual(Array.from(weights));
+    expect(channel.values.length / channel.times.length).toBe(4);
   });
 
   it("refuses an unknown target path", async () => {
@@ -2807,7 +2854,7 @@ describe("disposal (§83)", () => {
     asset.dispose();
     asset.dispose();
     expect(asset.isDisposed).toBe(true);
-    expect(texture?.isDisposed).toBe(true);
+    expect((texture as TextureAsset).isDisposed).toBe(true);
     // Records stay readable — they are plain data.
     expect(asset.meshes).toHaveLength(1);
   });
@@ -2830,5 +2877,121 @@ describe("sub-resource abort signal (2026-09-11)", () => {
     await loader.load(jsonResponse(document), "/m/model.gltf", { signal });
     await loader.load(jsonResponse(document), "/m/model.gltf");
     expect(inits).toEqual([{ signal }, undefined]);
+  });
+});
+
+describe("KHR_texture_basisu routing (R-30c)", () => {
+  const KTX2 = new Uint8Array([
+    0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a,
+  ]);
+
+  function basisDocument(
+    edit?: (copy: Record<string, unknown>) => void,
+  ): Record<string, unknown> {
+    return corrupt(texturedDocument(), (copy) => {
+      copy["images"] = [
+        { uri: dataUri(ENCODED_IMAGE), mimeType: "image/png" },
+        { uri: dataUri(KTX2), mimeType: "image/ktx2" },
+      ];
+      copy["textures"] = [
+        {
+          source: 0,
+          sampler: 0,
+          extensions: { KHR_texture_basisu: { source: 1 } },
+        },
+      ];
+      copy["extensionsUsed"] = ["KHR_texture_basisu"];
+      edit?.(copy);
+    });
+  }
+
+  const requests: unknown[] = [];
+  const seen: Uint8Array[] = [];
+  const transcoder: BasisTranscoder = (ktx2, request) => {
+    requests.push(request);
+    seen.push(new Uint8Array(ktx2));
+    return {
+      width: 4,
+      height: 4,
+      format: "bc7-rgba-unorm",
+      colorSpace: "linear",
+      levels: [new Uint8Array(16)],
+    };
+  };
+
+  it("routes the KTX2 image through the transcoder into a compressed source", async () => {
+    requests.length = 0;
+    seen.length = 0;
+    const asset = await load(basisDocument(), {
+      basisTranscoder: transcoder,
+      supportedFormats: ["bc7-rgba-unorm"],
+      // No decodeTexture: the basis path needs none.
+    });
+    const texture = asset.textures[0];
+    expect(texture).toMatchObject({
+      format: "bc7-rgba-unorm",
+      width: 4,
+      colorSpace: "srgb",
+      filter: "nearest",
+      wrap: "clamp-to-edge",
+    });
+    expect((texture as { levels: readonly unknown[] }).levels).toHaveLength(1);
+    expect(Array.from(seen[0])).toEqual(Array.from(KTX2));
+    expect(requests[0]).toEqual({ supportedFormats: ["bc7-rgba-unorm"] });
+    asset.dispose();
+  });
+
+  it("passes no request when supportedFormats is absent", async () => {
+    requests.length = 0;
+    await load(basisDocument(), { basisTranscoder: transcoder });
+    expect(requests[0]).toBeUndefined();
+  });
+
+  it("falls back to textures[i].source without a transcoder", async () => {
+    const asset = await load(basisDocument(), { decodeTexture: fakeDecode });
+    expect(asset.textures[0]).toMatchObject({ width: 1, height: 2 });
+  });
+
+  it("records a fallback-less texture in ignoredTextures without a transcoder", async () => {
+    const asset = await load(
+      basisDocument((c) => {
+        c["textures"] = [{ extensions: { KHR_texture_basisu: { source: 1 } } }];
+      }),
+    );
+    expect(asset.textures[0]).toBeNull();
+    expect(asset.materials[0].baseColorTexture).toBeNull();
+    expect(asset.materials[0].ignoredTextures).toEqual([
+      expect.stringMatching(/baseColorTexture .*KHR_texture_basisu/),
+    ]);
+  });
+
+  it("refuses extensionsRequired without a transcoder and accepts it with one", async () => {
+    const required = basisDocument((c) => {
+      c["extensionsRequired"] = ["KHR_texture_basisu"];
+    });
+    await expectRefusal(load(required), /GltfLoaderOptions\.basisTranscoder/);
+    const asset = await load(required, { basisTranscoder: transcoder });
+    expect((asset.textures[0] as { format: string }).format).toBe(
+      "bc7-rgba-unorm",
+    );
+  });
+
+  it("refuses an extension with no source index and a texture with neither", async () => {
+    await expectRefusal(
+      load(
+        basisDocument((c) => {
+          c["textures"] = [{ extensions: { KHR_texture_basisu: {} } }];
+        }),
+      ),
+      /source/,
+    );
+    await expectRefusal(
+      load(
+        basisDocument((c) => {
+          c["textures"] = [{}];
+        }),
+      ),
+      /without an image source/,
+    );
   });
 });

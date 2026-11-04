@@ -59,7 +59,11 @@
  * component (one weight) on every mesh that has those streams, using
  * `nodes[i].weights` when authored else `meshes[i].weights`, else `[0]`.
  * WebGL mixes the streams; WebGPU skips the draw rather than showing the
- * bind pose. `weights` animation channels stay refused at parse.
+ * bind pose. A `weights` animation channel (N floats per key, N = the node's
+ * target count) becomes N scalar tracks at `morphWeights.<node>.<k>` over
+ * {@link GltfInstance.morphWeights} — one `Float32Array` per node, shared by
+ * every `Mesh` of a multi-primitive node, so the track writes the very array
+ * the render list snapshots.
  *
  * ## Skins and the §62 joint ceiling
  *
@@ -87,6 +91,7 @@ import type { GltfAsset } from "@fourjs/assets";
 import {
   AnimationClip,
   AnimationTrack,
+  numberAdapter,
   quaternionAdapter,
   vector3Adapter,
   type AnimationTrackLike,
@@ -125,6 +130,13 @@ export interface GltfInstance {
    * `new AnimationMixer(instance).play(instance.animations[0])`.
    */
   readonly animations: readonly AnimationClip[];
+  /**
+   * Per node (index-aligned with {@link GltfInstance.nodes}), the morph
+   * weight array every `MorphWeights` component of that node holds, or
+   * `null` for a node without morph targets. Loaded `weights` tracks bind
+   * `morphWeights.<node>.<k>` (RFC 0003's indexed-element form).
+   */
+  readonly morphWeights: readonly (Float32Array | null)[];
 }
 
 /** What one asset shares across every instantiation. */
@@ -139,6 +151,30 @@ interface SharedResources {
 
 /** The per-asset share, keyed weakly so a dropped asset takes it along. */
 const sharedResources = new WeakMap<GltfAsset, SharedResources>();
+
+/**
+ * The morph-target count of node `index`: authored `nodes[i].weights`, else
+ * `meshes[i].weights`, else the geometry's target streams, else `null`.
+ */
+function morphCountOf(asset: GltfAsset, index: number): number | null {
+  const record = asset.nodes[index];
+  if (record.morphWeights !== undefined) {
+    return record.morphWeights.length;
+  }
+  if (record.mesh === null) {
+    return null;
+  }
+  const mesh = asset.meshes[record.mesh];
+  if (mesh.morphWeights !== undefined) {
+    return mesh.morphWeights.length;
+  }
+  for (const primitive of mesh.primitives) {
+    if (primitive.positions1 !== undefined) {
+      return 1 + (primitive.extraMorphTargets?.length ?? 0);
+    }
+  }
+  return null;
+}
 
 /** Scratch for matrix-form node decomposition (§7b: no per-call allocation). */
 const matrixScratch = new Matrix4();
@@ -186,6 +222,37 @@ function resourcesFor(asset: GltfAsset): SharedResources {
     const tracks: AnimationTrackLike[] = [];
     for (const channel of animation.channels) {
       const times = Array.from(channel.times);
+      // The parse tier's path union is the three transform channels; a
+      // `weights` channel (RFC 0003) is read through the widened string.
+      const channelPath: string = channel.path;
+      if (channelPath === "weights") {
+        const count = morphCountOf(asset, channel.node);
+        const perKey =
+          times.length === 0 ? 0 : channel.values.length / times.length;
+        if (count === null || perKey !== count) {
+          throw new FourError(
+            "ASSET_LOAD_FAILED",
+            `Cannot instantiate glTF "${asset.url}": animations[${String(i)}] weights channel on node ${String(channel.node)} carries ${String(perKey)} values per key; the node has ${count === null ? "no" : String(count)} morph targets.`,
+            { context: { url: asset.url, node: channel.node, perKey, count } },
+          );
+        }
+        for (let k = 0; k < count; k += 1) {
+          const values: number[] = [];
+          for (let key = 0; key < times.length; key += 1) {
+            values.push(channel.values[key * count + k]);
+          }
+          tracks.push(
+            new AnimationTrack({
+              path: `morphWeights.${String(channel.node)}.${String(k)}`,
+              adapter: numberAdapter,
+              times,
+              values,
+              interpolation: channel.interpolation,
+            }),
+          );
+        }
+        continue;
+      }
       if (channel.path === "rotation") {
         const values: Quaternion[] = [];
         for (let k = 0; k < times.length; k += 1) {
@@ -331,6 +398,7 @@ export function instantiateGltf(asset: GltfAsset): GltfInstance {
 
   // --- nodes, one engine node per glTF node (module header) -------------
   const nodes: Node[] = [];
+  const morphWeights: (Float32Array | null)[] = [];
   /** The meshes each node carries, for skeleton assignment below. */
   const nodeMeshes: Mesh<StandardMaterial>[][] = [];
   for (let i = 0; i < asset.nodes.length; i += 1) {
@@ -376,6 +444,7 @@ export function instantiateGltf(asset: GltfAsset): GltfInstance {
       }
     }
     node.name = record.name;
+    let sharedWeights: Float32Array | undefined;
     const authoredWeights =
       record.morphWeights ??
       (record.mesh === null
@@ -386,14 +455,13 @@ export function instantiateGltf(asset: GltfAsset): GltfInstance {
         mesh.geometry.positions1 !== undefined ||
         authoredWeights !== undefined
       ) {
-        mesh.addComponent(
-          new MorphWeights(
-            authoredWeights?.slice() ??
-              1 + (mesh.geometry.extraMorphTargets?.length ?? 0),
-          ),
-        );
+        sharedWeights ??=
+          authoredWeights?.slice() ??
+          new Float32Array(1 + (mesh.geometry.extraMorphTargets?.length ?? 0));
+        mesh.addComponent(new MorphWeights(sharedWeights));
       }
     }
+    morphWeights.push(sharedWeights ?? null);
     if (record.matrix !== null) {
       matrixScratch
         .fromArray(record.matrix)
@@ -471,5 +539,6 @@ export function instantiateGltf(asset: GltfAsset): GltfInstance {
     nodes,
     materials,
     animations: resources.clips,
+    morphWeights,
   };
 }
