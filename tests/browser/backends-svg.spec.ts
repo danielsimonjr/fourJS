@@ -1,10 +1,11 @@
 /**
  * The SVG backend (`@fourjs/render-svg`, §62) against a real `<svg>` in
- * Chromium: the element count against an empty-scene control (one background
+ * Chromium: the element count against an empty-scene control (per view one
+ * `<clipPath>` + one clipped `<g>` at the top level; inside, a background
  * `<rect>` plus one `<polygon>` per triangle) and §33 determinism — the
  * serialized markup is byte-identical over two runs.
  *
- * The Canvas/SVG picture-agreement check is added with `render-canvas`.
+ * The Canvas/SVG picture-agreement check lives in `backends-agreement.spec.ts`.
  */
 
 import { existsSync } from "node:fs";
@@ -84,17 +85,19 @@ test.describe("SVG backend (§62) in a real browser", () => {
       }, planes);
 
     const control = await probe(0);
-    expect(control.rects).toBe(1);
+    // Top level = clipPath + g for the one view; rects = clip rect + background.
+    expect(control.rects).toBe(2);
     expect(control.polygons).toBe(0);
-    expect(control.runs[0].elementCount).toBe(1);
+    expect(control.runs[0].elementCount).toBe(2);
 
     const scene = await probe(6);
-    // Six planes = twelve triangles, plus the one background rect.
-    expect(scene.rects).toBe(1);
+    // Six planes = twelve triangles, all inside the view's clipped group, so
+    // the top-level count stays 2 while the polygon count carries the scene.
+    expect(scene.rects).toBe(2);
     expect(scene.polygons).toBe(12);
-    expect(scene.runs[0].elementCount).toBe(13);
-    expect(scene.runs[0].elementCount).toBeGreaterThan(
-      control.runs[0].elementCount,
+    expect(scene.runs[0].elementCount).toBe(2);
+    expect(scene.runs[0].outerHTML.length).toBeGreaterThan(
+      control.runs[0].outerHTML.length,
     );
 
     // §33: two runs of the same scene serialize to the same bytes.

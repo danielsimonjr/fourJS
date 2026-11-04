@@ -9,8 +9,9 @@
  *
  * Each frame the scene's unlit triangles are projected on the CPU and written
  * as `<polygon points="…" fill="…">` children of the surface, after one
- * background `<rect>` per view that has a `clearColor`. The elements are
- * **retained**: slot *n* of the frame reuses slot *n*'s element from the last
+ * background `<rect>` per view that has a `clearColor`, inside a clipped group
+ * per view. The elements are
+ * **retained**: slot *n* of the view reuses slot *n*'s element from the last
  * frame, and an attribute is written only when its text changed, so a static
  * scene costs no DOM mutation at all and two runs of one scene serialize
  * byte-identically (§33). The element count grows only when the draw count
@@ -22,8 +23,11 @@
  * ## Scope (deliberate)
  *
  * Only `"unlit"` triangle items are drawn, flat-filled in painter's (list)
- * order with no depth test, no back-face culling, no per-view clipping and no
- * texture. Every other item kind is counted in {@link SvgRenderer.skippedItems}
+ * order with no depth test, no back-face culling and no texture. Each view's
+ * output sits in a retained `<g>` clipped by a `<clipPath>` of the view
+ * rectangle (§48), ids `fourjs-svg-clip-<viewIndex>` (so two renderers sharing
+ * one document would collide). The `points` string is allocated per triangle
+ * per frame (§7b; acceptable for the SVG tier). Every other item kind is counted in {@link SvgRenderer.skippedItems}
  * and skipped, with one development warning per kind. Triangles with any
  * vertex at or behind the camera plane (`w <= 0`) are dropped.
  *
@@ -36,7 +40,7 @@
  */
 
 import { DEV, EventEmitter, FourError, devWarnOnce } from "@fourjs/core";
-import { Matrix4 } from "@fourjs/math";
+import { Matrix4, linearToSrgb } from "@fourjs/math";
 import {
   buildInterpolatedRenderList,
   buildRenderList,
@@ -98,11 +102,23 @@ export function isSvgSurface(value: unknown): value is SvgSurface {
 
 interface Slot {
   readonly tag: "rect" | "polygon";
+  readonly parent: SvgElement;
   readonly element: SvgElement;
   /** Last-written attribute text, so an unchanged attribute is not rewritten. */
   readonly v: string[];
   fill: string;
   fillOpacity: string;
+}
+
+/**
+ * One view's retained structure: `<clipPath id><rect/></clipPath>` followed by
+ * `<g clip-path="url(#id)">` holding the view's background rect and polygons.
+ */
+interface ViewSlot {
+  readonly clipPath: SvgElement;
+  readonly group: SvgElement;
+  readonly clipRect: Slot;
+  readonly items: Slot[];
 }
 
 const viewProjection = new Matrix4();
@@ -118,8 +134,9 @@ function num(value: number): string {
   return out === "-0" ? "0" : out;
 }
 
+/** Linear material/clear colour to an 8-bit sRGB channel (§60a), as render-canvas does. */
 function channel(value: number): number {
-  return Math.round(Math.min(1, Math.max(0, value)) * 255);
+  return Math.round(Math.min(1, Math.max(0, linearToSrgb(value))) * 255);
 }
 
 function rgb(color: ArrayLike<number>): string {
@@ -146,7 +163,8 @@ export class SvgRenderer implements Renderer {
   skippedItems = 0;
 
   #surface: SvgSurface | null;
-  #slots: Slot[] = [];
+  #views: ViewSlot[] = [];
+  #pending: { w: number; h: number; cssW: string; cssH: string } | null = null;
   #list: RenderItem[] = [];
   #viewList: RenderItem[] = [];
   #width = 0;
@@ -160,7 +178,9 @@ export class SvgRenderer implements Renderer {
 
   /** Number of elements this renderer currently owns on the surface. */
   get elementCount(): number {
-    return this.#slots.length;
+    let n = 0;
+    for (const view of this.#views) n += 3 + view.items.length;
+    return n;
   }
 
   get disposed(): boolean {
@@ -180,6 +200,14 @@ export class SvgRenderer implements Renderer {
       );
     }
     this.#surface = candidate;
+    const pending = this.#pending;
+    if (pending !== null) {
+      // A resize() before initialize() is applied now (the app orders them so).
+      this.#viewBox = "";
+      this.#setSize(pending.w, pending.h);
+      candidate.setAttribute("width", pending.cssW);
+      candidate.setAttribute("height", pending.cssH);
+    }
     return Promise.resolve();
   }
 
@@ -190,9 +218,12 @@ export class SvgRenderer implements Renderer {
       Math.round(height * resolution),
     );
     const surface = this.#surface;
+    const cssW = num(width);
+    const cssH = num(height);
+    this.#pending = { w: this.#width, h: this.#height, cssW, cssH };
     if (surface !== null) {
-      surface.setAttribute("width", num(width));
-      surface.setAttribute("height", num(height));
+      surface.setAttribute("width", cssW);
+      surface.setAttribute("height", cssH);
     }
   }
 
@@ -203,7 +234,6 @@ export class SvgRenderer implements Renderer {
     target?: RenderTarget | null,
   ): void {
     this.#assertUsable("render");
-    void target;
     const surface = this.#surface;
     if (surface === null) {
       throw new FourError(
@@ -212,7 +242,21 @@ export class SvgRenderer implements Renderer {
         { context: { method: "render" } },
       );
     }
-    if (views.length === 0) return;
+    if (target != null) {
+      // Contract (render/renderer.ts): a target the backend cannot use skips the frame.
+      this.skippedItems += 1;
+      if (DEV) {
+        devWarnOnce(
+          "render-svg:render-target",
+          "SvgRenderer cannot draw to a RenderTarget; the frame was skipped (§62).",
+        );
+      }
+      return;
+    }
+    if (views.length === 0) {
+      this.#truncateViews(0);
+      return;
+    }
     if (this.#width === 0 || this.#height === 0) this.#sizeFromViews(views);
     const width = this.#width;
     const height = this.#height;
@@ -228,8 +272,11 @@ export class SvgRenderer implements Renderer {
             this.#list,
           );
 
-    let used = 0;
+    let viewIndex = 0;
     for (const view of views) {
+      const vs = this.#viewSlot(viewIndex);
+      viewIndex += 1;
+      let used = 0;
       const scaleX = view.normalized === true ? width : 1;
       const scaleY = view.normalized === true ? height : 1;
       const vx = view.x * scaleX;
@@ -237,8 +284,12 @@ export class SvgRenderer implements Renderer {
       const vh = view.height * scaleY;
       const top = height - (view.y * scaleY + vh);
       const clear = view.clearColor;
+      this.#write(vs.clipRect, 0, "x", num(vx));
+      this.#write(vs.clipRect, 1, "y", num(top));
+      this.#write(vs.clipRect, 2, "width", num(vw));
+      this.#write(vs.clipRect, 3, "height", num(vh));
       if (clear !== undefined) {
-        const slot = this.#slot(used, "rect");
+        const slot = this.#slot(vs, used, "rect");
         used += 1;
         this.#write(slot, 0, "x", num(vx));
         this.#write(slot, 1, "y", num(top));
@@ -291,7 +342,7 @@ export class SvgRenderer implements Renderer {
             points += `${k === 0 ? "" : " "}${num(vx + ((cx + 1) / 2) * vw)},${num(top + ((1 - cy) / 2) * vh)}`;
           }
           if (!ok) continue;
-          const slot = this.#slot(used, "polygon");
+          const slot = this.#slot(vs, used, "polygon");
           used += 1;
           this.#write(slot, 0, "points", points);
           this.#fill(slot, color, opacity);
@@ -301,14 +352,15 @@ export class SvgRenderer implements Renderer {
           }
         }
       }
+      this.#truncate(vs, used);
     }
-    this.#truncate(used);
+    this.#truncateViews(viewIndex);
   }
 
   dispose(): void {
     if (this.#disposed) return;
     this.#disposed = true;
-    this.#truncate(0);
+    this.#truncateViews(0);
     this.#surface = null;
     this.events.removeAllListeners();
   }
@@ -323,6 +375,7 @@ export class SvgRenderer implements Renderer {
     }
   }
 
+  /** Never-resized fallback: pixel views' extent; 1x1 when all views are normalized. */
   #sizeFromViews(views: readonly Viewport[]): void {
     let w = 0;
     let h = 0;
@@ -334,19 +387,52 @@ export class SvgRenderer implements Renderer {
     this.#setSize(Math.round(w) || 1, Math.round(h) || 1);
   }
 
-  /** The element for slot `index`, created/replaced only when needed. */
-  #slot(index: number, tag: "rect" | "polygon"): Slot {
-    const slots = this.#slots;
+  #viewSlot(index: number): ViewSlot {
+    const views = this.#views;
+    const existing = views[index] as ViewSlot | undefined;
+    if (existing !== undefined) return existing;
+    const surface = this.#surface as SvgSurface;
+    const factory = surface.ownerDocument;
+    const id = `fourjs-svg-clip-${String(index)}`;
+    const clipPath = factory.createElementNS(SVG_NAMESPACE, "clipPath");
+    clipPath.setAttribute("id", id);
+    const rect = factory.createElementNS(SVG_NAMESPACE, "rect");
+    clipPath.appendChild(rect as never);
+    const group = factory.createElementNS(SVG_NAMESPACE, "g");
+    group.setAttribute("clip-path", `url(#${id})`);
+    surface.appendChild(clipPath as never);
+    surface.appendChild(group as never);
+    const view: ViewSlot = {
+      clipPath,
+      group,
+      clipRect: {
+        tag: "rect",
+        parent: clipPath,
+        element: rect,
+        v: ["", "", "", ""],
+        fill: "",
+        fillOpacity: "1",
+      },
+      items: [],
+    };
+    views.push(view);
+    return view;
+  }
+
+  /** The element for item `index` of a view, created/replaced only when needed. */
+  #slot(view: ViewSlot, index: number, tag: "rect" | "polygon"): Slot {
+    const slots = view.items;
     const existing = slots[index] as Slot | undefined;
     if (existing !== undefined) {
       if (existing.tag === tag) return existing;
-      this.#truncate(index);
+      this.#truncate(view, index);
     }
     const surface = this.#surface as SvgSurface;
     const element = surface.ownerDocument.createElementNS(SVG_NAMESPACE, tag);
-    surface.appendChild(element as never);
+    view.group.appendChild(element as never);
     const slot: Slot = {
       tag,
+      parent: view.group,
       element,
       v: ["", "", "", ""],
       fill: "",
@@ -377,12 +463,21 @@ export class SvgRenderer implements Renderer {
     }
   }
 
-  #truncate(keep: number): void {
-    const surface = this.#surface;
-    const slots = this.#slots;
+  #truncate(view: ViewSlot, keep: number): void {
+    const slots = view.items;
     while (slots.length > keep) {
       const slot = slots.pop() as Slot;
-      surface?.removeChild(slot.element as never);
+      view.group.removeChild(slot.element as never);
+    }
+  }
+
+  #truncateViews(keep: number): void {
+    const surface = this.#surface;
+    const views = this.#views;
+    while (views.length > keep) {
+      const view = views.pop() as ViewSlot;
+      surface?.removeChild(view.group as never);
+      surface?.removeChild(view.clipPath as never);
     }
   }
 
