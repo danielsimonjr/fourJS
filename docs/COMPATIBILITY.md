@@ -28,7 +28,7 @@ releases that have not happened; the format and API versions in sections 3–4
 exist today and are the ones a document on disk has to match.
 
 **Decision 2026-09-06 — publish the reserved stubs as real 0.x packages.** The
-two reserved directories (`physics-box2d`, `physics-soft`) already exist, build, and export `PACKAGE_NAME`; the umbrella
+two reserved directories (`physics-box2d`, `physics-soft`) already existed, built, and exported `PACKAGE_NAME` (`physics-soft` has since shipped, 2026-11-04); the umbrella
 depends on them and re-exports each as a subpath, so Changesets cannot
 `ignore` them without also skipping `four` (see `.changeset/README.md`).
 Dropping the subpaths would break §98; optional peers would push the
@@ -260,8 +260,8 @@ hands `Application` a constructed instance carries no registry at all.
 ## 3. Physics solver adapters (§37, §102)
 
 §102 defines the solver package set as `@fourjs/physics-rapier` and
-`@fourjs/physics-box2d`; `@fourjs/physics-soft` is §35's soft-body package on the
-same seam. The table below is generated from the adapters' own
+`@fourjs/physics-box2d`; `@fourjs/physics-soft` is §35's soft-body package, which is
+not a §37 adapter (ERRATA E-3) and has no column. The table below is generated from the adapters' own
 `PhysicsCapabilities` records, read off constructed instances before
 `initialize`, plus the two structural access seams
 (`SolverBodyAccess`, `SolverJointAccess`) probed member by member against
@@ -275,31 +275,29 @@ same seam. The table below is generated from the adapters' own
      `node tools/generate-compatibility.mjs`, and
      `node tools/generate-compatibility.mjs --check` to verify. -->
 
-| Declaration                     | `physjs2d`                                 | `physjs3d`                                 | `rapier2d`                                         | `rapier3d`                                                      |
-| ------------------------------- | ------------------------------------------ | ------------------------------------------ | -------------------------------------------------- | --------------------------------------------------------------- |
-| Package (§98)                   | `@fourjs/physics-physjs`                   | `@fourjs/physics-physjs`                   | `@fourjs/physics-rapier`                           | `@fourjs/physics-rapier`                                        |
-| Exported class                  | `PhysJSAdapter2D`                          | `PhysJSAdapter3D`                          | `Rapier2dAdapter`                                  | `Rapier3dAdapter`                                               |
-| Underlying solver               | `@danielsimonjr/physjs` 0.5.0              | `@danielsimonjr/physjs` 0.5.0              | `@dimforge/rapier2d-compat` 0.20.0                 | `@dimforge/rapier3d-compat` 0.20.0                              |
-| `dimensions` (§21)              | `2d`, `3d`                                 | `2d`, `3d`                                 | `2d`                                               | `3d`                                                            |
-| `determinism` (§33)             | `same-runtime`                             | `same-runtime`                             | `same-runtime`                                     | `same-runtime`                                                  |
-| `snapshots` (§34)               | yes                                        | yes                                        | yes                                                | yes                                                             |
-| `ccdModes` (§31)                | `disabled`, `speculative`                  | `disabled`, `speculative`                  | `disabled`, `speculative`, `swept`                 | `disabled`, `speculative`, `swept`                              |
-| `jointTypes` (§28)              | `fixed`, `spring`, `revolute`, `spherical` | `fixed`, `spring`, `revolute`, `spherical` | `fixed`, `spring`, `revolute`, `prismatic`, `rope` | `fixed`, `spring`, `revolute`, `prismatic`, `spherical`, `rope` |
-| `queries.raycast` (§30)         | yes                                        | yes                                        | yes                                                | yes                                                             |
-| `queries.shapeCast` (§30)       | no                                         | no                                         | yes                                                | yes                                                             |
-| `queries.overlap` (§30)         | yes                                        | yes                                        | yes                                                | yes                                                             |
-| `queries.point` (§30)           | yes                                        | yes                                        | yes                                                | yes                                                             |
-| `tuning.rollingFriction` (§25)  | no                                         | no                                         | no                                                 | no                                                              |
-| `tuning.spinningFriction` (§25) | no                                         | no                                         | no                                                 | no                                                              |
-| `tuning.sleepThresholds` (§32)  | no                                         | no                                         | no                                                 | no                                                              |
-| `reportsJointReactions` (§28)   | no                                         | no                                         | no                                                 | no                                                              |
-| `SolverBodyAccess` implemented  | yes                                        | yes                                        | yes                                                | yes                                                             |
-| `SolverJointAccess` implemented | yes                                        | yes                                        | yes                                                | yes                                                             |
+| Declaration                     | `box2d`                                            | `rapier2d`                                         | `rapier3d`                                                      |
+| ------------------------------- | -------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------- |
+| Package (§98)                   | `@fourjs/physics-box2d`                            | `@fourjs/physics-rapier`                           | `@fourjs/physics-rapier`                                        |
+| Exported class                  | `Box2dAdapter`                                     | `Rapier2dAdapter`                                  | `Rapier3dAdapter`                                               |
+| Underlying solver               | `@box2d/core` 0.11.0                               | `@dimforge/rapier2d-compat` 0.20.0                 | `@dimforge/rapier3d-compat` 0.20.0                              |
+| `dimensions` (§21)              | `2d`                                               | `2d`                                               | `3d`                                                            |
+| `determinism` (§33)             | `same-runtime`                                     | `same-runtime`                                     | `same-runtime`                                                  |
+| `snapshots` (§34)               | yes                                                | yes                                                | yes                                                             |
+| `ccdModes` (§31)                | `disabled`, `swept`                                | `disabled`, `speculative`, `swept`                 | `disabled`, `speculative`, `swept`                              |
+| `jointTypes` (§28)              | `fixed`, `spring`, `revolute`, `prismatic`, `rope` | `fixed`, `spring`, `revolute`, `prismatic`, `rope` | `fixed`, `spring`, `revolute`, `prismatic`, `spherical`, `rope` |
+| `queries.raycast` (§30)         | yes                                                | yes                                                | yes                                                             |
+| `queries.shapeCast` (§30)       | yes                                                | yes                                                | yes                                                             |
+| `queries.overlap` (§30)         | yes                                                | yes                                                | yes                                                             |
+| `queries.point` (§30)           | yes                                                | yes                                                | yes                                                             |
+| `tuning.rollingFriction` (§25)  | no                                                 | no                                                 | no                                                              |
+| `tuning.spinningFriction` (§25) | no                                                 | no                                                 | no                                                              |
+| `tuning.sleepThresholds` (§32)  | no                                                 | no                                                 | no                                                              |
+| `reportsJointReactions` (§28)   | yes                                                | no                                                 | no                                                              |
+| `SolverBodyAccess` implemented  | yes                                                | yes                                                | yes                                                             |
+| `SolverJointAccess` implemented | yes                                                | yes                                                | yes                                                             |
 
-Solver packages that declare no adapter:
-
-- `@fourjs/physics-box2d` — reserved stub (§102): the package builds and exports `PACKAGE_NAME` only.
-- `@fourjs/physics-soft` — reserved stub (§102): the package builds and exports `PACKAGE_NAME` only.
+Not a solver adapter: `@fourjs/physics-soft` ships §35 soft bodies (rope, cloth, pressure) as a
+fixed-step `SoftBodySystem`; it declares no §37 capabilities and has no column above.
 
 <!-- END GENERATED: solver-adapters -->
 

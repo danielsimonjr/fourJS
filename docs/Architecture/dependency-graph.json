@@ -3,9 +3,9 @@
     "name": "fourjs-monorepo",
     "version": "0.0.0",
     "lastUpdated": "2026-11-04",
-    "totalFiles": 356,
-    "totalModules": 25,
-    "totalExports": 3573
+    "totalFiles": 358,
+    "totalModules": 24,
+    "totalExports": 3586
   },
   "entryPoints": [
     {
@@ -92,11 +92,6 @@
       "file": "packages/render-webgpu/src/index.ts",
       "type": "main",
       "description": "`@fourjs/render-webgpu` — the WebGPU backend (§62 backend 1)."
-    },
-    {
-      "file": "packages/physics-physjs/src/index.ts",
-      "type": "main",
-      "description": "`@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102)."
     },
     {
       "file": "packages/render-canvas/src/index.ts",
@@ -2978,14 +2973,241 @@
       }
     },
     "packages/physics-box2d": {
+      "packages/physics-box2d/src/box2d-adapter.ts": {
+        "description": "`Box2dAdapter` — the 2D §37 solver adapter over `@box2d/core` 0.11.0 (W8.1).",
+        "externalDependencies": [
+          {
+            "package": "@box2d/core",
+            "imports": [
+              "b2BodyType",
+              "b2CircleShape",
+              "b2ContactListener",
+              "b2DistanceJointDef",
+              "b2_maxFloat",
+              "b2PolygonShape",
+              "b2PrismaticJointDef",
+              "b2RevoluteJointDef",
+              "b2Vec2",
+              "b2WeldJointDef",
+              "b2World",
+              "b2WorldManifold",
+              "b2AABB",
+              "b2ShapeCast",
+              "b2Distance",
+              "b2DistanceInput",
+              "b2DistanceOutput",
+              "b2SimplexCache",
+              "b2ShapeCastInput",
+              "b2ShapeCastOutput",
+              "b2TestOverlap",
+              "b2Transform"
+            ]
+          },
+          {
+            "package": "@box2d/core",
+            "imports": [
+              "b2Body",
+              "b2Contact",
+              "b2Fixture",
+              "b2Joint",
+              "b2PrismaticJoint",
+              "b2RevoluteJoint",
+              "b2Shape"
+            ]
+          }
+        ],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./snapshot-codec.js",
+            "imports": [
+              "SNAPSHOT_FORMAT_VERSION",
+              "SNAPSHOT_MAGIC",
+              "SnapshotReader",
+              "SnapshotWriter"
+            ]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Quaternion", "Vector3"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Matrix3"]
+          },
+          {
+            "package": "@fourjs/physics",
+            "directory": "packages/physics",
+            "imports": [
+              "ALL_COLLISION_GROUPS",
+              "DEFAULT_FRICTION",
+              "DEFAULT_RESTITUTION",
+              "DETERMINISM_LEVELS",
+              "passesQueryFilter",
+              "rejectStalePhysicsHandle",
+              "resolveAngularVelocity",
+              "resolveQueryOptions",
+              "sortHitsByDistance",
+              "validateQueryShape",
+              "resolveDensity",
+              "resolveGravity",
+              "resolveRotation",
+              "resolveSleepingConfig",
+              "validateColliderDescriptor",
+              "validateJointDescriptor",
+              "validatePhysicsWorldOptions",
+              "validateRigidBodyDescriptor"
+            ]
+          },
+          {
+            "package": "@fourjs/physics",
+            "directory": "packages/physics",
+            "imports": [
+              "AngularVelocityInput",
+              "BodyType",
+              "CCDMode",
+              "ColliderDescriptor",
+              "ContactPoint",
+              "JointDescriptor",
+              "QueryCandidate",
+              "ResolvedQueryOptions",
+              "OverlapHit",
+              "OverlapQuery",
+              "PhysicsBodyHandle",
+              "PhysicsCapabilities",
+              "PhysicsColliderHandle",
+              "PhysicsEvent",
+              "PhysicsEventInterest",
+              "PhysicsJointHandle",
+              "PhysicsSolverAdapter",
+              "PhysicsWorldOptions",
+              "PointHit",
+              "PointQuery",
+              "RaycastHit",
+              "RaycastQuery",
+              "RigidBodyDescriptor",
+              "RotationInput",
+              "ShapeCastHit",
+              "ShapeCastQuery",
+              "ShippedJointType",
+              "SolverBodyAccess",
+              "SolverBodyTuningAccess",
+              "SolverJointAccess",
+              "SolverJointMotor",
+              "Vector3Input"
+            ]
+          }
+        ],
+        "exports": ["BOX2D_CORE_VERSION", "BOX2D_CAPABILITIES", "Box2dAdapter"],
+        "classes": ["Box2dAdapter"],
+        "constants": ["BOX2D_CORE_VERSION", "BOX2D_CAPABILITIES"]
+      },
       "packages/physics-box2d/src/index.ts": {
-        "description": "Entry point exporting 1 symbols",
+        "description": "Package entry point for @fourjs/physics-box2d (re-exports 6 symbols)",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./box2d-adapter.js",
+            "imports": [
+              "Box2dAdapter",
+              "BOX2D_CAPABILITIES",
+              "BOX2D_CORE_VERSION"
+            ],
+            "reExport": true
+          },
+          {
+            "file": "./register.js",
+            "imports": [
+              "createBox2dAdapter",
+              "isBox2dSupported",
+              "registerBox2dSolver"
+            ],
+            "reExport": true
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": [
+          "Box2dAdapter",
+          "BOX2D_CAPABILITIES",
+          "BOX2D_CORE_VERSION",
+          "createBox2dAdapter",
+          "isBox2dSupported",
+          "registerBox2dSolver",
+          "PACKAGE_NAME"
+        ],
+        "reExported": [
+          "Box2dAdapter",
+          "BOX2D_CAPABILITIES",
+          "BOX2D_CORE_VERSION",
+          "createBox2dAdapter",
+          "isBox2dSupported",
+          "registerBox2dSolver"
+        ],
+        "constants": ["PACKAGE_NAME"]
+      },
+      "packages/physics-box2d/src/snapshot-codec.ts": {
+        "description": "Byte codec for the Box2D adapter's §34 snapshot envelope (W8.3).",
         "externalDependencies": [],
         "nodeDependencies": [],
         "internalDependencies": [],
-        "workspaceDependencies": [],
-        "exports": ["PACKAGE_NAME"],
-        "constants": ["PACKAGE_NAME"]
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError"]
+          }
+        ],
+        "exports": [
+          "SNAPSHOT_MAGIC",
+          "SNAPSHOT_FORMAT_VERSION",
+          "SnapshotWriter",
+          "SnapshotReader"
+        ],
+        "classes": ["SnapshotWriter", "SnapshotReader"],
+        "constants": ["SNAPSHOT_MAGIC", "SNAPSHOT_FORMAT_VERSION"]
+      },
+      "packages/physics-box2d/src/register.ts": {
+        "description": "This package's opt-in to §37's solver registry (W8.1).",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./box2d-adapter.js",
+            "imports": ["Box2dAdapter"]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/physics",
+            "directory": "packages/physics",
+            "imports": [
+              "registerSolver",
+              "PhysicsWorldAdapter",
+              "PhysicsWorldOptions",
+              "SolverRegistry"
+            ]
+          }
+        ],
+        "exports": [
+          "isBox2dSupported",
+          "createBox2dAdapter",
+          "registerBox2dSolver"
+        ],
+        "functions": [
+          "isBox2dSupported",
+          "createBox2dAdapter",
+          "registerBox2dSolver"
+        ]
       }
     },
     "packages/scene": {
@@ -4907,13 +5129,144 @@
     },
     "packages/physics-soft": {
       "packages/physics-soft/src/index.ts": {
-        "description": "Entry point exporting 1 symbols",
+        "description": "Package entry point for @fourjs/physics-soft (re-exports 2 symbols)",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./soft-body.js",
+            "imports": ["*"],
+            "reExport": true
+          },
+          {
+            "file": "./serializers.js",
+            "imports": ["*"],
+            "reExport": true
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": ["PACKAGE_NAME"],
+        "reExported": ["* from ./soft-body.js", "* from ./serializers.js"],
+        "constants": ["PACKAGE_NAME"]
+      },
+      "packages/physics-soft/src/soft-body.ts": {
+        "description": "Soft bodies (RFC 0011, §35/§35a): the `SoftBody` component and the",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./pbd.js",
+            "imports": [
+              "PbdSolver",
+              "clothTopology",
+              "computeNormals",
+              "pressureTopology",
+              "ropeTopology",
+              "ParticleCollider",
+              "PbdSolver",
+              "SoftTopology"
+            ]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError", "Component", "ComponentHost"]
+          },
+          {
+            "package": "@fourjs/geometry",
+            "directory": "packages/geometry",
+            "imports": ["BufferGeometry"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Matrix4", "Vector3"]
+          },
+          {
+            "package": "@fourjs/scene",
+            "directory": "packages/scene",
+            "imports": ["Node", "resolveWorldTransform"]
+          },
+          {
+            "package": "@fourjs/motion",
+            "directory": "packages/motion",
+            "imports": [
+              "PRIORITY_PHYSICS_SOLVE",
+              "FixedUpdateContext",
+              "SimulationContext",
+              "SimulationSystem"
+            ]
+          }
+        ],
+        "exports": ["PRIORITY_SOFT_BODY", "SoftBody", "SoftBodySystem"],
+        "classes": ["SoftBody", "SoftBodySystem"],
+        "interfaces": [
+          "SoftBodyTuning",
+          "RopeDescriptor",
+          "ClothDescriptor",
+          "PressureDescriptor",
+          "GravitySource",
+          "SoftRaycastQuery",
+          "SoftRaycastHit",
+          "SoftCollisionWorld",
+          "SoftBodySystemOptions",
+          "SoftBodySnapshotEntry",
+          "SoftBodySnapshot"
+        ],
+        "constants": ["PRIORITY_SOFT_BODY"]
+      },
+      "packages/physics-soft/src/pbd.ts": {
+        "description": "The CPU position-based-dynamics kernel (RFC 0011 #1-#4, #8).",
         "externalDependencies": [],
         "nodeDependencies": [],
         "internalDependencies": [],
         "workspaceDependencies": [],
-        "exports": ["PACKAGE_NAME"],
-        "constants": ["PACKAGE_NAME"]
+        "exports": [
+          "signedVolume",
+          "pressureTopology",
+          "effectiveStiffness",
+          "ropeTopology",
+          "clothTopology",
+          "computeNormals",
+          "PbdSolver"
+        ],
+        "classes": ["PbdSolver"],
+        "interfaces": ["SoftTopology", "PbdTuning"],
+        "functions": [
+          "signedVolume",
+          "pressureTopology",
+          "effectiveStiffness",
+          "ropeTopology",
+          "clothTopology",
+          "computeNormals"
+        ]
+      },
+      "packages/physics-soft/src/serializers.ts": {
+        "description": "The §79 serializer for {@link SoftBody} (PH-17 policy: every shipped component",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./soft-body.js",
+            "imports": ["SoftBody", "SoftBodyDescriptor"]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError", "JsonValue"]
+          },
+          {
+            "package": "@fourjs/motion",
+            "directory": "packages/motion",
+            "imports": ["ComponentSerializerShape"]
+          }
+        ],
+        "exports": ["MAXIMUM_SOFT_BODY_ARRAY_LENGTH", "SOFT_BODY_SERIALIZER"],
+        "constants": ["MAXIMUM_SOFT_BODY_ARRAY_LENGTH", "SOFT_BODY_SERIALIZER"]
       }
     },
     "packages/physics-rapier": {
@@ -17134,193 +17487,6 @@
         "functions": ["hostGpu"]
       }
     },
-    "packages/physics-physjs": {
-      "packages/physics-physjs/src/index.ts": {
-        "description": "`@fourjs/physics-physjs` — the PhysJS solver adapters (RFC 0010, §37, §102).",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [
-          {
-            "file": "./physjs-adapter.js",
-            "imports": [
-              "PHYSJS_CAPABILITIES",
-              "PHYSJS_VERSION",
-              "PhysJSAdapter2D",
-              "PhysJSAdapter3D"
-            ],
-            "reExport": true
-          },
-          {
-            "file": "./register.js",
-            "imports": [
-              "createPhysJSAdapter",
-              "isPhysJSSupported",
-              "registerPhysJSSolver"
-            ],
-            "reExport": true
-          }
-        ],
-        "workspaceDependencies": [],
-        "exports": [
-          "PHYSJS_CAPABILITIES",
-          "PHYSJS_VERSION",
-          "PhysJSAdapter2D",
-          "PhysJSAdapter3D",
-          "createPhysJSAdapter",
-          "isPhysJSSupported",
-          "registerPhysJSSolver",
-          "PACKAGE_NAME"
-        ],
-        "reExported": [
-          "PHYSJS_CAPABILITIES",
-          "PHYSJS_VERSION",
-          "PhysJSAdapter2D",
-          "PhysJSAdapter3D",
-          "createPhysJSAdapter",
-          "isPhysJSSupported",
-          "registerPhysJSSolver"
-        ],
-        "constants": ["PACKAGE_NAME"]
-      },
-      "packages/physics-physjs/src/physjs-adapter.ts": {
-        "description": "The PhysJS solver adapters (RFC 0010, §37, §102).",
-        "externalDependencies": [
-          {
-            "package": "@danielsimonjr/physjs",
-            "imports": ["* as pj"]
-          }
-        ],
-        "nodeDependencies": [],
-        "internalDependencies": [],
-        "workspaceDependencies": [
-          {
-            "package": "@fourjs/core",
-            "directory": "packages/core",
-            "imports": ["FourError"]
-          },
-          {
-            "package": "@fourjs/core",
-            "directory": "packages/core",
-            "imports": ["FourErrorCode"]
-          },
-          {
-            "package": "@fourjs/math",
-            "directory": "packages/math",
-            "imports": ["Quaternion", "Vector3"]
-          },
-          {
-            "package": "@fourjs/math",
-            "directory": "packages/math",
-            "imports": ["Matrix3"]
-          },
-          {
-            "package": "@fourjs/physics",
-            "directory": "packages/physics",
-            "imports": [
-              "ALL_COLLISION_GROUPS",
-              "DEFAULT_DENSITY",
-              "DEFAULT_FRICTION",
-              "DEFAULT_RESTITUTION",
-              "DETERMINISM_LEVELS",
-              "rejectStalePhysicsHandle",
-              "resolveAngularVelocity",
-              "resolveGravity",
-              "resolveRotation",
-              "resolveSleepingConfig",
-              "passesQueryFilter",
-              "resolveQueryOptions",
-              "validateColliderDescriptor",
-              "validateJointDescriptor",
-              "validateQueryShape",
-              "validatePhysicsWorldOptions",
-              "validateRigidBodyDescriptor",
-              "widenToVector3"
-            ]
-          },
-          {
-            "package": "@fourjs/physics",
-            "directory": "packages/physics",
-            "imports": [
-              "AngularVelocityInput",
-              "BodyType",
-              "CCDMode",
-              "ColliderDescriptor",
-              "CollisionShape",
-              "ContactPoint",
-              "JointDescriptor",
-              "OverlapHit",
-              "OverlapQuery",
-              "PhysicsBodyHandle",
-              "PhysicsCapabilities",
-              "PhysicsColliderHandle",
-              "PhysicsDimension",
-              "PhysicsEvent",
-              "PhysicsEventInterest",
-              "PhysicsJointHandle",
-              "PhysicsWorldAdapter",
-              "PhysicsWorldOptions",
-              "PointHit",
-              "PointQuery",
-              "RaycastHit",
-              "RaycastQuery",
-              "RigidBodyDescriptor",
-              "RotationInput",
-              "ShapeCastHit",
-              "ShapeCastQuery",
-              "ShippedJointType",
-              "SleepingConfig",
-              "SolverBodyAccess",
-              "SolverBodyTuningAccess",
-              "SolverJointAccess",
-              "SolverJointMotor",
-              "QueryCandidate",
-              "Vector3Input"
-            ]
-          }
-        ],
-        "exports": [
-          "PHYSJS_VERSION",
-          "PHYSJS_CAPABILITIES",
-          "PhysJSAdapter2D",
-          "PhysJSAdapter3D"
-        ],
-        "classes": ["PhysJSAdapter2D", "PhysJSAdapter3D"],
-        "constants": ["PHYSJS_VERSION", "PHYSJS_CAPABILITIES"]
-      },
-      "packages/physics-physjs/src/register.ts": {
-        "description": "This package's opt-in to §37's solver registry (RFC 0010, decision 3).",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [
-          {
-            "file": "./physjs-adapter.js",
-            "imports": ["PhysJSAdapter2D", "PhysJSAdapter3D"]
-          }
-        ],
-        "workspaceDependencies": [
-          {
-            "package": "@fourjs/physics",
-            "directory": "packages/physics",
-            "imports": [
-              "registerSolver",
-              "PhysicsWorldAdapter",
-              "PhysicsWorldOptions",
-              "SolverRegistry"
-            ]
-          }
-        ],
-        "exports": [
-          "isPhysJSSupported",
-          "createPhysJSAdapter",
-          "registerPhysJSSolver"
-        ],
-        "functions": [
-          "isPhysJSSupported",
-          "createPhysJSAdapter",
-          "registerPhysJSSolver"
-        ]
-      }
-    },
     "packages/render-canvas": {
       "packages/render-canvas/src/index.ts": {
         "description": "`@fourjs/render-canvas` — the Canvas 2D backend (§62 backend 3).",
@@ -21737,21 +21903,6 @@
       }
     },
     "packages/fourjs": {
-      "packages/fourjs/src/physics-physjs.ts": {
-        "description": "physics-physjs module",
-        "externalDependencies": [],
-        "nodeDependencies": [],
-        "internalDependencies": [],
-        "workspaceDependencies": [
-          {
-            "package": "@fourjs/physics-physjs",
-            "directory": "packages/physics-physjs",
-            "imports": ["*"]
-          }
-        ],
-        "exports": [],
-        "reExported": ["* from @fourjs/physics-physjs"]
-      },
       "packages/fourjs/src/physics-box2d.ts": {
         "description": "physics-box2d module",
         "externalDependencies": [],
@@ -22920,6 +23071,11 @@
             ]
           },
           {
+            "package": "@fourjs/physics-soft",
+            "directory": "packages/physics-soft",
+            "imports": ["SOFT_BODY_SERIALIZER", "SoftBody"]
+          },
+          {
             "package": "@fourjs/render",
             "directory": "packages/render",
             "imports": [
@@ -23698,7 +23854,12 @@
       },
       {
         "name": "Packages/physics-box2d",
-        "files": ["packages/physics-box2d/src/index.ts"]
+        "files": [
+          "packages/physics-box2d/src/box2d-adapter.ts",
+          "packages/physics-box2d/src/index.ts",
+          "packages/physics-box2d/src/snapshot-codec.ts",
+          "packages/physics-box2d/src/register.ts"
+        ]
       },
       {
         "name": "Packages/scene",
@@ -23747,7 +23908,12 @@
       },
       {
         "name": "Packages/physics-soft",
-        "files": ["packages/physics-soft/src/index.ts"]
+        "files": [
+          "packages/physics-soft/src/index.ts",
+          "packages/physics-soft/src/soft-body.ts",
+          "packages/physics-soft/src/pbd.ts",
+          "packages/physics-soft/src/serializers.ts"
+        ]
       },
       {
         "name": "Packages/physics-rapier",
@@ -23930,14 +24096,6 @@
         ]
       },
       {
-        "name": "Packages/physics-physjs",
-        "files": [
-          "packages/physics-physjs/src/index.ts",
-          "packages/physics-physjs/src/physjs-adapter.ts",
-          "packages/physics-physjs/src/register.ts"
-        ]
-      },
-      {
         "name": "Packages/render-canvas",
         "files": [
           "packages/render-canvas/src/index.ts",
@@ -24033,7 +24191,6 @@
       {
         "name": "Packages/fourjs",
         "files": [
-          "packages/fourjs/src/physics-physjs.ts",
           "packages/fourjs/src/physics-box2d.ts",
           "packages/fourjs/src/gltf.ts",
           "packages/fourjs/src/application.ts",
@@ -24084,21 +24241,21 @@
     ]
   },
   "statistics": {
-    "totalTypeScriptFiles": 356,
-    "totalModules": 25,
-    "totalLinesOfCode": 170653,
-    "totalExports": 3573,
-    "totalClasses": 218,
-    "totalInterfaces": 656,
-    "totalFunctions": 601,
+    "totalTypeScriptFiles": 358,
+    "totalModules": 24,
+    "totalLinesOfCode": 172466,
+    "totalExports": 3586,
+    "totalClasses": 222,
+    "totalInterfaces": 669,
+    "totalFunctions": 607,
     "totalTypeGuards": 33,
     "totalEnums": 0,
-    "totalConstants": 523,
+    "totalConstants": 527,
     "totalReExports": 2250,
     "totalTypeOnlyImports": 456,
     "runtimeCircularDeps": 0,
     "typeOnlyCircularDeps": 10,
     "unusedFilesCount": 0,
-    "unusedExportsCount": 10
+    "unusedExportsCount": 11
   }
 }

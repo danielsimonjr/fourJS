@@ -10,10 +10,11 @@ physics in one shared scene model. **The implementation plan (§103–§113a) is
 `packages/*` packages build, test, and lint — ~3,000 unit tests with a tooling-enforced
 ≥95% per-package coverage gate, cross-package suites in `tests/{integration,determinism}/`,
 Playwright browser gates in `tests/browser/`, pixel-golden visual tests in `tests/visual/`,
-and performance records in `benchmarks/`. Two packages are deliberate reserved stubs
-(`physics-box2d`, `physics-soft`); `render-webgpu` left the stub list 2026-08-21…29
-(the R-1 plan, WP-R1.1–R1.9 — a full second GPU backend) and `render-canvas` /
-`render-svg` left it 2026-11-04 (wave 3: Canvas 2D and SVG backends).
+and performance records in `benchmarks/`. No package is a reserved stub any more
+(`physics-box2d` shipped 2026-11-04 (wave 8: the 2D Box2D solver adapter) and
+`physics-soft` shipped 2026-11-04 (RFC 0011: CPU PBD rope, cloth and pressure bodies);
+`render-webgpu` left the stub list 2026-08-21…29 (the R-1 plan, WP-R1.1–R1.9 — a full
+second GPU backend) and `render-canvas` / `render-svg` left it 2026-11-04 (wave 3).
 
 Toolchain (§91, RFC 0006): strict TypeScript, ESM with `.js` import suffixes, Bun
 workspace, Vitest, Playwright, ESLint, Prettier, Vite, TypeDoc, Changesets. Common

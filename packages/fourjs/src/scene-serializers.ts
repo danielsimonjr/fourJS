@@ -176,6 +176,7 @@ import {
   SWEPT_CHARACTER_CONTROLLER_SERIALIZER,
   SweptCharacterController,
 } from "@fourjs/physics";
+import { SOFT_BODY_SERIALIZER, SoftBody } from "@fourjs/physics-soft";
 import {
   Arc,
   Circle,
@@ -3331,6 +3332,8 @@ export function registerPhysicsSerializers(
       // headless simulation that saves a scene carries its characters and a
       // widget-only application still pulls in neither.
       .register(SweptCharacterController, SWEPT_CHARACTER_CONTROLLER_SERIALIZER)
+      // RFC 0011 soft bodies: descriptor and tuning only, never the solve.
+      .register(SoftBody, SOFT_BODY_SERIALIZER)
   );
 }
 

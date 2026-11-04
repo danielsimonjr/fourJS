@@ -131,7 +131,9 @@ for (const [name, members] of SEAMS) {
 
 const packagesDir = join(root, "packages");
 const solverPackageDirs = readdirSync(packagesDir)
-  .filter((name) => name.startsWith("physics-"))
+  // physics-soft is §35's soft-body package, not a §37 solver adapter (ERRATA
+  // E-3); it is noted below the table instead of being probed for an adapter.
+  .filter((name) => name.startsWith("physics-") && name !== "physics-soft")
   .sort();
 
 if (solverPackageDirs.length === 0) {
@@ -332,6 +334,9 @@ const generatedSolverBlock = [
   ...(reservedLines.length > 0
     ? ["Solver packages that declare no adapter:", "", ...reservedLines, ""]
     : []),
+  "Not a solver adapter: `@fourjs/physics-soft` ships §35 soft bodies (rope, cloth, pressure) as a",
+  "fixed-step `SoftBodySystem`; it declares no §37 capabilities and has no column above.",
+  "",
   SOLVER_END,
 ].join("\n");
 

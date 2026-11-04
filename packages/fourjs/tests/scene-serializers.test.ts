@@ -54,6 +54,7 @@ import {
   instantiateScene,
   serializeScene,
 } from "@fourjs/serialization";
+import { SoftBody } from "@fourjs/physics-soft";
 import { buildGlyphAtlas } from "@fourjs/text";
 import {
   Button,
@@ -995,6 +996,7 @@ describe("registerSceneNodeTypes — components (PH-17)", () => {
       "orbit-rig",
       "pose-target",
       "rigid-body",
+      "soft-body",
       "swept-character-controller",
     ]);
 
@@ -1031,9 +1033,11 @@ describe("registerPhysicsSerializers (PH-17)", () => {
     // the motion one: the split is by package (`PH-11b`, 2026-08-21).
     expect(components.has(SweptCharacterController.typeName)).toBe(true);
     // The registry it was handed, returned for chaining — not a copy.
+    // RFC 0011 soft bodies register in the same family (the physics registrar).
+    expect(components.has(SoftBody.typeName)).toBe(true);
     expect(
       registerPhysicsSerializers(new ComponentSerializerRegistry()).size,
-    ).toBe(3);
+    ).toBe(4);
   });
 
   it("refuses to register twice on one registry, rather than overwriting", () => {

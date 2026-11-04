@@ -168,6 +168,9 @@
       "name": "@fourjs/physics-box2d",
       "version": "0.1.0",
       "dependencies": {
+        "@box2d/core": "0.11.0",
+        "@fourjs/core": "workspace:*",
+        "@fourjs/math": "workspace:*",
         "@fourjs/physics": "workspace:*",
       },
     },
@@ -196,7 +199,11 @@
       "name": "@fourjs/physics-soft",
       "version": "0.1.0",
       "dependencies": {
-        "@fourjs/physics": "workspace:*",
+        "@fourjs/core": "workspace:*",
+        "@fourjs/geometry": "workspace:*",
+        "@fourjs/math": "workspace:*",
+        "@fourjs/motion": "workspace:*",
+        "@fourjs/scene": "workspace:*",
       },
     },
     "packages/render": {
@@ -303,6 +310,8 @@
     "@babel/types": ["@babel/types@7.29.8", "", { "dependencies": { "@babel/helper-string-parser": "^7.29.7", "@babel/helper-validator-identifier": "^7.29.7" } }, "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg=="],
 
     "@bcoe/v8-coverage": ["@bcoe/v8-coverage@1.0.2", "", {}, "sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA=="],
+
+    "@box2d/core": ["@box2d/core@0.11.0", "", {}, "sha512-LlMYleqFpRTxBjyPvvVw2qsirjYyRyuMbrpceiJDE4vNe8Zaz4yT/4JZv1M+ZIGsUCKviyhAg1QShM77Yt0Mtg=="],
 
     "@changesets/apply-release-plan": ["@changesets/apply-release-plan@8.1.1", "", { "dependencies": { "@changesets/config": "^4.0.1", "@changesets/format": "^0.1.2", "@changesets/git": "^4.0.1", "@changesets/should-skip-package": "^1.0.0", "@changesets/types": "^7.0.0", "import-meta-resolve": "^4.2.0", "jsonc-parser": "^3.3.1", "semver": "^7.8.1" } }, "sha512-nk2Hbq3M9NeHMdaIRBDvawKrQJzXB9sGyBUE5yWnIKtvdcNCPj75zBekJYr0gTT2ecJH3eFeTrc8eisPImcv0Q=="],
 

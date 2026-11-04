@@ -12,8 +12,9 @@ readable; never delete the pointer itself.
 
 - The repository is **fully implemented** (implementation plan complete 2026-08-02; this
   bullet said "scaffold only" until 2026-08-05 — it predated Phase 0): 24 packages build,
-  test (~3,000 unit + suites + browser/visual), and lint, with ≥95% coverage gates. Two
-  packages are deliberate reserved stubs (physics-box2d/soft; render-canvas/svg shipped 2026-11-04).
+  test (~3,000 unit + suites + browser/visual), and lint, with ≥95% coverage gates. One
+  package is a deliberate reserved stub — superseded 2026-11-04: none remain (physics-box2d, wave 8;
+  physics-soft, RFC 0011; render-canvas/svg, wave 3 — all shipped 2026-11-04).
   `render-webgpu` left that list 2026-08-21…29 (the R-1 plan; standing-fact wording
   corrected 2026-08-30).
 - `docs/SPECIFICATION.md` is the working reference — the current revision is whatever tops
@@ -4896,3 +4897,51 @@ like consecutive unlit items; lit meshes do not batch yet (R-22). Evidence:
   (`tensordot-range-*.js`), so `bun run size` failed with `UNRESOLVED_IMPORT` on all eight entries. The
   adapter is reachable only through the `fourjs/physics-physjs` subpath (and `@fourjs/physics-physjs`
   directly); rapier/box2d/soft keep their root namespace exports because they carry no worker.
+
+## 2026-11-04 — wave 8: Box2D adapter
+
+- `@fourjs/physics-box2d` is now a real 2D `PhysicsSolverAdapter` (`Box2dAdapter`, `registerBox2dSolver()`),
+  (physics-soft shipped the same day in wave 10; no stub remains). Dependency pinned **exactly** to `@box2d/core` 0.11.0
+  (pure-TS Box2D 2.4 port: no wasm, no async init, plain float64 state).
+- Box2D 2.4 has no capsule: a capsule collider is **three fixtures** (rectangle + two circles) under one
+  collider handle; collision/trigger pair events aggregate per collider pair.
+- **Friction combines by `sqrt(a*b)`** (Box2D's rule), not Appendix A's mean; restitution by `max`. Recorded
+  as a difference in COMPATIBILITY prose, pinned by the conformance suite.
+- Joint conventions: revolute reference angle / `-Z` axis mirroring (negated target rate, mirrored limits);
+  motor `maxEffort` maps to `maxMotorTorque`/`maxMotorForce`, a real **hard cap** (`jointMotorEffortCap: true`).
+  `reportsJointReactions: true`, so breakable joints work (they are refused on Rapier).
+- **Snapshot caveat (honest limit):** snapshots are an explicit float64 envelope and do **not** capture
+  warm-start contact/joint impulses. Bit-identical continuation from a restore holds only from a snapshot
+  with no touching contacts and no loaded joints. `capabilities.snapshots` is a plain boolean, so it stays
+  `true`; the caveat lives in the adapter header, README, COMPATIBILITY prose and the benchmark note. Do not
+  claim `replayFromSnapshot` for box2d beyond that case.
+- Gotcha found by W8.4: Box2D may end one contact and begin another for the same collider pair inside one
+  `Step`; the adapter now cancels the pending end (otherwise `EndContact` read an undefined pair).
+- Benchmark (`benchmarks/physics-step.mjs box2d`, record in `docs/benchmarks/box2d-vs-rapier.md`): 2D lattice,
+  not comparable head-to-head with the 3D Rapier workload. Result JSON is not committed.
+
+## 2026-11-04 — wave 10: soft bodies (RFC 0011)
+
+- `@fourjs/physics-soft` shipped (rope, cloth, pressure, coupling, snapshots); it left the stub list.
+  It is §35, not a §37 adapter (ERRATA E-3), so `tools/generate-compatibility.mjs` excludes it
+  from solver discovery and notes it under the table instead of listing it as a reserved stub.
+- **PBD layout:** world-space float64 particles (`positions`, `previous`, `velocities`); each
+  fixed step = `substeps` substeps of `iterations` projections (distance, bending, volume);
+  geometry is published node-local Float32 via the inverse world matrix, normals recomputed.
+- **Stiffness mapping:** user fractions in [0,1] become `1 - (1 - k)^(1/iterations)` so behaviour is
+  iteration-count independent.
+- **Priority 610** = `PRIORITY_PHYSICS_SOLVE + 10`: soft bodies read the rigid solve's results
+  (colliders, gravity) from the same step and never feed back.
+- **Pin interpolation:** pinned particles lerp from the previous to the current node-transform
+  target across substeps and land exactly on the target at the last substep; required so a
+  snapshot taken after a step restores exactly.
+- **Coupling seam:** structural `SoftCollisionWorld` (`raycast` only; §30 point/overlap queries
+  give no normal or depth). A particle is tested by a ray pre-to-post substep plus
+  `particleRadius`. Limits: inside-start particles undetected; `PhysicsWorld.raycast` allocates;
+  one-way (no impulses to rigid bodies).
+- **Snapshot/checksum:** `{version: 1, kind: "soft-bodies", bodies[{id, kind, particleCount,
+positions, previous, velocities}]}` with float64 arrays; checksum is FNV-1a over the
+  1e-6-quantized low/high words (the `PhysicsWorld.checksum`/diagnostics encoding,
+  re-implemented because the dependency matrix excludes diagnostics).
+- No `geometry`-package sphere generator is used by the package; pressure tests build their own
+  welded icosphere. Stub count on merge: lead reconciles with wave 8 (`physics-box2d`).
