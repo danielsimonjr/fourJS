@@ -98,12 +98,12 @@ export function pressureTopology(
   const b = new Uint32Array(total);
   const len = new Float64Array(total);
   const stretch = new Uint8Array(total);
-  const dist = (i: number, j: number): number =>
-    Math.hypot(
-      rest[i * 3] - rest[j * 3],
-      rest[i * 3 + 1] - rest[j * 3 + 1],
-      rest[i * 3 + 2] - rest[j * 3 + 2],
-    );
+  const dist = (i: number, j: number): number => {
+    const dx = rest[i * 3] - rest[j * 3];
+    const dy = rest[i * 3 + 1] - rest[j * 3 + 1];
+    const dz = rest[i * 3 + 2] - rest[j * 3 + 2];
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  };
   let c = 0;
   for (const key of keys) {
     a[c] = Math.floor(key / n);
@@ -196,10 +196,10 @@ export function clothTopology(
   const add = (i: number, j: number, isStretch: number): void => {
     a[k] = i;
     b[k] = j;
-    len[k] = Math.hypot(
-      rest[i * 3] - rest[j * 3],
-      rest[i * 3 + 2] - rest[j * 3 + 2],
-    );
+    const dx = rest[i * 3] - rest[j * 3];
+    const dy = rest[i * 3 + 1] - rest[j * 3 + 1];
+    const dz = rest[i * 3 + 2] - rest[j * 3 + 2];
+    len[k] = Math.sqrt(dx * dx + dy * dy + dz * dz);
     stretch[k] = isStretch;
     k++;
   };

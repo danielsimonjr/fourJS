@@ -4,7 +4,7 @@ import {
   constructionCount,
   resetConstructionCount,
 } from "@fourjs/math";
-import { Node } from "@fourjs/scene";
+import { Group, type Node } from "@fourjs/scene";
 import { describe, expect, it } from "vitest";
 
 import { PbdSolver, computeNormals, effectiveStiffness } from "../src/pbd.js";
@@ -24,7 +24,7 @@ function setup(
   options?: SoftBodySystemOptions,
   prepare?: (node: Node) => void,
 ): { node: Node; body: SoftBody; system: SoftBodySystem } {
-  const node = new Node();
+  const node = new Group();
   prepare?.(node);
   const body = node.addComponent(new SoftBody(descriptor));
   const system = new SoftBodySystem(options);
@@ -276,7 +276,7 @@ describe("stepping contract", () => {
         mass: 1,
       },
     );
-    solver.step(DT, 0, 0, 0, new Node().transform.worldMatrix.elements);
+    solver.step(DT, 0, 0, 0, new Group().transform.worldMatrix.elements);
     expect(solver.positions[0]).toBe(0);
   });
 
@@ -312,5 +312,33 @@ describe("SoftBodySystem registry", () => {
     expect(
       () => new SoftBody({ kind: "rope", segments: 3, length: 1, pinned: [3] }),
     ).toThrow(FourError);
+  });
+});
+
+describe("SoftBodySystem host loss and dispose", () => {
+  it("untracks a hosted body that lost its node instead of stepping at the origin", () => {
+    const { node, body, system } = setup(
+      { kind: "rope", segments: 3, length: 1, pinned: [0] },
+      undefined,
+    );
+    node.position.set(5, 5, 5);
+    run(system, 1);
+    node.removeComponent(body);
+    const before = Array.from(body.solver.positions);
+    run(system, 2);
+    expect(system.bodies).not.toContain(body);
+    expect(Array.from(body.solver.positions)).toEqual(before);
+  });
+
+  it("dispose clears collider hooks", () => {
+    const world = { gravity: { x: 0, y: -9.81, z: 0 }, raycast: () => null };
+    const { body, system } = setup(
+      { kind: "rope", segments: 3, length: 1 },
+      { world: world as never },
+    );
+    expect(body.solver.collider).not.toBeNull();
+    system.dispose();
+    expect(body.solver.collider).toBeNull();
+    expect(system.bodies).toHaveLength(0);
   });
 });

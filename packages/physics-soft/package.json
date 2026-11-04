@@ -22,7 +22,6 @@
     "@fourjs/geometry": "workspace:*",
     "@fourjs/math": "workspace:*",
     "@fourjs/motion": "workspace:*",
-    "@fourjs/physics": "workspace:*",
     "@fourjs/scene": "workspace:*"
   }
 }

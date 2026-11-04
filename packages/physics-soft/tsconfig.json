@@ -21,9 +21,6 @@
       "path": "../motion/tsconfig.build.json"
     },
     {
-      "path": "../physics/tsconfig.build.json"
-    },
-    {
       "path": "../scene/tsconfig.build.json"
     }
   ]

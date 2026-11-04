@@ -5,7 +5,7 @@ import {
   resetConstructionCount,
 } from "@fourjs/math";
 import type { PhysicsWorld } from "@fourjs/physics";
-import { Node } from "@fourjs/scene";
+import { Group, type Node } from "@fourjs/scene";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -159,7 +159,7 @@ function setup(
   world: FakeWorld | undefined,
   y = 0,
 ): { node: Node; body: SoftBody; system: SoftBodySystem } {
-  const node = new Node();
+  const node = new Group();
   lift(node, y);
   const body = node.addComponent(new SoftBody(descriptor));
   const system = new SoftBodySystem({ ...(world ? { world } : {}) });
@@ -367,7 +367,7 @@ describe("snapshots", () => {
   });
 
   it("restores pinned bodies exactly", () => {
-    const node = new Node();
+    const node = new Group();
     node.position.set(0, 2, 0);
     const body = node.addComponent(new SoftBody(rope));
     const system = new SoftBodySystem();

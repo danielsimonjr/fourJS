@@ -33,19 +33,22 @@ W10.3 rigid coupling) need no further design. The package is not a 37 solver ada
    in a dynamic `BufferGeometry` (`SoftBody.geometry`) the system writes each step and
    `markDirty()`s. The node transform is not written; it remains the body's rest frame
    under its own authority. Pinned particles follow the node transform.
-7. **Rigid coupling (W10.3) only through 37 queries** (raycast, overlap, point): particles
-   are pushed out of collider hits. No solver internals, no reaction impulses on rigid
+7. **Rigid coupling (W10.3) only through the 37 raycast query** (overlap and point queries
+   are not used): particles are pushed out of raycast hits. Limit: a particle that starts a
+   substep already inside a collider is not pushed out. No solver internals, no reaction impulses on rigid
    bodies in this RFC; a soft body is a one-way follower.
 8. **Determinism:** tier `same-runtime` (33). Particles, constraints and bodies are
    processed in fixed index order; no `Map` or `Set` iteration over unordered keys; any
    randomness (cloth jitter) comes from the seeded RNG in `core`.
-9. **Snapshot format (34):** `{ version: 1, kind, particles: Float64 positions, previous
-positions, velocities }` per body, keyed by node id; geometry is rebuilt from it. Exact
-   float64 bits; included in the world checksum.
+9. **Snapshot format (34):** `{ version: 1, kind: "soft-bodies", bodies: [{ id, kind,
+particleCount, positions, previous, velocities }] }`, bodies keyed by node id; geometry
+   is rebuilt from it. Exact float64 bits. The checksum is a separate
+   `SoftBodySystem.checksum()` (FNV-1a), not folded into the world checksum.
 10. **Render path:** deformation reuses `BufferGeometry` dynamic vertex data; normals are
     recomputed after the final substep. No new renderer API.
-11. **Skeleton behaviour:** until W10.2, `SoftBodySystem.fixedUpdate` throws
-    `FourError("NOT_IMPLEMENTED")`; the `SoftBody` component validates and attaches.
+11. **Skeleton behaviour (historical, skeleton phase, superseded 2026-11-04):**
+    `SoftBodySystem.fixedUpdate` threw `FourError("NOT_IMPLEMENTED")`. The system now steps
+    fully (see 35a).
 12. **Out of scope:** FEM and volumetric elasticity, GPU soft bodies, shape matching,
     tearing, self-collision, two-way rigid coupling.
 

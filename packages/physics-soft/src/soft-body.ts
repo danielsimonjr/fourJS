@@ -1,7 +1,7 @@
 /**
  * Soft bodies (RFC 0011, §35/§35a): the `SoftBody` component and the
- * `SoftBodySystem` that will drive it. This is the design skeleton: the
- * component validates and attaches, the system refuses to step.
+ * `SoftBodySystem` that steps it: PBD substeps, optional one-way raycast
+ * coupling to a rigid world, geometry publication, snapshot and checksum.
  */
 import { FourError, type Component, type ComponentHost } from "@fourjs/core";
 import { BufferGeometry } from "@fourjs/geometry";
@@ -401,6 +401,8 @@ export class SoftBodySystem implements SimulationSystem {
     readonly y: number;
     readonly z: number;
   };
+  /** Bodies that had a host when tracked (lookup only; never iterated). */
+  readonly #hosted = new Set<SoftBody>();
   /** Scratch, allocated once: identity fallback and inverse world matrix. */
   readonly #identity = new Matrix4();
   readonly #inverse = new Matrix4();
@@ -438,6 +440,7 @@ export class SoftBodySystem implements SimulationSystem {
       body.solver.collider = this.#collide;
     }
     this.#bodies.push(body);
+    if (body.host !== null) this.#hosted.add(body);
     return body;
   }
 
@@ -446,6 +449,7 @@ export class SoftBodySystem implements SimulationSystem {
     const i = this.#bodies.indexOf(body);
     if (i < 0) return false;
     this.#bodies.splice(i, 1);
+    this.#hosted.delete(body);
     body.solver.collider = null;
     return true;
   }
@@ -593,6 +597,12 @@ export class SoftBodySystem implements SimulationSystem {
   fixedUpdate(context: FixedUpdateContext): void {
     const dt = context.time.fixedDeltaTime;
     const g = this.#world?.gravity ?? this.#gravity;
+    for (let n = this.#bodies.length - 1; n >= 0; n--) {
+      // A body tracked with a host that has since lost it is dropped, not
+      // stepped in the wrong space.
+      const b = this.#bodies[n];
+      if (b.host === null && this.#hosted.has(b)) this.untrack(b);
+    }
     for (let n = 0; n < this.#bodies.length; n++) {
       const body = this.#bodies[n];
       const solver = body.solver;
@@ -629,6 +639,8 @@ export class SoftBodySystem implements SimulationSystem {
   }
 
   dispose(): void {
+    for (const b of this.#bodies) b.solver.collider = null;
+    this.#hosted.clear();
     this.#bodies.length = 0;
   }
 }

@@ -1287,9 +1287,17 @@ fixed-step system beside the §37 seam.
   dirty. Under §42 the `"physics"` owner holds the vertex positions, not the node transform.
 - `SoftBodySystem` is a `SimulationSystem` registered just after the rigid solve
   (priority `PRIORITY_PHYSICS_SOLVE + 10`, before constraints and event dispatch) and iterates bodies in attach order.
-- Coupling to rigid bodies uses only §37 queries (raycast, overlap, point), never solver
-  internals (RFC 0011, W10.3). Determinism tier is `same-runtime` (§33).
-- Until Phase 13a lands, `SoftBodySystem.fixedUpdate` throws `FourError("NOT_IMPLEMENTED")`.
+- Coupling to rigid bodies uses only the §37 raycast query, never solver internals (RFC 0011,
+  W10.3); overlap and point queries are not used. Limit: a particle that starts a substep
+  already inside a collider is not pushed out. Coupling is one-way (no reaction impulses).
+  Determinism tier is `same-runtime` (§33).
+- `SoftBodySystem.fixedUpdate` steps every tracked body (substeps, constraint passes,
+  optional raycast coupling) and publishes geometry. A body tracked with a host node that
+  later loses it (component removed, node disposed) is untracked before the next step.
+- Snapshot (§34): `{ version: 1, kind: "soft-bodies", bodies: [{ id, kind, particleCount,
+positions, previous, velocities }] }` at exact float64 bits; `SoftBodySystem.checksum()`
+  is a separate FNV-1a digest over the same state, not part of the world checksum.
+- Defaults: see Appendix A (priority `PRIORITY_PHYSICS_SOLVE + 10` = 610).
 
 ### 36. Particles
 
@@ -4188,22 +4196,23 @@ Create once. Position anywhere. Animate naturally. Simulate physically. Render e
 
 Examples elsewhere in this specification are illustrative; this table is normative.
 
-| Setting                        | Default                                              |
-| ------------------------------ | ---------------------------------------------------- |
-| `fixedTimeStep`                | 1/60 s (§10, §45)                                    |
-| `maximumSubSteps`              | 5 (§10, §45)                                         |
-| Gravity, 3D world              | `(0, -9.81, 0)` m/s² (§20)                           |
-| Gravity, 2D world              | `(0, -9.81)` m/s² (§21)                              |
-| Friction combine mode          | `average` (§25)                                      |
-| Restitution combine mode       | `maximum` (§25)                                      |
-| Sleeping                       | enabled; linear 0.01, angular 0.01, time 0.5 s (§32) |
-| Continuous collision detection | `disabled` (§31)                                     |
-| `renderer: "auto"` order       | WebGPU, then WebGL 2, then Canvas 2D (§62)           |
-| Determinism target             | `same-runtime` (§33)                                 |
-| Unit system                    | meter / kilogram / second / radian (§40)             |
-| Angle unit in APIs             | radian (§7a)                                         |
-| Time unit in APIs              | second (§7a)                                         |
-| `reducedMotion`                | `"auto"` (§45, §75)                                  |
+| Setting                        | Default                                                                                                                            |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `fixedTimeStep`                | 1/60 s (§10, §45)                                                                                                                  |
+| `maximumSubSteps`              | 5 (§10, §45)                                                                                                                       |
+| Gravity, 3D world              | `(0, -9.81, 0)` m/s² (§20)                                                                                                         |
+| Gravity, 2D world              | `(0, -9.81)` m/s² (§21)                                                                                                            |
+| Friction combine mode          | `average` (§25)                                                                                                                    |
+| Restitution combine mode       | `maximum` (§25)                                                                                                                    |
+| Sleeping                       | enabled; linear 0.01, angular 0.01, time 0.5 s (§32)                                                                               |
+| Continuous collision detection | `disabled` (§31)                                                                                                                   |
+| `renderer: "auto"` order       | WebGPU, then WebGL 2, then Canvas 2D (§62)                                                                                         |
+| Determinism target             | `same-runtime` (§33)                                                                                                               |
+| Unit system                    | meter / kilogram / second / radian (§40)                                                                                           |
+| Angle unit in APIs             | radian (§7a)                                                                                                                       |
+| Time unit in APIs              | second (§7a)                                                                                                                       |
+| `reducedMotion`                | `"auto"` (§45, §75)                                                                                                                |
+| `SoftBody` / `SoftBodySystem`  | substeps 4, iterations 4, stiffness 1, bending 0.1, damping 0.1 /s, mass 1, `particleRadius` 0.01, pressure 1, priority 610 (§35a) |
 
 ## Appendix B - Glossary
 

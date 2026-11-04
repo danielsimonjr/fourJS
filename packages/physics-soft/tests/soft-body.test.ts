@@ -1,5 +1,5 @@
 import { FourError } from "@fourjs/core";
-import { Node } from "@fourjs/scene";
+import { Group } from "@fourjs/scene";
 import { describe, expect, it } from "vitest";
 
 import * as api from "../src/index.js";
@@ -27,7 +27,7 @@ function bad(d: SoftBodyDescriptor): void {
 
 describe("SoftBody component", () => {
   it("attaches, replaces and detaches like RigidBody (one per node)", () => {
-    const node = new Node();
+    const node = new Group();
     const a = node.addComponent(new SoftBody(rope));
     expect(a.host).toBe(node);
     expect(node.getComponent(SoftBody)).toBe(a);
@@ -68,7 +68,7 @@ describe("SoftBody component", () => {
     bad({ kind: "rope", segments: 1, length: 1 });
     bad({ kind: "rope", segments: 3, length: Number.NaN });
     bad({ ...(cloth as object), columns: 1 } as SoftBodyDescriptor);
-    bad({ ...(cloth as object), pinned: [6] } as SoftBodyDescriptor);
+    bad({ ...(cloth as object), pinned: [6] } as unknown as SoftBodyDescriptor);
     bad({ ...(cloth as object), width: 0 } as SoftBodyDescriptor);
     bad({ ...tetra, positions: new Float32Array(6) });
     bad({ ...tetra, indices: new Uint32Array(4) });
