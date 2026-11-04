@@ -71,16 +71,48 @@
  * occupies group 2, at group 2 when there is no albedo.**
  * `shadedMrBindingWgsl` is the one helper; {@link standardShaderSource}
  * passes `map ? 3 : 2`. Vertex uvs are written when *either* texture is
- * sampled (`shadedVertexStageWgsl(normals, map || metalRoughness)`), matching
- * GL's `useMetalRoughnessMap` without `useMap`. `normalMap` /
- * `occlusionMap` sample on WebGL using derivative normal frames and ambient AO,
- * but remain unsampled on WebGPU. `emissiveMap` is sampled
- * on WebGL 2 (texture unit 3) this slice; WebGPU leaves it unsampled —
- * groups 2 and 3 already hold albedo and metallic-roughness when both maps
- * exist, and the four-group budget is full. Do not add a fifth bind group
- * for it.
+ * sampled (`shadedVertexStageWgsl(normals, map || metalRoughness || detail)`), matching
+ * GL's `useMetalRoughnessMap` without `useMap`.
+ *
+ * ## Surface group (WP-W4.2): `normalMap` / `occlusionMap` / `emissiveMap`
+ *
+ * Groups 2 and 3 already hold albedo and metallic-roughness and the
+ * four-group budget is full, so no fifth group is added; the three maps ride
+ * a widened MR group instead. Final layout:
+ *
+ * ```text
+ * group 0  StandardUniforms (dynamic offset)      group 1  lights (+ shadow)
+ * group 2  albedo map (when map) | surface group when no albedo
+ * group 3  surface group when albedo present
+ * surface group = createSurfaceBindGroupLayout (wgpu-bindings.ts):
+ *   binding 0 mrTexture   1 surfaceSampler (shared, filtering)
+ *   binding 2 normalTexture  3 occlusionTexture  4 emissiveTexture
+ * ```
+ *
+ * MR keeps bindings 0/1, so a draw with any of the three new maps binds this
+ * layout *instead of* the 2-entry MR layout, at `map ? 3 : 2`. The shader
+ * declares only the bindings its variant samples; the bind group supplies all
+ * five, absent ones as 1x1 defaults ({@link SURFACE_DEFAULT_TEXELS}: white for
+ * mr/occlusion/emissive, flat `(0.5, 0.5, 1)` for normal). WebGL's switches
+ * are runtime booleans; here each is a compile-time variant flag, so absent
+ * maps cost nothing in the shader.
+ *
+ * Math is `gl-standard.ts`'s: derivative tangent frame from world-position and
+ * uv derivatives (`mappedNormal`, derivatives taken before any branch for quad
+ * coherence; the sample uses `textureSampleGrad`), `xy` scaled by
+ * `1 + normalScaleOffset`; occlusion `mix(1, ao.r, 1 + occlusionStrengthOffset)`
+ * multiplies the ambient diffuse term only; `emissive * emissiveMap.rgb`. The
+ * two offsets travel in `surface.z` / `surface.w` (spare slots, previously
+ * written 0, so a zero default is "no change" exactly as in GL).
  */
 
+import {
+  SURFACE_EMISSIVE_BINDING,
+  SURFACE_MR_BINDING,
+  SURFACE_NORMAL_BINDING,
+  SURFACE_OCCLUSION_BINDING,
+  SURFACE_SAMPLER_BINDING,
+} from "./wgpu-bindings.js";
 import {
   GPU_SHADER_STAGE,
   type GpuBindGroupLayout,
@@ -101,6 +133,74 @@ import {
   SHADOW_LIGHT_UNIFORM_WGSL,
 } from "./wgpu-shadow.js";
 import { FRAGMENT_ENTRY_POINT } from "./wgpu-unlit.js";
+
+/** Which of the three surface-detail maps a standard variant samples. */
+export interface SurfaceMaps {
+  readonly normal: boolean;
+  readonly occlusion: boolean;
+  readonly emissive: boolean;
+}
+
+/** No detail maps — the landed variants, byte-identical. */
+export const NO_SURFACE_MAPS: SurfaceMaps = Object.freeze({
+  normal: false,
+  occlusion: false,
+  emissive: false,
+});
+
+/**
+ * 1x1 RGBA8 texels bound for absent slots of the surface group: white for
+ * mr / occlusion / emissive (multiplicative identity), flat tangent-space
+ * normal for normal.
+ */
+export const SURFACE_DEFAULT_TEXELS = Object.freeze({
+  metalRoughness: [255, 255, 255, 255],
+  normal: [128, 128, 255, 255],
+  occlusion: [255, 255, 255, 255],
+  emissive: [255, 255, 255, 255],
+} as const);
+
+/**
+ * The surface group's WGSL declarations — only the bindings the variant
+ * samples (the layout declares all five). The sampler is always declared.
+ */
+export function surfaceBindingWgsl(
+  group: number,
+  surface: SurfaceMaps,
+  metalRoughness: boolean,
+): string {
+  const g = String(group);
+  const decl = (binding: number, name: string): string =>
+    `@group(${g}) @binding(${String(binding)}) var ${name} : texture_2d<f32>;`;
+  const lines = [
+    `@group(${g}) @binding(${String(SURFACE_SAMPLER_BINDING)}) var surfaceSampler : sampler;`,
+  ];
+  if (metalRoughness) lines.push(decl(SURFACE_MR_BINDING, "mrTexture"));
+  if (surface.normal) lines.push(decl(SURFACE_NORMAL_BINDING, "normalTexture"));
+  if (surface.occlusion) {
+    lines.push(decl(SURFACE_OCCLUSION_BINDING, "occlusionTexture"));
+  }
+  if (surface.emissive) {
+    lines.push(decl(SURFACE_EMISSIVE_BINDING, "emissiveTexture"));
+  }
+  return lines.join("\n");
+}
+
+/** `gl-standard.ts`'s `mappedNormal`, ported (derivatives passed in, uniform flow). */
+const MAPPED_NORMAL_WGSL = `fn mappedNormal(n : vec3<f32>, dpdxV : vec3<f32>, dpdyV : vec3<f32>, duvdx : vec2<f32>, duvdy : vec2<f32>, uv : vec2<f32>) -> vec3<f32> {
+  let tangent = cross(dpdyV, n) * duvdx.x + cross(n, dpdxV) * duvdy.x;
+  let bitangent = cross(dpdyV, n) * duvdx.y + cross(n, dpdxV) * duvdy.y;
+  let frameLength = max(dot(tangent, tangent), dot(bitangent, bitangent));
+  if (frameLength <= 1e-20) {
+    return n;
+  }
+  var sampleNormal = textureSampleGrad(normalTexture, surfaceSampler, uv, duvdx, duvdy).xyz * 2.0 - vec3<f32>(1.0);
+  sampleNormal = vec3<f32>(sampleNormal.xy * (1.0 + draw.surface.z), sampleNormal.z);
+  let invFrame = inverseSqrt(frameLength);
+  let perturbed = mat3x3<f32>(tangent * invFrame, bitangent * invFrame, n) * sampleNormal;
+  let magnitude = length(perturbed);
+  return select(n, perturbed / magnitude, magnitude > 1e-10);
+}`;
 
 /** Byte offset of `StandardUniforms.viewProjection` — shared with `DrawUniforms`. */
 export const STANDARD_VIEW_PROJECTION_OFFSET = 0;
@@ -193,7 +293,12 @@ export function standardShaderSource(
   map: boolean,
   shadow = false,
   metalRoughness = false,
+  surface: SurfaceMaps = NO_SURFACE_MAPS,
 ): string {
+  const detail = surface.normal || surface.occlusion || surface.emissive;
+  const surfaceGroup = map
+    ? SHADED_MR_BIND_GROUP_INDEX
+    : SHADED_MAP_BIND_GROUP_INDEX;
   return `${STANDARD_UNIFORM_WGSL}
 
 ${shadow ? SHADOW_LIGHT_UNIFORM_WGSL : LIGHT_UNIFORM_WGSL}${
@@ -206,10 +311,16 @@ ${SHADED_MAP_BINDING_WGSL}`
     metalRoughness
       ? `
 
-${shadedMrBindingWgsl(
-  map ? SHADED_MR_BIND_GROUP_INDEX : SHADED_MAP_BIND_GROUP_INDEX,
-)}`
-      : ""
+${
+  detail
+    ? surfaceBindingWgsl(surfaceGroup, surface, true)
+    : shadedMrBindingWgsl(surfaceGroup)
+}`
+      : detail
+        ? `
+
+${surfaceBindingWgsl(surfaceGroup, surface, false)}`
+        : ""
   }
 
 ${shadedVertexStageWgsl(normals, map || metalRoughness)}
@@ -225,7 +336,7 @@ ${SHADOW_FACTOR_WGSL}`
   }
 
 const DIELECTRIC_F0 : f32 = 0.04;
-const MIN_ROUGHNESS : f32 = 0.045;
+const MIN_ROUGHNESS : f32 = 0.045;${surface.normal ? `\n\n${MAPPED_NORMAL_WGSL}` : ""}
 
 fn directLobe(
   n : vec3<f32>,
@@ -256,7 +367,15 @@ fn directLobe(
 
 @fragment
 fn ${FRAGMENT_ENTRY_POINT}(input : VertexOutput) -> @location(0) vec4<f32> {
-  var base = draw.baseColor;${
+${
+  surface.normal
+    ? `  let wpdx = dpdx(input.worldPosition);
+  let wpdy = dpdy(input.worldPosition);
+  let uvdx = dpdx(input.uv);
+  let uvdy = dpdy(input.uv);
+`
+    : ""
+}  var base = draw.baseColor;${
     map
       ? `
   base = base * textureSample(mapTexture, mapSampler, input.uv);`
@@ -267,7 +386,7 @@ fn ${FRAGMENT_ENTRY_POINT}(input : VertexOutput) -> @location(0) vec4<f32> {
       ? `
   var metalness = draw.surface.x;
   var roughness = draw.surface.y;
-  let mr = textureSample(mrTexture, mrSampler, input.uv);
+  let mr = textureSample(mrTexture, ${detail ? "surfaceSampler" : "mrSampler"}, input.uv);
   metalness = metalness * mr.b;
   roughness = roughness * mr.g;`
       : `
@@ -276,10 +395,22 @@ fn ${FRAGMENT_ENTRY_POINT}(input : VertexOutput) -> @location(0) vec4<f32> {
   let diffuseColor = albedo * (1.0 - metalness);
   let f0 = mix(vec3<f32>(DIELECTRIC_F0), albedo, metalness);
   let normalLength = length(input.normal);
-  let nHemi = select(vec3<f32>(0.0), input.normal / normalLength, normalLength > 0.0);
-  var shaded = (lights.ambientColor.xyz + hemisphereAmbient(normalLength, nHemi)) * diffuseColor;
+  var nHemi = select(vec3<f32>(0.0), input.normal / normalLength, normalLength > 0.0);${
+    surface.normal
+      ? `
   if (normalLength > 0.0) {
-    let n = input.normal / normalLength;
+    nHemi = mappedNormal(nHemi, wpdx, wpdy, uvdx, uvdy, input.uv);
+  }`
+      : ""
+  }${
+    surface.occlusion
+      ? `
+  let occlusion = mix(1.0, textureSample(occlusionTexture, surfaceSampler, input.uv).r, 1.0 + draw.surface.w);`
+      : ""
+  }
+  var shaded = (lights.ambientColor.xyz + hemisphereAmbient(normalLength, nHemi)) * diffuseColor${surface.occlusion ? " * occlusion" : ""};
+  if (normalLength > 0.0) {
+    let n = ${surface.normal ? "nHemi" : "input.normal / normalLength"};
     let v = normalize(lights.cameraPosition.xyz - input.worldPosition);
 
     var alpha = max(${metalRoughness ? "roughness" : "draw.surface.y"}, MIN_ROUGHNESS);
@@ -312,7 +443,11 @@ fn ${FRAGMENT_ENTRY_POINT}(input : VertexOutput) -> @location(0) vec4<f32> {
     }
   }
 
-  return vec4<f32>(shaded + draw.emissive.xyz, base.a);
+  return vec4<f32>(shaded + ${
+    surface.emissive
+      ? "draw.emissive.xyz * textureSample(emissiveTexture, surfaceSampler, input.uv).rgb"
+      : "draw.emissive.xyz"
+  }, base.a);
 }
 `;
 }

@@ -210,3 +210,46 @@ export function createTextureBindGroupLayout(
  */
 export const MAP_BINDING_WGSL = `@group(${String(MAP_BIND_GROUP_INDEX)}) @binding(${String(MAP_TEXTURE_BINDING)}) var mapTexture : texture_2d<f32>;
 @group(${String(MAP_BIND_GROUP_INDEX)}) @binding(${String(MAP_SAMPLER_BINDING)}) var mapSampler : sampler;`;
+
+/** Surface group (WP-W4.2) binding 0 — packed metallic-roughness texture. */
+export const SURFACE_MR_BINDING = 0;
+/** Surface group binding 1 — the one sampler shared by every surface texture. */
+export const SURFACE_SAMPLER_BINDING = 1;
+/** Surface group binding 2 — tangent-space normal map. */
+export const SURFACE_NORMAL_BINDING = 2;
+/** Surface group binding 3 — ambient-occlusion map (red channel). */
+export const SURFACE_OCCLUSION_BINDING = 3;
+/** Surface group binding 4 — emissive map (rgb). */
+export const SURFACE_EMISSIVE_BINDING = 4;
+
+/**
+ * The standard family's surface bind-group layout: the metallic-roughness
+ * pair widened by the three detail textures, so all four fit the last
+ * available group (groups 0/1 are uniforms and lights, 2 is albedo). Fragment
+ * only, `float`/`filtering`, one shared sampler — the same policy as
+ * {@link createTextureBindGroupLayout}. A variant's shader declares only the
+ * bindings it samples; the bind group supplies every entry.
+ */
+export function createSurfaceBindGroupLayout(
+  device: GpuDevice,
+): GpuBindGroupLayout {
+  const tex = (binding: number) => ({
+    binding,
+    visibility: GPU_SHADER_STAGE.FRAGMENT,
+    texture: { sampleType: "float" as const, viewDimension: "2d" as const },
+  });
+  return device.createBindGroupLayout({
+    label: "fourJS:surface",
+    entries: [
+      tex(SURFACE_MR_BINDING),
+      {
+        binding: SURFACE_SAMPLER_BINDING,
+        visibility: GPU_SHADER_STAGE.FRAGMENT,
+        sampler: { type: "filtering" },
+      },
+      tex(SURFACE_NORMAL_BINDING),
+      tex(SURFACE_OCCLUSION_BINDING),
+      tex(SURFACE_EMISSIVE_BINDING),
+    ],
+  });
+}
