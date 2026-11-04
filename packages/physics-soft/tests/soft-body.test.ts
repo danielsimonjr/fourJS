@@ -80,8 +80,10 @@ describe("SoftBody component", () => {
 describe("exported surface", () => {
   it("is stable", () => {
     expect(Object.keys(api).sort()).toEqual([
+      "MAXIMUM_SOFT_BODY_ARRAY_LENGTH",
       "PACKAGE_NAME",
       "PRIORITY_SOFT_BODY",
+      "SOFT_BODY_SERIALIZER",
       "SoftBody",
       "SoftBodySystem",
     ]);
