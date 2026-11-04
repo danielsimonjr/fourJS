@@ -105,6 +105,7 @@ import type { RenderItem } from "@fourjs/render";
 import { warnDisposedInUse } from "@fourjs/render";
 
 import {
+  GPU_SHADER_STAGE,
   GPU_TEXTURE_USAGE,
   type GpuBindGroup,
   type GpuBindGroupLayout,
@@ -174,13 +175,19 @@ const ASSUMED_MAX_ANISOTROPY = 16;
  * that loop by a floating-point ulp at a power of two — the two numbers have to
  * match or the accounting is wrong (§84).
  */
-export function mipLevelCount(width: number, height: number): number {
+export function mipLevelCount(
+  width: number,
+  height: number,
+  depth = 1,
+): number {
   let levels = 1;
   let currentWidth = width;
   let currentHeight = height;
-  while (currentWidth > 1 || currentHeight > 1) {
+  let currentDepth = depth;
+  while (currentWidth > 1 || currentHeight > 1 || currentDepth > 1) {
     currentWidth = Math.max(1, currentWidth >> 1);
     currentHeight = Math.max(1, currentHeight >> 1);
+    currentDepth = Math.max(1, currentDepth >> 1);
     levels += 1;
   }
   return levels;
@@ -199,19 +206,66 @@ export function textureByteLength(
   width: number,
   height: number,
   mipmaps: boolean,
+  layers = 1,
+  volume = false,
 ): number {
-  let bytes = width * height * BYTES_PER_TEXEL;
+  // `layers` is faces / array layers / volume depth; only a volume halves it.
+  let bytes = width * height * layers * BYTES_PER_TEXEL;
   if (!mipmaps) {
     return bytes;
   }
   let currentWidth = width;
   let currentHeight = height;
-  while (currentWidth > 1 || currentHeight > 1) {
+  let currentLayers = layers;
+  while (
+    currentWidth > 1 ||
+    currentHeight > 1 ||
+    (volume && currentLayers > 1)
+  ) {
     currentWidth = Math.max(1, currentWidth >> 1);
     currentHeight = Math.max(1, currentHeight >> 1);
-    bytes += currentWidth * currentHeight * BYTES_PER_TEXEL;
+    if (volume) currentLayers = Math.max(1, currentLayers >> 1);
+    bytes += currentWidth * currentHeight * currentLayers * BYTES_PER_TEXEL;
   }
   return bytes;
+}
+
+/** Box-filters a `w`×`h`×`d` RGBA8 volume down one level (CPU: a volume cannot be blitted). */
+export function downsampleVolume(
+  source: Uint8Array,
+  w: number,
+  h: number,
+  d: number,
+): { data: Uint8Array; w: number; h: number; d: number } {
+  const nw = Math.max(1, w >> 1);
+  const nh = Math.max(1, h >> 1);
+  const nd = Math.max(1, d >> 1);
+  const data = new Uint8Array(nw * nh * nd * BYTES_PER_TEXEL);
+  for (let z = 0; z < nd; z += 1) {
+    for (let y = 0; y < nh; y += 1) {
+      for (let x = 0; x < nw; x += 1) {
+        for (let c = 0; c < BYTES_PER_TEXEL; c += 1) {
+          let sum = 0;
+          let count = 0;
+          for (let dz = 0; dz < 2; dz += 1) {
+            for (let dy = 0; dy < 2; dy += 1) {
+              for (let dx = 0; dx < 2; dx += 1) {
+                const sx = Math.min(w - 1, x * 2 + dx);
+                const sy = Math.min(h - 1, y * 2 + dy);
+                const sz = Math.min(d - 1, z * 2 + dz);
+                sum += source[((sz * h + sy) * w + sx) * BYTES_PER_TEXEL + c];
+                count += 1;
+              }
+            }
+          }
+          data[((z * nh + y) * nw + x) * BYTES_PER_TEXEL + c] = Math.round(
+            sum / count,
+          );
+        }
+      }
+    }
+  }
+  return { data, w: nw, h: nh, d: nd };
 }
 
 /** §77's `wrap` as a WebGPU address mode; see `gl-texture.ts`'s `glWrap`. */
@@ -321,6 +375,10 @@ export interface WgpuTextureRecord {
   readonly bindGroup: GpuBindGroup;
   /** `Texture.version` this record was uploaded from. */
   readonly version: number;
+  /** §77 target kind: `"2d"`, `"cube"`, `"array"` or `"3d"` (R-30c). */
+  readonly dimension: string;
+  /** Layers / faces / slices held (1 for 2D, 6 for a cube). */
+  readonly depth: number;
   /** Levels allocated: the full chain, or `1`. */
   readonly levels: number;
   /** Bytes this record describes (§84) — see {@link textureByteLength}. */
@@ -399,6 +457,9 @@ export class WgpuTextureCache {
   /** Group 1's layout, created on the first textured upload. */
   #bindGroupLayout: GpuBindGroupLayout | null = null;
 
+  /** Layouts for cube / 2d-array / 3d view dimensions (R-30c), by view dimension. */
+  readonly #layouts = new Map<string, GpuBindGroupLayout>();
+
   /** The blit's pipeline layout, created with the first mip chain. */
   #mipPipelineLayout: GpuPipelineLayout | null = null;
 
@@ -471,6 +532,30 @@ export class WgpuTextureCache {
     return this.#bindGroupLayout;
   }
 
+  /** Group-1 layout for a view dimension other than `"2d"` (R-30c). */
+  #layoutFor(viewDimension: string): GpuBindGroupLayout {
+    let layout = this.#layouts.get(viewDimension);
+    if (layout === undefined) {
+      layout = this.#device.createBindGroupLayout({
+        label: `fourJS:map:${viewDimension}`,
+        entries: [
+          {
+            binding: MAP_TEXTURE_BINDING,
+            visibility: GPU_SHADER_STAGE.FRAGMENT,
+            texture: { sampleType: "float", viewDimension },
+          },
+          {
+            binding: MAP_SAMPLER_BINDING,
+            visibility: GPU_SHADER_STAGE.FRAGMENT,
+            sampler: { type: "filtering" },
+          },
+        ],
+      });
+      this.#layouts.set(viewDimension, layout);
+    }
+    return layout;
+  }
+
   /**
    * Returns the bind group for `texture`, uploading it on first use and
    * re-uploading whenever `texture.version` has advanced.
@@ -481,7 +566,28 @@ export class WgpuTextureCache {
    * `Renderer.render`, and §61 forbids throwing there.
    */
   acquire(texture: WgpuCacheableTexture): WgpuTextureRecord | null {
+    return this.#acquire(texture, false);
+  }
+
+  /**
+   * Like {@link WgpuTextureCache.acquire}, but also uploads `"cube"`,
+   * `"array"` and `"3d"` textures (§77, R-30c). The record's bind group uses a
+   * layout of the matching view dimension, which no shipped shader consumes
+   * yet; `acquire` stays 2D-only so a cube can never be bound where
+   * `texture_2d` is declared.
+   */
+  acquireResource(texture: WgpuCacheableTexture): WgpuTextureRecord | null {
+    return this.#acquire(texture, true);
+  }
+
+  #acquire(
+    texture: WgpuCacheableTexture,
+    any: boolean,
+  ): WgpuTextureRecord | null {
     if (this.#disposed) {
+      return null;
+    }
+    if (!any && (texture.dimension ?? "2d") !== "2d") {
       return null;
     }
     const existing = this.#records.get(texture.id);
@@ -558,7 +664,7 @@ export class WgpuTextureCache {
         "NOT_IMPLEMENTED",
         "Asynchronous texture preparation requires queue completion notification.",
       );
-    const record = this.acquire(texture);
+    const record = this.#acquire(texture, true);
     if (record === null) return null;
     this.#pending.set(record, (this.#pending.get(record) ?? 0) + 1);
     try {
@@ -592,6 +698,7 @@ export class WgpuTextureCache {
     this.#samplers.clear();
     this.#mipPipelines.clear();
     this.#bindGroupLayout = null;
+    this.#layouts.clear();
     this.#mipPipelineLayout = null;
     this.#mipModule = null;
     this.#mipSampler = null;
@@ -711,18 +818,25 @@ export class WgpuTextureCache {
     const width = texture.width;
     const height = texture.height;
     const mipmaps = texture.mipmaps === true;
+    const dimension = texture.dimension ?? "2d";
+    const volume = dimension === "3d";
+    const layers = dimension === "cube" ? 6 : (texture.depth ?? 1);
     const format =
       (texture.colorSpace ?? "linear") === "srgb"
         ? "rgba8unorm-srgb"
         : "rgba8unorm";
     const data = texture.data;
-    const levels = mipmaps ? mipLevelCount(width, height) : 1;
-    // A chain is *drawn*, so its texture must be attachable and readable; a
-    // one-level texture is neither, and asks for neither.
-    const generate = levels > 1 && data !== null;
+    const levels = mipmaps
+      ? mipLevelCount(width, height, volume ? layers : 1)
+      : 1;
+    // A 2D / cube / array chain is *drawn*, so its texture must be attachable
+    // and readable; a volume's chain is filtered on the CPU (a volume cannot
+    // be a 2D blit source), and a one-level texture is neither.
+    const generate = levels > 1 && data !== null && !volume;
     const handle = device.createTexture({
       label: `fourJS:texture:${texture.id}`,
-      size: [width, height],
+      size: dimension === "2d" ? [width, height] : [width, height, layers],
+      ...(volume ? { dimension: "3d" as const } : {}),
       format,
       usage:
         GPU_TEXTURE_USAGE.TEXTURE_BINDING |
@@ -740,14 +854,52 @@ export class WgpuTextureCache {
           bytesPerRow: width * BYTES_PER_TEXEL,
           rowsPerImage: height,
         },
-        [width, height],
+        dimension === "2d" ? [width, height] : [width, height, layers],
       );
     }
     if (generate) {
-      this.#generateMipmaps(handle, format, width, height, levels);
+      this.#generateMipmaps(
+        handle,
+        format,
+        width,
+        height,
+        levels,
+        dimension === "2d" ? 1 : layers,
+      );
+    } else if (levels > 1 && data !== null) {
+      let level = data;
+      let lw = width;
+      let lh = height;
+      let ld = layers;
+      for (let mip = 1; mip < levels; mip += 1) {
+        const next = downsampleVolume(level, lw, lh, ld);
+        device.queue.writeTexture(
+          { texture: handle, mipLevel: mip },
+          next.data,
+          {
+            offset: 0,
+            bytesPerRow: next.w * BYTES_PER_TEXEL,
+            rowsPerImage: next.h,
+          },
+          [next.w, next.h, next.d],
+        );
+        level = next.data;
+        lw = next.w;
+        lh = next.h;
+        ld = next.d;
+      }
     }
 
-    const view = handle.createView();
+    const viewDimension =
+      dimension === "array"
+        ? "2d-array"
+        : dimension === "2d"
+          ? "2d"
+          : dimension;
+    const view =
+      dimension === "2d"
+        ? handle.createView()
+        : handle.createView({ dimension: viewDimension });
     const sampler = this.#acquireSampler(texture, levels > 1);
     return {
       texture: handle,
@@ -755,15 +907,20 @@ export class WgpuTextureCache {
       sampler,
       bindGroup: device.createBindGroup({
         label: `fourJS:map:${texture.id}`,
-        layout: this.bindGroupLayout,
+        layout:
+          dimension === "2d"
+            ? this.bindGroupLayout
+            : this.#layoutFor(viewDimension),
         entries: [
           { binding: MAP_TEXTURE_BINDING, resource: view },
           { binding: MAP_SAMPLER_BINDING, resource: sampler },
         ],
       }),
       version: texture.version,
+      dimension,
+      depth: dimension === "2d" ? 1 : layers,
       levels,
-      byteLength: textureByteLength(width, height, mipmaps),
+      byteLength: textureByteLength(width, height, mipmaps, layers, volume),
     };
   }
 
@@ -782,6 +939,7 @@ export class WgpuTextureCache {
     width: number,
     height: number,
     levels: number,
+    layers = 1,
   ): void {
     const device = this.#device;
     const pipeline = this.#mipPipeline(format);
@@ -792,45 +950,53 @@ export class WgpuTextureCache {
     for (let level = 1; level < levels; level += 1) {
       levelWidth = Math.max(1, levelWidth >> 1);
       levelHeight = Math.max(1, levelHeight >> 1);
-      const source = texture.createView({
-        label: `fourJS:mip-source:${String(level - 1)}`,
-        baseMipLevel: level - 1,
-        mipLevelCount: 1,
-      });
-      const destination = texture.createView({
-        label: `fourJS:mip-target:${String(level)}`,
-        baseMipLevel: level,
-        mipLevelCount: 1,
-      });
-      const pass = encoder.beginRenderPass({
-        label: `fourJS:mipmap:${String(level)}`,
-        colorAttachments: [
-          {
-            view: destination,
-            // The whole level is written by the triangle, so there is nothing
-            // to preserve and no scissor in play — the one place in this
-            // backend where `loadOp: "clear"` is the right answer, precisely
-            // because this pass is not a §61 viewport clear.
-            loadOp: "clear",
-            storeOp: "store",
-            clearValue: [0, 0, 0, 0],
-          },
-        ],
-      });
-      pass.setPipeline(pipeline);
-      pass.setBindGroup(
-        0,
-        this.#device.createBindGroup({
-          label: `fourJS:mip-bind:${String(level)}`,
-          layout: this.bindGroupLayout,
-          entries: [
-            { binding: MAP_TEXTURE_BINDING, resource: source },
-            { binding: MAP_SAMPLER_BINDING, resource: sampler },
+      for (let layer = 0; layer < layers; layer += 1) {
+        const source = texture.createView({
+          label: `fourJS:mip-source:${String(level - 1)}`,
+          baseMipLevel: level - 1,
+          mipLevelCount: 1,
+          ...(layers > 1
+            ? { dimension: "2d", baseArrayLayer: layer, arrayLayerCount: 1 }
+            : {}),
+        });
+        const destination = texture.createView({
+          label: `fourJS:mip-target:${String(level)}`,
+          baseMipLevel: level,
+          mipLevelCount: 1,
+          ...(layers > 1
+            ? { dimension: "2d", baseArrayLayer: layer, arrayLayerCount: 1 }
+            : {}),
+        });
+        const pass = encoder.beginRenderPass({
+          label: `fourJS:mipmap:${String(level)}`,
+          colorAttachments: [
+            {
+              view: destination,
+              // The whole level is written by the triangle, so there is nothing
+              // to preserve and no scissor in play — the one place in this
+              // backend where `loadOp: "clear"` is the right answer, precisely
+              // because this pass is not a §61 viewport clear.
+              loadOp: "clear",
+              storeOp: "store",
+              clearValue: [0, 0, 0, 0],
+            },
           ],
-        }),
-      );
-      pass.draw(MIPMAP_VERTEX_COUNT);
-      pass.end();
+        });
+        pass.setPipeline(pipeline);
+        pass.setBindGroup(
+          0,
+          this.#device.createBindGroup({
+            label: `fourJS:mip-bind:${String(level)}`,
+            layout: this.bindGroupLayout,
+            entries: [
+              { binding: MAP_TEXTURE_BINDING, resource: source },
+              { binding: MAP_SAMPLER_BINDING, resource: sampler },
+            ],
+          }),
+        );
+        pass.draw(MIPMAP_VERTEX_COUNT);
+        pass.end();
+      }
     }
     device.queue.submit([encoder.finish()]);
   }
@@ -896,6 +1062,8 @@ function textureState(texture: WgpuCacheableTexture): string {
   return [
     texture.width,
     texture.height,
+    texture.dimension,
+    texture.depth,
     texture.colorSpace,
     texture.filter,
     texture.minFilter,

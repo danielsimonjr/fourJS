@@ -178,6 +178,12 @@ export interface GpuTextureViewDescriptor {
   readonly baseMipLevel?: number;
   /** How many levels from `baseMipLevel`; all of them by default. */
   readonly mipLevelCount?: number;
+  /** View dimension (`"cube"`, `"2d-array"`, `"3d"`, `"2d"`); the texture's own by default (§77, R-30c). */
+  readonly dimension?: string;
+  /** First array layer / cube face the view exposes. */
+  readonly baseArrayLayer?: number;
+  /** How many layers from `baseArrayLayer`. */
+  readonly arrayLayerCount?: number;
 }
 
 /** An opaque GPU texture handle. */
@@ -549,7 +555,7 @@ export interface GpuQueue {
       readonly bytesPerRow: number;
       readonly rowsPerImage?: number;
     },
-    size: readonly [number, number],
+    size: readonly [number, number] | readonly [number, number, number],
   ): void;
   /** Submits recorded command buffers, in order. */
   submit(commandBuffers: readonly GpuCommandBuffer[]): void;
@@ -594,8 +600,13 @@ export interface GpuBufferDescriptor {
 export interface GpuTextureDescriptor {
   /** Diagnostic name. */
   readonly label?: string;
-  /** Extent, as WebGPU's array form. */
-  readonly size: readonly [number, number];
+  /**
+   * Extent, as WebGPU's array form; the third entry is array layers (cube:
+   * 6) for a `"2d"` allocation and depth for a `"3d"` one (§77, R-30c).
+   */
+  readonly size: readonly [number, number] | readonly [number, number, number];
+  /** Allocation dimension; `"2d"` when omitted. */
+  readonly dimension?: "2d" | "3d";
   /** Texel format. */
   readonly format: string;
   /** Bit set from {@link GPU_TEXTURE_USAGE}. */

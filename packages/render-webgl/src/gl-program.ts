@@ -50,7 +50,7 @@
 
 import { FourError, type Disposable } from "@fourjs/core";
 import { Matrix3, type Matrix4, type Vector3 } from "@fourjs/math";
-import { MAX_PUNCTUAL_LIGHTS, type SceneLights } from "@fourjs/render";
+import { MAX_LIGHT_SLOTS, type SceneLights } from "@fourjs/render";
 
 /**
  * The WebGL 2 / OpenGL ES 3.0 enumerants this package uses, by their normative
@@ -188,6 +188,16 @@ export const GL = {
   SCISSOR_TEST: 0x0c11,
   /** `GL_TEXTURE_2D` — the one texture target this tier binds (§77). */
   TEXTURE_2D: 0x0de1,
+  /** `GL_TEXTURE_CUBE_MAP` (§77, R-30c). */
+  TEXTURE_CUBE_MAP: 0x8513,
+  /** `GL_TEXTURE_CUBE_MAP_POSITIVE_X`; faces +X, -X, +Y, -Y, +Z, -Z follow in order. */
+  TEXTURE_CUBE_MAP_POSITIVE_X: 0x8515,
+  /** `GL_TEXTURE_2D_ARRAY` (§77, R-30c). */
+  TEXTURE_2D_ARRAY: 0x8c1a,
+  /** `GL_TEXTURE_3D` (§77, R-30c). */
+  TEXTURE_3D: 0x806f,
+  /** `GL_TEXTURE_WRAP_R`. */
+  TEXTURE_WRAP_R: 0x8072,
   /** `GL_MAX_TEXTURE_SIZE`, the one §62 limit the MVP reports. */
   MAX_TEXTURE_SIZE: 0x0d33,
   /** `GL_UNSIGNED_BYTE` — the RGBA8 texel component type. */
@@ -396,6 +406,23 @@ export interface WebglContext {
     internalFormat: number,
     width: number,
     height: number,
+    border: number,
+    format: number,
+    type: number,
+    pixels: ArrayBufferView | null,
+  ): void;
+  /**
+   * The eleven-argument volume / array form (§77, R-30c). Optional, and its
+   * presence is the capability: a context without it cannot hold `"array"` or
+   * `"3d"` textures, which are then skipped rather than thrown.
+   */
+  texImage3D?(
+    target: number,
+    level: number,
+    internalFormat: number,
+    width: number,
+    height: number,
+    depth: number,
     border: number,
     format: number,
     type: number,
@@ -984,16 +1011,21 @@ void main() {
  * (R-13, 2026-08-08), which is what lets a point light and the directional
  * light add up to one lighting model.
  */
-export const PUNCTUAL_LIGHT_GLSL = `const int MAX_PUNCTUAL_LIGHTS = ${String(
-  MAX_PUNCTUAL_LIGHTS,
+export const PUNCTUAL_LIGHT_GLSL = `const int MAX_LIGHT_SLOTS = ${String(
+  MAX_LIGHT_SLOTS,
 )};
 uniform int punctualCount;
-uniform vec3 punctualPosition[MAX_PUNCTUAL_LIGHTS];
-uniform vec3 punctualColor[MAX_PUNCTUAL_LIGHTS];
-uniform vec3 punctualDirection[MAX_PUNCTUAL_LIGHTS];
-uniform vec4 punctualParams[MAX_PUNCTUAL_LIGHTS];
+uniform vec3 punctualPosition[MAX_LIGHT_SLOTS];
+uniform vec3 punctualColor[MAX_LIGHT_SLOTS];
+uniform vec3 punctualDirection[MAX_LIGHT_SLOTS];
+uniform vec4 punctualParams[MAX_LIGHT_SLOTS];
 
 vec3 punctualIrradiance(int i, vec3 p, out vec3 l) {
+  if (punctualParams[i].w > 1.5) {
+    // W5.1: an extra directional light rides the same slots (flag 2).
+    l = -punctualDirection[i];
+    return punctualColor[i];
+  }
   vec3 offset = punctualPosition[i] - p;
   float distanceSquared = max(dot(offset, offset), 1e-8);
   float d = sqrt(distanceSquared);

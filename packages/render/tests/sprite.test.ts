@@ -19,7 +19,6 @@
  *    between a textured quad and the flat-colour pipeline.
  */
 
-import { isFourError } from "@fourjs/core";
 import { planeGeometry } from "@fourjs/geometry";
 import { SpriteMaterial, UnlitMaterial } from "@fourjs/materials";
 import { PoseBuffer, Scene } from "@fourjs/scene";
@@ -135,22 +134,6 @@ describe("Texture — construction and validation (§77, §85)", () => {
     expect(
       new Texture({ width: 1, height: 1, dimension: "2d" }).dimension,
     ).toBe("2d");
-  });
-
-  it("refuses cube, array, and 3D sources at upload (§77, R-30c)", () => {
-    for (const dimension of ["cube", "array", "3d"] as const) {
-      try {
-        new Texture({ width: 1, height: 1, dimension });
-        expect.unreachable(`expected ${dimension} to be refused`);
-      } catch (error: unknown) {
-        expect(isFourError(error)).toBe(true);
-        if (isFourError(error)) {
-          expect(error.code).toBe("NOT_IMPLEMENTED");
-          expect(error.context).toEqual({ dimension });
-          expect(error.message).toMatch(/uploads 2D textures only/);
-        }
-      }
-    }
   });
 
   it("rejects a non-integer, zero, or negative dimension (§85)", () => {

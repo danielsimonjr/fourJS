@@ -126,6 +126,21 @@ export interface MaterialTexture {
   readonly height: number;
 
   /**
+   * Target kind (§77, R-30c). Absent means `"2d"`. A backend binds a
+   * non-`"2d"` texture only through its explicit resource path, never as a
+   * sprite or unlit map: the sampler type differs (cube, 2d-array, 3d).
+   */
+  readonly dimension?: "2d" | "cube" | "array" | "3d";
+
+  /**
+   * Layer count: `6` for `"cube"` (faces +X, -X, +Y, -Y, +Z, -Z), the array
+   * length for `"array"`, the slice count for `"3d"`; absent means `1`.
+   * `data` then holds `depth` tightly packed `width * height * 4` images,
+   * layer 0 first.
+   */
+  readonly depth?: number;
+
+  /**
    * Tightly packed RGBA8 texels — four bytes per texel, `width * height * 4`
    * bytes — or `null` when the texture carries no CPU-side data.
    *
