@@ -520,12 +520,37 @@ describe("allocation counter (§7b, §83)", () => {
   });
 });
 
-describe.each([
-  ["Vector2", (...c: number[]) => new Vector2(c[0], c[1]), 2],
-  ["Vector3", (...c: number[]) => new Vector3(c[0], c[1], c[2]), 3],
-] as const)("%s shared additions", (_name, make, n) => {
-  const comps = (v: Vector2 | Vector3): number[] =>
-    n === 2 ? [v.x, v.y] : [v.x, v.y, (v as Vector3).z];
+/**
+ * The surface the shared-additions cases exercise on both vector types. A
+ * union of the two constructors would make every call site a `Vector2 &
+ * Vector3` parameter under TypeScript 6 (the docs compiler); `this` typing
+ * keeps each case self-consistent instead.
+ */
+interface SharedVector {
+  x: number;
+  y: number;
+  onChanged?: () => void;
+  distanceTo(v: this): number;
+  distanceToSq(v: this): number;
+  negate(): this;
+  multiply(v: this): this;
+  min(v: this): this;
+  max(v: this): this;
+  addScaled(v: this, s: number): this;
+}
+
+const SHARED_CASES: readonly [
+  name: string,
+  make: (...c: number[]) => SharedVector,
+  n: number,
+][] = [
+  ["Vector2", (...c) => new Vector2(c[0], c[1]), 2],
+  ["Vector3", (...c) => new Vector3(c[0], c[1], c[2]), 3],
+];
+
+describe.each(SHARED_CASES)("%s shared additions", (_name, make, n) => {
+  const comps = (v: SharedVector): number[] =>
+    n === 2 ? [v.x, v.y] : [v.x, v.y, (v as unknown as Vector3).z];
 
   beforeEach(() => resetConstructionCount());
 
