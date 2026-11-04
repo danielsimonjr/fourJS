@@ -73,6 +73,7 @@ import {
   VERTEX_ENTRY_POINT,
   unlitShaderSource,
   unlitVertexBufferLayouts,
+  type WgpuMorph,
 } from "./wgpu-unlit.js";
 
 /**
@@ -326,6 +327,15 @@ export interface WgpuPipelineDescriptor {
    * always were).
    */
   readonly metalRoughness?: boolean;
+
+  /**
+   * One-target GPU morph (RFC 0003 WP-SK.4): which target streams an
+   * `unlit` or `lit` variant reads beyond the base ones — `"p"` positions1,
+   * `"pn"` positions1 and normals1. Vertex-layout and module identity;
+   * appended to the key **only when carried**, so every morph-free key and
+   * label is byte-identical.
+   */
+  readonly morph?: WgpuMorph;
 }
 
 /**
@@ -389,6 +399,9 @@ export function pipelineKey(descriptor: WgpuPipelineDescriptor): string {
   }
   if (descriptor.gpuInstances === true) {
     key += "|gi:y";
+  }
+  if (descriptor.morph !== undefined) {
+    key += `|mo:${descriptor.morph}`;
   }
   return key;
 }
@@ -865,6 +878,7 @@ export class WgpuPipelineCache {
     effect: WgpuEffectKind | null,
     shadow: boolean,
     metalRoughness: boolean,
+    morph: WgpuMorph | undefined,
   ): GpuShaderModule {
     const key =
       kind === "clear"
@@ -878,8 +892,8 @@ export class WgpuPipelineCache {
               : kind === "effect"
                 ? `effect|${effect ?? "copy"}`
                 : kind === "lit" || kind === "standard"
-                  ? `${kind}${normals ? "|n" : ""}${map ? "|map" : ""}${kind === "standard" && metalRoughness ? "|mr" : ""}${shadow ? "|sh" : ""}`
-                  : `unlit${vertexColors ? "|vc" : ""}${map ? "|map" : ""}`;
+                  ? `${kind}${normals ? "|n" : ""}${map ? "|map" : ""}${kind === "standard" && metalRoughness ? "|mr" : ""}${shadow ? "|sh" : ""}${kind === "lit" && morph !== undefined ? `|mo:${morph}` : ""}`
+                  : `unlit${vertexColors ? "|vc" : ""}${map ? "|map" : ""}${morph === undefined ? "" : `|mo:${morph}`}`;
     const existing = this.#modules.get(key);
     if (existing !== undefined) {
       return existing;
@@ -898,7 +912,7 @@ export class WgpuPipelineCache {
                 : kind === "effect"
                   ? effectShaderSource(effect ?? "copy")
                   : kind === "lit"
-                    ? litShaderSource(normals, map, shadow)
+                    ? litShaderSource(normals, map, shadow, morph)
                     : kind === "standard"
                       ? standardShaderSource(
                           normals,
@@ -906,7 +920,7 @@ export class WgpuPipelineCache {
                           shadow,
                           metalRoughness,
                         )
-                      : unlitShaderSource(vertexColors, map),
+                      : unlitShaderSource(vertexColors, map, morph),
     });
     this.#modules.set(key, module);
     return module;
@@ -952,6 +966,7 @@ export class WgpuPipelineCache {
         descriptor.map ||
           (descriptor.kind === "standard" &&
             descriptor.metalRoughness === true),
+        descriptor.kind === "lit" ? descriptor.morph : undefined,
       );
     }
     const batch = descriptor.batch ?? null;
@@ -965,7 +980,11 @@ export class WgpuPipelineCache {
         ),
       ];
     }
-    return unlitVertexBufferLayouts(descriptor.vertexColors, descriptor.map);
+    return unlitVertexBufferLayouts(
+      descriptor.vertexColors,
+      descriptor.map,
+      descriptor.morph,
+    );
   }
 
   #create(
@@ -981,6 +1000,9 @@ export class WgpuPipelineCache {
       descriptor.effect ?? null,
       descriptor.shadow === true,
       descriptor.metalRoughness === true,
+      descriptor.kind === "lit" || descriptor.kind === "unlit"
+        ? descriptor.morph
+        : undefined,
     );
     const blend = blendStateFor(descriptor.blend);
     return this.#device.createRenderPipeline({

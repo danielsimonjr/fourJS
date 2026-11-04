@@ -276,7 +276,7 @@ import {
   type SkinningPipelineHost,
   type WgpuSkinnedDrawDescriptor,
 } from "./wgpu-skinning-registry.js";
-import { CLEAR_VERTEX_COUNT } from "./wgpu-unlit.js";
+import { CLEAR_VERTEX_COUNT, DRAW_MORPH_WEIGHT_OFFSET } from "./wgpu-unlit.js";
 
 /** Error code for use-after-dispose, mirroring the other two backends (§83, §89). */
 const LIFECYCLE_ERROR_CODE = "INVALID_APPLICATION_STATE";
@@ -1720,14 +1720,21 @@ export class WebgpuRenderer implements Renderer {
           }
           continue;
         }
-        if (!maskPass && item.geometry.positions1 !== undefined) {
+        if (
+          !maskPass &&
+          item.geometry.positions1 !== undefined &&
+          item.kind === "standard"
+        ) {
+          // RFC 0003 WP-SK.4's one-target morph draws on the unlit and lit
+          // families; the standard (PBR) family has no morph variant yet, so
+          // those items are skipped rather than shown in bind pose.
           if (DEV) {
             devWarnOnce(
               "webgpu-gpu-morph-skip",
-              "§54: this scene contains a mesh with GPU morph streams " +
-                "(positions1) but the WebGPU backend does not draw them yet; " +
-                "those items are skipped rather than shown in bind pose " +
-                "(RFC 0003 WP-SK.4). Use the WebGL 2 one-target path.",
+              "§54: a StandardMaterial mesh carries GPU morph streams " +
+                "(positions1) but the WebGPU standard family does not draw " +
+                "them yet; those items are skipped rather than shown in " +
+                "bind pose (RFC 0003 WP-SK.4). Use LitMaterial or WebGL 2.",
             );
           }
           continue;
@@ -1821,9 +1828,16 @@ export class WebgpuRenderer implements Renderer {
         // A shaded draw asks the cache for the normal stream too (WP-R1.5);
         // a mask does not — coverage, not shading — and every other kind
         // passes the default `false`, i.e. exactly the call it always made.
+        // One-target GPU morph (RFC 0003): the unlit and lit draws ask for
+        // `positions1` (and, lit, `normals1`); everything else passes the
+        // default `false` — the call it always made.
         const record = geometries.acquire(
           item.geometry,
           !maskPass && (item.kind === "lit" || item.kind === "standard"),
+          false,
+          !maskPass &&
+            item.geometry.positions1 !== undefined &&
+            (item.kind === "lit" || item.kind === "unlit"),
         );
         if (record === null) {
           continue;
@@ -2044,6 +2058,13 @@ export class WebgpuRenderer implements Renderer {
           request.shadow = receiving;
           request.metalRoughness = useMetalRoughness;
           request.gpuInstances = false;
+          const morph =
+            item.kind === "lit" && record.position1Buffer !== null
+              ? normals && record.normal1Buffer !== null
+                ? "pn"
+                : "p"
+              : undefined;
+          request.morph = morph;
           const pipeline = this.#pipelineMemo.acquire(pipelines, request);
           if (pipeline === null) {
             // Unreachable given the class invariant — the unlit arm's
@@ -2084,6 +2105,9 @@ export class WebgpuRenderer implements Renderer {
               color[2],
               color[3] * opacity,
             );
+            if (morph !== undefined) {
+              this.#writeMorphWeight(block, item.morphWeights);
+            }
             pass.setPipeline(pipeline);
             pass.setBindGroup(
               0,
@@ -2122,6 +2146,14 @@ export class WebgpuRenderer implements Renderer {
           if (useMap || useMetalRoughness) {
             slot += 1;
             pass.setVertexBuffer(slot, record.uvBuffer);
+          }
+          if (morph !== undefined) {
+            slot += 1;
+            pass.setVertexBuffer(slot, record.position1Buffer);
+            if (morph === "pn") {
+              slot += 1;
+              pass.setVertexBuffer(slot, record.normal1Buffer);
+            }
           }
           if (mapBindGroup !== null) {
             pass.setBindGroup(SHADED_MAP_BIND_GROUP_INDEX, mapBindGroup);
@@ -2203,6 +2235,8 @@ export class WebgpuRenderer implements Renderer {
         request.shadow = false;
         request.metalRoughness = false;
         request.gpuInstances = false;
+        const morph = record.position1Buffer !== null ? "p" : undefined;
+        request.morph = morph;
         const pipeline = this.#pipelineMemo.acquire(pipelines, request);
         if (pipeline === null) {
           // Unreachable given the class invariant — the cache answers `null`
@@ -2223,6 +2257,9 @@ export class WebgpuRenderer implements Renderer {
           material.color[2],
           material.color[3] * opacity,
         );
+        if (morph !== undefined) {
+          this.#writeMorphWeight(block, item.morphWeights);
+        }
 
         pass.setPipeline(pipeline);
         pass.setBindGroup(
@@ -2250,6 +2287,10 @@ export class WebgpuRenderer implements Renderer {
           slot += 1;
           pass.setVertexBuffer(slot, record.uvBuffer);
           pass.setBindGroup(MAP_BIND_GROUP_INDEX, mapBindGroup);
+        }
+        if (morph !== undefined) {
+          slot += 1;
+          pass.setVertexBuffer(slot, record.position1Buffer);
         }
         if (record.indexBuffer !== null && record.indexFormat !== null) {
           pass.setIndexBuffer(record.indexBuffer, record.indexFormat);
@@ -3383,6 +3424,7 @@ export class WebgpuRenderer implements Renderer {
     request.shadow = false;
     request.metalRoughness = false;
     request.gpuInstances = false;
+    request.morph = undefined;
     const pipeline = this.#pipelineMemo.acquire(pipelines, request);
     if (pipeline === null) {
       // Unreachable for the unlit path's reason — this renderer always wires
@@ -4085,6 +4127,20 @@ export class WebgpuRenderer implements Renderer {
     // and recreated by the next receiving draw, the sprite group's rule.
     this.#shadowBindGroup = null;
     this.#shadowBindGroupView = null;
+  }
+
+  /**
+   * Writes the one-target morph weight (`morphWeights[0]`, default 0) into the
+   * padding word of the block's `normalMatrix` first column (RFC 0003) —
+   * after {@link WebgpuRenderer.#writeBlock}, which zeroes it.
+   */
+  #writeMorphWeight(
+    block: number,
+    weights: Float32Array | null | undefined,
+  ): void {
+    this.#uniformStaging[
+      block * UNIFORM_STRIDE_FLOATS + DRAW_MORPH_WEIGHT_OFFSET / 4
+    ] = weights?.[0] ?? 0;
   }
 
   /** Packs one `DrawUniforms` block into the staging array at `block`'s stride. */

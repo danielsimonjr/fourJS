@@ -44,6 +44,7 @@ import type {
   WgpuPipelineDescriptor,
   WgpuPipelineKind,
 } from "./wgpu-pipeline-cache.js";
+import type { WgpuMorph } from "./wgpu-unlit.js";
 import {
   STENCIL_ALL_BITS,
   stencilDescriptor,
@@ -69,6 +70,8 @@ export interface WgpuPipelineRequest {
   readonly shadow: boolean;
   readonly metalRoughness: boolean;
   readonly gpuInstances: boolean;
+  /** One-target GPU morph variant (RFC 0003), or `undefined` for none. */
+  readonly morph: WgpuMorph | undefined;
 }
 
 /**
@@ -97,6 +100,7 @@ export class WgpuPipelineMemo {
   #shadow = false;
   #metalRoughness = false;
   #gpuInstances = false;
+  #morph: WgpuMorph | undefined = undefined;
 
   #hasStencil = false;
   #stencilFunc = "";
@@ -155,6 +159,7 @@ export class WgpuPipelineMemo {
       this.#shadow === request.shadow &&
       this.#metalRoughness === request.metalRoughness &&
       this.#gpuInstances === request.gpuInstances &&
+      this.#morph === request.morph &&
       this.#hasStencil === hasStencil &&
       this.#stencilFunc === stencilFunc &&
       this.#stencilReadMask === stencilReadMask &&
@@ -187,6 +192,7 @@ export class WgpuPipelineMemo {
       ...(request.shadow ? { shadow: true } : {}),
       ...(request.metalRoughness ? { metalRoughness: true } : {}),
       ...(request.gpuInstances ? { gpuInstances: true } : {}),
+      ...(request.morph === undefined ? {} : { morph: request.morph }),
     };
     const pipeline = cache.acquire(descriptor);
 
@@ -206,6 +212,7 @@ export class WgpuPipelineMemo {
     this.#shadow = request.shadow;
     this.#metalRoughness = request.metalRoughness;
     this.#gpuInstances = request.gpuInstances;
+    this.#morph = request.morph;
     this.#hasStencil = hasStencil;
     this.#stencilFunc = stencilFunc;
     this.#stencilReadMask = stencilReadMask;
@@ -239,6 +246,7 @@ export interface MutableWgpuPipelineRequest {
   shadow: boolean;
   metalRoughness: boolean;
   gpuInstances: boolean;
+  morph: WgpuMorph | undefined;
 }
 
 /** A fresh request record at the unlit family's defaults. */
@@ -259,5 +267,6 @@ export function createPipelineRequest(): MutableWgpuPipelineRequest {
     shadow: false,
     metalRoughness: false,
     gpuInstances: false,
+    morph: undefined,
   };
 }

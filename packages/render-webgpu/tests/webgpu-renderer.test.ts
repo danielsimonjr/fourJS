@@ -72,6 +72,7 @@ import {
   STANDARD_EMISSIVE_OFFSET,
   STANDARD_SURFACE_OFFSET,
   UNIFORM_STRIDE_BYTES,
+  DRAW_MORPH_WEIGHT_OFFSET,
   WebgpuRenderer,
   JOINT_PALETTE_FLOATS,
   clearRegisteredSkinningPipeline,
@@ -4464,5 +4465,171 @@ describe("registerSkinningPipeline — WebgpuRenderer colour pair (RFC 0003)", (
     harness.gpu.reset();
     harness.renderer.render(node, [createView()]);
     expect(harness.gpu.countOf("pass.draw")).toBe(1);
+  });
+});
+
+describe("WebgpuRenderer one-target GPU morph (RFC 0003 WP-SK.4)", () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await initialized();
+  });
+
+  afterEach(() => {
+    harness.renderer.dispose();
+  });
+
+  /** A triangle (optionally with normals) carrying the first morph target. */
+  function morphTriangle(withNormals: boolean): TestGeometry {
+    const geometry = withNormals ? litTriangle() : triangle();
+    Object.assign(geometry, {
+      positions1: new Float32Array([-1, -1, 0, 1, -1, 0, 0, 1, 0]),
+    });
+    if (withNormals) {
+      Object.assign(geometry, {
+        normals1: new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]),
+      });
+    }
+    return geometry;
+  }
+
+  function morphing(node: Renderable, weight: number): Renderable {
+    (
+      node as unknown as { morphTargetWeights: Float32Array }
+    ).morphTargetWeights = new Float32Array([weight]);
+    return node;
+  }
+
+  /** The morph-weight word of every uniform block in the frame's upload. */
+  function weightWords(): number[] {
+    const data = uniformUpload(harness.gpu);
+    const words: number[] = [];
+    for (let at = 0; at < data.length; at += UNIFORM_STRIDE_BYTES / 4) {
+      words.push(data[at + DRAW_MORPH_WEIGHT_OFFSET / 4]);
+    }
+    return words;
+  }
+
+  function shaderLabels(): string[] {
+    return harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((call) => String((call.args[0] as { label?: string }).label));
+  }
+
+  it("draws an unlit morph mesh with a second vertex stream and its own pipeline", () => {
+    const root = createRoot();
+    root.add(morphing(renderable(morphTriangle(false)), 0.25));
+    harness.renderer.render(root, [createView()]);
+
+    expect(shaderLabels()).toContain("fourJS:unlit|mo:p");
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 1]);
+    expect(harness.gpu.countOf("pass.draw")).toBeGreaterThanOrEqual(1);
+    const uploads = harness.gpu
+      .callsOf("device.createBuffer")
+      .map((call) => String((call.args[0] as { label?: string }).label));
+    expect(
+      uploads.some((label) => label.startsWith("fourJS:positions1:")),
+    ).toBe(true);
+    const code = harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((call) => (call.args[0] as { code: string }).code)
+      .find((source) => source.includes("position1"));
+    expect(code).toContain("mix(position, position1, draw.normalColumn0.w)");
+  });
+
+  it("draws a lit morph mesh with position1 and normal1 streams", () => {
+    const root = createRoot();
+    root.add(
+      morphing(
+        new Renderable(
+          morphTriangle(true).asGeometry,
+          new TestLitMaterial().asMaterial,
+        ),
+        0.5,
+      ),
+    );
+    harness.renderer.render(root, [createView()]);
+
+    expect(shaderLabels()).toContain("fourJS:lit|n|mo:pn");
+    // position, normal, position1, normal1 — one counter.
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 1, 2, 3]);
+    const code = harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((call) => (call.args[0] as { code: string }).code)
+      .find((source) => source.includes("normal1"));
+    expect(code).toContain("mix(normal, normal1, draw.normalColumn0.w)");
+    expect(code).toContain("mix(position, position1, draw.normalColumn0.w)");
+  });
+
+  it("morphs positions only when a lit mesh has no normals1", () => {
+    const root = createRoot();
+    const geometry = morphTriangle(true);
+    Object.assign(geometry, { normals1: undefined });
+    root.add(
+      new Renderable(geometry.asGeometry, new TestLitMaterial().asMaterial),
+    );
+    harness.renderer.render(root, [createView()]);
+    expect(shaderLabels()).toContain("fourJS:lit|n|mo:p");
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 1, 2]);
+  });
+
+  it("leaves a non-morph mesh on the original pipeline and memo path", () => {
+    const root = createRoot();
+    root.add(renderable(triangle()));
+    root.add(renderable(triangle()));
+    harness.renderer.render(root, [createView()]);
+    expect(shaderLabels().filter((label) => label.includes("mo:"))).toEqual([]);
+    // Clear + one unlit pipeline shared by both draws.
+    expect(harness.gpu.countOf("device.createRenderPipeline")).toBe(2);
+    expect(
+      harness.gpu.callsOf("pass.setVertexBuffer").map((call) => call.args[0]),
+    ).toEqual([0, 0]);
+    expect(
+      harness.gpu
+        .callsOf("device.createBuffer")
+        .some((call) =>
+          String((call.args[0] as { label?: string }).label).includes(
+            "positions1",
+          ),
+        ),
+    ).toBe(false);
+  });
+
+  it("keeps morph and plain unlit pipelines distinct in one frame", () => {
+    const root = createRoot();
+    root.add(renderable(triangle()));
+    root.add(morphing(renderable(morphTriangle(false)), 1));
+    harness.renderer.render(root, [createView()]);
+    // Clear + plain unlit + morph unlit.
+    expect(harness.gpu.countOf("device.createRenderPipeline")).toBe(3);
+  });
+
+  it("writes morphWeights[0] into the draw uniform and tracks updates", () => {
+    const root = createRoot();
+    const node = morphing(renderable(morphTriangle(false)), 0.25);
+    root.add(node);
+    harness.renderer.render(root, [createView()]);
+    expect(weightWords()).toContain(0.25);
+
+    harness.gpu.reset();
+    morphing(node, 0.75);
+    harness.renderer.render(root, [createView()]);
+    expect(weightWords()).toContain(0.75);
+    expect(weightWords()).not.toContain(0.25);
+    // Same variant: no new pipeline on the second frame.
+    expect(harness.gpu.countOf("device.createRenderPipeline")).toBe(0);
+  });
+
+  it("defaults the weight to 0 when the node carries none", () => {
+    const root = createRoot();
+    root.add(renderable(morphTriangle(false)));
+    harness.renderer.render(root, [createView()]);
+    expect(weightWords().every((word) => word === 0)).toBe(true);
   });
 });
