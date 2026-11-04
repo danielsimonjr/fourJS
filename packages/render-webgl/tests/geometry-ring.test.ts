@@ -102,6 +102,18 @@ describe("GeometryCache VBO ring (§65)", () => {
     expect(cache.isRinged("missing")).toBe(false);
   });
 
+  it("refreshes a ringed record in place (same object, no spread)", () => {
+    const ctx = ringContext();
+    const cache = new GeometryCache(ctx.gl);
+    const g = geo(9, true);
+    cache.acquire(c(g));
+    bump(cache, g, GEOMETRY_RING_PROMOTE_AFTER);
+    const first = bump(cache, g, 1);
+    const second = bump(cache, g, 1);
+    expect(second).toBe(first);
+    expect(second.version).toBe(g.version);
+  });
+
   it("promotes, rotates slots, and allocates nothing after warm-up", () => {
     const ctx = ringContext();
     const cache = new GeometryCache(ctx.gl);

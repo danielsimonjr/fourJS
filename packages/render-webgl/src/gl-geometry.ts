@@ -527,7 +527,8 @@ export class GeometryCache {
     const gl = this.#gl;
     const sub = gl as unknown as Required<SubDataContext>;
     ring.cursor = (ring.cursor + 1) % GEOMETRY_RING_SLOTS;
-    const record: AllocatingGeometryRecord = { ...existing };
+    // Mutate the cached record in place (§7b: no per-refresh allocation).
+    const record: AllocatingGeometryRecord = existing;
     gl.bindVertexArray(existing.vertexArray);
     for (let stream = 0; stream < RING_STREAMS.length; stream += 1) {
       const row = ring.slots[stream];

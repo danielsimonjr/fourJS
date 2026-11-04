@@ -132,6 +132,76 @@ export interface WgpuGeometryRecord {
   readonly topology: "triangle-list" | "line-list";
 }
 
+/** Mutable view of a record, for the in-place refresh. */
+type MutableRecord = {
+  -readonly [Key in keyof WgpuGeometryRecord]: WgpuGeometryRecord[Key];
+};
+
+/** Fixed streams walked by `#rewriteInPlace`; extra morph buffers follow. */
+const STREAM_COUNT = 9;
+
+/** Record buffer for stream `k` (extra morph buffers from `STREAM_COUNT`). */
+function bufferAt(record: WgpuGeometryRecord, k: number): GpuBuffer | null {
+  switch (k) {
+    case 0:
+      return record.positionBuffer;
+    case 1:
+      return record.normalBuffer;
+    case 2:
+      return record.colorBuffer;
+    case 3:
+      return record.uvBuffer;
+    case 4:
+      return record.jointBuffer;
+    case 5:
+      return record.weightBuffer;
+    case 6:
+      return record.position1Buffer;
+    case 7:
+      return record.normal1Buffer;
+    case 8:
+      return record.indexBuffer;
+    default:
+      return record.extraMorphBuffers[k - STREAM_COUNT];
+  }
+}
+
+/** Geometry source for stream `k`, matching {@link bufferAt}. */
+function dataAt(
+  geometry: CacheableGeometry,
+  k: number,
+): ArrayBufferView | undefined {
+  switch (k) {
+    case 0:
+      return geometry.positions;
+    case 1:
+      return geometry.normals;
+    case 2:
+      return geometry.colors;
+    case 3:
+      return geometry.uvs;
+    case 4:
+      return geometry.joints;
+    case 5:
+      return geometry.weights;
+    case 6:
+      return geometry.positions1;
+    case 7:
+      return geometry.normals1;
+    case 8:
+      return geometry.indices;
+    default: {
+      const j = k - STREAM_COUNT;
+      const target = geometry.extraMorphTargets?.[j >> 1];
+      return target === undefined
+        ? undefined
+        : (j & 1) === 0
+          ? target.positions
+          : target.normals;
+    }
+  }
+}
+
 /**
  * Rounds a byte length up to a multiple of four.
  *
@@ -227,40 +297,23 @@ export class WgpuGeometryCache {
     const existing = this.#records.get(geometry.id);
     if (existing !== undefined) {
       if (existing.version === geometry.version) {
-        if (
-          normals &&
-          existing.normalBuffer === null &&
-          geometry.normals !== undefined
-        ) {
-          // The upgrade path: a record first acquired by an unshaded draw
-          // meets its first lit one. One buffer uploads; the other four are
-          // current and stay where they are.
-          existing.normalBuffer = this.#uploadBuffer(
-            geometry.normals,
-            GPU_BUFFER_USAGE.VERTEX,
-            `fourJS:normals:${geometry.id}`,
-          );
-        }
-        if (skinning) {
-          this.#upgradeSkinning(existing, geometry);
-        }
-        if (morph) {
-          this.#upgradeMorph(existing, geometry, normals);
-        }
+        this.#upgrade(existing, geometry, normals, skinning, morph);
         return existing;
       }
       if (
         geometry.drawCount !== 0 &&
         this.#rewriteInPlace(existing, geometry)
       ) {
-        const updated: WgpuGeometryRecord = {
-          ...existing,
-          version: geometry.version,
-          count: geometry.drawCount,
-          topology: geometry.mode === "lines" ? "line-list" : "triangle-list",
-        };
-        this.#records.set(geometry.id, updated);
-        return updated;
+        // Mutate the cached record (§7b: no per-refresh record allocation);
+        // streams the geometry gained since the last upload (or that were
+        // never asked for) upgrade exactly as on the same-version path.
+        const live: MutableRecord = existing;
+        live.version = geometry.version;
+        live.count = geometry.drawCount;
+        live.topology =
+          geometry.mode === "lines" ? "line-list" : "triangle-list";
+        this.#upgrade(existing, geometry, normals, skinning, morph);
+        return existing;
       }
       this.#destroyRecord(existing);
       this.#records.delete(geometry.id);
@@ -311,31 +364,18 @@ export class WgpuGeometryCache {
     record: WgpuGeometryRecord,
     geometry: CacheableGeometry,
   ): boolean {
-    const pairs: [GpuBuffer | null, ArrayBufferView | undefined][] = [
-      [record.positionBuffer, geometry.positions],
-      [record.normalBuffer, geometry.normals],
-      [record.colorBuffer, geometry.colors],
-      [record.uvBuffer, geometry.uvs],
-      [record.jointBuffer, geometry.joints],
-      [record.weightBuffer, geometry.weights],
-      [record.position1Buffer, geometry.positions1],
-      [record.normal1Buffer, geometry.normals1],
-      [record.indexBuffer, geometry.indices],
-    ];
-    const extra = geometry.extraMorphTargets;
-    for (let i = 0; i < record.extraMorphBuffers.length; i += 1) {
-      const target = extra?.[i >> 1];
-      pairs.push([
-        record.extraMorphBuffers[i],
-        target === undefined
-          ? undefined
-          : (i & 1) === 0
-            ? target.positions
-            : target.normals,
-      ]);
-    }
-    for (const [buffer, data] of pairs) {
+    const extraCount = record.extraMorphBuffers.length;
+    const total = STREAM_COUNT + extraCount;
+    for (let k = 0; k < total; k += 1) {
+      const buffer = bufferAt(record, k);
+      const data = dataAt(geometry, k);
       if (buffer === null) {
+        // Colours, uvs and indices are uploaded with the record, so a stream
+        // that appeared since cannot be added in place. The lazily uploaded
+        // ones (normals, skinning, morph) are picked up by `#upgrade`.
+        if (data !== undefined && (k === 2 || k === 3 || k === 8)) {
+          return false;
+        }
         continue;
       }
       if (
@@ -352,12 +392,42 @@ export class WgpuGeometryCache {
     ) {
       return false;
     }
-    for (const [buffer, data] of pairs) {
+    for (let k = 0; k < total; k += 1) {
+      const buffer = bufferAt(record, k);
+      const data = dataAt(geometry, k);
       if (buffer !== null && data !== undefined) {
         this.#staging.write(buffer, data);
       }
     }
     return true;
+  }
+
+  #upgrade(
+    record: WgpuGeometryRecord,
+    geometry: CacheableGeometry,
+    normals: boolean,
+    skinning: boolean,
+    morph: boolean,
+  ): void {
+    if (
+      normals &&
+      record.normalBuffer === null &&
+      geometry.normals !== undefined
+    ) {
+      // A record first acquired by an unshaded draw meets its first lit one.
+      // One buffer uploads; the other streams are current.
+      record.normalBuffer = this.#uploadBuffer(
+        geometry.normals,
+        GPU_BUFFER_USAGE.VERTEX,
+        `fourJS:normals:${geometry.id}`,
+      );
+    }
+    if (skinning) {
+      this.#upgradeSkinning(record, geometry);
+    }
+    if (morph) {
+      this.#upgradeMorph(record, geometry, normals);
+    }
   }
 
   #upgradeSkinning(
@@ -564,7 +634,7 @@ export class WgpuGeometryCache {
       size: alignedSize(data.byteLength),
       usage: usage | GPU_BUFFER_USAGE.COPY_DST,
     });
-    this.#device.queue.writeBuffer(buffer, 0, data);
+    this.#staging.writeDirect(buffer, data);
     this.#sizes.set(buffer, alignedSize(data.byteLength));
     return buffer;
   }

@@ -11,10 +11,10 @@
  *   writes in its own upload heap, so a ring would only add a copy command.
  * - **Ringed**, at or above the threshold: `queue.writeBuffer` into the next of
  *   {@link STAGING_RING_FRAMES} (3) `COPY_SRC` staging buffers, then a
- *   `copyBufferToBuffer` into the destination, submitted immediately. Rotating
- *   the slot means a write never targets a staging buffer a copy from the
- *   previous frames may still be reading, so no write has to wait on one in
- *   flight. Staging buffers are reused (grown geometrically when a bigger
+ *   `copyBufferToBuffer` into the destination, submitted immediately. The slot
+ *   cursor advances per ringed write (not per frame); queue order already
+ *   makes reuse hazard-free, since a `writeBuffer` is ordered after every
+ *   earlier submitted copy that reads the same staging buffer. Staging buffers are reused (grown geometrically when a bigger
  *   write arrives), so a steady-state frame allocates nothing.
  *
  * `mapAsync` is deliberately not used: it would make the update asynchronous
@@ -47,6 +47,12 @@ export class WgpuStagingRing {
 
   #cursor = 0;
 
+  /** Whether the encoder has `copyBufferToBuffer`; `null` until probed. */
+  #copySupported: boolean | null = null;
+
+  /** Reused 4-byte-aligned copy of an odd-length write; grows, never shrinks. */
+  #scratch = new Uint8Array(0);
+
   #allocations = 0;
 
   constructor(device: GpuDevice) {
@@ -70,19 +76,46 @@ export class WgpuStagingRing {
     return byteLength < STAGING_DIRECT_THRESHOLD ? "direct" : "ring";
   }
 
+  /**
+   * `queue.writeBuffer` of `data` at offset 0 with a 4-byte-multiple size
+   * (WebGPU validation): an odd-length view (a `Uint16Array` of odd count) is
+   * copied into a reused zero-padded scratch first.
+   */
+  writeDirect(destination: GpuBuffer, data: ArrayBufferView): void {
+    const bytes = data.byteLength;
+    if ((bytes & 3) === 0) {
+      this.#device.queue.writeBuffer(destination, 0, data);
+      return;
+    }
+    const padded = (bytes + 3) & ~3;
+    if (this.#scratch.byteLength < padded) {
+      this.#scratch = new Uint8Array(padded);
+    }
+    const scratch = this.#scratch;
+    scratch.set(new Uint8Array(data.buffer, data.byteOffset, bytes), 0);
+    scratch.fill(0, bytes, padded);
+    this.#device.queue.writeBuffer(destination, 0, scratch, 0, padded);
+  }
+
   /** Rewrites `destination` (offset 0) with `data`. */
   write(destination: GpuBuffer, data: ArrayBufferView): void {
-    if (this.pathFor(data.byteLength) === "direct") {
-      this.#device.queue.writeBuffer(destination, 0, data);
+    if (
+      this.pathFor(data.byteLength) === "direct" ||
+      this.#copySupported === false
+    ) {
+      this.writeDirect(destination, data);
       return;
     }
     const encoder = this.#device.createCommandEncoder({
       label: "fourJS:staging-copy",
     });
     if (encoder.copyBufferToBuffer === undefined) {
-      this.#device.queue.writeBuffer(destination, 0, data);
+      // Probed once: later writes skip the encoder entirely.
+      this.#copySupported = false;
+      this.writeDirect(destination, data);
       return;
     }
+    this.#copySupported = true;
     const size = Math.ceil(data.byteLength / 4) * 4;
     const slot = this.#cursor;
     this.#cursor = (slot + 1) % STAGING_RING_FRAMES;
@@ -99,7 +132,7 @@ export class WgpuStagingRing {
       this.#sizes[slot] = grown;
       this.#allocations += 1;
     }
-    this.#device.queue.writeBuffer(staging, 0, data);
+    this.writeDirect(staging, data);
     encoder.copyBufferToBuffer(staging, 0, destination, 0, size);
     this.#device.queue.submit([encoder.finish()]);
   }

@@ -186,3 +186,139 @@ describe("WgpuGeometryCache dynamic updates (§65)", () => {
     expect(gpu.countOf("buffer.destroy")).toBe(2);
   });
 });
+
+describe("WgpuGeometryCache dynamic refresh residues (wave 5)", () => {
+  it("refreshes in place: the cached record keeps its identity", () => {
+    const { device } = setup();
+    const cache = new WgpuGeometryCache(device);
+    const g = geo(9);
+    const first = cache.acquire(g)!;
+    g.version = 1;
+    const second = cache.acquire(g)!;
+    expect(second).toBe(first);
+    expect(second.version).toBe(1);
+  });
+
+  it("binds normals gained in a version bump on the next acquisition", () => {
+    const { device, gpu } = setup();
+    const cache = new WgpuGeometryCache(device);
+    const g = geo(9) as CacheableGeometry & { normals?: Float32Array };
+    expect(cache.acquire(g, true)!.normalBuffer).toBeNull();
+    g.normals = new Float32Array(9);
+    g.version = 1;
+    gpu.reset();
+    const record = cache.acquire(g, true)!;
+    expect(record.normalBuffer).not.toBeNull();
+    expect(gpu.countOf("buffer.destroy")).toBe(0);
+    g.version = 2;
+    const again = cache.acquire(g, true)!;
+    expect(again.normalBuffer).toBe(record.normalBuffer);
+  });
+
+  it("binds an extra morph target gained in a version bump", () => {
+    const { device } = setup();
+    const cache = new WgpuGeometryCache(device);
+    const g = geo(9) as CacheableGeometry & {
+      positions1?: Float32Array;
+      extraMorphTargets?: { positions: Float32Array }[];
+    };
+    g.positions1 = new Float32Array(9);
+    expect(cache.acquire(g, false, false, true)!.extraMorphBuffers).toEqual([]);
+    g.extraMorphTargets = [{ positions: new Float32Array(9) }];
+    g.version = 1;
+    const record = cache.acquire(g, false, false, true)!;
+    expect(record.extraMorphBuffers[0]).not.toBeNull();
+    g.version = 2;
+    cache.acquire(g, false, false, true);
+    expect(record.extraMorphBuffers[0]).not.toBeNull();
+  });
+
+  it("reallocates when colours appear after the first upload", () => {
+    const { device, gpu } = setup();
+    const cache = new WgpuGeometryCache(device);
+    const g = geo(9) as CacheableGeometry & { colors?: Float32Array };
+    cache.acquire(g);
+    g.colors = new Float32Array(9);
+    g.version = 1;
+    gpu.reset();
+    expect(cache.acquire(g)!.colorBuffer).not.toBeNull();
+    expect(gpu.countOf("buffer.destroy")).toBe(1);
+  });
+
+  it("writes 4-byte-aligned sizes for an odd-length index stream", () => {
+    const { device, gpu } = setup();
+    const sizes: number[] = [];
+    const rawWrite = device.queue.writeBuffer.bind(device.queue);
+    device.queue.writeBuffer = (
+      buf: never,
+      off: number,
+      data: ArrayBufferView,
+      dOff?: number,
+      size?: number,
+    ) => {
+      sizes.push(size ?? data.byteLength);
+      return (rawWrite as (...a: unknown[]) => void)(
+        buf,
+        off,
+        data,
+        dOff,
+        size,
+      );
+    };
+    const cache = new WgpuGeometryCache(device);
+    const g = geo(9) as CacheableGeometry & { indices?: Uint16Array };
+    g.indices = new Uint16Array([0, 1, 2]);
+    (g as { mode: string }).mode = "lines";
+    (g as { drawCount: number }).drawCount = 3;
+    cache.acquire(g);
+    for (let i = 1; i <= 3; i++) {
+      g.version = i;
+      cache.acquire(g);
+    }
+    expect(sizes.length).toBeGreaterThanOrEqual(5);
+    for (const size of sizes) expect(size % 4).toBe(0);
+    expect(gpu.countOf("device.createBuffer")).toBe(2);
+  });
+
+  it("pads odd writes through the ring and probes copy support once", () => {
+    const { device } = setup();
+    const sizes: number[] = [];
+    const rawWrite = device.queue.writeBuffer.bind(device.queue);
+    device.queue.writeBuffer = (
+      buf: never,
+      off: number,
+      data: ArrayBufferView,
+      dOff?: number,
+      size?: number,
+    ) => {
+      sizes.push(size ?? data.byteLength);
+      return (rawWrite as (...a: unknown[]) => void)(
+        buf,
+        off,
+        data,
+        dOff,
+        size,
+      );
+    };
+    const ring = new WgpuStagingRing(device);
+    const dest = device.createBuffer({ size: BIG * 4 + 4, usage: 0x28 });
+    ring.write(dest, new Uint16Array(BIG * 2 + 1));
+    expect(sizes).toEqual([BIG * 4 + 4]);
+
+    let encoders = 0;
+    const raw = device.createCommandEncoder.bind(device);
+    const bare = {
+      ...device,
+      queue: device.queue,
+      createBuffer: device.createBuffer.bind(device),
+      createCommandEncoder: () => {
+        encoders += 1;
+        return { ...raw(), copyBufferToBuffer: undefined };
+      },
+    } as unknown as GpuDevice;
+    const fallback = new WgpuStagingRing(bare);
+    fallback.write(dest, new Float32Array(BIG));
+    fallback.write(dest, new Float32Array(BIG));
+    expect(encoders).toBe(1);
+  });
+});
