@@ -4842,6 +4842,7 @@ pin. Draco/Basis remain open.
 bundle (particles-demo would exceed its 46 kB budget); draw-call wins only on thousands of
 like consecutive unlit items; lit meshes do not batch yet (R-22). Evidence:
 `docs/benchmarks/batching-default-on.md`.
+
 ## 2026-11-04 — wave 3: Canvas 2D and SVG backends shipped
 
 - `@fourjs/render-canvas` (`Canvas2dRenderer`, `registerCanvasRenderer()`) and
