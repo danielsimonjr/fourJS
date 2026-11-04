@@ -44,9 +44,9 @@
  * ```
  *
  * Hemisphere rides the remaining spare stride after §69's shadow tail
- * (672…720 of 768). The first {@link LIGHT_UNIFORM_BYTES} bytes stay this
+ * (864…912 of 1024 at 11 slots). The first {@link LIGHT_UNIFORM_BYTES} bytes stay this
  * layout exactly — a no-hemisphere pack writes zeros in the new slots, so
- * every landed float in 0…592 is byte-identical. The unshadowed bind group
+ * every landed float in 0…784 is byte-identical. The unshadowed bind group
  * widens to {@link LIGHT_BINDING_BYTES} so the fragment can read the tail;
  * the shadowed twin does the same by growing
  * `SHADOW_LIGHT_UNIFORM_BYTES`.
@@ -95,7 +95,7 @@
  * §69's comparison sampler is a structurally different binding, and it lives
  * in `wgpu-shadow.ts`: a **widened twin** of this block
  * (`SHADOW_LIGHT_UNIFORM_WGSL`) appends the shadow matrix and parameters in
- * the stride bytes this layout already leaves spare (592…672 of 768), and two
+ * the stride bytes this layout already leaves spare (784…864 of 1024), and two
  * more bindings — `texture_depth_2d` and `sampler_comparison` — join it in a
  * second group-1 layout. This layout, this struct, and
  * {@link LIGHT_UNIFORM_BYTES} are untouched, which is what keeps every landed
@@ -182,7 +182,7 @@ export const LIGHT_UNIFORM_FLOATS = LIGHT_UNIFORM_BYTES / 4;
 
 /**
  * Byte offset of the hemisphere sky colour (rgb × intensity; w 0) — the
- * first spare stride byte after §69's shadow tail (592…672).
+ * first spare stride byte after §69's shadow tail (784…864).
  */
 export const HEMISPHERE_SKY_OFFSET = LIGHT_UNIFORM_BYTES + 80;
 
@@ -194,7 +194,7 @@ export const HEMISPHERE_UP_OFFSET = HEMISPHERE_GROUND_OFFSET + 16;
 
 /**
  * Size of the unshadowed light binding once the hemisphere tail is
- * included — 720 bytes, still inside the landed 768-byte stride. The
+ * included — 912 bytes, still inside the 1024-byte stride. The
  * core {@link LIGHT_UNIFORM_BYTES} is untouched; this is what
  * `createLightsBindGroupLayout` and the renderer bind as `minBindingSize`
  * / `size` so the fragment may read the tail.
@@ -273,8 +273,8 @@ export const HEMISPHERE_UNIFORM_MEMBERS_WGSL = `  hemisphereSky : vec4<f32>,
  * the layout the pipeline declares and the layout the shader reads live side
  * by side in one module, so they cannot drift.
  *
- * Five `vec4` pads sit in the 592…672 gap §69's shadow tail occupies on
- * the shadowed twin, so `hemisphereSky` lands at byte 672 in both structs.
+ * Five `vec4` pads sit in the 784…864 gap §69's shadow tail occupies on
+ * the shadowed twin, so `hemisphereSky` lands at byte 864 in both structs.
  */
 export const LIGHT_UNIFORM_WGSL = `struct LightUniforms {
 ${LIGHT_UNIFORM_MEMBERS_WGSL}

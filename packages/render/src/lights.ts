@@ -35,8 +35,9 @@
  * compare against it. Only the *directional* light casts at this tier — see
  * `@fourjs/scene`'s `DirectionalLightShadow` for §69's staged remainder.
  *
- * §68's rectangular-area type is still staged, and so are light layers,
- * IBL, and the clustered/forward-plus path for *many* lights — see
+ * §68's rectangular-area type is still staged, and so are IBL and the
+ * clustered/forward-plus path for *many* lights (light layers shipped with
+ * W5.1, per frame as described above) — see
  * `@fourjs/scene`'s `light.ts`, which owns that list. Hemisphere ships
  * (2026-09-10) as the fields on {@link SceneLights} below.
  *
