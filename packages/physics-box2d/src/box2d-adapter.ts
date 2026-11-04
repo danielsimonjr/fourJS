@@ -8,10 +8,11 @@
  *
  * Implemented: world + gravity, the four §22 body types, circle / rectangle /
  * capsule / convex-polygon colliders, `step`, collision / trigger / sleep event
- * derivation, and the whole `SolverBodyAccess` seam. **Not yet** (they throw
- * `FourError("NOT_IMPLEMENTED")`, and the capability record says so): joints,
- * queries, snapshots, and `SolverBodyTuningAccess` / `SolverJointAccess`
- * (absent, so the world keeps its warn-once machinery on).
+ * derivation, the whole `SolverBodyAccess` seam, joints and tuning (W8.2), and
+ * (W8.3) the four §30 queries (`raycast`, `shapeCast`, `overlap`,
+ * `pointQuery`) plus §34 snapshots in an explicit float64 envelope (see
+ * `snapshot-codec.ts`). Snapshot restore does not recover warm-start state; see
+ * `restoreSnapshot` for exactly which §34 guarantees hold.
  *
  * ## Mappings worth knowing
  *
@@ -43,6 +44,16 @@ import {
   b2WeldJointDef,
   b2World,
   b2WorldManifold,
+  b2AABB,
+  b2ShapeCast,
+  b2Distance,
+  b2DistanceInput,
+  b2DistanceOutput,
+  b2SimplexCache,
+  b2ShapeCastInput,
+  b2ShapeCastOutput,
+  b2TestOverlap,
+  b2Transform,
 } from "@box2d/core";
 import type {
   b2Body,
@@ -54,6 +65,12 @@ import type {
   b2Shape,
 } from "@box2d/core";
 import { FourError } from "@fourjs/core";
+import {
+  SNAPSHOT_FORMAT_VERSION,
+  SNAPSHOT_MAGIC,
+  SnapshotReader,
+  SnapshotWriter,
+} from "./snapshot-codec.js";
 import { Quaternion, Vector3 } from "@fourjs/math";
 import type { Matrix3 } from "@fourjs/math";
 import {
@@ -61,8 +78,12 @@ import {
   DEFAULT_FRICTION,
   DEFAULT_RESTITUTION,
   DETERMINISM_LEVELS,
+  passesQueryFilter,
   rejectStalePhysicsHandle,
   resolveAngularVelocity,
+  resolveQueryOptions,
+  sortHitsByDistance,
+  validateQueryShape,
   resolveDensity,
   resolveGravity,
   resolveRotation,
@@ -79,6 +100,8 @@ import type {
   ColliderDescriptor,
   ContactPoint,
   JointDescriptor,
+  QueryCandidate,
+  ResolvedQueryOptions,
   OverlapHit,
   OverlapQuery,
   PhysicsBodyHandle,
@@ -122,8 +145,8 @@ const POSITION_ITERATIONS = 3;
 /**
  * What this adapter can do, declared honestly for the W8.1 state.
  *
- * - `jointTypes`: the five 2D shipped types (W8.2). `queries` all `false` /
- *   `snapshots: false`: later packets.
+ * - `jointTypes`: the five 2D shipped types (W8.2). `queries` all `true` /
+ *   `snapshots: true` (W8.3).
  * - `ccdModes`: Box2D's continuous collision is TOI-based; `"swept"` maps to
  *   `b2Body.SetBullet`. There is no speculative mode.
  * - `tuning.jointMotorEffortCap` is `true`: Box2D's `maxMotorTorque` /
@@ -144,12 +167,12 @@ export const BOX2D_CAPABILITIES: PhysicsCapabilities = Object.freeze({
   jointTypes: Object.freeze<string[]>([...BOX2D_JOINT_TYPES]),
   ccdModes: Object.freeze<CCDMode[]>(["disabled", "swept"]),
   determinism: "same-runtime",
-  snapshots: false,
+  snapshots: true,
   queries: Object.freeze({
-    raycast: false,
-    shapeCast: false,
-    overlap: false,
-    point: false,
+    raycast: true,
+    shapeCast: true,
+    overlap: true,
+    point: true,
   }),
   tuning: Object.freeze({
     rollingFriction: false,
@@ -161,7 +184,8 @@ export const BOX2D_CAPABILITIES: PhysicsCapabilities = Object.freeze({
 
 interface BodyRecord {
   readonly id: number;
-  readonly body: b2Body;
+  /** Re-pointed by `restoreSnapshot`, which rebuilds the world under live handles. */
+  body: b2Body;
   type: BodyType;
   alive: boolean;
   sleeping: boolean;
@@ -179,7 +203,7 @@ interface BodyRecord {
 interface ColliderRecord {
   readonly id: number;
   readonly bodyId: number;
-  readonly fixtures: b2Fixture[];
+  fixtures: b2Fixture[];
   readonly sensor: boolean;
   alive: boolean;
 }
@@ -218,6 +242,107 @@ interface PairRecord {
   readonly trigger: boolean;
   /** Touching Box2D contacts between the two colliders (capsules have several). */
   readonly contacts: Set<b2Contact>;
+}
+
+/** The `b2Body` members the snapshot reads and writes (private in the typings). */
+interface BodyInternals {
+  m_sleepTime: number;
+  m_xf: b2Transform;
+  m_sweep: {
+    localCenter: b2Vec2;
+    c0: b2Vec2;
+    c: b2Vec2;
+    a0: number;
+    a: number;
+    alpha0: number;
+  };
+  m_linearVelocity: b2Vec2;
+  m_angularVelocity: number;
+  m_force: b2Vec2;
+  m_torque: number;
+  m_mass: number;
+  m_invMass: number;
+  m_I: number;
+  m_invI: number;
+}
+
+const BODY_TYPES: readonly BodyType[] = [
+  "static",
+  "dynamic",
+  "kinematic-velocity",
+  "kinematic-position",
+];
+
+interface SnapshotFixture {
+  shape: b2Shape;
+  friction: number;
+  restitution: number;
+  restitutionThreshold: number;
+  density: number;
+  categoryBits: number;
+  maskBits: number;
+  groupIndex: number;
+}
+
+interface SnapshotData {
+  gravity: [number, number];
+  sleepingEnabled: boolean;
+  velocityIterations: number;
+  nextBodyId: number;
+  nextColliderId: number;
+  nextJointId: number;
+  bodies: {
+    id: number;
+    type: BodyType;
+    awake: boolean;
+    sleeping: boolean;
+    sleepTime: number;
+    xf: number[];
+    sweep: number[];
+    dynamics: number[];
+    bullet: boolean;
+    authoredMass: number | undefined;
+    authoredCenter: [number, number] | undefined;
+    authoredInertia: number | undefined;
+    target: [number, number, number] | undefined;
+  }[];
+  colliders: {
+    id: number;
+    bodyId: number;
+    sensor: boolean;
+    fixtures: SnapshotFixture[];
+  }[];
+  joints: {
+    id: number;
+    type: ShippedJointType;
+    bodyA: number;
+    bodyB: number;
+    config: JointConfig;
+  }[];
+}
+
+function writeOptional(
+  w: SnapshotWriter,
+  values: readonly number[] | undefined,
+): void {
+  w.bool(values !== undefined);
+  if (values !== undefined) {
+    for (const v of values) {
+      w.f64(v);
+    }
+  }
+}
+
+function readNumbers(r: SnapshotReader, count: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < count; i += 1) {
+    out.push(r.f64());
+  }
+  return out;
+}
+
+function readOptional(r: SnapshotReader, count: number): number[] | undefined {
+  return r.bool() ? readNumbers(r, count) : undefined;
 }
 
 function notImplemented(feature: string): FourError {
@@ -682,33 +807,644 @@ export class Box2dAdapter
     this.#requireWorld();
   }
 
+  /**
+   * Casts a ray (§30) through `b2World.RayCast`.
+   *
+   * Filtering is `@fourjs/physics`'s `passesQueryFilter` (the same code the
+   * Rapier adapters use), not Box2D's filter words. `mode: "first"` clips the
+   * ray at every accepted hit so the nearest one wins; `"all"` collects one hit
+   * per collider (a capsule's three fixtures report their nearest), applies
+   * `maxHits` in traversal order, then sorts if asked.
+   *
+   * Box2D rule, inherited: a ray that **starts inside** a shape does not hit
+   * that shape. The query never mutates the world (it reads the broad phase).
+   */
   raycast(query: RaycastQuery): RaycastHit[] {
-    void query;
-    throw notImplemented("raycast");
+    const world = this.#requireWorld();
+    const options = resolveQueryOptions(query);
+    const { x: ox, y: oy } = this.#queryPoint("origin", query.origin);
+    const [dx, dy] = this.#queryDirection("raycast", query.direction);
+    const length = this.#sweepLength(ox, oy, query.maxDistance, 0);
+    if (length === 0) {
+      return [];
+    }
+    const p2 = { x: ox + dx * length, y: oy + dy * length };
+    const best = new Map<
+      ColliderRecord,
+      { fraction: number; nx: number; ny: number }
+    >();
+    world.RayCast({ x: ox, y: oy }, p2, (fixture, _point, normal, fraction) => {
+      const record = this.#recordByFixture.get(fixture);
+      if (
+        record === undefined ||
+        !this.#passesFilter(record, fixture, options)
+      ) {
+        return -1;
+      }
+      const known = best.get(record);
+      if (known === undefined || fraction < known.fraction) {
+        best.set(record, { fraction, nx: normal.x, ny: normal.y });
+      }
+      // "first": clip the ray to this hit; "all": keep going.
+      return options.mode === "first" ? fraction : 1;
+    });
+    let entries = [...best.entries()];
+    if (options.mode === "first") {
+      let nearest = entries[0];
+      for (const entry of entries) {
+        if (entry[1].fraction < nearest[1].fraction) {
+          nearest = entry;
+        }
+      }
+      entries = nearest === undefined ? [] : [nearest];
+    }
+    const hits: RaycastHit[] = entries
+      .slice(0, options.maxHits)
+      .map(([record, h]) => {
+        const distance = h.fraction * length;
+        return {
+          collider: record as unknown as PhysicsColliderHandle,
+          body: this.#bodyHandleOf(record),
+          point: new Vector3(ox + dx * distance, oy + dy * distance, 0),
+          normal: new Vector3(h.nx, h.ny, 0),
+          distance,
+        };
+      });
+    return options.sorted ? sortHitsByDistance(hits) : hits;
   }
 
+  /**
+   * Sweeps a shape (§30) with `b2ShapeCast` (GJK ray-cast, Gino van den
+   * Bergen) against every fixture the swept AABB reaches. Returns one hit per
+   * collider; `mode: "first"` keeps only the nearest.
+   *
+   * Conventions, all pinned by tests: `distance` is how far the shape travelled
+   * before touching; `point` is the witness on the hit collider; `normal` points
+   * out of the hit collider. A shape already overlapping at the start reports
+   * `distance: 0`, `normal` opposite the sweep and `point` its start centre
+   * (Box2D's cast reports nothing for initial overlap, so this adapter
+   * synthesises the record `ShapeCastHit` documents). Sweeps are translations
+   * only: the shape does not rotate while moving. The query reads the broad
+   * phase and never mutates the world.
+   */
   shapeCast(query: ShapeCastQuery): ShapeCastHit[] {
-    void query;
-    throw notImplemented("shapeCast");
+    const world = this.#requireWorld();
+    const options = resolveQueryOptions(query);
+    validateQueryShape(query.shape, "2d");
+    const origin = this.#queryPoint("position", query.position);
+    const [dx, dy] = this.#queryDirection("shapeCast", query.direction);
+    const angle =
+      query.rotation === undefined ? 0 : this.#angleOf(query.rotation);
+    const shapes = this.#shapesOf(
+      { shape: query.shape } as ColliderDescriptor,
+      {
+        x: origin.x,
+        y: origin.y,
+        cos: Math.cos(angle),
+        sin: Math.sin(angle),
+        angle,
+      },
+    );
+    const extent = this.#shapesExtent(shapes);
+    const length = this.#sweepLength(
+      origin.x,
+      origin.y,
+      query.maxDistance,
+      extent,
+    );
+    const identity = new b2Transform();
+    identity.SetIdentity();
+    const swept = new b2AABB();
+    const box = new b2AABB();
+    swept.lowerBound.Set(Infinity, Infinity);
+    swept.upperBound.Set(-Infinity, -Infinity);
+    for (const shape of shapes) {
+      shape.ComputeAABB(box, identity, 0);
+      for (const t of [0, length]) {
+        swept.lowerBound.Set(
+          Math.min(swept.lowerBound.x, box.lowerBound.x + dx * t),
+          Math.min(swept.lowerBound.y, box.lowerBound.y + dy * t),
+        );
+        swept.upperBound.Set(
+          Math.max(swept.upperBound.x, box.upperBound.x + dx * t),
+          Math.max(swept.upperBound.y, box.upperBound.y + dy * t),
+        );
+      }
+    }
+    const best = new Map<ColliderRecord, ShapeCastHit>();
+    const input = new b2ShapeCastInput();
+    const output = new b2ShapeCastOutput();
+    input.transformB.SetIdentity();
+    input.translationB.Set(dx * length, dy * length);
+    world.QueryAABB(swept, (fixture) => {
+      const record = this.#recordByFixture.get(fixture);
+      if (
+        record === undefined ||
+        !this.#passesFilter(record, fixture, options)
+      ) {
+        return true;
+      }
+      const xfA = fixture.GetBody().GetTransform();
+      input.transformA.Copy(xfA);
+      input.proxyA.SetShape(fixture.GetShape(), 0);
+      for (const shape of shapes) {
+        input.proxyB.SetShape(shape, 0);
+        let hit: ShapeCastHit | undefined;
+        if (b2TestOverlap(fixture.GetShape(), 0, shape, 0, xfA, identity)) {
+          hit = {
+            collider: record as unknown as PhysicsColliderHandle,
+            body: this.#bodyHandleOf(record),
+            point: new Vector3(origin.x, origin.y, 0),
+            normal: new Vector3(-dx, -dy, 0),
+            distance: 0,
+          };
+        } else if (length > 0 && b2ShapeCast(output, input)) {
+          hit = {
+            collider: record as unknown as PhysicsColliderHandle,
+            body: this.#bodyHandleOf(record),
+            point: this.#witness(
+              input,
+              output.lambda,
+              dx * length,
+              dy * length,
+            ),
+            normal: new Vector3(output.normal.x, output.normal.y, 0),
+            distance: output.lambda * length,
+          };
+        }
+        const known = best.get(record);
+        if (
+          hit !== undefined &&
+          (known === undefined || hit.distance < known.distance)
+        ) {
+          best.set(record, hit);
+        }
+      }
+      return true;
+    });
+    let hits = [...best.values()];
+    if (options.mode === "first") {
+      hits = sortHitsByDistance(hits).slice(0, 1);
+    } else {
+      hits = hits.slice(0, options.maxHits);
+      if (options.sorted) {
+        sortHitsByDistance(hits);
+      }
+    }
+    return hits;
   }
 
+  /**
+   * Tests a static shape for overlaps (§30): `QueryFixtureShape` (AABB query,
+   * then Box2D's exact `b2TestOverlap` on the two shapes). A capsule collider
+   * is one hit however many of its three fixtures overlap. Hits are in
+   * broad-phase traversal order; `sorted` does nothing (no distance).
+   */
   overlap(query: OverlapQuery): OverlapHit[] {
-    void query;
-    throw notImplemented("overlap");
+    const world = this.#requireWorld();
+    const options = resolveQueryOptions(query);
+    validateQueryShape(query.shape, "2d");
+    const origin = this.#queryPoint("position", query.position);
+    const angle =
+      query.rotation === undefined ? 0 : this.#angleOf(query.rotation);
+    const shapes = this.#shapesOf(
+      { shape: query.shape } as ColliderDescriptor,
+      {
+        x: origin.x,
+        y: origin.y,
+        cos: Math.cos(angle),
+        sin: Math.sin(angle),
+        angle,
+      },
+    );
+    const identity = new b2Transform();
+    identity.SetIdentity();
+    const found = new Set<ColliderRecord>();
+    for (const shape of shapes) {
+      world.QueryFixtureShape(shape, 0, identity, (fixture) => {
+        const record = this.#recordByFixture.get(fixture);
+        if (
+          record !== undefined &&
+          this.#passesFilter(record, fixture, options)
+        ) {
+          found.add(record);
+        }
+        return true;
+      });
+    }
+    return [...found].slice(0, options.maxHits).map((record) => ({
+      collider: record as unknown as PhysicsColliderHandle,
+      body: this.#bodyHandleOf(record),
+    }));
   }
 
+  /**
+   * Tests a point (§30): every collider that contains it (`TestPoint` per
+   * fixture after a point-AABB query). `distance` is `0` and `point` the query
+   * point, as `PointHit` documents for a contained point.
+   */
   pointQuery(query: PointQuery): PointHit[] {
-    void query;
-    throw notImplemented("pointQuery");
+    const world = this.#requireWorld();
+    const options = resolveQueryOptions(query);
+    const p = this.#queryPoint("point", query.point);
+    const found = new Set<ColliderRecord>();
+    world.QueryFixturePoint(p, (fixture) => {
+      const record = this.#recordByFixture.get(fixture);
+      if (
+        record !== undefined &&
+        this.#passesFilter(record, fixture, options)
+      ) {
+        found.add(record);
+      }
+      return true;
+    });
+    return [...found].slice(0, options.maxHits).map((record) => ({
+      collider: record as unknown as PhysicsColliderHandle,
+      body: this.#bodyHandleOf(record),
+      point: new Vector3(p.x, p.y, 0),
+      distance: 0,
+    }));
   }
 
+  /**
+   * Serialises the whole world (§34) into the explicit float64 envelope of
+   * `snapshot-codec.ts`: header (magic, format, adapter name, version), world
+   * (gravity, sleeping, iterations, the three id counters), then every body,
+   * collider (with its fixtures' shapes verbatim) and joint in ascending id
+   * order. Body capture includes the exact `b2Sweep`/`b2Transform`, velocities,
+   * pending force and torque, sleep state and sleep timer, mass data, damping,
+   * gravity scale and bullet flag.
+   *
+   * **Not captured, and why it matters** (see {@link Box2dAdapter.restoreSnapshot}):
+   * contact manifolds / accumulated contact impulses (warm start), joint
+   * accumulated impulses, and the broad-phase tree shape. Pending collision
+   * events (`drainEvents` backlog) are not part of solver state and are not
+   * captured. Reading changes nothing in the world.
+   */
   createSnapshot(): ArrayBuffer {
-    throw notImplemented("createSnapshot");
+    const world = this.#requireWorld();
+    const w = new SnapshotWriter();
+    w.u32(SNAPSHOT_MAGIC);
+    w.u32(SNAPSHOT_FORMAT_VERSION);
+    w.str(this.name);
+    w.str(this.version);
+    const g = world.GetGravity();
+    w.f64(g.x);
+    w.f64(g.y);
+    w.bool(this.#sleepingEnabled);
+    w.u32(this.#velocityIterations);
+    w.u32(this.#nextBodyId);
+    w.u32(this.#nextColliderId);
+    w.u32(this.#nextJointId);
+
+    w.u32(this.#bodies.size);
+    for (const record of this.#bodies.values()) {
+      const b = record.body;
+      const internals = b as unknown as BodyInternals;
+      w.u32(record.id);
+      w.str(record.type);
+      w.bool(b.IsAwake());
+      w.bool(record.sleeping);
+      w.f64(internals.m_sleepTime);
+      const xf = internals.m_xf;
+      for (const v of [xf.p.x, xf.p.y, xf.q.s, xf.q.c]) {
+        w.f64(v);
+      }
+      const sw = internals.m_sweep;
+      for (const v of [
+        sw.localCenter.x,
+        sw.localCenter.y,
+        sw.c0.x,
+        sw.c0.y,
+        sw.c.x,
+        sw.c.y,
+        sw.a0,
+        sw.a,
+        sw.alpha0,
+      ]) {
+        w.f64(v);
+      }
+      const lv = b.GetLinearVelocity();
+      for (const v of [
+        lv.x,
+        lv.y,
+        b.GetAngularVelocity(),
+        internals.m_force.x,
+        internals.m_force.y,
+        internals.m_torque,
+        b.GetLinearDamping(),
+        b.GetAngularDamping(),
+        b.GetGravityScale(),
+        internals.m_mass,
+        internals.m_invMass,
+        internals.m_I,
+        internals.m_invI,
+      ]) {
+        w.f64(v);
+      }
+      w.bool(b.IsBullet());
+      writeOptional(
+        w,
+        record.authoredMass === undefined ? undefined : [record.authoredMass],
+      );
+      writeOptional(w, record.authoredCenter);
+      writeOptional(
+        w,
+        record.authoredInertia === undefined
+          ? undefined
+          : [record.authoredInertia],
+      );
+      writeOptional(w, record.target);
+    }
+
+    w.u32(this.#colliders.size);
+    for (const record of this.#colliders.values()) {
+      w.u32(record.id);
+      w.u32(record.bodyId);
+      w.bool(record.sensor);
+      w.u32(record.fixtures.length);
+      for (const fixture of record.fixtures) {
+        const shape = fixture.GetShape();
+        if (shape instanceof b2CircleShape) {
+          w.u8(0);
+          w.f64(shape.m_p.x);
+          w.f64(shape.m_p.y);
+          w.f64(shape.m_radius);
+        } else {
+          const polygon = shape as b2PolygonShape;
+          w.u8(1);
+          w.u32(polygon.m_count);
+          for (let i = 0; i < polygon.m_count; i += 1) {
+            w.f64(polygon.m_vertices[i].x);
+            w.f64(polygon.m_vertices[i].y);
+            w.f64(polygon.m_normals[i].x);
+            w.f64(polygon.m_normals[i].y);
+          }
+          w.f64(polygon.m_centroid.x);
+          w.f64(polygon.m_centroid.y);
+          w.f64(polygon.m_radius);
+        }
+        const filter = fixture.GetFilterData();
+        for (const v of [
+          fixture.GetFriction(),
+          fixture.GetRestitution(),
+          fixture.GetRestitutionThreshold(),
+          fixture.GetDensity(),
+          filter.categoryBits,
+          filter.maskBits,
+          filter.groupIndex,
+        ]) {
+          w.f64(v);
+        }
+      }
+    }
+
+    w.u32(this.#joints.size);
+    for (const record of this.#joints.values()) {
+      const c = record.config;
+      w.u32(record.id);
+      w.str(record.type);
+      w.u32(record.bodyA.id);
+      w.u32(record.bodyB.id);
+      for (const v of [
+        c.anchorA[0],
+        c.anchorA[1],
+        c.anchorB[0],
+        c.anchorB[1],
+        c.axis[0],
+        c.axis[1],
+        c.sign,
+        c.referenceAngle,
+        c.maxLength,
+        c.restLength,
+        c.stiffness,
+        c.damping,
+      ]) {
+        w.f64(v);
+      }
+      w.bool(c.collide);
+      writeOptional(w, c.limits && [c.limits.min, c.limits.max]);
+      writeOptional(
+        w,
+        c.motor && [
+          Number(c.motor.enabled),
+          c.motor.targetVelocity,
+          c.motor.maxEffort,
+        ],
+      );
+    }
+    return w.finish();
   }
 
+  /**
+   * Replaces the world with a snapshot taken by {@link Box2dAdapter.createSnapshot}
+   * (§34). The envelope is fully decoded and cross-checked **before** anything
+   * is touched, so a refused buffer leaves the live world intact.
+   *
+   * Refused: a buffer that is not a Box2D envelope (wrong magic / format /
+   * adapter name / adapter version / truncated / dangling body references).
+   *
+   * Handle identity: bodies, colliders and joints whose id survives keep their
+   * existing handle object (re-pointed at the rebuilt Box2D objects), so the
+   * engine's node-to-body maps stay valid; ids the snapshot lacks go stale and
+   * ids the live adapter lacks get fresh handles. Ids and the three id counters
+   * are restored, so a later `createBody` continues the original sequence.
+   *
+   * What §34 guarantees here and what it does not:
+   * - Holds: body/collider/joint ids and order, every body's pose, velocities,
+   *   sleep state and timer, mass data, shapes, materials and filters, joint
+   *   definitions, and the §33 checksum of the restored state equals the
+   *   captured one.
+   * - Does NOT hold: warm start. Box2D keeps contact manifolds (accumulated
+   *   normal / tangent impulses), joint impulses and a history-dependent
+   *   broad-phase tree; none are exposed for restoration, so the first step
+   *   after a restore starts those from zero / fresh. Stepping after a restore
+   *   is bit-identical to continuous stepping only from a state where that
+   *   history is irrelevant: no touching contacts and no joint impulses at the
+   *   snapshot (bodies in free flight, or asleep, with contacts forming only
+   *   after the snapshot between at most one pair at a time). Otherwise the
+   *   restored run is a valid simulation but not a bit-for-bit continuation.
+   * - Collision events: pairs touching at the snapshot report `collisionstart`
+   *   again on the first step after a restore (the contacts are new).
+   */
   restoreSnapshot(snapshot: ArrayBuffer): void {
-    void snapshot;
-    throw notImplemented("restoreSnapshot");
+    this.#requireWorld();
+    const data = this.#decodeSnapshot(snapshot);
+
+    const world = b2World.Create({ x: data.gravity[0], y: data.gravity[1] });
+    this.#sleepingEnabled = data.sleepingEnabled;
+    this.#velocityIterations = data.velocityIterations;
+    world.SetAllowSleeping(data.sleepingEnabled);
+    world.SetContactListener(this.#createListener());
+    this.#world = world;
+
+    for (const record of this.#bodies.values()) {
+      record.alive = false;
+    }
+    for (const record of this.#colliders.values()) {
+      record.alive = false;
+    }
+    for (const record of this.#joints.values()) {
+      record.alive = false;
+    }
+    const oldBodies = new Map(this.#bodies);
+    const oldColliders = new Map(this.#colliders);
+    const oldJoints = new Map(this.#joints);
+    this.#bodies.clear();
+    this.#colliders.clear();
+    this.#joints.clear();
+    this.#recordByFixture.clear();
+    this.#activePairs.clear();
+    this.#startedKeys.clear();
+    this.#stoppedKeys.clear();
+    this.#started.length = 0;
+    this.#stopped.length = 0;
+    this.#pendingEvents = [];
+    this.#suppressContactEvents = false;
+    this.#nextBodyId = data.nextBodyId;
+    this.#nextColliderId = data.nextColliderId;
+    this.#nextJointId = data.nextJointId;
+
+    for (const d of data.bodies) {
+      const body = world.CreateBody({
+        type: toB2Type(d.type),
+        position: { x: d.xf[0], y: d.xf[1] },
+        angle: d.sweep[7],
+        allowSleep: data.sleepingEnabled,
+      });
+      let record = oldBodies.get(d.id);
+      if (record === undefined) {
+        record = {
+          id: d.id,
+          body,
+          type: d.type,
+          alive: true,
+          sleeping: d.sleeping,
+          authoredMass: undefined,
+          authoredCenter: undefined,
+          authoredInertia: undefined,
+          colliders: [],
+          target: undefined,
+        };
+      }
+      record.body = body;
+      record.type = d.type;
+      record.alive = true;
+      record.sleeping = d.sleeping;
+      record.authoredMass = d.authoredMass;
+      record.authoredCenter = d.authoredCenter;
+      record.authoredInertia = d.authoredInertia;
+      record.target = d.target;
+      record.colliders.length = 0;
+      this.#bodies.set(d.id, record);
+    }
+
+    for (const d of data.colliders) {
+      const bodyRecord = this.#bodies.get(d.bodyId) as BodyRecord;
+      const fixtures = d.fixtures.map((f) =>
+        bodyRecord.body.CreateFixture({
+          shape: f.shape,
+          friction: f.friction,
+          restitution: f.restitution,
+          restitutionThreshold: f.restitutionThreshold,
+          density: f.density,
+          isSensor: d.sensor,
+          filter: {
+            categoryBits: f.categoryBits,
+            maskBits: f.maskBits,
+            groupIndex: f.groupIndex,
+          },
+        }),
+      );
+      let record = oldColliders.get(d.id);
+      if (record === undefined || record.bodyId !== d.bodyId) {
+        record = {
+          id: d.id,
+          bodyId: d.bodyId,
+          fixtures,
+          sensor: d.sensor,
+          alive: true,
+        };
+      }
+      record.fixtures = fixtures;
+      record.alive = true;
+      (record as { sensor: boolean }).sensor = d.sensor;
+      this.#colliders.set(d.id, record);
+      for (const fixture of fixtures) {
+        this.#recordByFixture.set(fixture, record);
+      }
+      bodyRecord.colliders.push(record);
+    }
+
+    // Body state goes in last: creating fixtures recomputes mass data and the
+    // sweep, and the captured values are the exact ones to land on.
+    for (const d of data.bodies) {
+      const record = this.#bodies.get(d.id) as BodyRecord;
+      const b = record.body;
+      const internals = b as unknown as BodyInternals;
+      if (b.IsAwake() !== d.awake) {
+        b.SetAwake(d.awake);
+      }
+      internals.m_xf.p.Set(d.xf[0], d.xf[1]);
+      internals.m_xf.q.s = d.xf[2];
+      internals.m_xf.q.c = d.xf[3];
+      internals.m_sweep.localCenter.Set(d.sweep[0], d.sweep[1]);
+      internals.m_sweep.c0.Set(d.sweep[2], d.sweep[3]);
+      internals.m_sweep.c.Set(d.sweep[4], d.sweep[5]);
+      internals.m_sweep.a0 = d.sweep[6];
+      internals.m_sweep.a = d.sweep[7];
+      internals.m_sweep.alpha0 = d.sweep[8];
+      const [
+        vx,
+        vy,
+        av,
+        fx,
+        fy,
+        torque,
+        ld,
+        ad,
+        gs,
+        mass,
+        invMass,
+        inertia,
+        invI,
+      ] = d.dynamics;
+      internals.m_linearVelocity.Set(vx, vy);
+      internals.m_angularVelocity = av;
+      internals.m_force.Set(fx, fy);
+      internals.m_torque = torque;
+      b.SetLinearDamping(ld);
+      b.SetAngularDamping(ad);
+      b.SetGravityScale(gs);
+      b.SetBullet(d.bullet);
+      internals.m_mass = mass;
+      internals.m_invMass = invMass;
+      internals.m_I = inertia;
+      internals.m_invI = invI;
+      internals.m_sleepTime = d.sleepTime;
+    }
+
+    for (const d of data.joints) {
+      const bodyA = this.#bodies.get(d.bodyA) as BodyRecord;
+      const bodyB = this.#bodies.get(d.bodyB) as BodyRecord;
+      const old = oldJoints.get(d.id);
+      const record: JointRecord =
+        old !== undefined && old.bodyA === bodyA && old.bodyB === bodyB
+          ? old
+          : {
+              id: d.id,
+              type: d.type,
+              bodyA,
+              bodyB,
+              config: d.config,
+              joint: undefined as unknown as b2Joint,
+              alive: true,
+            };
+      record.alive = true;
+      Object.assign(record.config, d.config);
+      record.joint = this.#buildJoint(record);
+      this.#joints.set(d.id, record);
+    }
   }
 
   dispose(): void {
@@ -1110,6 +1846,313 @@ export class Box2dAdapter
   }
 
   // ---------------------------------------------------------------- internals
+
+  // ---------------------------------------------------------------- query helpers
+
+  #queryPoint(field: string, value: Vector3Input): { x: number; y: number } {
+    checkVector2(field, value);
+    return { x: value.x, y: value.y };
+  }
+
+  /** The unit direction of a ray / sweep; a zero vector is rejected (§30, §85). */
+  #queryDirection(query: string, value: Vector3Input): [number, number] {
+    checkVector2("direction", value);
+    const length = Math.hypot(value.x, value.y);
+    if (length === 0) {
+      throw new FourError(
+        ADAPTER_ERROR_CODE,
+        `${query} direction must have non-zero length (§30, §85).`,
+        { context: { adapter: ADAPTER_NAME } },
+      );
+    }
+    return [value.x / length, value.y / length];
+  }
+
+  /**
+   * How far to cast. An explicit finite `maxDistance` is used as is; an omitted
+   * (or infinite) one becomes "far enough to leave every fixture behind": the
+   * distance from the origin to the farthest corner of the union of all fixture
+   * AABBs, plus the swept shape's size. `0` when there is nothing to hit.
+   */
+  #sweepLength(
+    ox: number,
+    oy: number,
+    maxDistance: number | undefined,
+    extent: number,
+  ): number {
+    if (maxDistance !== undefined && Number.isFinite(maxDistance)) {
+      return Math.max(0, maxDistance);
+    }
+    let reach = 0;
+    for (const fixture of this.#recordByFixture.keys()) {
+      const box = fixture.GetAABB(0);
+      for (const cx of [box.lowerBound.x, box.upperBound.x]) {
+        for (const cy of [box.lowerBound.y, box.upperBound.y]) {
+          reach = Math.max(reach, Math.hypot(cx - ox, cy - oy));
+        }
+      }
+    }
+    return reach === 0 ? 0 : reach + extent + 1;
+  }
+
+  /**
+   * The contact point on the hit collider at fraction `lambda` of the sweep.
+   * `b2ShapeCast`'s own `point` is in the swept shape's frame (it lands at the
+   * shape's centre for a circle), so the witness is recomputed with `b2Distance`
+   * (radii included) between the target and the shape moved to the impact.
+   */
+  #witness(
+    input: b2ShapeCastInput,
+    lambda: number,
+    tx: number,
+    ty: number,
+  ): Vector3 {
+    const distanceInput = new b2DistanceInput();
+    distanceInput.proxyA.Copy(input.proxyA);
+    distanceInput.proxyB.Copy(input.proxyB);
+    distanceInput.transformA.Copy(input.transformA);
+    distanceInput.transformB.SetIdentity();
+    distanceInput.transformB.p.Set(tx * lambda, ty * lambda);
+    distanceInput.useRadii = true;
+    const out = new b2DistanceOutput();
+    b2Distance(out, new b2SimplexCache(), distanceInput);
+    return new Vector3(out.pointA.x, out.pointA.y, 0);
+  }
+
+  #shapesExtent(shapes: readonly b2Shape[]): number {
+    const box = new b2AABB();
+    const identity = new b2Transform();
+    identity.SetIdentity();
+    let extent = 0;
+    for (const shape of shapes) {
+      shape.ComputeAABB(box, identity, 0);
+      extent = Math.max(
+        extent,
+        Math.hypot(
+          box.upperBound.x - box.lowerBound.x,
+          box.upperBound.y - box.lowerBound.y,
+        ),
+      );
+    }
+    return extent;
+  }
+
+  /** §30's filter on one fixture, through the shared `passesQueryFilter`. */
+  #passesFilter(
+    record: ColliderRecord,
+    fixture: b2Fixture,
+    options: ResolvedQueryOptions,
+  ): boolean {
+    const filter = fixture.GetFilterData();
+    const candidate: QueryCandidate = {
+      collider: record as unknown as PhysicsColliderHandle,
+      body: this.#bodyHandleOf(record),
+      collisionGroups: filter.categoryBits,
+      collisionMask: filter.maskBits,
+      sensor: record.sensor,
+    };
+    return passesQueryFilter(candidate, options);
+  }
+
+  // ---------------------------------------------------------------- snapshot decoding
+
+  /** Fully decodes and cross-checks an envelope; touches no adapter state. */
+  #decodeSnapshot(snapshot: ArrayBuffer): SnapshotData {
+    const r = new SnapshotReader(snapshot);
+    const refuse = (
+      message: string,
+      context: Record<string, unknown> = {},
+    ): never => {
+      throw new FourError(ADAPTER_ERROR_CODE, `${message} (§34, §37).`, {
+        context: { adapter: ADAPTER_NAME, ...context },
+      });
+    };
+    if (snapshot.byteLength < 8 || r.u32() !== SNAPSHOT_MAGIC) {
+      refuse(
+        `Snapshot was not produced by ${ADAPTER_NAME}; a snapshot is opaque adapter data and is valid only for the adapter that wrote it`,
+      );
+    }
+    const format = r.u32();
+    if (format !== SNAPSHOT_FORMAT_VERSION) {
+      refuse(
+        `Snapshot envelope format ${String(format)} is not ${String(SNAPSHOT_FORMAT_VERSION)}`,
+      );
+    }
+    const name = r.str();
+    const version = r.str();
+    if (name !== this.name) {
+      refuse(
+        `Snapshot was taken with adapter ${JSON.stringify(name)} and this is ${JSON.stringify(this.name)}`,
+        { found: name },
+      );
+    }
+    if (version !== this.version) {
+      refuse(
+        `Snapshot was taken with ${JSON.stringify(name)} version ${JSON.stringify(version)} and this adapter is version ${JSON.stringify(this.version)}`,
+        { found: version },
+      );
+    }
+    const data: SnapshotData = {
+      gravity: [r.f64(), r.f64()],
+      sleepingEnabled: r.bool(),
+      velocityIterations: r.u32(),
+      nextBodyId: r.u32(),
+      nextColliderId: r.u32(),
+      nextJointId: r.u32(),
+      bodies: [],
+      colliders: [],
+      joints: [],
+    };
+    const bodyIds = new Set<number>();
+    const nBodies = r.u32();
+    for (let i = 0; i < nBodies; i += 1) {
+      const id = r.u32();
+      const type = r.str() as BodyType;
+      if (!BODY_TYPES.includes(type)) {
+        refuse(
+          `Snapshot body ${String(id)} has unknown type ${JSON.stringify(type)}`,
+        );
+      }
+      const awake = r.bool();
+      const sleeping = r.bool();
+      const sleepTime = r.f64();
+      const xf = readNumbers(r, 4);
+      const sweep = readNumbers(r, 9);
+      const dynamics = readNumbers(r, 13);
+      const bullet = r.bool();
+      const mass = readOptional(r, 1);
+      const center = readOptional(r, 2);
+      const inertia = readOptional(r, 1);
+      const target = readOptional(r, 3);
+      bodyIds.add(id);
+      data.bodies.push({
+        id,
+        type,
+        awake,
+        sleeping,
+        sleepTime,
+        xf,
+        sweep,
+        dynamics,
+        bullet,
+        authoredMass: mass?.[0],
+        authoredCenter: center && [center[0], center[1]],
+        authoredInertia: inertia?.[0],
+        target: target && [target[0], target[1], target[2]],
+      });
+    }
+    const nColliders = r.u32();
+    for (let i = 0; i < nColliders; i += 1) {
+      const id = r.u32();
+      const bodyId = r.u32();
+      if (!bodyIds.has(bodyId)) {
+        refuse(
+          `Snapshot collider ${String(id)} names missing body ${String(bodyId)}`,
+        );
+      }
+      const sensor = r.bool();
+      const count = r.u32();
+      const fixtures: SnapshotFixture[] = [];
+      for (let j = 0; j < count; j += 1) {
+        const kind = r.u8();
+        let shape: b2Shape;
+        if (kind === 0) {
+          const circle = new b2CircleShape();
+          circle.m_p.Set(r.f64(), r.f64());
+          circle.m_radius = r.f64();
+          shape = circle;
+        } else if (kind === 1) {
+          const n = r.u32();
+          if (n < 3 || n > MAX_POLYGON_VERTICES) {
+            refuse(`Snapshot polygon has ${String(n)} vertices`);
+          }
+          const polygon = new b2PolygonShape();
+          polygon.m_count = n;
+          polygon.m_vertices = [];
+          polygon.m_normals = [];
+          for (let k = 0; k < n; k += 1) {
+            polygon.m_vertices.push(new b2Vec2(r.f64(), r.f64()));
+            polygon.m_normals.push(new b2Vec2(r.f64(), r.f64()));
+          }
+          polygon.m_centroid.Set(r.f64(), r.f64());
+          polygon.m_radius = r.f64();
+          shape = polygon;
+        } else {
+          return refuse(
+            `Snapshot fixture has unknown shape kind ${String(kind)}`,
+          );
+        }
+        const [
+          friction,
+          restitution,
+          restitutionThreshold,
+          density,
+          categoryBits,
+          maskBits,
+          groupIndex,
+        ] = readNumbers(r, 7);
+        fixtures.push({
+          shape,
+          friction,
+          restitution,
+          restitutionThreshold,
+          density,
+          categoryBits,
+          maskBits,
+          groupIndex,
+        });
+      }
+      data.colliders.push({ id, bodyId, sensor, fixtures });
+    }
+    const nJoints = r.u32();
+    for (let i = 0; i < nJoints; i += 1) {
+      const id = r.u32();
+      const type = r.str() as ShippedJointType;
+      const bodyA = r.u32();
+      const bodyB = r.u32();
+      if (
+        !(BOX2D_JOINT_TYPES as readonly string[]).includes(type) ||
+        !bodyIds.has(bodyA) ||
+        !bodyIds.has(bodyB)
+      ) {
+        refuse(
+          `Snapshot joint ${String(id)} has an unknown type or names a missing body`,
+        );
+      }
+      const n = readNumbers(r, 12);
+      const collide = r.bool();
+      const limits = readOptional(r, 2);
+      const motor = readOptional(r, 3);
+      data.joints.push({
+        id,
+        type,
+        bodyA,
+        bodyB,
+        config: {
+          anchorA: [n[0], n[1]],
+          anchorB: [n[2], n[3]],
+          collide,
+          axis: [n[4], n[5]],
+          sign: n[6] === -1 ? -1 : 1,
+          referenceAngle: n[7],
+          limits: limits && { min: limits[0], max: limits[1] },
+          motor: motor && {
+            enabled: motor[0] !== 0,
+            targetVelocity: motor[1],
+            maxEffort: motor[2],
+          },
+          maxLength: n[8],
+          restLength: n[9],
+          stiffness: n[10],
+          damping: n[11],
+        },
+      });
+    }
+    if (!r.done) {
+      refuse("Snapshot has trailing bytes after its declared contents");
+    }
+    return data;
+  }
 
   #anchorOf(field: string, anchor: Vector3Input | undefined): [number, number] {
     if (anchor === undefined) {

@@ -107,12 +107,12 @@ describe("registration", () => {
     ]);
     expect(BOX2D_CAPABILITIES.tuning.jointMotorEffortCap).toBe(true);
     expect(BOX2D_CAPABILITIES.tuning.rollingFriction).toBe(false);
-    expect(BOX2D_CAPABILITIES.snapshots).toBe(false);
+    expect(BOX2D_CAPABILITIES.snapshots).toBe(true);
     expect(Object.values(BOX2D_CAPABILITIES.queries)).toEqual([
-      false,
-      false,
-      false,
-      false,
+      true,
+      true,
+      true,
+      true,
     ]);
   });
 });
@@ -595,21 +595,25 @@ describe("events", () => {
   });
 });
 
-describe("not-yet-implemented surfaces", () => {
-  it("throws NOT_IMPLEMENTED for queries and snapshots", () => {
-    const adapter = make();
-    const calls: (() => unknown)[] = [
-      () => adapter.raycast({} as never),
-      () => adapter.shapeCast({} as never),
-      () => adapter.overlap({} as never),
-      () => adapter.pointQuery({} as never),
-      () => adapter.createSnapshot(),
-      () => adapter.restoreSnapshot(new ArrayBuffer(0)),
-    ];
-    for (const call of calls) {
-      expect(call).toThrow(
-        expect.objectContaining({ code: "NOT_IMPLEMENTED" }),
-      );
+describe("queries and snapshots need a live world", () => {
+  it("throw before initialize and after dispose", () => {
+    const fresh = new Box2dAdapter();
+    const disposed = make();
+    disposed.dispose();
+    for (const adapter of [fresh, disposed]) {
+      const calls: (() => unknown)[] = [
+        () => adapter.raycast({} as never),
+        () => adapter.shapeCast({} as never),
+        () => adapter.overlap({} as never),
+        () => adapter.pointQuery({} as never),
+        () => adapter.createSnapshot(),
+        () => adapter.restoreSnapshot(new ArrayBuffer(0)),
+      ];
+      for (const call of calls) {
+        expect(call).toThrow(
+          expect.objectContaining({ code: "INVALID_APPLICATION_STATE" }),
+        );
+      }
     }
   });
 
