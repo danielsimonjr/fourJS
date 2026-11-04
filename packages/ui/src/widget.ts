@@ -123,7 +123,8 @@ import type { Pickable, ScenePointerEvent } from "@fourjs/input";
 import { Vector2, Vector3 } from "@fourjs/math";
 import {
   Node,
-  runOwnedTransformWrite,
+  beginOwnedTransformWrite,
+  endOwnedTransformWrite,
   warnAuthorityConflict,
   type NodeOptions,
 } from "@fourjs/scene";
@@ -1154,9 +1155,12 @@ export abstract class UIWidget extends Node implements Disposable {
     this.#layoutLeft = left;
     this.#layoutTop = top;
     if (this.transformAuthority === UI_LAYOUT_AUTHORITY) {
-      runOwnedTransformWrite(() => {
+      beginOwnedTransformWrite();
+      try {
         this.transform.position.set(left, -top, this.transform.position.z);
-      });
+      } finally {
+        endOwnedTransformWrite();
+      }
     } else {
       warnAuthorityConflict(this, UI_LAYOUT_AUTHORITY);
     }

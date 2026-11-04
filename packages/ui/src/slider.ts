@@ -111,17 +111,6 @@ export interface SliderOptions extends PanelOptions {
 const inverseWorld = new Matrix4();
 const localPoint = new Vector3();
 
-/** Transforms `v` by `m` as a point (translation applies). Affine `m` only. */
-function transformPoint(m: Matrix4, v: Vector3, out: Vector3): void {
-  const e = m.elements;
-  const { x, y, z } = v;
-  out.set(
-    e[0] * x + e[4] * y + e[8] * z + e[12],
-    e[1] * x + e[5] * y + e[9] * z + e[13],
-    e[2] * x + e[6] * y + e[10] * z + e[14],
-  );
-}
-
 /** Fraction of the range one arrow keystroke moves a continuous slider. */
 const CONTINUOUS_KEY_STEP = 0.01;
 
@@ -346,7 +335,7 @@ export class Slider extends Panel {
     const world = resolveWorldTransform(this);
     if (world.determinant() === 0) return;
     inverseWorld.copy(world).invert();
-    transformPoint(inverseWorld, point, localPoint);
+    localPoint.copy(point).applyMatrix4(inverseWorld);
     this.setValueFromLocalPoint(localPoint.x, localPoint.y);
   }
 
