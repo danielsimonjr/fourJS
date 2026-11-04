@@ -644,13 +644,6 @@ interface BodyRegistration {
    * must be snapped to the solver pose once, even though nothing woke it.
    */
   publishedAuthority: TransformAuthority | null;
-  /**
-   * Whether the solver may still hold a force or torque from the previous step.
-   * `true` at registration (one conservative reset), set after a step applies a
-   * force/torque/point force, cleared by the `resetForces` that follows. The
-   * command buffer is the only path that writes forces to the solver.
-   */
-  forcesLive: boolean;
 }
 
 /** One registered joint: the object, its handle, and its monotonic id (§28). */
@@ -1341,7 +1334,6 @@ export class PhysicsWorld {
       localPlane: usesPlane,
       publishPending: true,
       publishedAuthority: null,
-      forcesLive: true,
     };
 
     for (const collider of colliders) {
@@ -2652,10 +2644,6 @@ export class PhysicsWorld {
     this.#adapter.restoreSnapshot(snapshot.data);
     for (const registration of this.#bodiesByNode.values()) {
       registration.publishPending = true;
-      // A solver snapshot may carry the persistent force a body held when it
-      // was taken; arm the flag so the next step's resetForces clears it (§26)
-      // instead of letting a restored force act on every later step.
-      registration.forcesLive = true;
     }
   }
 
@@ -3745,35 +3733,25 @@ export class PhysicsWorld {
    *
    * Forces and torques are reset first, because a solver commonly keeps user
    * forces until they are cleared and §26 makes a force act for exactly one
-   * step — but only on a step that follows one that applied a force or torque
-   * (`BodyRegistration.forcesLive`), since nothing else writes persistent
-   * solver forces (every force path goes through this buffer; impulses are
-   * one-shot in the solver and do not arm the flag). Impulses are applied as
-   * they stand and the buffer's own clearing makes them one-shot.
-   * Zero-magnitude accumulations are skipped — nothing was asked for, and
-   * calling a solver with a zero force can wake a sleeping body.
+   * step; impulses are applied as they stand and the buffer's own clearing makes
+   * them one-shot. Zero-magnitude accumulations are skipped — nothing was asked
+   * for, and calling a solver with a zero force can wake a sleeping body.
    */
   #applyCommands(registration: BodyRegistration): void {
     const adapter = this.#adapter;
     const { handle, body } = registration;
     const commands = body.commands;
 
-    if (registration.forcesLive) {
-      adapter.resetForces(handle);
-      registration.forcesLive = false;
-    }
+    adapter.resetForces(handle);
     if (!isZero(commands.force)) {
       adapter.applyForce(handle, commands.force);
-      registration.forcesLive = true;
     }
     if (!isZero(commands.torque)) {
       adapter.applyTorque(handle, commands.torque);
-      registration.forcesLive = true;
     }
     for (let i = 0; i < commands.pointForceCount; i += 1) {
       const load = commands.pointForces[i];
       adapter.applyForceAtPoint(handle, load.value, load.point);
-      registration.forcesLive = true;
     }
     if (!isZero(commands.impulse)) {
       adapter.applyImpulse(handle, commands.impulse);

@@ -147,19 +147,4 @@ describe("PhysicsWorld sleeping publish skip (§32)", () => {
     world.step(DT);
     expect(reads(adapter)).toBeGreaterThan(0);
   });
-
-  it("resets solver forces on the step after restoreSnapshot (§26)", async () => {
-    const { adapter, world, node } = await setup();
-    world.step(DT);
-    world.step(DT); // forcesLive from registration is consumed
-    adapter.clearCalls();
-    world.step(DT);
-    expect(adapter.callsOf("resetForces").length).toBe(0);
-    const snapshot = world.createSnapshot();
-    world.restoreSnapshot(snapshot);
-    adapter.clearCalls();
-    world.step(DT);
-    expect(adapter.callsOf("resetForces").length).toBe(1);
-    expect(node.getComponent(RigidBody)).toBeDefined();
-  });
 });

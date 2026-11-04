@@ -4783,12 +4783,15 @@ lockfileVersion 0-3. The `bun` entry is restored with the three ignores; its
 first scheduled run is the test. If hosted Dependabot still reports
 "Unsupported bun.lock", wait; do not pin Bun back.
 
-**Force resets.** `BodyRegistration.forcesLive` gates `resetForces`. Proof
-that nothing else writes persistent solver forces: every force/torque path
-(`ForceFieldSystem`, controllers) goes through `RigidBody`'s command buffer,
-which only `#applyCommands` drains; impulses are one-shot in Rapier. A new
-adapter method that applies a persistent force outside the buffer must arm
-the flag.
+**Force resets stay unconditional.** Skipping `resetForces` on steps with no
+applied force (audit M2) was implemented, reviewed and then REVERTED: Rapier's
+`resetForces` touches the body's modified flags, which its `takeSnapshot`
+serializes, so `tests/determinism/phase10-replay.test.ts` saw a different
+snapshot digest with identical dynamics. A per-step solver call that is part
+of the serialized state is not an optimization target unless the §34 golden is
+deliberately re-recorded with a format-version bump. The force-path proof
+still holds (every force goes through the command buffer; impulses are
+one-shot) and is recorded here for the next attempt.
 
 **`capturePoseTargets` stays universal.** Narrowing it to `"blended"` nodes
 was tried and reverted: `world-blend.test.ts` pins that a `PoseTarget` on any

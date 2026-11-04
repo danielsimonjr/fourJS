@@ -29,10 +29,11 @@ specification; until then, entries are grouped by date under **Unreleased**.
   returns early on an unchanged palette; `pick()` rejects by a conservative world-space
   sphere and caches each node's inverse by `worldVersion` before the per-pickable ray test;
   `AnimationTrack` precomputes cubic tangents and checks the last span before binary search;
-  `AnimationController` scans one per-state transition bucket; `PhysicsWorld` calls
-  `resetForces` only on the step after a force or torque was applied; the Rapier adapters
-  answer `isBodySleeping` from the flag `#collectEvents` already read, invalidated by every
-  body mutator.
+  `AnimationController` scans one per-state transition bucket; the Rapier adapters answer
+  `isBodySleeping` from the flag `#collectEvents` already read, invalidated by every body
+  mutator. (Skipping `resetForces` on force-free steps was implemented and reverted: Rapier
+  records the reset in its serialized body state, so the §34 replay golden's snapshot digest
+  changed although dynamics did not.)
 
 ### Fixed
 

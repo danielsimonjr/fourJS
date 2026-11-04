@@ -1800,27 +1800,3 @@ describe("event interest (2026-09-11): the adapter is told when nobody listens f
     world.dispose();
   });
 });
-
-describe("PhysicsWorld resetForces skipping (M2)", () => {
-  it("resets forces only on steps following an applied force", async () => {
-    const { adapter, world } = await readyWorld();
-    const node = dynamicNode();
-    world.addBody(node);
-    const body = node.getComponent(RigidBody)!;
-    world.step(1 / 60); // first step: one conservative reset
-    adapter.clearCalls();
-
-    world.step(1 / 60);
-    world.step(1 / 60);
-    expect(adapter.callsOf("resetForces")).toHaveLength(0);
-
-    body.applyForce(new Vector2(1, 0));
-    world.step(1 / 60); // applies the force; nothing live before it
-    expect(adapter.callsOf("resetForces")).toHaveLength(0);
-    expect(adapter.callsOf("applyForce")).toHaveLength(1);
-    world.step(1 / 60); // clears it
-    expect(adapter.callsOf("resetForces")).toHaveLength(1);
-    world.step(1 / 60);
-    expect(adapter.callsOf("resetForces")).toHaveLength(1);
-  });
-});
