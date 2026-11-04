@@ -5216,7 +5216,7 @@ function litRenderable(
 }
 
 describe("LitProgram — compilation and linking (§61, §68, §89)", () => {
-  it("compiles both stages, links, and resolves the twenty-four uniforms", () => {
+  it("compiles both stages, links, and resolves the thirty-four uniforms", () => {
     const gl = createFakeGl();
 
     const program = LitProgram.create(gl);
@@ -5262,6 +5262,16 @@ describe("LitProgram — compilation and linking (§61, §68, §89)", () => {
       "shadowBias",
       "shadowNormalBias",
       "shadowTexelSize",
+      "shadowExtended",
+      "shadowCascadeCount",
+      "shadowCascadeMatrix",
+      "shadowCascadeSplits",
+      "shadowViewDepth",
+      "shadowAtlas",
+      "shadowPunctualSlot",
+      "shadowPunctualParams",
+      "shadowPunctualRange",
+      "shadowSpotMatrix",
     ]);
     expect(program.disposed).toBe(false);
   });
@@ -8299,7 +8309,7 @@ function standardRenderable(
 }
 
 describe("StandardProgram — compilation and linking (§59, §61, §89)", () => {
-  it("compiles both stages, links, and resolves the thirty-two uniforms", () => {
+  it("compiles both stages, links, and resolves the forty-two uniforms", () => {
     const gl = createFakeGl();
 
     const program = StandardProgram.create(gl);
@@ -8356,6 +8366,16 @@ describe("StandardProgram — compilation and linking (§59, §61, §89)", () =>
       "shadowBias",
       "shadowNormalBias",
       "shadowTexelSize",
+      "shadowExtended",
+      "shadowCascadeCount",
+      "shadowCascadeMatrix",
+      "shadowCascadeSplits",
+      "shadowViewDepth",
+      "shadowAtlas",
+      "shadowPunctualSlot",
+      "shadowPunctualParams",
+      "shadowPunctualRange",
+      "shadowSpotMatrix",
     ]);
     expect(program.disposed).toBe(false);
   });
@@ -14845,5 +14865,209 @@ describe("bone-texture skinning in WebglRenderer (decision D7)", () => {
     gl.reset();
     renderer.render(root, [createView(camera)]);
     expect(subImage).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// W6.3 (2026-11-04): cascades, point/spot maps and the shadow atlas.
+// ---------------------------------------------------------------------------
+
+/**
+ * A point/spot light double that casts — the structural `PunctualLightSource`
+ * contract plus the W6.3 `castShadow`/`shadow` members.
+ */
+class TestPunctualShadowLight extends Renderable {
+  readonly isPunctualLight = true as const;
+
+  readonly color: [number, number, number] = [1, 1, 1];
+
+  readonly intensity = 1;
+
+  readonly range = 0;
+
+  castShadow = true;
+
+  shadow = { mapSize: 8, bias: 0.001, normalBias: 0.02, near: 0.1, far: 20 };
+
+  constructor(
+    readonly lightType: "point" | "spot",
+    readonly position: [number, number, number] = [0, 3, 0],
+  ) {
+    super(
+      new TestGeometry(new Float32Array(0)).asGeometry,
+      new TestMaterial().asMaterial,
+    );
+  }
+
+  readonly innerConeAngle = 0;
+
+  readonly outerConeAngle = 0.5;
+
+  getWorldPosition(out: Vector3): Vector3 {
+    return out.set(this.position[0], this.position[1], this.position[2]);
+  }
+
+  getWorldDirection(out: Vector3): Vector3 {
+    return out.set(0, -1, 0);
+  }
+}
+
+describe("WebglRenderer — cascades and punctual shadows (W6.3)", () => {
+  beforeEach(() => {
+    resetDevWarnings();
+    registerShadowPipeline();
+  });
+
+  function fitCamera(): TestCamera {
+    const camera = new TestCamera() as TestCamera & {
+      near: number;
+      far: number;
+    };
+    camera.near = 0.5;
+    camera.far = 50;
+    camera.projectionMatrix.elements[0] = 1;
+    camera.projectionMatrix.elements[5] = 1;
+    camera.projectionMatrix.elements[11] = -1;
+    camera.viewMatrix.identity();
+    return camera;
+  }
+
+  it("reports the cascade and punctual-light capabilities", async () => {
+    const { renderer } = await initialized();
+    expect(renderer.capabilities.maximumShadowCascades).toBe(4);
+    expect(renderer.capabilities.maximumShadowedPunctualLights).toBe(4);
+  });
+
+  it("renders one tile per cascade into a 2x2 atlas and switches the receiver to the atlas path", async () => {
+    const { renderer, gl } = await initialized();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    const light = new TestShadowLight(8);
+    Object.assign(light.shadow, { cascades: 3, cascadeDistance: 40 });
+    root.add(light, litRenderable());
+    const camera = fitCamera();
+    const views = [createView(camera)];
+    gl.reset();
+
+    renderer.render(root, views);
+
+    // The atlas is 2 × 2 tiles of 8 texels: opened whole, then tile by tile.
+    const viewports = gl.callsOf("viewport").map((c) => c.args);
+    expect(viewports[0]).toEqual([0, 0, 16, 16]);
+    expect(viewports.slice(1, 4)).toEqual([
+      [0, 0, 8, 8],
+      [8, 0, 8, 8],
+      [0, 8, 8, 8],
+    ]);
+    expect(
+      gl
+        .callsOf("scissor")
+        .slice(1, 4)
+        .map((c) => c.args),
+    ).toEqual([
+      [0, 0, 8, 8],
+      [8, 0, 8, 8],
+      [0, 8, 8, 8],
+    ]);
+    // One matrix upload per tile, each different.
+    const uploads = uploadsAt(
+      gl,
+      shadowUniforms(gl).get("shadowViewProjection"),
+    ) as Float32Array[];
+    expect(uploads).toHaveLength(3);
+    expect(uploads[0][0]).not.toBe(uploads[2][0]);
+    // The receiver: extended on, three cascades, atlas 2 x 2 over 16 texels.
+    const lit = litUniforms(gl);
+    expect(uploadsAt(gl, lit.get("shadowExtended"))).toEqual([1]);
+    expect(uploadsAt(gl, lit.get("shadowCascadeCount"))).toEqual([3]);
+    expect([
+      ...(uploadsAt(gl, lit.get("shadowAtlas"))[0] as Float32Array),
+    ]).toEqual([2, 2, 1 / 16, 1 / 16]);
+    const splits = uploadsAt(
+      gl,
+      lit.get("shadowCascadeSplits"),
+    )[0] as Float32Array;
+    expect(splits[2]).toBe(40);
+  });
+
+  it("keeps a single cascade on the pre-atlas call sequence", async () => {
+    const { renderer, gl, camera } = await initialized();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    root.add(new TestShadowLight(8), litRenderable());
+    const views = [createView(camera)];
+    renderer.render(root, views);
+    gl.reset();
+
+    renderer.render(root, views);
+
+    const lit = litUniforms(gl);
+    expect(uploadsAt(gl, lit.get("shadowExtended"))).toEqual([]);
+    expect(uploadsAt(gl, lit.get("shadowCascadeMatrix"))).toEqual([]);
+    expect(gl.callsOf("viewport")).toHaveLength(2);
+  });
+
+  it("renders six cube faces for a point light and one tile for a spot", async () => {
+    const { renderer, gl, camera } = await initialized();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    const point = new TestPunctualShadowLight("point");
+    const spot = new TestPunctualShadowLight("spot", [2, 3, 0]);
+    root.add(point, spot, litRenderable());
+    const views = [createView(camera)];
+    gl.reset();
+
+    renderer.render(root, views);
+
+    // 6 + 1 tiles of 8 texels in a 3 × 3 grid (24 × 24 texels).
+    expect(gl.callsOf("viewport")[0].args).toEqual([0, 0, 24, 24]);
+    expect(gl.callsOf("viewport")).toHaveLength(9);
+    expect(gl.callsOf("viewport")[7].args).toEqual([0, 16, 8, 8]);
+    expect(
+      uploadsAt(gl, shadowUniforms(gl).get("shadowViewProjection")),
+    ).toHaveLength(7);
+    const lit = litUniforms(gl);
+    expect(uploadsAt(gl, lit.get("shadowExtended"))).toEqual([1]);
+    expect(uploadsAt(gl, lit.get("shadowCascadeCount"))).toEqual([0]);
+    const slots = uploadsAt(
+      gl,
+      lit.get("shadowPunctualSlot"),
+    )[0] as Float32Array;
+    expect([slots[0], slots[1]]).toEqual([1, 2]);
+    const params = uploadsAt(
+      gl,
+      lit.get("shadowPunctualParams"),
+    )[0] as Float32Array;
+    expect([params[0], params[3], params[4], params[7]]).toEqual([0, 2, 6, 1]);
+  });
+
+  it("drops the extended flag again when a later frame is single-map", async () => {
+    const { renderer, gl, camera } = await initialized();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    const point = new TestPunctualShadowLight("point");
+    const sun = new TestShadowLight(8);
+    root.add(sun, point, litRenderable());
+    const views = [createView(camera)];
+    renderer.render(root, views);
+    expect(uploadsAt(gl, litUniforms(gl).get("shadowExtended"))).toEqual([1]);
+    point.castShadow = false;
+    gl.reset();
+
+    renderer.render(root, views);
+
+    expect(uploadsAt(gl, litUniforms(gl).get("shadowExtended"))).toEqual([0]);
+  });
+
+  it("splices the atlas sampling into both shaded fragment stages", () => {
+    expect(SHADOW_GLSL).toContain("punctualShadowFactor");
+    expect(SHADOW_GLSL).toContain("directionalShadowAtlas");
+    expect(SHADOW_GLSL).toContain(
+      "SHADOW_FACE_FORWARD[6] = vec3[6](vec3(1.0, 0.0, 0.0)",
+    );
+    const gl = createFakeGl();
+    LitProgram.create(gl);
+    StandardProgram.create(gl);
+    const sources = gl.callsOf("shaderSource").map((c) => String(c.args[1]));
+    const fragments = sources.filter((s) =>
+      s.includes("punctualShadowFactor(i"),
+    );
+    expect(fragments).toHaveLength(2);
   });
 });

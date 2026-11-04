@@ -206,8 +206,14 @@ export const LIGHT_BINDING_BYTES = HEMISPHERE_UP_OFFSET + 16;
  * rounded up to the 256-byte dynamic-offset alignment (`UNIFORM_STRIDE_BYTES`'
  * reasoning — 256 is every conforming device's valid alignment, and a fixed
  * stride keeps the frame's byte layout device-independent, §33).
+ *
+ * W6.3 (2026-11-04) doubled it, 1024 → 2048: the shadow-atlas tail
+ * (`wgpu-shadow.ts`: cascade and spot matrices, splits, the tile table) is 752
+ * bytes appended **after** the hemisphere tail, so every offset of the landed
+ * 0…912 layout is unchanged and the new bytes are zeros on a frame that does not
+ * use them.
  */
-export const LIGHT_UNIFORM_STRIDE_BYTES = 1024;
+export const LIGHT_UNIFORM_STRIDE_BYTES = 2048;
 
 /** {@link LIGHT_UNIFORM_STRIDE_BYTES} in `Float32Array` elements. */
 export const LIGHT_UNIFORM_STRIDE_FLOATS = LIGHT_UNIFORM_STRIDE_BYTES / 4;

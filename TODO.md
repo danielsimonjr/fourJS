@@ -206,7 +206,7 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 - RFC 0004 residue (all deferred by the RFC's own §6 table, none scheduled):
 - RFC 0005 residue — **CLOSED 2026-09-10** (WebGPU skinned id pass). All named slices landed.
 - RFC 0001 residue (staged in source, 2026-08-28):
-- RFC 0003 residue (staged in source, 2026-08-28): WebGPU colour pair DONE 2026-09-09; WebGL shadow caster DONE 2026-09-09; WebGPU skinned id DONE 2026-09-10 (lives in `wgpu-picking.ts`); CPU skinning DONE 2026-09-11; WebGPU skinned shadow DONE 2026-09-10. ~~GPU morph~~ **DONE 2026-10-05** (one-target WebGL at 6/7; WebGPU skip). Still bone-texture.
+- RFC 0003 residue (staged in source, 2026-08-28): WebGPU colour pair DONE 2026-09-09; WebGL shadow caster DONE 2026-09-09; WebGPU skinned id DONE 2026-09-10 (lives in `wgpu-picking.ts`); CPU skinning DONE 2026-09-11; WebGPU skinned shadow DONE 2026-09-10. ~~GPU morph~~ **DONE 2026-10-05** (one-target WebGL at 6/7; WebGPU skip). Bone-texture palette DONE 2026-11-04 (wave 6).
 - RFC 0003 prototype measurements — DONE 2026-09-09 (`benchmarks/skinning-resolve.mjs`):
 - Tokens for the five absent §81 extension points — DONE 2026-09-06 (`ASSET_LOADERS`, `SHADER_OPERATORS`, `UI_CONTROLS`, `EDITOR_TOOLS`, `COMPUTE_WORKLOADS`)
 - Lighting follow-ups (MVP tier shipped 2026-08-04 — see Done): ~~point/spot multi-light~~ **DONE 2026-08-09** (R-17, 8 punctual); ~~hemisphere~~ **DONE 2026-09-10** (`HemisphereLight`, first-match, +Y sky); still area + clustered path (multi-directional DONE 2026-11-04), shadows (§69 — directional tier shipped; cascades, point/spot maps, the atlas, transparent masks and contact shadows remain), §59 PBR rest, §60a tone-mapping operator + IBL (sRGB encode + color grade shipped), light layers. CSS light colors + WebGL/WebGPU normal-matrix hoist DONE 2026-09-09. WebGPU `metalRoughnessMap` sampling DONE 2026-09-09. WebGL `emissiveMap` (unit 3) DONE 2026-09-09 (still open: area / clustered, cascades, PBR rest, tone-map operator, light layers, WebGPU `normalMap` / `occlusionMap` and emissive; WebGL normal/AO DONE 2026-09-11).
@@ -215,7 +215,7 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 - PH-11c — character/dynamics push interaction — DONE 2026-09-06 (`pushMass` / reduced-mass impulse / wake).
 - R-32 — textured / rotated / soft particles — DONE 2026-09-06 (opt-in 10-float stream).
 - R-33 — §112's exit, rendered as well as simulated — DONE 2026-09-16 (100,403 particles at 60.0 fps on a Radeon 8060S; simulate 2.42 + present 7.65 ms). Recorded, not gated: the gate still pins SwiftShader by design.
-- R-31 — GPU particle simulation integrator tier — DONE 2026-08-29 (`simulation: "gpu"`); §27 GPU fields / depth-buffer collision / GPU snapshots remain under R-31 residue.
+- R-31 — GPU particle simulation integrator tier — DONE 2026-08-29 (`simulation: "gpu"`); §27 GPU field stack and depth-buffer collision DONE 2026-11-04 (wave 6); GPU snapshots remain under R-31 residue.
 - PH-22 residue (re-read 2026-08-21): PH-22f anchors DONE 2026-09-06; path-planning RFC 0007 accepted and implemented 2026-09-11.
 - R-8 follow-ups:
 - §8 node-level `NodeSpace` component — DONE 2026-09-06.
@@ -1578,9 +1578,14 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       RFC 0005 skinned id lives in `wgpu-picking.ts`);
       ~~CPU skinning~~ **DONE 2026-09-11** (`CpuSkinning` + `Mesh.skinningMode`,
       interpolated geometry, bounds/picking and serialization, same-runtime golden);
-      bone-texture palette (still open; unbounds
+      ~~bone-texture palette (still open; unbounds
       `MAX_SKINNING_JOINTS = 48`; needs a render-target format union +
-      vertex texture fetch); ~~§43-interpolated palettes (today the palette
+      vertex texture fetch)~~ **DONE 2026-11-04 (wave 6, decision D7:
+      `RenderTargetFormat` gains `"rgba32float"` as a texel format; `Mesh.skinningMode`
+      `"texture"` fetches a 2048-wide rgba32float palette, 4 texels per joint, up to
+      65535 joints, byte-identical to the uniform palette; uniform-palette fallback with
+      one warning when `floatTextures` is absent; shadow caster and picking still use the
+      uniform palette so a texture rig over 48 joints casts no shadow and is not pickable); ~~§43-interpolated palettes (today the palette
       is the last resolved pose)~~ **DONE 2026-09-09**
       (`Skeleton.update(skinRoot, worldOf?)`; interpolated list composes
       local poses then the palette product — palettes are never lerped).
@@ -1772,13 +1777,20 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
 - [x] **R-31 mechanism closed on WebGPU (WP-R1.8, 2026-08-29)** — see the R-31
       residue item above for the remaining `@fourjs/particles` wiring; WebGL 2
       declares the tier absent.
-- [ ] **Follow-ups the R-1 plan explicitly defers** (each needs its own filing): §63
+- [ ] **Follow-ups the R-1 plan explicitly defers** (each needs its own filing): ~~§63
       transient-target pooling and barrier scheduling (must land on both backends or
-      neither); ~~§65's persistent-mapped/staging-ring buffers~~ **DONE 2026-11-04
-      (wave 5: `wgpu-staging.ts` ring + WebGL orphaning ring for dynamic geometry)**; §27 GPU fields
+      neither)~~ **DONE 2026-11-04 (wave 6: `AddPassOptions.transient`, static lifetimes,
+      deterministic first-fit slot aliasing through the `TransientTargetPool` seam each
+      backend implements, `usageTransitions()`; WebGPU sets slot usage from the plan, WebGL
+      emits nothing and DEV-warns on feedback)**; ~~§65's persistent-mapped/staging-ring buffers~~ **DONE 2026-11-04
+      (wave 5: `wgpu-staging.ts` ring + WebGL orphaning ring for dynamic geometry)**; ~~§27 GPU fields
       (radial-only stub on `simulation: "gpu"`; generic GPU field stack staged)
       and §36 `collisions: "depth-buffer"` (CPU kill-below-ground + GPU
-      `y=ground` rest; true depth-texture collide-and-kill still open); ~~RFC 0005's `Rectangle2` prerequisite for a regional
+      `y=ground` rest; true depth-texture collide-and-kill still open)~~ **DONE 2026-11-04
+      (wave 6: `MAX_GPU_FIELDS` = 8 field records with the CPU formulas at float32;
+      WebGPU depth collide-and-kill against a bound `depth32float` render-target depth via
+      `renderer.bindParticleSceneDepth`; kill parks the particle; WebGL declares
+      `particleDepthCollision: false`; no bounce, no automatic view-projection update)**; ~~RFC 0005's `Rectangle2` prerequisite for a regional
       `readPixels`~~ **DONE 2026-08-29** — `render/src/renderer.ts:464` states it outright
       (_"`readPixels` joined the interface when `Rectangle2` landed in `@fourjs/math`
       (2026-08-29; RFC 0005's recorded prerequisite, cleared)"_), `Rectangle2` is exported

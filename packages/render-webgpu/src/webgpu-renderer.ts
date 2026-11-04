@@ -119,6 +119,8 @@ import {
   MAX_SKINNING_JOINTS,
   MAX_TEXTURE_SKINNING_JOINTS,
   skinPaletteRows,
+  MAX_SHADOWED_PUNCTUAL_LIGHTS,
+  MAX_SHADOW_CASCADES,
   collectSceneLights,
   unionViewLayerMask,
   createSceneLights,
@@ -230,6 +232,7 @@ import {
   RENDER_TARGET_COLOR_FORMAT,
   RENDER_TARGET_DEPTH_TEXTURE_FORMAT,
   WgpuRenderTargetCache,
+  WgpuTransientTargetPool,
   type WgpuRenderTargetRecord,
 } from "./wgpu-render-target.js";
 import {
@@ -576,6 +579,10 @@ function readCapabilities(device: GpuDevice): RendererCapabilities {
     // palette's 2048 texels wide; a double that omits `limits` reports false
     // and draws "texture" meshes through the uniform palette.
     floatTextures: limit("maxTextureDimension2D") >= 2048,
+    // §69 (W6.3): the atlas needs a texture at least as wide as one tile, and
+    // a spot costs one tile, a point light six; declared, like the joint limit.
+    maximumShadowCascades: MAX_SHADOW_CASCADES,
+    maximumShadowedPunctualLights: MAX_SHADOWED_PUNCTUAL_LIGHTS,
     maximumTextureSkinningJoints:
       limit("maxTextureDimension2D") >= 2048
         ? Math.min(
@@ -791,6 +798,8 @@ export class WebgpuRenderer implements Renderer {
     maximumSkinningJoints: MAX_SKINNING_JOINTS,
     floatTextures: false,
     maximumTextureSkinningJoints: 0,
+    maximumShadowCascades: 0,
+    maximumShadowedPunctualLights: 0,
   } satisfies RendererCapabilities);
 
   #canvas: WebgpuCanvas | null = null;
@@ -1416,7 +1425,14 @@ export class WebgpuRenderer implements Renderer {
       }
     }
     if (hasLitItems) {
-      collectSceneLights(root, sceneLights, unionViewLayerMask(views));
+      // W6.3: cascades are fitted to the first view's camera (§33: authored
+      // view order decides).
+      collectSceneLights(
+        root,
+        sceneLights,
+        unionViewLayerMask(views),
+        views[0]?.camera ?? null,
+      );
       // Sized before recording, like the draw uniforms below: one block per
       // view at most, and growth mid-pass would orphan the bound group.
       this.#growLights(device, views.length);
@@ -1427,6 +1443,9 @@ export class WebgpuRenderer implements Renderer {
     // allocation, call, or byte: the byte-identity contract, not an
     // optimisation.
     const frameShadow = hasLitItems && sceneLights.hasShadow;
+    // W6.3: one caster pass per atlas tile (`1` for the classic single map), so
+    // the caster blocks and palette rows scale with the tile count.
+    const shadowTiles = frameShadow ? sceneLights.shadowTileCount : 0;
 
     // §60's frame preparation (WP-R1.9): the store resolves — and on first
     // sight compiles — every node graph and grows its own strided buffer,
@@ -1457,7 +1476,7 @@ export class WebgpuRenderer implements Renderer {
     if (skinnedPrograms !== null) {
       skinnedPrograms.prepare(
         device,
-        skinnedCount * views.length + (frameShadow ? skinnedCount : 0),
+        skinnedCount * views.length + skinnedCount * shadowTiles,
       );
       if (
         skinnedTextureDraws > 0 &&
@@ -1479,7 +1498,7 @@ export class WebgpuRenderer implements Renderer {
     this.#growUniforms(
       device,
       layout,
-      views.length * (1 + items.length) + (frameShadow ? items.length : 0),
+      views.length * (1 + items.length) + items.length * shadowTiles,
     );
     const bindGroup = this.#bindGroup;
     const uniformBuffer = this.#uniformBuffer;
@@ -3470,6 +3489,13 @@ export class WebgpuRenderer implements Renderer {
     return this.#effectBindGroup;
   }
 
+  #transientPool: WgpuTransientTargetPool | null = null;
+
+  /** The renderer-owned §63 transient-target pool (W6.1); disposed with the renderer. */
+  transientTargetPool(): WgpuTransientTargetPool {
+    return (this.#transientPool ??= new WgpuTransientTargetPool());
+  }
+
   /**
    * Releases every GPU resource this renderer owns (§83).
    *
@@ -3483,6 +3509,7 @@ export class WebgpuRenderer implements Renderer {
       return;
     }
     this.#disposed = true;
+    this.#transientPool?.dispose();
     if (this.#deviceLost) {
       this.#geometries?.forget();
       this.#textures?.forget();
@@ -4153,17 +4180,19 @@ export class WebgpuRenderer implements Renderer {
     skinnedPrograms: SkinnedPrograms | null,
   ): { record: WgpuRenderTargetRecord | null; block: number } {
     let block = blockStart;
-    const size = sceneLights.shadowMapSize;
+    // W6.3: the atlas — `1 × 1` tiles of `mapSize` for the classic single map.
+    const atlasWidth = sceneLights.shadowAtlasWidth;
+    const atlasHeight = sceneLights.shadowAtlasHeight;
     let target = this.#shadowTarget;
     if (target === null) {
       target = new RenderTarget({
-        width: size,
-        height: size,
+        width: atlasWidth,
+        height: atlasHeight,
         depthTexture: true,
       });
       this.#shadowTarget = target;
-    } else if (target.width !== size) {
-      target.resize(size, size);
+    } else if (target.width !== atlasWidth || target.height !== atlasHeight) {
+      target.resize(atlasWidth, atlasHeight);
     }
 
     const record = renderTargets.acquire(target);
@@ -4183,95 +4212,141 @@ export class WebgpuRenderer implements Renderer {
         depthStoreOp: "store",
       },
     });
-    for (const item of items) {
-      // The caster filter — `wgpu-shadow.ts`'s header owns the list: §49's
-      // opt-out, sprites (a quad would cast its rectangle). Masks and
-      // particle items carry `castShadow: false` from the list builder —
-      // a §36 billboard has no surface to project, drawn (WP-R1.8) or not.
-      // Skinned casters draw through `acquireShadow()` when the colour
-      // pair is registered; unregistered or failed skips, never bind-pose.
-      // §60 (WP-R1.9): a node material with **no** displacement casts its
-      // geometry exactly — depth ignores colour, so the shared caster
-      // module is right for it — while a displacing graph would cast its
-      // *undisplaced* silhouette, a different picture, so those casters
-      // skip: GL's node-caster rule, verbatim (and like GL's,
-      // registration-independent — the caster module is this backend's own).
-      if (
-        !item.castShadow ||
-        (item.kind !== "unlit" &&
-          item.kind !== "lit" &&
-          item.kind !== "standard" &&
-          item.kind !== "node" &&
-          item.kind !== "skinned-unlit" &&
-          item.kind !== "skinned-lit") ||
-        (item.kind === "node" &&
-          item.material.graph.positionOffset !== undefined)
-      ) {
-        continue;
+    const tileCount = sceneLights.shadowTileCount;
+    const tileSize = sceneLights.shadowMapSize;
+    const columns = sceneLights.shadowAtlasColumns;
+    for (let tile = 0; tile < tileCount; tile += 1) {
+      const tileMatrix = sceneLights.shadowTileMatrices[tile];
+      if (tileCount > 1) {
+        // Each tile owns a square of the atlas, in WebGPU's top-left space.
+        const x = (tile % columns) * tileSize;
+        const y = Math.floor(tile / columns) * tileSize;
+        pass.setViewport(x, y, tileSize, tileSize, 0, 1);
+        pass.setScissorRect(x, y, tileSize, tileSize);
       }
-      if (isSkinnedUnlitItem(item) || isSkinnedLitItem(item)) {
-        if (skinnedPrograms === null) {
-          continue;
-        }
-        if (item.jointCount > MAX_SKINNING_JOINTS) {
-          // Casters take the uniform palette; a bone-texture rig past 48
-          // joints would overflow it. Skipped, never a truncated silhouette.
-          if (DEV) {
-            devWarnOnce(
-              "webgpu-skinning-texture-caster",
-              "§69: a bone-texture mesh over 48 joints casts no shadow " +
-                "(casters use the uniform palette).",
-            );
-          }
-          continue;
-        }
-        const geometry = geometries.acquire(item.geometry, false, true);
+      for (const item of items) {
+        // The caster filter — `wgpu-shadow.ts`'s header owns the list: §49's
+        // opt-out, sprites (a quad would cast its rectangle). Masks and
+        // particle items carry `castShadow: false` from the list builder —
+        // a §36 billboard has no surface to project, drawn (WP-R1.8) or not.
+        // Skinned casters draw through `acquireShadow()` when the colour
+        // pair is registered; unregistered or failed skips, never bind-pose.
+        // §60 (WP-R1.9): a node material with **no** displacement casts its
+        // geometry exactly — depth ignores colour, so the shared caster
+        // module is right for it — while a displacing graph would cast its
+        // *undisplaced* silhouette, a different picture, so those casters
+        // skip: GL's node-caster rule, verbatim (and like GL's,
+        // registration-independent — the caster module is this backend's own).
         if (
-          geometry === null ||
-          geometry.jointBuffer === null ||
-          geometry.weightBuffer === null
+          !item.castShadow ||
+          (item.kind !== "unlit" &&
+            item.kind !== "lit" &&
+            item.kind !== "standard" &&
+            item.kind !== "node" &&
+            item.kind !== "skinned-unlit" &&
+            item.kind !== "skinned-lit") ||
+          (item.kind === "node" &&
+            item.material.graph.positionOffset !== undefined)
         ) {
           continue;
         }
-        const depthFormat = record.depthFormat;
-        if (depthFormat === null) {
+        if (isSkinnedUnlitItem(item) || isSkinnedLitItem(item)) {
+          if (skinnedPrograms === null) {
+            continue;
+          }
+          if (item.jointCount > MAX_SKINNING_JOINTS) {
+            // Casters take the uniform palette; a bone-texture rig past 48
+            // joints would overflow it. Skipped, never a truncated silhouette.
+            if (DEV) {
+              devWarnOnce(
+                "webgpu-skinning-texture-caster",
+                "§69: a bone-texture mesh over 48 joints casts no shadow " +
+                  "(casters use the uniform palette).",
+              );
+            }
+            continue;
+          }
+          const geometry = geometries.acquire(item.geometry, false, true);
+          if (
+            geometry === null ||
+            geometry.jointBuffer === null ||
+            geometry.weightBuffer === null
+          ) {
+            continue;
+          }
+          const depthFormat = record.depthFormat;
+          if (depthFormat === null) {
+            continue;
+          }
+          const skinnedPipeline = this.#acquireSkinnedShadowPipeline(
+            skinnedPrograms,
+            {
+              topology: geometry.topology,
+              colorFormat: RENDER_TARGET_COLOR_FORMAT,
+              depthFormat,
+            },
+          );
+          if (skinnedPipeline === null) {
+            continue;
+          }
+          const paletteGroup = skinnedPrograms.paletteBindGroup();
+          if (paletteGroup === null) {
+            continue;
+          }
+          const paletteOffset = skinnedPrograms.packPalette(item.jointMatrices);
+          this.#writeBlock(block, tileMatrix, item.worldMatrix, 0, 0, 0, 0);
+          pass.setPipeline(skinnedPipeline);
+          pass.setBindGroup(
+            0,
+            bindGroup,
+            dynamicOffset(block * UNIFORM_STRIDE_BYTES),
+          );
+          pass.setBindGroup(1, paletteGroup, dynamicOffset(paletteOffset));
+          pass.setVertexBuffer(0, geometry.positionBuffer);
+          pass.setVertexBuffer(1, geometry.jointBuffer);
+          pass.setVertexBuffer(2, geometry.weightBuffer);
+          if (geometry.indexBuffer !== null && geometry.indexFormat !== null) {
+            pass.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
+            pass.drawIndexed(geometry.count);
+          } else {
+            pass.draw(geometry.count);
+          }
+          if (statistics !== null) {
+            countDraw(statistics, geometry.topology, geometry.count, 1);
+          }
+          block += 1;
           continue;
         }
-        const skinnedPipeline = this.#acquireSkinnedShadowPipeline(
-          skinnedPrograms,
-          {
-            topology: geometry.topology,
-            colorFormat: RENDER_TARGET_COLOR_FORMAT,
-            depthFormat,
-          },
-        );
-        if (skinnedPipeline === null) {
+        const geometry = geometries.acquire(item.geometry);
+        if (geometry === null) {
           continue;
         }
-        const paletteGroup = skinnedPrograms.paletteBindGroup();
-        if (paletteGroup === null) {
+        const pipeline = pipelines.acquire({
+          kind: "shadow",
+          vertexColors: false,
+          map: false,
+          blend: "none",
+          depthTest: true,
+          depthWrite: true,
+          colorWrite: true,
+          topology: geometry.topology,
+          colorFormat: RENDER_TARGET_COLOR_FORMAT,
+          depthFormat: record.depthFormat,
+          stencil: null,
+          batch: null,
+        });
+        if (pipeline === null) {
+          // Unreachable for the reason the unlit path states; same narrowing.
           continue;
         }
-        const paletteOffset = skinnedPrograms.packPalette(item.jointMatrices);
-        this.#writeBlock(
-          block,
-          sceneLights.shadowMatrix,
-          item.worldMatrix,
-          0,
-          0,
-          0,
-          0,
-        );
-        pass.setPipeline(skinnedPipeline);
+        this.#writeBlock(block, tileMatrix, item.worldMatrix, 0, 0, 0, 0);
+        pass.setPipeline(pipeline);
         pass.setBindGroup(
           0,
           bindGroup,
           dynamicOffset(block * UNIFORM_STRIDE_BYTES),
         );
-        pass.setBindGroup(1, paletteGroup, dynamicOffset(paletteOffset));
         pass.setVertexBuffer(0, geometry.positionBuffer);
-        pass.setVertexBuffer(1, geometry.jointBuffer);
-        pass.setVertexBuffer(2, geometry.weightBuffer);
         if (geometry.indexBuffer !== null && geometry.indexFormat !== null) {
           pass.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
           pass.drawIndexed(geometry.count);
@@ -4279,61 +4354,12 @@ export class WebgpuRenderer implements Renderer {
           pass.draw(geometry.count);
         }
         if (statistics !== null) {
+          // A caster pass draw is a draw (§84) — the GL pass's counter
+          // argument, verbatim.
           countDraw(statistics, geometry.topology, geometry.count, 1);
         }
         block += 1;
-        continue;
       }
-      const geometry = geometries.acquire(item.geometry);
-      if (geometry === null) {
-        continue;
-      }
-      const pipeline = pipelines.acquire({
-        kind: "shadow",
-        vertexColors: false,
-        map: false,
-        blend: "none",
-        depthTest: true,
-        depthWrite: true,
-        colorWrite: true,
-        topology: geometry.topology,
-        colorFormat: RENDER_TARGET_COLOR_FORMAT,
-        depthFormat: record.depthFormat,
-        stencil: null,
-        batch: null,
-      });
-      if (pipeline === null) {
-        // Unreachable for the reason the unlit path states; same narrowing.
-        continue;
-      }
-      this.#writeBlock(
-        block,
-        sceneLights.shadowMatrix,
-        item.worldMatrix,
-        0,
-        0,
-        0,
-        0,
-      );
-      pass.setPipeline(pipeline);
-      pass.setBindGroup(
-        0,
-        bindGroup,
-        dynamicOffset(block * UNIFORM_STRIDE_BYTES),
-      );
-      pass.setVertexBuffer(0, geometry.positionBuffer);
-      if (geometry.indexBuffer !== null && geometry.indexFormat !== null) {
-        pass.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
-        pass.drawIndexed(geometry.count);
-      } else {
-        pass.draw(geometry.count);
-      }
-      if (statistics !== null) {
-        // A caster pass draw is a draw (§84) — the GL pass's counter
-        // argument, verbatim.
-        countDraw(statistics, geometry.topology, geometry.count, 1);
-      }
-      block += 1;
     }
     pass.end();
     return { record, block };

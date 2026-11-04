@@ -50,7 +50,11 @@
 
 import { FourError, type Disposable } from "@fourjs/core";
 import { Matrix3, type Matrix4, type Vector3 } from "@fourjs/math";
-import { MAX_LIGHT_SLOTS, type SceneLights } from "@fourjs/render";
+import {
+  MAX_LIGHT_SLOTS,
+  SHADOW_CUBE_FACES,
+  type SceneLights,
+} from "@fourjs/render";
 
 /**
  * The WebGL 2 / OpenGL ES 3.0 enumerants this package uses, by their normative
@@ -1426,14 +1430,133 @@ export class PunctualLightUniforms {
  * arrives as `shadowTexelSize = 1 / mapSize`, computed once per frame on the
  * CPU rather than once per fragment here.
  */
+/** A `vec3` literal list of one face axis per cube face, for the shaders. */
+function faceTable(axis: "forward" | "up" | "right"): string {
+  return SHADOW_CUBE_FACES.map(
+    (face) => `vec3(${face[axis].map((v) => v.toFixed(1)).join(", ")})`,
+  ).join(", ");
+}
+
 export const SHADOW_GLSL = `uniform bool useShadow;
 uniform sampler2D shadowMap;
 uniform mat4 shadowMatrix;
 uniform float shadowBias;
 uniform float shadowNormalBias;
 uniform float shadowTexelSize;
+uniform bool shadowExtended;
+uniform int shadowCascadeCount;
+uniform mat4 shadowCascadeMatrix[4];
+uniform vec4 shadowCascadeSplits;
+uniform vec4 shadowViewDepth;
+uniform vec4 shadowAtlas;
+uniform vec4 shadowPunctualSlot[3];
+uniform vec4 shadowPunctualParams[4];
+uniform vec4 shadowPunctualRange[4];
+uniform mat4 shadowSpotMatrix[4];
+
+const vec3 SHADOW_FACE_FORWARD[6] = vec3[6](${faceTable("forward")});
+const vec3 SHADOW_FACE_UP[6] = vec3[6](${faceTable("up")});
+const vec3 SHADOW_FACE_RIGHT[6] = vec3[6](${faceTable("right")});
+
+float shadowTileTaps(float tile, vec2 uv, float receiver) {
+  float row = floor((tile + 0.5) / shadowAtlas.x);
+  float col = tile - row * shadowAtlas.x;
+  vec2 grid = shadowAtlas.xy;
+  vec2 origin = vec2(col, row) / grid;
+  vec2 texel = shadowAtlas.zw;
+  vec2 lo = origin + 0.5 * texel;
+  vec2 hi = origin + 1.0 / grid - 0.5 * texel;
+  vec2 base = origin + uv / grid;
+  float lit = 0.0;
+  for (int y = -1; y <= 1; y += 1) {
+    for (int x = -1; x <= 1; x += 1) {
+      vec2 tap = clamp(base + vec2(x, y) * texel, lo, hi);
+      float occluder = texture(shadowMap, tap).r;
+      lit += receiver <= occluder ? 1.0 : 0.0;
+    }
+  }
+  return lit / 9.0;
+}
+
+float shadowReceiverDepth(float z, float near, float far, float bias) {
+  float zb = max(z - bias * (far - near), near);
+  return far * (zb - near) / ((far - near) * zb);
+}
+
+float directionalShadowAtlas(vec3 worldPosition, vec3 n) {
+  if (shadowCascadeCount < 1) {
+    return 1.0;
+  }
+  int cascade = 0;
+  if (shadowCascadeCount > 1) {
+    float depth = dot(shadowViewDepth.xyz, worldPosition) + shadowViewDepth.w;
+    cascade = -1;
+    for (int i = 0; i < 4; i += 1) {
+      if (cascade < 0 && i < shadowCascadeCount && depth <= shadowCascadeSplits[i]) {
+        cascade = i;
+      }
+    }
+    if (cascade < 0) {
+      return 1.0;
+    }
+  }
+  vec4 lightSpace = shadowCascadeMatrix[cascade] * vec4(worldPosition + n * shadowNormalBias, 1.0);
+  vec3 c = (lightSpace.xyz / lightSpace.w) * 0.5 + 0.5;
+  if (any(lessThan(c, vec3(0.0))) || any(greaterThan(c, vec3(1.0)))) {
+    return 1.0;
+  }
+  return shadowTileTaps(float(cascade), c.xy, c.z - shadowBias);
+}
+
+float punctualShadowFactor(int i, vec3 worldPosition, vec3 n) {
+  if (!shadowExtended) {
+    return 1.0;
+  }
+  float entry = shadowPunctualSlot[i / 4][i - (i / 4) * 4];
+  if (entry < 0.5) {
+    return 1.0;
+  }
+  int k = int(entry) - 1;
+  vec4 params = shadowPunctualParams[k];
+  vec4 range = shadowPunctualRange[k];
+  vec3 p = worldPosition + n * params.z;
+  if (params.w < 1.5) {
+    vec4 lightSpace = shadowSpotMatrix[k] * vec4(p, 1.0);
+    if (lightSpace.w <= 0.0) {
+      return 1.0;
+    }
+    vec3 c = (lightSpace.xyz / lightSpace.w) * 0.5 + 0.5;
+    if (any(lessThan(c, vec3(0.0))) || any(greaterThan(c, vec3(1.0)))) {
+      return 1.0;
+    }
+    return shadowTileTaps(
+      params.x, c.xy,
+      shadowReceiverDepth(lightSpace.w, range.x, range.y, params.y));
+  }
+  vec3 d = p - punctualPosition[i];
+  vec3 a = abs(d);
+  int f;
+  if (a.x >= a.y && a.x >= a.z) {
+    f = d.x >= 0.0 ? 0 : 1;
+  } else if (a.y >= a.z) {
+    f = d.y >= 0.0 ? 2 : 3;
+  } else {
+    f = d.z >= 0.0 ? 4 : 5;
+  }
+  float vz = dot(d, SHADOW_FACE_FORWARD[f]);
+  if (vz <= range.x || vz >= range.y) {
+    return 1.0;
+  }
+  vec2 uv = vec2(dot(d, SHADOW_FACE_RIGHT[f]), dot(d, SHADOW_FACE_UP[f])) / vz * 0.5 + 0.5;
+  return shadowTileTaps(
+    params.x + float(f), uv,
+    shadowReceiverDepth(vz, range.x, range.y, params.y));
+}
 
 float shadowFactor(vec3 worldPosition, vec3 n) {
+  if (shadowExtended) {
+    return directionalShadowAtlas(worldPosition, n);
+  }
   vec4 lightSpace = shadowMatrix * vec4(worldPosition + n * shadowNormalBias, 1.0);
   vec3 c = (lightSpace.xyz / lightSpace.w) * 0.5 + 0.5;
   if (any(lessThan(c, vec3(0.0))) || any(greaterThan(c, vec3(1.0)))) {
@@ -1465,7 +1588,20 @@ const SHADOW_UNIFORM_NAMES = [
   "shadowBias",
   "shadowNormalBias",
   "shadowTexelSize",
+  "shadowExtended",
+  "shadowCascadeCount",
+  "shadowCascadeMatrix",
+  "shadowCascadeSplits",
+  "shadowViewDepth",
+  "shadowAtlas",
+  "shadowPunctualSlot",
+  "shadowPunctualParams",
+  "shadowPunctualRange",
+  "shadowSpotMatrix",
 ] as const;
+
+/** Scratch for the atlas `vec4` upload (never per frame allocation, §7b). */
+const atlasScratch = new Float32Array(4);
 
 /**
  * One shaded pipeline's shadow uniforms: the six locations, the sampler-unit
@@ -1513,6 +1649,9 @@ export class ShadowUniforms {
 
   /** Whether the sampler unit has been uploaded; see {@link LitProgram.setFeatures}. */
   #samplerUploaded = false;
+
+  /** CPU mirror of `shadowExtended` (W6.3), seeded at GL's initial `false`. */
+  #extended = false;
 
   private constructor(
     gl: WebglContext,
@@ -1568,6 +1707,37 @@ export class ShadowUniforms {
     // anything else — and `hasShadow` is only true for a light carrying a valid
     // record, so this cannot divide by zero on the path that reaches it.
     gl.uniform1f(this.#locations[5], 1 / lights.shadowMapSize);
+    // W6.3: the atlas path. A frame with one cascade and no punctual shadow
+    // uploads none of this (and mirrors `shadowExtended` at GL's initial
+    // `false`), so it emits the pre-W6.3 sequence call for call.
+    if (!lights.shadowExtended) {
+      if (this.#extended) {
+        gl.uniform1i(this.#locations[6], 0);
+        this.#extended = false;
+      }
+      return;
+    }
+    if (!this.#extended) {
+      gl.uniform1i(this.#locations[6], 1);
+      this.#extended = true;
+    }
+    gl.uniform1i(this.#locations[7], lights.shadowCascadeCount);
+    gl.uniformMatrix4fv(
+      this.#locations[8],
+      false,
+      lights.shadowCascadeMatrices,
+    );
+    gl.uniform4fv(this.#locations[9], lights.shadowCascadeSplits);
+    gl.uniform4fv(this.#locations[10], lights.shadowViewDepth);
+    atlasScratch[0] = lights.shadowAtlasColumns;
+    atlasScratch[1] = lights.shadowAtlasRows;
+    atlasScratch[2] = 1 / lights.shadowAtlasWidth;
+    atlasScratch[3] = 1 / lights.shadowAtlasHeight;
+    gl.uniform4fv(this.#locations[11], atlasScratch);
+    gl.uniform4fv(this.#locations[12], lights.shadowPunctualSlot);
+    gl.uniform4fv(this.#locations[13], lights.shadowPunctualParams);
+    gl.uniform4fv(this.#locations[14], lights.shadowPunctualRange);
+    gl.uniformMatrix4fv(this.#locations[15], false, lights.shadowSpotMatrices);
   }
 
   /**
@@ -1749,7 +1919,11 @@ void main() {
   if (len > 0.0) {
     for (int i = 0; i < punctualCount; i += 1) {
       vec3 l;
-      lighting += punctualIrradiance(i, vWorldPosition, l) * max(dot(n, l), 0.0);
+      vec3 irradiance = punctualIrradiance(i, vWorldPosition, l);
+      if (useShadow) {
+        irradiance *= punctualShadowFactor(i, vWorldPosition, n);
+      }
+      lighting += irradiance * max(dot(n, l), 0.0);
     }
   }
   fragColor = vec4(base.rgb * lighting, base.a);

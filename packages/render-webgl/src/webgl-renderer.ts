@@ -44,6 +44,8 @@ import {
   buildInterpolatedRenderList,
   buildRenderList,
   buildViewRenderList,
+  MAX_SHADOWED_PUNCTUAL_LIGHTS,
+  MAX_SHADOW_CASCADES,
   collectSceneLights,
   unionViewLayerMask,
   createSceneLights,
@@ -117,6 +119,7 @@ import {
   type PickingRendererHost,
 } from "./gl-picking-registry.js";
 import {
+  GlTransientTargetPool,
   RenderTargetCache,
   type RenderTargetRecord,
 } from "./gl-render-target.js";
@@ -1099,6 +1102,10 @@ const WEBGL_STATIC_CAPABILITIES = Object.freeze({
   // test double) cannot refill the texture; `readCapabilities` reports `false`.
   floatTextures: true,
   maximumTextureSkinningJoints: MAX_TEXTURE_SKINNING_JOINTS,
+  // §69 (W6.3): declared constants, not queries (R-30b). Cascades render into
+  // tiles of one atlas texture; a spot costs one tile and a point light six.
+  maximumShadowCascades: MAX_SHADOW_CASCADES,
+  maximumShadowedPunctualLights: MAX_SHADOWED_PUNCTUAL_LIGHTS,
 } satisfies Partial<RendererCapabilities>);
 
 /**
@@ -2106,7 +2113,14 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         }
       }
       if (hasLitItems) {
-        collectSceneLights(root, sceneLights, unionViewLayerMask(views));
+        // W6.3: cascades are fitted to the first view's camera (§33: authored
+        // view order decides); a frame with no views has nothing to fit.
+        collectSceneLights(
+          root,
+          sceneLights,
+          unionViewLayerMask(views),
+          views[0]?.camera ?? null,
+        );
       }
 
       // §69's shadow map (R-18), rendered **before** the view loop: §63's own
@@ -3895,6 +3909,13 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     }
   }
 
+  #transientPool: GlTransientTargetPool | null = null;
+
+  /** The renderer-owned §63 transient-target pool (W6.1); disposed with the renderer. */
+  transientTargetPool(): GlTransientTargetPool {
+    return (this.#transientPool ??= new GlTransientTargetPool());
+  }
+
   /**
    * Releases every GPU resource this renderer owns and detaches its listeners
    * (§83). Idempotent, terminal, and safe while the context is lost — in which
@@ -3909,6 +3930,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       return;
     }
     this.#disposed = true;
+    this.#transientPool?.dispose();
 
     const canvas = this.#canvas;
     if (canvas !== null) {
@@ -4685,23 +4707,26 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     state: GlState,
     statistics: RenderStatistics | null,
   ): RenderTargetRecord | null {
-    const size = sceneLights.shadowMapSize;
+    // W6.3: the atlas — one tile for the classic single map, so `1 × 1`
+    // tiles of `mapSize` is the pre-W6.3 target exactly.
+    const atlasWidth = sceneLights.shadowAtlasWidth;
+    const atlasHeight = sceneLights.shadowAtlasHeight;
     let target = this.#shadowTarget;
     if (target === null) {
       // The one target this renderer owns, described the first time a frame
       // asks for a shadow. `depthTexture` is the whole point (R-4's residue):
       // the pass writes depth and the shaded pipelines sample it.
       target = new RenderTarget({
-        width: size,
-        height: size,
+        width: atlasWidth,
+        height: atlasHeight,
         depthTexture: true,
       });
       this.#shadowTarget = target;
-    } else if (target.width !== size) {
+    } else if (target.width !== atlasWidth || target.height !== atlasHeight) {
       // `mapSize` changed. Resizing bumps the version, which is what makes the
       // framebuffer cache re-allocate at the new size on this very frame (R-4)
       // — a new `RenderTarget` would leak the old one's §83 accounting instead.
-      target.resize(size, size);
+      target.resize(atlasWidth, atlasHeight);
     }
 
     const record = renderTargets.acquire(target);
@@ -4723,70 +4748,108 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     // no one can observe.
     gl.clear(GL.DEPTH_BUFFER_BIT);
 
-    shadowProgram.use();
-    shadowProgram.setViewProjection(sceneLights.shadowMatrix);
     // `"shadow"` / `"skinned-shadow"` rather than `RenderItemKind`: the caster
     // pass has two programs for what the colour pass splits across families,
     // and switching when the kind changes is the colour loop's `activeKind`
     // rule applied to that pair. View-projection is per-program, so the
     // unskinned upload above stays valid across a switch away and back; the
     // skinned program gets its own copy the first time it is current.
-    let activeKind: "shadow" | "skinned-shadow" = "shadow";
-    let skinnedShadowViewUploaded = false;
-    for (const item of items) {
-      // §67's clip is deliberately not consulted here (R-23). A stencil clip
-      // is a per-view, screen-space construct and this framebuffer carries no
-      // stencil attachment (R-7: samplable depth is a DEPTH_COMPONENT24
-      // texture, which structurally excludes the packed stencil format), so a
-      // clipped surface casts its **whole** shadow — the §69 analogue of a
-      // sprite casting its rectangle, and honest for the same reason: a
-      // depth-only pass writes geometry, not visibility. Mask draws never
-      // reach this loop at all; the list builder writes `castShadow: false`
-      // on every one, because a mask is not content.
-      // §60 (RFC 0001): a node material with **no** displacement casts its
-      // geometry exactly — depth ignores colour, so the caster program is
-      // right for it — but one whose graph displaces vertices would cast its
-      // *undisplaced* silhouette, which is a different picture (the skinned
-      // bind-pose rule, one pipeline over), so those casters are skipped.
-      if (
-        !item.castShadow ||
-        item.kind === "sprite" ||
-        (item.kind === "node" &&
-          item.material.graph.positionOffset !== undefined)
-      ) {
-        continue;
+    const tileCount = sceneLights.shadowTileCount;
+    const tileSize = sceneLights.shadowMapSize;
+    const columns = sceneLights.shadowAtlasColumns;
+    for (let tile = 0; tile < tileCount; tile += 1) {
+      const tileMatrix = sceneLights.shadowTileMatrices[tile];
+      if (tileCount > 1) {
+        // Each tile owns a square of the atlas. GL clips primitives to the
+        // viewport rectangle, and the scissor is the belt to that brace.
+        const x = (tile % columns) * tileSize;
+        const y = Math.floor(tile / columns) * tileSize;
+        gl.scissor(x, y, tileSize, tileSize);
+        gl.viewport(x, y, tileSize, tileSize);
       }
-      if (isSkinnedUnlitItem(item) || isSkinnedLitItem(item)) {
-        if (item.jointCount > MAX_SKINNING_JOINTS) {
-          // Casters take the uniform palette; a bone-texture rig past 48
-          // joints would overflow it. Skipped, never a truncated silhouette.
-          if (DEV) {
-            devWarnOnce(
-              "webgl-skinning-texture-caster",
-              "§69: a bone-texture mesh over 48 joints casts no shadow " +
-                "(casters use the uniform palette).",
-            );
-          }
+      shadowProgram.use();
+      shadowProgram.setViewProjection(tileMatrix);
+      let activeKind: "shadow" | "skinned-shadow" = "shadow";
+      let skinnedShadowViewUploaded = false;
+      for (const item of items) {
+        // §67's clip is deliberately not consulted here (R-23). A stencil clip
+        // is a per-view, screen-space construct and this framebuffer carries no
+        // stencil attachment (R-7: samplable depth is a DEPTH_COMPONENT24
+        // texture, which structurally excludes the packed stencil format), so a
+        // clipped surface casts its **whole** shadow — the §69 analogue of a
+        // sprite casting its rectangle, and honest for the same reason: a
+        // depth-only pass writes geometry, not visibility. Mask draws never
+        // reach this loop at all; the list builder writes `castShadow: false`
+        // on every one, because a mask is not content.
+        // §60 (RFC 0001): a node material with **no** displacement casts its
+        // geometry exactly — depth ignores colour, so the caster program is
+        // right for it — but one whose graph displaces vertices would cast its
+        // *undisplaced* silhouette, which is a different picture (the skinned
+        // bind-pose rule, one pipeline over), so those casters are skipped.
+        if (
+          !item.castShadow ||
+          item.kind === "sprite" ||
+          (item.kind === "node" &&
+            item.material.graph.positionOffset !== undefined)
+        ) {
           continue;
         }
-        const skinnedShadow = this.#acquireSkinnedShadowProgram(gl);
-        if (skinnedShadow === null) {
+        if (isSkinnedUnlitItem(item) || isSkinnedLitItem(item)) {
+          if (item.jointCount > MAX_SKINNING_JOINTS) {
+            // Casters take the uniform palette; a bone-texture rig past 48
+            // joints would overflow it. Skipped, never a truncated silhouette.
+            if (DEV) {
+              devWarnOnce(
+                "webgl-skinning-texture-caster",
+                "§69: a bone-texture mesh over 48 joints casts no shadow " +
+                  "(casters use the uniform palette).",
+              );
+            }
+            continue;
+          }
+          const skinnedShadow = this.#acquireSkinnedShadowProgram(gl);
+          if (skinnedShadow === null) {
+            continue;
+          }
+          const geometry = geometries.acquire(item.geometry);
+          if (geometry === null) {
+            continue;
+          }
+          if (activeKind !== "skinned-shadow") {
+            skinnedShadow.use();
+            activeKind = "skinned-shadow";
+          }
+          if (!skinnedShadowViewUploaded) {
+            skinnedShadow.setViewProjection(tileMatrix);
+            skinnedShadowViewUploaded = true;
+          }
+          skinnedShadow.setModel(item.worldMatrix);
+          skinnedShadow.setJointMatrices(item.jointMatrices);
+          gl.bindVertexArray(geometry.vertexArray);
+          if (geometry.indexType === null) {
+            gl.drawArrays(geometry.mode, 0, geometry.count);
+          } else {
+            gl.drawElements(
+              geometry.mode,
+              geometry.count,
+              geometry.indexType,
+              0,
+            );
+          }
+          if (statistics !== null) {
+            countDraw(statistics, geometry.mode, geometry.count, 1);
+          }
           continue;
         }
         const geometry = geometries.acquire(item.geometry);
         if (geometry === null) {
           continue;
         }
-        if (activeKind !== "skinned-shadow") {
-          skinnedShadow.use();
-          activeKind = "skinned-shadow";
+        if (activeKind !== "shadow") {
+          shadowProgram.use();
+          activeKind = "shadow";
         }
-        if (!skinnedShadowViewUploaded) {
-          skinnedShadow.setViewProjection(sceneLights.shadowMatrix);
-          skinnedShadowViewUploaded = true;
-        }
-        skinnedShadow.setModel(item.worldMatrix);
-        skinnedShadow.setJointMatrices(item.jointMatrices);
+        shadowProgram.setModel(item.worldMatrix);
         gl.bindVertexArray(geometry.vertexArray);
         if (geometry.indexType === null) {
           gl.drawArrays(geometry.mode, 0, geometry.count);
@@ -4794,31 +4857,12 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           gl.drawElements(geometry.mode, geometry.count, geometry.indexType, 0);
         }
         if (statistics !== null) {
+          // A caster pass draw is a draw (§84): it costs a submission and its
+          // triangles, and a frame that suddenly doubled its draw calls should
+          // say so rather than hide the second pass from the counter that exists
+          // to find it.
           countDraw(statistics, geometry.mode, geometry.count, 1);
         }
-        continue;
-      }
-      const geometry = geometries.acquire(item.geometry);
-      if (geometry === null) {
-        continue;
-      }
-      if (activeKind !== "shadow") {
-        shadowProgram.use();
-        activeKind = "shadow";
-      }
-      shadowProgram.setModel(item.worldMatrix);
-      gl.bindVertexArray(geometry.vertexArray);
-      if (geometry.indexType === null) {
-        gl.drawArrays(geometry.mode, 0, geometry.count);
-      } else {
-        gl.drawElements(geometry.mode, geometry.count, geometry.indexType, 0);
-      }
-      if (statistics !== null) {
-        // A caster pass draw is a draw (§84): it costs a submission and its
-        // triangles, and a frame that suddenly doubled its draw calls should
-        // say so rather than hide the second pass from the counter that exists
-        // to find it.
-        countDraw(statistics, geometry.mode, geometry.count, 1);
       }
     }
     return record;

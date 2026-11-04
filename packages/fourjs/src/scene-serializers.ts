@@ -788,6 +788,64 @@ function readShadowOptions(value: JsonValue | undefined): {
     options.near = near;
     options.far = far;
   }
+  // §69 cascades (W6.3): the same filter-not-trust rule, field by field.
+  const cascades = readFinite(data.cascades);
+  if (
+    cascades !== undefined &&
+    Number.isInteger(cascades) &&
+    cascades >= 1 &&
+    cascades <= 4
+  ) {
+    options.cascades = cascades;
+  }
+  const cascadeLambda = readFinite(data.cascadeLambda);
+  if (cascadeLambda !== undefined && cascadeLambda >= 0 && cascadeLambda <= 1) {
+    options.cascadeLambda = cascadeLambda;
+  }
+  const cascadeDistance = readFinite(data.cascadeDistance);
+  if (cascadeDistance !== undefined && cascadeDistance > 0) {
+    options.cascadeDistance = cascadeDistance;
+  }
+  return options;
+}
+
+/** A point or spot light's §69 shadow record as a document field (W6.3). */
+function punctualShadowJson(light: PointLight | SpotLight): JsonValue {
+  return {
+    mapSize: light.shadow.mapSize,
+    bias: light.shadow.bias,
+    normalBias: light.shadow.normalBias,
+    near: light.shadow.near,
+    far: light.shadow.far,
+  };
+}
+
+/**
+ * A point or spot light's §69 shadow settings, filtered to the values
+ * `PunctualLightShadow` will accept (W6.3) — {@link readShadowOptions}'s
+ * rule: a corrupted field restores its default, `near`/`far` as a pair.
+ */
+function readPunctualShadowOptions(value: JsonValue | undefined): {
+  readonly [key: string]: number;
+} {
+  const data = record(value);
+  const options: Record<string, number> = {};
+  const mapSize = readFinite(data.mapSize);
+  if (mapSize !== undefined && Number.isInteger(mapSize) && mapSize >= 1) {
+    options.mapSize = mapSize;
+  }
+  const bias = readFinite(data.bias);
+  if (bias !== undefined) options.bias = bias;
+  const normalBias = readFinite(data.normalBias);
+  if (normalBias !== undefined && normalBias >= 0) {
+    options.normalBias = normalBias;
+  }
+  const near = readFinite(data.near);
+  const far = readFinite(data.far);
+  if (near !== undefined && far !== undefined && near > 0 && near < far) {
+    options.near = near;
+    options.far = far;
+  }
   return options;
 }
 
@@ -1473,7 +1531,9 @@ export function registerUISerializers(
  *   The `depthRange` that projection was last built with is deliberately absent
  *   — it belongs to the renderer, not the camera (§47), so a document does not
  *   pin a scene to the backend that saved it.
- * - **`DirectionalLight`** — `color` and `intensity`. Its direction is its
+ * - **`DirectionalLight`** — `color` and `intensity`, plus `castShadow` and the
+ *   §69 `shadow` record (`mapSize`, biases, volume, and since W6.3 `cascades`,
+ *   `cascadeLambda`, `cascadeDistance`). Its direction is its
  *   node's −Z axis (§68), which is the transform, not a payload.
  * - **`PointLight`** — `color`, `intensity`, and `range`. Its *position* is
  *   the node transform §79 already carries, so it is not a payload either
@@ -1481,6 +1541,9 @@ export function registerUISerializers(
  * - **`SpotLight`** — the point light's three, plus `innerConeAngle` and
  *   `outerConeAngle` in radians (§7a). Its axis is the node's −Z, like a
  *   directional light's: transform, not payload.
+ * - **Point and spot shadows** (W6.3) — both carry `castShadow` and a `shadow`
+ *   record (`mapSize`, `bias`, `normalBias`, `near`, `far`), filtered on read
+ *   field by field like the directional record.
  *
  * A restored `Renderable` accepts **whatever material its key resolves to**;
  * only a `Sprite` insists on a `"sprite"` one. The asymmetry is the classes'
@@ -1684,6 +1747,11 @@ export function registerRenderSerializers(
               extent: light.shadow.extent,
               near: light.shadow.near,
               far: light.shadow.far,
+              // §69 cascades (W6.3, 2026-11-04) — additive: a document written
+              // before this build carries none and restores one cascade.
+              cascades: light.shadow.cascades,
+              cascadeLambda: light.shadow.cascadeLambda,
+              cascadeDistance: light.shadow.cascadeDistance,
             },
           };
         }
@@ -1693,6 +1761,8 @@ export function registerRenderSerializers(
             color: [light.color[0], light.color[1], light.color[2]],
             intensity: light.intensity,
             range: light.range,
+            castShadow: light.castShadow,
+            shadow: punctualShadowJson(light),
           };
         }
         if (constructor === SpotLight) {
@@ -1703,6 +1773,8 @@ export function registerRenderSerializers(
             range: light.range,
             innerConeAngle: light.innerConeAngle,
             outerConeAngle: light.outerConeAngle,
+            castShadow: light.castShadow,
+            shadow: punctualShadowJson(light),
           };
         }
         if (constructor === HemisphereLight) {
@@ -1870,13 +1942,17 @@ export function registerRenderSerializers(
         }
         if (document.type === POINT_LIGHT_NODE_TYPE) {
           const color = readColor(data.color);
+          const castShadow = readBoolean(data.castShadow);
           return new PointLight({
             ...finiteOptions(data, ["intensity", "range"]),
             ...(color !== undefined ? { color } : {}),
+            ...(castShadow !== undefined ? { castShadow } : {}),
+            shadow: readPunctualShadowOptions(data.shadow),
           });
         }
         if (document.type === SPOT_LIGHT_NODE_TYPE) {
           const color = readColor(data.color);
+          const castShadow = readBoolean(data.castShadow);
           return new SpotLight({
             ...finiteOptions(data, [
               "intensity",
@@ -1885,6 +1961,8 @@ export function registerRenderSerializers(
               "outerConeAngle",
             ]),
             ...(color !== undefined ? { color } : {}),
+            ...(castShadow !== undefined ? { castShadow } : {}),
+            shadow: readPunctualShadowOptions(data.shadow),
           });
         }
         if (document.type === HEMISPHERE_LIGHT_NODE_TYPE) {

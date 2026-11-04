@@ -94,6 +94,10 @@ import type { EffectRenderPass } from "./effect-pass.js";
 import type { PickingService } from "./picking.js";
 import type { RenderTarget } from "./render-target.js";
 import type { RenderStatistics } from "./statistics.js";
+import {
+  RenderTargetPool,
+  type TransientTargetPool,
+} from "./transient-pool.js";
 
 /**
  * Which backend an implementation drives (§62).
@@ -312,6 +316,20 @@ export interface RendererCapabilities {
    * device's texture-dimension limit.
    */
   readonly maximumTextureSkinningJoints?: number;
+
+  /**
+   * The most cascades a directional light's shadow may render (§69; W6.3), or
+   * `0` where shadows are unsupported. Optional with the WP-R1.1 tri-state:
+   * absent means "not reported".
+   */
+  readonly maximumShadowCascades?: number;
+
+  /**
+   * The most point/spot lights that may cast a shadow in one frame (§69;
+   * W6.3) — a spot costs one atlas tile and a point light six — or `0` where
+   * shadows are unsupported.
+   */
+  readonly maximumShadowedPunctualLights?: number;
 }
 
 /**
@@ -747,6 +765,13 @@ export interface Renderer extends Disposable {
   renderEffect?(pass: EffectRenderPass): void;
 
   /**
+   * The renderer-owned §63 transient-target pool (W6.1), created on first use
+   * and disposed with the renderer. Optional: a renderer without it makes
+   * {@link RenderGraph} fall back to a graph-owned {@link RenderTargetPool}.
+   */
+  transientTargetPool?(): TransientTargetPool;
+
+  /**
    * Builds a {@link PickingService} over this backend — §71's `"gpu"`/`"pixel"`
    * picking tier (RFC 0005, 2026-08-28).
    *
@@ -989,6 +1014,8 @@ export class NullRenderer implements Renderer {
     maximumSkinningJoints: 0,
     floatTextures: false,
     maximumTextureSkinningJoints: 0,
+    maximumShadowCascades: 0,
+    maximumShadowedPunctualLights: 0,
   } satisfies RendererCapabilities);
 
   /** The §6b channel required by {@link Renderer}. Never emitted to by this class. */
@@ -1128,6 +1155,13 @@ export class NullRenderer implements Renderer {
     this.lastEffectPass = pass;
   }
 
+  #pool: RenderTargetPool | null = null;
+
+  /** Headless §63 transient pool (plain targets; nothing to allocate). */
+  transientTargetPool(): TransientTargetPool {
+    return (this.#pool ??= new RenderTargetPool());
+  }
+
   /** Records the requested size. `resolution` defaults to `1`. */
   resize(width: number, height: number, resolution = 1): void {
     this.#assertUsable("resize");
@@ -1145,6 +1179,7 @@ export class NullRenderer implements Renderer {
       return;
     }
     this.#disposed = true;
+    this.#pool?.dispose();
     this.events.removeAllListeners();
   }
 

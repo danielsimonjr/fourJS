@@ -215,7 +215,9 @@ export {
   RENDER_TARGET_DEPTH_STENCIL_FORMAT,
   RENDER_TARGET_DEPTH_TEXTURE_FORMAT,
   WgpuRenderTargetCache,
+  WgpuTransientTargetPool,
   renderTargetDepthFormat,
+  transientUsageOf,
 } from "./wgpu-render-target.js";
 export type { WgpuEffectKind } from "./wgpu-effect.js";
 export {
@@ -288,7 +290,17 @@ export {
   WgpuParticleSimulation,
 } from "./wgpu-particle-simulation.js";
 export {
+  SHADOW_ATLAS_OFFSET,
+  SHADOW_CASCADE_MATRIX_OFFSET,
+  SHADOW_CASCADE_SPLITS_OFFSET,
   SHADOW_FACTOR_WGSL,
+  SHADOW_INFO_OFFSET,
+  SHADOW_LEGACY_UNIFORM_BYTES,
+  SHADOW_PUNCTUAL_PARAMS_OFFSET,
+  SHADOW_PUNCTUAL_RANGE_OFFSET,
+  SHADOW_PUNCTUAL_SLOT_OFFSET,
+  SHADOW_SPOT_MATRIX_OFFSET,
+  SHADOW_VIEW_DEPTH_OFFSET,
   SHADOW_LIGHT_UNIFORM_BYTES,
   SHADOW_LIGHT_UNIFORM_WGSL,
   SHADOW_MAP_BINDING,

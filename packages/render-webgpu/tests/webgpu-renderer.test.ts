@@ -65,8 +65,13 @@ import {
   PARTICLE_UNIFORM_BYTES,
   PARTICLE_VIEW_OFFSET,
   POSITION_BUFFER_LAYOUT,
+  SHADOW_ATLAS_OFFSET,
+  SHADOW_CASCADE_SPLITS_OFFSET,
+  SHADOW_INFO_OFFSET,
   SHADOW_LIGHT_UNIFORM_BYTES,
   SHADOW_MATRIX_OFFSET,
+  SHADOW_PUNCTUAL_PARAMS_OFFSET,
+  SHADOW_PUNCTUAL_SLOT_OFFSET,
   SHADOW_PARAMS_OFFSET,
   SPRITE_TINT_OFFSET,
   STANDARD_EMISSIVE_OFFSET,
@@ -648,6 +653,8 @@ describe("WebgpuRenderer.initialize", () => {
       maximumSkinningJoints: 48,
       floatTextures: false,
       maximumTextureSkinningJoints: 0,
+      maximumShadowCascades: 0,
+      maximumShadowedPunctualLights: 0,
     });
   });
 
@@ -5403,5 +5410,113 @@ describe("bone-texture skinning in WebgpuRenderer (decision D7)", () => {
     harness.gpu.reset();
     harness.renderer.dispose();
     expect(harness.gpu.countOf("texture.destroy")).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// W6.3 (2026-11-04): cascades, point/spot maps and the shadow atlas.
+// ---------------------------------------------------------------------------
+
+/** A point/spot light that casts — the W6.3 `castShadow`/`shadow` members. */
+class CastingPunctualNode extends SpotLightNode {
+  castShadow = true;
+
+  shadow = { mapSize: 64, bias: 0.001, normalBias: 0.02, near: 0.1, far: 20 };
+
+  constructor(
+    kind: "point" | "spot",
+    position: [number, number, number] = [0, 3, 0],
+  ) {
+    super(position);
+    (this as { lightType: "point" | "spot" }).lightType = kind;
+    this.axis = [0, -1, 0];
+  }
+}
+
+function fitView(): RenderView {
+  const camera = new TestCamera() as TestCamera & {
+    near: number;
+    far: number;
+  };
+  camera.near = 0.5;
+  camera.far = 50;
+  camera.projectionMatrix.elements[0] = 1;
+  camera.projectionMatrix.elements[5] = 1;
+  camera.projectionMatrix.elements[11] = -1;
+  camera.viewMatrix.identity();
+  return createView({ camera: camera.asCamera });
+}
+
+describe("WebgpuRenderer atlas shadows (W6.3)", () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await initialized();
+  });
+
+  it("reports the cascade and punctual capabilities", () => {
+    expect(harness.renderer.capabilities.maximumShadowCascades).toBe(4);
+    expect(harness.renderer.capabilities.maximumShadowedPunctualLights).toBe(4);
+  });
+
+  it("keeps one cascade on the pre-atlas pass: no viewport, no atlas flag", () => {
+    const { root } = shadowedScene();
+    harness.renderer.render(root, [createView()]);
+
+    // The shadow pass sets no viewport of its own; the views pass sets one.
+    expect(harness.gpu.countOf("pass.setViewport")).toBe(1);
+    const { floats } = lightsUpload(harness.gpu);
+    expect(lightSlot(floats, 0, SHADOW_INFO_OFFSET)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("draws every caster once per cascade tile into a 2x2 atlas", () => {
+    const { root, light } = shadowedScene();
+    Object.assign(light.shadow, { cascades: 3, cascadeDistance: 40 });
+    harness.renderer.render(root, [fitView()]);
+
+    // Three tile viewports in the shadow pass (+1 for the views pass), each
+    // 256 texels in a 512 x 512 atlas, top-left origin.
+    const viewports = harness.gpu
+      .callsOf("pass.setViewport")
+      .map((call) => call.args.slice(0, 4));
+    expect(viewports.slice(0, 3)).toEqual([
+      [0, 0, 256, 256],
+      [256, 0, 256, 256],
+      [0, 256, 256, 256],
+    ]);
+    expect(
+      harness.gpu.countOf("pass.drawIndexed") +
+        harness.gpu.countOf("pass.draw"),
+    ).toBe(3 + 2);
+    const { floats } = lightsUpload(harness.gpu);
+    expect(lightSlot(floats, 0, SHADOW_INFO_OFFSET)).toEqual([3, 1, 0, 0]);
+    expect(lightSlot(floats, 0, SHADOW_ATLAS_OFFSET)).toEqual(
+      [2, 2, 1 / 512, 1 / 512].map(Math.fround),
+    );
+    expect(lightSlot(floats, 0, SHADOW_CASCADE_SPLITS_OFFSET)[2]).toBe(40);
+  });
+
+  it("renders six faces for a point light and one tile for a spot", () => {
+    const { root } = shadowedScene();
+    root.add(new CastingPunctualNode("point"));
+    root.add(new CastingPunctualNode("spot", [2, 3, 0]));
+    harness.renderer.render(root, [createView()]);
+
+    // 1 sun tile + 6 + 1 = 8 tiles of 256 (sun) in a 3 x 3 grid.
+    const viewports = harness.gpu
+      .callsOf("pass.setViewport")
+      .map((call) => call.args.slice(0, 4));
+    expect(viewports.slice(0, 8)).toHaveLength(8);
+    expect(viewports[7]).toEqual([256, 512, 256, 256]);
+    const { floats } = lightsUpload(harness.gpu);
+    expect(lightSlot(floats, 0, SHADOW_INFO_OFFSET)).toEqual([1, 1, 2, 0]);
+    expect(lightSlot(floats, 0, SHADOW_PUNCTUAL_SLOT_OFFSET)[0]).toBe(1);
+    expect(lightSlot(floats, 0, SHADOW_PUNCTUAL_SLOT_OFFSET)[1]).toBe(2);
+    expect(lightSlot(floats, 0, SHADOW_PUNCTUAL_PARAMS_OFFSET)).toEqual([
+      1,
+      Math.fround(0.001),
+      Math.fround(0.02),
+      2,
+    ]);
   });
 });
