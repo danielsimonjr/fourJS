@@ -4722,3 +4722,49 @@ absolute streams; `meshes.weights`/`nodes.weights` length 1; `weights`
 animation channels still refused. Further targets, bone-texture palettes,
 Box2D/soft/Canvas/SVG backends, TypeDoc→TS7, harfbuzzjs>0.4.13, js-yaml≥5,
 repo-wide Prettier, and default-on batching were explicitly not started.
+
+### 2026-11-04 — optimization and completion audit (docs/AUDIT-2026-11-OPTIMIZATION.md)
+
+Four-model audit (Haiku inventory, Sonnet hot-path scan, Opus correctness
+scan, Fable verification/planning) over all 24 packages; verified findings
+landed in one PR. Decisions:
+
+**EventEmitter deferred queue.** An aborted _outermost_ dispatch (a listener
+threw and nothing caught it) drops every rule-4 deferred event; a nested
+throw that an outer listener catches leaves the queue for the outer frame.
+`removeAllListeners()` clears the queue (wholesale, or per type in place).
+`totalListenerCount()` is a deprecated alias of `listenerCountAll()`.
+
+**Owned writes on hot paths.** `beginOwnedTransformWrite()` /
+`endOwnedTransformWrite()` (scene) are the per-step form; keep
+`runOwnedTransformWrite(fn)` for cold paths. Always pair in `try/finally`.
+
+**Sleeping-body publish skip (§32).** `PhysicsWorld.#publishBody` skips the
+pose/velocity publish of a dynamic, non-blended body that the solver reports
+asleep _and_ that was already published asleep, unless
+`BodyRegistration.publishPending` is set. Every world method that rewrites
+the solver without waking the body (teleport, velocity setters,
+`setBodyControlMode`, `restoreSnapshot`) must set `publishPending`; a new
+such method that forgets it will leave the node stale until the body wakes.
+The sleep-flag refresh and `#retrackPose` still run every step.
+
+**Math API.** Distances are `Math.sqrt` of the squared sum, never
+`Math.hypot` (implementation-defined; `WaypointGraphPlanner` declared
+`same-runtime` determinism while using it). `Vector3.transformDirection`
+does not renormalize (pick needs the scaled length); `applyProjection` with
+`w === 0` writes `(0,0,0)`; `Quaternion.equalsApprox` is sign-insensitive;
+`Quaternion.invert` of a zero quaternion is identity. `vector3.ts` now has a
+type-only import of `matrix4.ts`, which raises the gated
+`typeOnlyCircularDeps` count (runtime cycles stay 0).
+
+**Numeric keys.** Rapier collider-pair key is `lo * 2^32 + hi` (exact below
+2^53 while `lo < 2^21`; ids are monotonic, so ~2 M colliders per adapter
+lifetime). `SpatialHash` cell keys are packed integers; see its header for
+the range and wrap note.
+
+**Deferred with reasons** (not started): H3 cached `isBodySleeping` (flag is
+stale between steps by design), H5 render-list ancestor memo, M2
+`resetForces` skip, M3 skeleton palette cache, M4 pick broad-phase, M5/M6
+animation caches. Rejected: math test-instrumentation exports (§7b/§83),
+double determinant in pick (required by `Matrix4.invert`'s silent no-op),
+per-frame `Object.keys().sort()` sites (setup/validation scale).

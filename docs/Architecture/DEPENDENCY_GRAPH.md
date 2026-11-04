@@ -4,7 +4,7 @@
 
 # fourjs-monorepo - Dependency Graph
 
-**Version**: 0.0.0 | **Last Updated**: 2026-10-16
+**Version**: 0.0.0 | **Last Updated**: 2026-11-04
 
 This document provides a comprehensive dependency graph of all files, components, imports, functions, and variables in the codebase.
 
@@ -14,30 +14,30 @@ This document provides a comprehensive dependency graph of all files, components
 
 1. [Overview](#overview)
 2. [Package Dependencies](#package-dependencies)
-3. [Packages/animation Dependencies](#packages-animation-dependencies)
-4. [Packages/assets Dependencies](#packages-assets-dependencies)
-5. [Packages/core Dependencies](#packages-core-dependencies)
-6. [Packages/diagnostics Dependencies](#packages-diagnostics-dependencies)
-7. [Packages/fourjs Dependencies](#packages-fourjs-dependencies)
-8. [Packages/geometry Dependencies](#packages-geometry-dependencies)
-9. [Packages/input Dependencies](#packages-input-dependencies)
-10. [Packages/materials Dependencies](#packages-materials-dependencies)
-11. [Packages/math Dependencies](#packages-math-dependencies)
-12. [Packages/motion Dependencies](#packages-motion-dependencies)
-13. [Packages/particles Dependencies](#packages-particles-dependencies)
-14. [Packages/physics Dependencies](#packages-physics-dependencies)
-15. [Packages/physics box2d Dependencies](#packages-physics-box2d-dependencies)
-16. [Packages/physics rapier Dependencies](#packages-physics-rapier-dependencies)
-17. [Packages/physics soft Dependencies](#packages-physics-soft-dependencies)
-18. [Packages/render Dependencies](#packages-render-dependencies)
-19. [Packages/render canvas Dependencies](#packages-render-canvas-dependencies)
-20. [Packages/render svg Dependencies](#packages-render-svg-dependencies)
-21. [Packages/render webgl Dependencies](#packages-render-webgl-dependencies)
-22. [Packages/render webgpu Dependencies](#packages-render-webgpu-dependencies)
-23. [Packages/scene Dependencies](#packages-scene-dependencies)
-24. [Packages/serialization Dependencies](#packages-serialization-dependencies)
-25. [Packages/text Dependencies](#packages-text-dependencies)
-26. [Packages/ui Dependencies](#packages-ui-dependencies)
+3. [Packages/particles Dependencies](#packages-particles-dependencies)
+4. [Packages/materials Dependencies](#packages-materials-dependencies)
+5. [Packages/ui Dependencies](#packages-ui-dependencies)
+6. [Packages/text Dependencies](#packages-text-dependencies)
+7. [Packages/math Dependencies](#packages-math-dependencies)
+8. [Packages/render svg Dependencies](#packages-render-svg-dependencies)
+9. [Packages/physics box2d Dependencies](#packages-physics-box2d-dependencies)
+10. [Packages/scene Dependencies](#packages-scene-dependencies)
+11. [Packages/assets Dependencies](#packages-assets-dependencies)
+12. [Packages/physics soft Dependencies](#packages-physics-soft-dependencies)
+13. [Packages/physics rapier Dependencies](#packages-physics-rapier-dependencies)
+14. [Packages/render webgl Dependencies](#packages-render-webgl-dependencies)
+15. [Packages/physics Dependencies](#packages-physics-dependencies)
+16. [Packages/geometry Dependencies](#packages-geometry-dependencies)
+17. [Packages/render Dependencies](#packages-render-dependencies)
+18. [Packages/input Dependencies](#packages-input-dependencies)
+19. [Packages/render webgpu Dependencies](#packages-render-webgpu-dependencies)
+20. [Packages/render canvas Dependencies](#packages-render-canvas-dependencies)
+21. [Packages/motion Dependencies](#packages-motion-dependencies)
+22. [Packages/animation Dependencies](#packages-animation-dependencies)
+23. [Packages/diagnostics Dependencies](#packages-diagnostics-dependencies)
+24. [Packages/core Dependencies](#packages-core-dependencies)
+25. [Packages/fourjs Dependencies](#packages-fourjs-dependencies)
+26. [Packages/serialization Dependencies](#packages-serialization-dependencies)
 27. [Dependency Matrix](#dependency-matrix)
 28. [Circular Dependency Analysis](#circular-dependency-analysis)
 29. [Visual Dependency Graph](#visual-dependency-graph)
@@ -51,30 +51,30 @@ This document provides a comprehensive dependency graph of all files, components
 
 The codebase is organized into the following modules:
 
-- **packages/animation**: 14 files
-- **packages/assets**: 15 files
-- **packages/core**: 14 files
-- **packages/diagnostics**: 12 files
-- **packages/fourjs**: 35 files
-- **packages/geometry**: 13 files
-- **packages/input**: 9 files
-- **packages/materials**: 17 files
-- **packages/math**: 11 files
-- **packages/motion**: 24 files
 - **packages/particles**: 9 files
-- **packages/physics**: 25 files
-- **packages/physics-box2d**: 1 file
-- **packages/physics-rapier**: 8 files
-- **packages/physics-soft**: 1 file
-- **packages/render**: 34 files
-- **packages/render-canvas**: 1 file
-- **packages/render-svg**: 1 file
-- **packages/render-webgl**: 25 files
-- **packages/render-webgpu**: 30 files
-- **packages/scene**: 17 files
-- **packages/serialization**: 5 files
-- **packages/text**: 6 files
+- **packages/materials**: 17 files
 - **packages/ui**: 16 files
+- **packages/text**: 6 files
+- **packages/math**: 11 files
+- **packages/render-svg**: 1 file
+- **packages/physics-box2d**: 1 file
+- **packages/scene**: 17 files
+- **packages/assets**: 15 files
+- **packages/physics-soft**: 1 file
+- **packages/physics-rapier**: 8 files
+- **packages/render-webgl**: 25 files
+- **packages/physics**: 25 files
+- **packages/geometry**: 13 files
+- **packages/render**: 34 files
+- **packages/input**: 9 files
+- **packages/render-webgpu**: 30 files
+- **packages/render-canvas**: 1 file
+- **packages/motion**: 24 files
+- **packages/animation**: 14 files
+- **packages/diagnostics**: 12 files
+- **packages/core**: 14 files
+- **packages/fourjs**: 35 files
+- **packages/serialization**: 5 files
 
 ---
 
@@ -84,791 +84,234 @@ The codebase is organized into the following modules:
 
 | Package                                               | Depends On                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Files (Active) | Files (Dormant) |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | --------------- |
-| `@fourjs/animation` (`packages/animation/`)           | `@fourjs/core`, `@fourjs/motion`, `@fourjs/scene`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                     | 14             | 0               |
-| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 15             | 0               |
-| `@fourjs/core` (`packages/core/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 14             | 0               |
-| `@fourjs/diagnostics` (`packages/diagnostics/`)       | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 12             | 1               |
-| `fourJS` (`packages/fourjs/`)                         | `@fourjs/animation`, `@fourjs/core`, `@fourjs/diagnostics`, `@fourjs/geometry`, `@fourjs/motion`, `@fourjs/math`, `@fourjs/assets`, `@fourjs/physics`, `@fourjs/scene`, `@fourjs/render`, `@fourjs/materials`, `@fourjs/input`, `@fourjs/particles`, `@fourjs/physics-box2d`, `@fourjs/physics-rapier`, `@fourjs/physics-soft`, `@fourjs/serialization`, `@fourjs/ui`, `@fourjs/render-canvas`, `@fourjs/render-svg`, `@fourjs/render-webgl`, `@fourjs/render-webgpu`, `@fourjs/text` | 35             | 1               |
-| `@fourjs/geometry` (`packages/geometry/`)             | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 13             | 0               |
-| `@fourjs/input` (`packages/input/`)                   | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 9              | 0               |
+| `@fourjs/particles` (`packages/particles/`)           | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 9              | 0               |
 | `@fourjs/materials` (`packages/materials/`)           | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 17             | 0               |
-| `@fourjs/math` (`packages/math/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 11             | 0               |
-| `@fourjs/motion` (`packages/motion/`)                 | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 24             | 0               |
-| `@fourjs/particles` (`packages/particles/`)           | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 9              | 0               |
-| `@fourjs/physics` (`packages/physics/`)               | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                     | 25             | 0               |
-| `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
-| `@fourjs/physics-rapier` (`packages/physics-rapier/`) | `@fourjs/physics`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                     | 8              | 0               |
-| `@fourjs/physics-soft` (`packages/physics-soft/`)     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
-| `@fourjs/render` (`packages/render/`)                 | `@fourjs/geometry`, `@fourjs/materials`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                              | 34             | 0               |
-| `@fourjs/render-canvas` (`packages/render-canvas/`)   | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
-| `@fourjs/render-svg` (`packages/render-svg/`)         | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
-| `@fourjs/render-webgl` (`packages/render-webgl/`)     | `@fourjs/math`, `@fourjs/render`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                      | 25             | 0               |
-| `@fourjs/render-webgpu` (`packages/render-webgpu/`)   | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 30             | 0               |
-| `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 17             | 0               |
-| `@fourjs/serialization` (`packages/serialization/`)   | `@fourjs/core`, `@fourjs/scene`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 5              | 0               |
+| `@fourjs/ui` (`packages/ui/`)                         | `@fourjs/text`, `@fourjs/math`, `@fourjs/input`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                      | 16             | 0               |
 | `@fourjs/text` (`packages/text/`)                     | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 6              | 3               |
-| `@fourjs/ui` (`packages/ui/`)                         | `@fourjs/core`, `@fourjs/scene`, `@fourjs/input`, `@fourjs/math`, `@fourjs/text`                                                                                                                                                                                                                                                                                                                                                                                                      | 16             | 0               |
+| `@fourjs/math` (`packages/math/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 11             | 0               |
+| `@fourjs/render-svg` (`packages/render-svg/`)         | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
+| `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
+| `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 17             | 0               |
+| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 15             | 0               |
+| `@fourjs/physics-soft` (`packages/physics-soft/`)     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
+| `@fourjs/physics-rapier` (`packages/physics-rapier/`) | `@fourjs/physics`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                     | 8              | 0               |
+| `@fourjs/render-webgl` (`packages/render-webgl/`)     | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                      | 25             | 0               |
+| `@fourjs/physics` (`packages/physics/`)               | `@fourjs/core`, `@fourjs/math`, `@fourjs/motion`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 25             | 0               |
+| `@fourjs/geometry` (`packages/geometry/`)             | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 13             | 0               |
+| `@fourjs/render` (`packages/render/`)                 | `@fourjs/math`, `@fourjs/materials`, `@fourjs/geometry`, `@fourjs/core`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                              | 34             | 0               |
+| `@fourjs/input` (`packages/input/`)                   | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 9              | 0               |
+| `@fourjs/render-webgpu` (`packages/render-webgpu/`)   | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 30             | 0               |
+| `@fourjs/render-canvas` (`packages/render-canvas/`)   | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
+| `@fourjs/motion` (`packages/motion/`)                 | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 24             | 0               |
+| `@fourjs/animation` (`packages/animation/`)           | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                     | 14             | 0               |
+| `@fourjs/diagnostics` (`packages/diagnostics/`)       | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 12             | 1               |
+| `@fourjs/core` (`packages/core/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 14             | 0               |
+| `fourJS` (`packages/fourjs/`)                         | `@fourjs/physics-box2d`, `@fourjs/assets`, `@fourjs/animation`, `@fourjs/core`, `@fourjs/geometry`, `@fourjs/materials`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`, `@fourjs/diagnostics`, `@fourjs/motion`, `@fourjs/physics`, `@fourjs/serialization`, `@fourjs/ui`, `@fourjs/render-webgpu`, `@fourjs/render-svg`, `@fourjs/input`, `@fourjs/text`, `@fourjs/particles`, `@fourjs/physics-soft`, `@fourjs/render-canvas`, `@fourjs/render-webgl`, `@fourjs/physics-rapier` | 35             | 1               |
+| `@fourjs/serialization` (`packages/serialization/`)   | `@fourjs/core`, `@fourjs/scene`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 5              | 0               |
 | `@fourjs-tools/docs` (`tools/docs/`)                  | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 0              | 0               |
 
 ### Package Dependency Diagram
 
 ```mermaid
 graph LR
-    P0[packages/animation]
-    P1[packages/assets]
-    P2[packages/core]
-    P3[packages/diagnostics]
-    P4[packages/fourjs]
-    P5[packages/geometry]
-    P6[packages/input]
-    P7[packages/materials]
-    P8[packages/math]
-    P9[packages/motion]
-    P10[packages/particles]
-    P11[packages/physics]
-    P12[packages/physics-box2d]
-    P13[packages/physics-rapier]
-    P14[packages/physics-soft]
-    P15[packages/render]
-    P16[packages/render-canvas]
-    P17[packages/render-svg]
-    P18[packages/render-webgl]
-    P19[packages/render-webgpu]
-    P20[packages/scene]
-    P21[packages/serialization]
-    P22[packages/text]
-    P23[packages/ui]
+    P0[packages/particles]
+    P1[packages/materials]
+    P2[packages/ui]
+    P3[packages/text]
+    P4[packages/math]
+    P5[packages/render-svg]
+    P6[packages/physics-box2d]
+    P7[packages/scene]
+    P8[packages/assets]
+    P9[packages/physics-soft]
+    P10[packages/physics-rapier]
+    P11[packages/render-webgl]
+    P12[packages/physics]
+    P13[packages/geometry]
+    P14[packages/render]
+    P15[packages/input]
+    P16[packages/render-webgpu]
+    P17[packages/render-canvas]
+    P18[packages/motion]
+    P19[packages/animation]
+    P20[packages/diagnostics]
+    P21[packages/core]
+    P22[packages/fourjs]
+    P23[packages/serialization]
     P24[tools/docs]
-    P0 --> P2
-    P0 --> P9
-    P0 --> P20
-    P0 --> P8
-    P1 --> P2
-    P3 --> P2
-    P3 --> P8
-    P4 --> P0
-    P4 --> P2
-    P4 --> P3
-    P4 --> P5
-    P4 --> P9
-    P4 --> P8
-    P4 --> P1
-    P4 --> P11
-    P4 --> P20
-    P4 --> P15
-    P4 --> P7
-    P4 --> P6
-    P4 --> P10
-    P4 --> P12
-    P4 --> P13
-    P4 --> P14
-    P4 --> P21
-    P4 --> P23
-    P4 --> P16
-    P4 --> P17
-    P4 --> P18
-    P4 --> P19
-    P4 --> P22
-    P5 --> P8
-    P5 --> P2
-    P6 --> P2
-    P6 --> P8
-    P6 --> P20
-    P7 --> P2
-    P7 --> P8
-    P9 --> P2
-    P9 --> P8
-    P9 --> P20
-    P10 --> P2
-    P10 --> P8
-    P10 --> P20
-    P11 --> P2
-    P11 --> P8
-    P11 --> P20
-    P11 --> P9
-    P13 --> P11
-    P13 --> P2
-    P13 --> P8
-    P15 --> P5
+    P0 --> P4
+    P0 --> P7
+    P0 --> P21
+    P1 --> P21
+    P1 --> P4
+    P2 --> P3
+    P2 --> P4
+    P2 --> P15
+    P2 --> P7
+    P2 --> P21
+    P3 --> P21
+    P7 --> P4
+    P7 --> P21
+    P8 --> P21
+    P10 --> P12
+    P10 --> P21
+    P10 --> P4
+    P11 --> P14
+    P11 --> P21
+    P11 --> P4
+    P12 --> P21
+    P12 --> P4
+    P12 --> P18
+    P12 --> P7
+    P13 --> P4
+    P13 --> P21
+    P14 --> P4
+    P14 --> P1
+    P14 --> P13
+    P14 --> P21
+    P14 --> P7
+    P15 --> P21
+    P15 --> P4
     P15 --> P7
-    P15 --> P8
-    P15 --> P20
-    P15 --> P2
-    P18 --> P8
-    P18 --> P15
-    P18 --> P2
-    P19 --> P15
-    P19 --> P2
-    P19 --> P8
-    P19 --> P20
-    P20 --> P2
-    P20 --> P8
-    P21 --> P2
-    P21 --> P20
-    P21 --> P8
+    P16 --> P14
+    P16 --> P21
+    P16 --> P4
+    P16 --> P7
+    P18 --> P4
+    P18 --> P7
+    P18 --> P21
+    P19 --> P21
+    P19 --> P4
+    P19 --> P7
+    P19 --> P18
+    P20 --> P21
+    P20 --> P4
+    P22 --> P6
+    P22 --> P8
+    P22 --> P19
+    P22 --> P21
+    P22 --> P13
+    P22 --> P1
+    P22 --> P4
+    P22 --> P14
+    P22 --> P7
+    P22 --> P20
+    P22 --> P18
+    P22 --> P12
+    P22 --> P23
     P22 --> P2
-    P23 --> P2
-    P23 --> P20
-    P23 --> P6
-    P23 --> P8
-    P23 --> P22
+    P22 --> P16
+    P22 --> P5
+    P22 --> P15
+    P22 --> P3
+    P22 --> P0
+    P22 --> P9
+    P22 --> P17
+    P22 --> P11
+    P22 --> P10
+    P23 --> P21
+    P23 --> P7
+    P23 --> P4
 ```
 
 ---
 
-<a id="packages-animation-dependencies"></a>
+<a id="packages-particles-dependencies"></a>
 
-## Packages/animation Dependencies
+## Packages/particles Dependencies
 
-### `packages/animation/src/animation-system.ts` - The fixed-step animation system (§39 step 3, plan decision P4-1).
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                             |
-| ---------------- | ------------------------------------------------------------------ |
-| `@fourjs/core`   | `FourError`                                                        |
-| `@fourjs/motion` | `PRIORITY_ANIMATION_TARGETS, FixedUpdateContext, SimulationSystem` |
-
-**Exports:**
-
-- Classes: `AnimationSystem`
-- Interfaces: `Advanceable`, `AnimationSystemOptions`
-- Types: `AnimationPlaybackState`
-
----
-
-### `packages/animation/src/binding.ts` - Property bindings (§16).
+### `packages/particles/src/particle-renderable.ts` - `ParticleRenderable` (§36, §49, plan P9-3) — the scene node that puts a
 
 **Workspace Dependencies:**
 
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
+| Package         | Import             |
+| --------------- | ------------------ |
+| `@fourjs/math`  | `Vector3, Vector4` |
+| `@fourjs/scene` | `Node`             |
 
 **Internal Dependencies:**
 
-| File          | Imports                                      | Type   |
-| ------------- | -------------------------------------------- | ------ |
-| `./values.js` | `detectAdapter, numberAdapter, ValueAdapter` | Import |
+| File           | Imports                                     | Type               |
+| -------------- | ------------------------------------------- | ------------------ |
+| `./emitter.js` | `ParticleEmitter`                           | Import (type-only) |
+| `./types.js`   | `ParticleTexture`                           | Import (type-only) |
+| `./trail.js`   | `TRAIL_VERTEX_FLOATS, buildTrailRibbonMesh` | Import             |
 
 **Exports:**
 
-- Interfaces: `PropertyBinding`
-- Functions: `createBinding`, `createArrayElementBinding`
+- Classes: `ParticleRenderable`
+- Interfaces: `ParticleRenderableOptions`
+- Constants: `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_TRAIL_VERTEX_FLOATS`
 
 ---
 
-### `packages/animation/src/blend-tree.ts` - Blend trees for {@link ./controller.js#AnimationController} (PH-9, §18).
-
-**Internal Dependencies:**
-
-| File        | Imports         | Type               |
-| ----------- | --------------- | ------------------ |
-| `./clip.js` | `AnimationClip` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `BlendTree1DPoint`, `BlendTree2DPoint`, `BlendTree1D`, `BlendTree2D`, `Blend2DRank`
-- Types: `BlendTree`
-- Functions: `isBlendTree`, `locateBlend1D`, `locateBlend2D`
-
----
-
-### `packages/animation/src/clip.ts` - Animation clips (§17).
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File         | Imports              | Type               |
-| ------------ | -------------------- | ------------------ |
-| `./track.js` | `AnimationTrackLike` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `AnimationClip`
-- Interfaces: `AnimationEvent`, `TrackSampleSink`, `AnimationClipOptions`
-- Types: `AnimationEventVisitor`
-
----
-
-### `packages/animation/src/controller.ts` - §18 animation state machines — {@link AnimationController}.
-
-**Workspace Dependencies:**
-
-| Package         | Import                                                |
-| --------------- | ----------------------------------------------------- |
-| `@fourjs/core`  | `FourError`                                           |
-| `@fourjs/scene` | `Node, runOwnedTransformWrite, warnAuthorityConflict` |
-| `@fourjs/scene` | `TransformAuthority`                                  |
-
-**Internal Dependencies:**
-
-| File                    | Imports                                                                                      | Type                  |
-| ----------------------- | -------------------------------------------------------------------------------------------- | --------------------- |
-| `./animation-system.js` | `Advanceable`                                                                                | Import (type-only)    |
-| `./blend-tree.js`       | `isBlendTree, locateBlend1D, locateBlend2D, Blend2DRank, BlendTree`                          | Import                |
-| `./binding.js`          | `createBinding, PropertyBinding`                                                             | Import                |
-| `./clip.js`             | `AnimationClip`                                                                              | Import                |
-| `./mixer.js`            | `AnimationEventListener`                                                                     | Import (type-only)    |
-| `./track.js`            | `AnimationTrackLike`                                                                         | Import (type-only)    |
-| `./tween.js`            | `claimProperty, isTransformOwner, releaseProperty, requireNonNegativeSeconds, PropertyClaim` | Import                |
-| `./values.js`           | `detectAdapter, ValueAdapter`                                                                | Import                |
-| `./when.js`             | `compileWhenExpression`                                                                      | Import                |
-| `./blend-tree.js`       | `BlendTree, BlendTree1D, BlendTree2D, BlendTree1DPoint, BlendTree2DPoint`                    | Re-export (type-only) |
-
-**Exports:**
-
-- Classes: `AnimationController`
-- Interfaces: `AnimationStateOptions`, `NumericCondition`, `BooleanCondition`, `TriggerCondition`, `AnimationTransition`, `AnimationControllerParameters`, `AnimationControllerOptions`, `ControllerAdvanceOptions`
-- Types: `ControllerPlaybackState`, `AnimationStateInput`, `NumericComparison`, `TransitionCondition`, `TransitionWhen`, `StateChangeListener`
-- Constants: `ANY_STATE`
-- Re-exports: `BlendTree`, `BlendTree1D`, `BlendTree2D`, `BlendTree1DPoint`, `BlendTree2DPoint`
-
----
-
-### `packages/animation/src/easing.ts` - Easing functions (§15).
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Exports:**
-
-- Types: `EasingFunction`, `EasingName`
-- Functions: `resolveEasing`
-- Constants: `BACK_OVERSHOOT`, `BACK_OVERSHOOT_IN_OUT`, `BOUNCE_AMPLITUDE`, `BOUNCE_SEGMENT_DIVISOR`, `ELASTIC_AMPLITUDE`, `ELASTIC_PERIOD`, `ELASTIC_PERIOD_IN_OUT`, `SPRING_DAMPING_RATIO`, `SPRING_OSCILLATIONS`, `linear`, `quadraticIn`, `quadraticOut`, `quadraticInOut`, `cubicIn`, `cubicOut`, `cubicInOut`, `quarticIn`, `quarticOut`, `quarticInOut`, `quinticIn`, `quinticOut`, `quinticInOut`, `sineIn`, `sineOut`, `sineInOut`, `exponentialIn`, `exponentialOut`, `exponentialInOut`, `circularIn`, `circularOut`, `circularInOut`, `backIn`, `backOut`, `backInOut`, `bounceOut`, `bounceIn`, `bounceInOut`, `elasticIn`, `elasticOut`, `elasticInOut`, `springOut`, `springIn`, `springInOut`, `EASINGS`, `EASING_NAMES`
-
----
-
-### `packages/animation/src/index.ts` - `@fourjs/animation` — the public surface of the animation pillar (Part III).
-
-**Internal Dependencies:**
-
-| File                    | Imports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Type                  |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./animation-system.js` | `AnimationSystem`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export             |
-| `./binding.js`          | `createArrayElementBinding, createBinding`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
-| `./clip.js`             | `AnimationClip`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
-| `./blend-tree.js`       | `isBlendTree`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
-| `./controller.js`       | `ANY_STATE, AnimationController`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
-| `./layer-stack.js`      | `AnimationLayerStack`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Re-export             |
-| `./easing.js`           | `BACK_OVERSHOOT, BACK_OVERSHOOT_IN_OUT, BOUNCE_AMPLITUDE, BOUNCE_SEGMENT_DIVISOR, EASINGS, EASING_NAMES, ELASTIC_AMPLITUDE, ELASTIC_PERIOD, ELASTIC_PERIOD_IN_OUT, SPRING_DAMPING_RATIO, SPRING_OSCILLATIONS, backIn, backInOut, backOut, bounceIn, bounceInOut, bounceOut, circularIn, circularInOut, circularOut, cubicIn, cubicInOut, cubicOut, elasticIn, elasticInOut, elasticOut, exponentialIn, exponentialInOut, exponentialOut, linear, quadraticIn, quadraticInOut, quadraticOut, quarticIn, quarticInOut, quarticOut, quinticIn, quinticInOut, quinticOut, resolveEasing, sineIn, sineInOut, sineOut, springIn, springInOut, springOut` | Re-export             |
-| `./mixer.js`            | `AnimationMixer`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
-| `./timeline.js`         | `Timeline`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
-| `./track.js`            | `AnimationTrack`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
-| `./tween.js`            | `Tween, animate, tween`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
-| `./when.js`             | `compileWhenExpression`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
-| `./values.js`           | `booleanAdapter, colorAdapter, detectAdapter, discreteAdapter, discreteAdapterFor, numberAdapter, quaternionAdapter, vector2Adapter, vector3Adapter, vector4Adapter`                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
-| `./animation-system.js` | `Advanceable, AnimationPlaybackState, AnimationSystemOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
-| `./binding.js`          | `PropertyBinding`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./clip.js`             | `AnimationClipOptions, AnimationEvent, AnimationEventVisitor, TrackSampleSink`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
-| `./blend-tree.js`       | `BlendTree, BlendTree1D, BlendTree1DPoint, BlendTree2D, BlendTree2DPoint`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
-| `./controller.js`       | `AnimationControllerOptions, AnimationControllerParameters, AnimationStateInput, AnimationStateOptions, AnimationTransition, BooleanCondition, ControllerAdvanceOptions, ControllerPlaybackState, NumericComparison, NumericCondition, StateChangeListener, TransitionCondition, TransitionWhen, TriggerCondition`                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
-| `./layer-stack.js`      | `AnimationLayer, AnimationLayerStackOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./easing.js`           | `EasingFunction, EasingName`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./mixer.js`            | `AnimationEventListener, MixerPlayOptions, MixerRootMotionOptions, MixerState`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
-| `./timeline.js`         | `TimelineChild, TimelineEntry, TimelineMarkerCallback, TimelineMarkerOptions, TimelineState`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./track.js`            | `AnimationTrackLike, AnimationTrackOptions, InterpolationMode`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
-| `./tween.js`            | `TweenProperties, TweenState, TweenValue`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
-| `./when.js`             | `WhenParameterLookup`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
-| `./values.js`           | `ColorRGBA, ValueAdapter, ValueKind`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `AnimationSystem`, `createArrayElementBinding`, `createBinding`, `AnimationClip`, `isBlendTree`, `ANY_STATE`, `AnimationController`, `AnimationLayerStack`, `BACK_OVERSHOOT`, `BACK_OVERSHOOT_IN_OUT`, `BOUNCE_AMPLITUDE`, `BOUNCE_SEGMENT_DIVISOR`, `EASINGS`, `EASING_NAMES`, `ELASTIC_AMPLITUDE`, `ELASTIC_PERIOD`, `ELASTIC_PERIOD_IN_OUT`, `SPRING_DAMPING_RATIO`, `SPRING_OSCILLATIONS`, `backIn`, `backInOut`, `backOut`, `bounceIn`, `bounceInOut`, `bounceOut`, `circularIn`, `circularInOut`, `circularOut`, `cubicIn`, `cubicInOut`, `cubicOut`, `elasticIn`, `elasticInOut`, `elasticOut`, `exponentialIn`, `exponentialInOut`, `exponentialOut`, `linear`, `quadraticIn`, `quadraticInOut`, `quadraticOut`, `quarticIn`, `quarticInOut`, `quarticOut`, `quinticIn`, `quinticInOut`, `quinticOut`, `resolveEasing`, `sineIn`, `sineInOut`, `sineOut`, `springIn`, `springInOut`, `springOut`, `AnimationMixer`, `Timeline`, `AnimationTrack`, `Tween`, `animate`, `tween`, `compileWhenExpression`, `booleanAdapter`, `colorAdapter`, `detectAdapter`, `discreteAdapter`, `discreteAdapterFor`, `numberAdapter`, `quaternionAdapter`, `vector2Adapter`, `vector3Adapter`, `vector4Adapter`, `Advanceable`, `AnimationPlaybackState`, `AnimationSystemOptions`, `PropertyBinding`, `AnimationClipOptions`, `AnimationEvent`, `AnimationEventVisitor`, `TrackSampleSink`, `BlendTree`, `BlendTree1D`, `BlendTree1DPoint`, `BlendTree2D`, `BlendTree2DPoint`, `AnimationControllerOptions`, `AnimationControllerParameters`, `AnimationStateInput`, `AnimationStateOptions`, `AnimationTransition`, `BooleanCondition`, `ControllerAdvanceOptions`, `ControllerPlaybackState`, `NumericComparison`, `NumericCondition`, `StateChangeListener`, `TransitionCondition`, `TransitionWhen`, `TriggerCondition`, `AnimationLayer`, `AnimationLayerStackOptions`, `EasingFunction`, `EasingName`, `AnimationEventListener`, `MixerPlayOptions`, `MixerRootMotionOptions`, `MixerState`, `TimelineChild`, `TimelineEntry`, `TimelineMarkerCallback`, `TimelineMarkerOptions`, `TimelineState`, `AnimationTrackLike`, `AnimationTrackOptions`, `InterpolationMode`, `TweenProperties`, `TweenState`, `TweenValue`, `WhenParameterLookup`, `ColorRGBA`, `ValueAdapter`, `ValueKind`
-
----
-
-### `packages/animation/src/layer-stack.ts` - Layered / additive animation (PH-9, §18, §100).
-
-**Workspace Dependencies:**
-
-| Package         | Import                                                |
-| --------------- | ----------------------------------------------------- |
-| `@fourjs/core`  | `FourError`                                           |
-| `@fourjs/scene` | `Node, runOwnedTransformWrite, warnAuthorityConflict` |
-| `@fourjs/scene` | `TransformAuthority`                                  |
-
-**Internal Dependencies:**
-
-| File                    | Imports                                                                                      | Type               |
-| ----------------------- | -------------------------------------------------------------------------------------------- | ------------------ |
-| `./animation-system.js` | `Advanceable`                                                                                | Import (type-only) |
-| `./binding.js`          | `createBinding, PropertyBinding`                                                             | Import             |
-| `./controller.js`       | `AnimationController, ControllerPlaybackState`                                               | Import (type-only) |
-| `./tween.js`            | `claimProperty, isTransformOwner, releaseProperty, requireNonNegativeSeconds, PropertyClaim` | Import             |
-| `./values.js`           | `detectAdapter, ValueAdapter`                                                                | Import             |
-
-**Exports:**
-
-- Classes: `AnimationLayerStack`
-- Interfaces: `AnimationLayer`, `AnimationLayerStackOptions`
-
----
-
-### `packages/animation/src/mixer.ts` - The clip player (§17 clips, §16 playback semantics, §107 "playback controls").
-
-**Workspace Dependencies:**
-
-| Package         | Import                                                |
-| --------------- | ----------------------------------------------------- |
-| `@fourjs/core`  | `FourError`                                           |
-| `@fourjs/math`  | `Quaternion, Vector3`                                 |
-| `@fourjs/scene` | `Node, runOwnedTransformWrite, warnAuthorityConflict` |
-| `@fourjs/scene` | `TransformAuthority`                                  |
-
-**Internal Dependencies:**
-
-| File           | Imports                                                                                      | Type               |
-| -------------- | -------------------------------------------------------------------------------------------- | ------------------ |
-| `./binding.js` | `createBinding, PropertyBinding`                                                             | Import             |
-| `./clip.js`    | `AnimationClip, AnimationEvent, TrackSampleSink`                                             | Import (type-only) |
-| `./track.js`   | `AnimationTrackLike`                                                                         | Import (type-only) |
-| `./tween.js`   | `claimProperty, isTransformOwner, releaseProperty, requireNonNegativeSeconds, PropertyClaim` | Import             |
-| `./values.js`  | `detectAdapter, ValueAdapter`                                                                | Import             |
-
-**Exports:**
-
-- Classes: `AnimationMixer`
-- Interfaces: `MixerRootMotionOptions`, `MixerPlayOptions`
-- Types: `MixerState`, `AnimationEventListener`
-
----
-
-### `packages/animation/src/timeline.ts` - Timelines (§16).
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File         | Imports                     | Type   |
-| ------------ | --------------------------- | ------ |
-| `./tween.js` | `requireNonNegativeSeconds` | Import |
-
-**Exports:**
-
-- Classes: `Timeline`
-- Interfaces: `TimelineMarkerOptions`, `TimelineChild`
-- Types: `TimelineState`, `TimelineMarkerCallback`, `TimelineEntry`
-
----
-
-### `packages/animation/src/track.ts` - Animation tracks (§17).
-
-**Workspace Dependencies:**
-
-| Package        | Import                      |
-| -------------- | --------------------------- |
-| `@fourjs/core` | `FourError`                 |
-| `@fourjs/math` | `Vector2, Vector3, Vector4` |
-
-**Internal Dependencies:**
-
-| File          | Imports                              | Type               |
-| ------------- | ------------------------------------ | ------------------ |
-| `./values.js` | `ColorRGBA, ValueAdapter, ValueKind` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `AnimationTrack`
-- Interfaces: `AnimationTrackOptions`, `AnimationTrackLike`
-- Types: `InterpolationMode`
-
----
-
-### `packages/animation/src/tween.ts` - Tweens (§15).
-
-**Workspace Dependencies:**
-
-| Package         | Import                                                |
-| --------------- | ----------------------------------------------------- |
-| `@fourjs/core`  | `DEV_WARNING_PREFIX, FourError`                       |
-| `@fourjs/math`  | `Quaternion, Vector2, Vector3, Vector4`               |
-| `@fourjs/scene` | `Node, runOwnedTransformWrite, warnAuthorityConflict` |
-| `@fourjs/scene` | `TransformAuthority`                                  |
-
-**Internal Dependencies:**
-
-| File           | Imports                                     | Type   |
-| -------------- | ------------------------------------------- | ------ |
-| `./binding.js` | `createBinding, PropertyBinding`            | Import |
-| `./easing.js`  | `resolveEasing, EasingFunction, EasingName` | Import |
-| `./values.js`  | `detectAdapter, ColorRGBA, ValueAdapter`    | Import |
-
-**Exports:**
-
-- Classes: `Tween`
-- Interfaces: `TweenProperties`, `PropertyClaim`
-- Types: `TweenValue`, `TweenState`
-- Functions: `claimProperty`, `releaseProperty`, `requireNonNegativeSeconds`, `isTransformOwner`, `animate`, `tween`
-
----
-
-### `packages/animation/src/values.ts` - Value adapters (§16 property bindings, §17 track value types).
-
-**Workspace Dependencies:**
-
-| Package        | Import                                             |
-| -------------- | -------------------------------------------------- |
-| `@fourjs/math` | `Quaternion, Vector2, Vector3, Vector4, ColorRGBA` |
-| `@fourjs/math` | `ColorRGBA`                                        |
-
-**Exports:**
-
-- Interfaces: `ValueAdapter`
-- Types: `ValueKind`
-- Functions: `discreteAdapterFor`, `detectAdapter`
-- Constants: `numberAdapter`, `vector2Adapter`, `vector3Adapter`, `vector4Adapter`, `quaternionAdapter`, `colorAdapter`, `booleanAdapter`, `discreteAdapter`
-- Re-exports: `ColorRGBA`
-
----
-
-### `packages/animation/src/when.ts` - Optional `when` string sugar for {@link ./controller.js#AnimationTransition}
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File              | Imports                                  | Type               |
-| ----------------- | ---------------------------------------- | ------------------ |
-| `./controller.js` | `NumericComparison, TransitionCondition` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `WhenParameterLookup`
-- Functions: `compileWhenExpression`
-
----
-
-<a id="packages-assets-dependencies"></a>
-
-## Packages/assets Dependencies
-
-### `packages/assets/src/asset-manager.ts` - The asset manager (§76) — one cache, one refcount, one fetch per asset.
-
-**Workspace Dependencies:**
-
-| Package        | Import                                                             |
-| -------------- | ------------------------------------------------------------------ |
-| `@fourjs/core` | `DEV, FourError, devWarnOnce, disposeAll, isFourError, Disposable` |
-
-**Internal Dependencies:**
-
-| File                | Imports                                                                     | Type   |
-| ------------------- | --------------------------------------------------------------------------- | ------ |
-| `./content-hash.js` | `resolveGlobalDigest, resolveGlobalTextDecoder, DigestLike, TextDecodeLike` | Import |
-
-**Exports:**
-
-- Classes: `AssetManager`
-- Interfaces: `FetchResponse`, `ReadableBodyLike`, `ByteReaderLike`, `AssetProgressEvent`, `WorkerLike`, `AssetWithDependencies`, `AssetGraph`, `AssetGraphLoadOptions`, `ResponseHeadersLike`, `TimerLike`, `AssetLoadContext`, `FetchInit`, `AbortHandle`, `AbortSignalLike`, `AssetLoadOptions`, `AssetLoader`, `AssetManagerOptions`
-- Types: `AssetWatchLike`, `FetchLike`
-- Functions: `resolveGlobalFetch`
-- Constants: `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`
-
----
-
-### `packages/assets/src/bounded-jpeg.ts` - Application-pinned `squoosh_jpg_bg.wasm` from `@jsquash/jpeg@1.6.0`.
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                | Imports                                                                                          | Type   |
-| ------------------- | ------------------------------------------------------------------------------------------------ | ------ |
-| `./image-memory.js` | `registerBoundedImageDecoder`                                                                    | Import |
-| `./image-probe.js`  | `probeJpeg`                                                                                      | Import |
-| `./texture.js`      | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO, DecodedTexels, TexelDecodeLike` | Import |
-| `./wasm-memory.js`  | `limitWasmMemory`                                                                                | Import |
-| `./bounded-png.js`  | `DEFAULT_IMAGE_WORKING_BYTES`                                                                    | Import |
-
-**Exports:**
-
-- Interfaces: `BoundedJpegDecoderOptions`
-- Functions: `createBoundedJpegDecoder`
-
----
-
-### `packages/assets/src/bounded-png.ts` - Application-pinned `squoosh_png_bg.wasm` from `@jsquash/png@3.1.1`.
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                | Imports                                                                                          | Type   |
-| ------------------- | ------------------------------------------------------------------------------------------------ | ------ |
-| `./image-memory.js` | `registerBoundedImageDecoder`                                                                    | Import |
-| `./texture.js`      | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO, DecodedTexels, TexelDecodeLike` | Import |
-| `./wasm-memory.js`  | `limitWasmMemory`                                                                                | Import |
-
-**Exports:**
-
-- Interfaces: `BoundedPngDecoderOptions`
-- Functions: `createBoundedPngDecoder`
-- Constants: `DEFAULT_IMAGE_WORKING_BYTES`
-
----
-
-### `packages/assets/src/capabilities.ts` - This package's §81 capability token (RFC 0002).
+### `packages/particles/src/emitter.ts` - `ParticleEmitter` — the CPU particle simulation (§36, plan P9-1, WP-9.1).
 
 **Workspace Dependencies:**
 
 | Package        | Import             |
 | -------------- | ------------------ |
-| `@fourjs/core` | `defineCapability` |
+| `@fourjs/core` | `FourError`        |
+| `@fourjs/math` | `Vector3, Vector4` |
 
 **Internal Dependencies:**
 
-| File                   | Imports               | Type               |
-| ---------------------- | --------------------- | ------------------ |
-| `./loader-registry.js` | `AssetLoaderRegistry` | Import (type-only) |
+| File          | Imports                                                                                                                                                                                                                                                                        | Type               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `./pool.js`   | `ParticlePool`                                                                                                                                                                                                                                                                 | Import             |
+| `./random.js` | `SeededRandom`                                                                                                                                                                                                                                                                 | Import             |
+| `./trail.js`  | `ParticleTrailStore, resolveTrailOptions, ParticleTrailOptions`                                                                                                                                                                                                                | Import             |
+| `./types.js`  | `ParticleBurst, ParticleCollisionMode, MutableParticleColor, ParticleColor, ParticleForceField, ParticleGpuIntegrateExtras, ParticleGpuRadialField, ParticleGpuSimulation, ParticleLifetimeRamp, ParticleLifetimeStop, ParticleRange, ParticleSimulationMode, ParticleTexture` | Import (type-only) |
+| `./types.js`  | `evaluateLifetimeRampColorInto, evaluateLifetimeRampNumber`                                                                                                                                                                                                                    | Import             |
 
 **Exports:**
 
-- Constants: `ASSET_LOADERS`
+- Classes: `ParticleEmitter`
+- Interfaces: `ParticleEmitterOptions`
+- Constants: `PARTICLE_DRAWS_PER_SPAWN`, `DEFAULT_PARTICLE_SEED`, `DEFAULT_PARTICLE_LIFETIME_SECONDS`, `DEFAULT_PARTICLE_SIZE`, `DEFAULT_PARTICLE_RESTITUTION`
 
 ---
 
-### `packages/assets/src/content-hash.ts` - Content hashing (§76's last-but-one capability, §79's manifest half).
-
-**Exports:**
-
-- Types: `DigestLike`, `TextDecodeLike`
-- Functions: `resolveGlobalDigest`, `resolveGlobalTextDecoder`
-- Constants: `CONTENT_HASH_ALGORITHM`
-
----
-
-### `packages/assets/src/gltf.ts` - The §78 glTF 2.0 loader — the **parse tier** (A-19's last half, 2026-08-29).
-
-**Workspace Dependencies:**
-
-| Package        | Import                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------ |
-| `@fourjs/core` | `FourError, cloneJsonValue, devWarnOnce, isFourError, parseUntrustedJson, Disposable, JsonValue` |
+### `packages/particles/src/index.ts` - --- WP-9.2: §27 force fields (begin) ---
 
 **Internal Dependencies:**
 
-| File                 | Imports                                                                                                   | Type   |
-| -------------------- | --------------------------------------------------------------------------------------------------------- | ------ |
-| `./image-memory.js`  | `assertImageDecoderMemory`                                                                                | Import |
-| `./asset-manager.js` | `DEFAULT_MAXIMUM_BYTES, resolveGlobalFetch, AssetLoadContext, AssetLoader, FetchLike, FetchResponse`      | Import |
-| `./content-hash.js`  | `resolveGlobalTextDecoder, TextDecodeLike`                                                                | Import |
-| `./texture.js`       | `createTextureDecoder, TexelDecodeLike, TexelProbeLike, TextureAsset, TextureFilterMode, TextureWrapMode` | Import |
-
-**Exports:**
-
-- Classes: `GltfAsset`
-- Interfaces: `GltfPrimitiveRecord`, `GltfMeshRecord`, `GltfMaterialRecord`, `GltfNodeRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `GltfChannelRecord`, `GltfAnimationRecord`, `GltfLoaderOptions`
-- Types: `GltfPrimitiveMode`, `GltfChannelPath`
-- Functions: `createGltfLoader`
-
----
-
-### `packages/assets/src/gzip.ts` - Host gzip decoder. Must validate the complete stream and checksum, rejecting
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                          | Type               |
-| -------------------- | ---------------------------------------------------------------- | ------------------ |
-| `./asset-manager.js` | `AssetLoader, ByteReaderLike`                                    | Import (type-only) |
-| `./texture.js`       | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO` | Import             |
-
-**Exports:**
-
-- Interfaces: `GzipReader`, `GzipLoaderOptions`
-- Types: `GzipDecodeLike`
-- Functions: `createGzipLoader`
-
----
-
-### `packages/assets/src/image-memory.ts` - Only decoder implementations that establish the runtime's memory ceiling
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Exports:**
-
-- Functions: `registerBoundedImageDecoder`, `assertImageDecoderMemory`
-
----
-
-### `packages/assets/src/image-probe.ts` - Header probes for encoded raster formats (§96).
-
-**Exports:**
-
-- Interfaces: `ImageDimensions`
-- Functions: `probePng`, `probeJpeg`, `probeWebp`, `probeImage`
-
----
-
-### `packages/assets/src/index.ts` - `@fourjs/assets` — the asset system (§76–78).
-
-**Internal Dependencies:**
-
-| File                   | Imports                                                                                                                                                                                                                                                                                                               | Type                  |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./capabilities.js`    | `ASSET_LOADERS`                                                                                                                                                                                                                                                                                                       | Re-export             |
-| `./loader-registry.js` | `AssetLoaderRegistry`                                                                                                                                                                                                                                                                                                 | Re-export             |
-| `./asset-manager.js`   | `AssetManager, DEFAULT_MAXIMUM_BYTES, DEFAULT_TIMEOUT_SECONDS`                                                                                                                                                                                                                                                        | Re-export             |
-| `./content-hash.js`    | `CONTENT_HASH_ALGORITHM`                                                                                                                                                                                                                                                                                              | Re-export             |
-| `./manifest.js`        | `loadFromManifest, manifestLoader, manifestUrl, parseAssetManifest`                                                                                                                                                                                                                                                   | Re-export             |
-| `./texture.js`         | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO, TextureAsset, createTextureDecoder, createTextureLoader`                                                                                                                                                                                             | Re-export             |
-| `./gltf.js`            | `GltfAsset, createGltfLoader`                                                                                                                                                                                                                                                                                         | Re-export             |
-| `./loaders.js`         | `ImageAsset, binaryLoader, createImageLoader, jsonLoader, textLoader`                                                                                                                                                                                                                                                 | Re-export             |
-| `./gzip.js`            | `createGzipLoader`                                                                                                                                                                                                                                                                                                    | Re-export             |
-| `./bounded-png.js`     | `createBoundedPngDecoder, DEFAULT_IMAGE_WORKING_BYTES`                                                                                                                                                                                                                                                                | Re-export             |
-| `./bounded-jpeg.js`    | `createBoundedJpegDecoder`                                                                                                                                                                                                                                                                                            | Re-export             |
-| `./image-probe.js`     | `probeImage, probeJpeg, probePng, probeWebp`                                                                                                                                                                                                                                                                          | Re-export             |
-| `./loader-registry.js` | `RegisteredAssetLoader`                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
-| `./asset-manager.js`   | `AbortHandle, AbortSignalLike, AssetGraph, AssetGraphLoadOptions, AssetLoadOptions, AssetLoadContext, AssetLoader, AssetManagerOptions, AssetProgressEvent, AssetWatchLike, AssetWithDependencies, ByteReaderLike, FetchInit, FetchLike, FetchResponse, ReadableBodyLike, ResponseHeadersLike, TimerLike, WorkerLike` | Re-export (type-only) |
-| `./content-hash.js`    | `DigestLike, TextDecodeLike`                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
-| `./manifest.js`        | `AssetManifest, AssetManifestEntry, ManifestLoadOptions, ManifestParseOptions`                                                                                                                                                                                                                                        | Re-export (type-only) |
-| `./texture.js`         | `DecodedTexels, TexelDecodeLike, TexelProbeLike, TextureColorSpace, TextureFilterMode, TextureLoaderOptions, TextureWrapMode`                                                                                                                                                                                         | Re-export (type-only) |
-| `./gltf.js`            | `GltfAnimationRecord, GltfChannelPath, GltfChannelRecord, GltfLoaderOptions, GltfMaterialRecord, GltfMeshRecord, GltfNodeRecord, GltfPrimitiveMode, GltfPrimitiveRecord, GltfSceneRecord, GltfSkinRecord`                                                                                                             | Re-export (type-only) |
-| `./loaders.js`         | `ImageBitmapLike, ImageDecodeLike, ImageLoaderOptions`                                                                                                                                                                                                                                                                | Re-export (type-only) |
-| `./gzip.js`            | `GzipDecodeLike, GzipLoaderOptions, GzipReader`                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./bounded-png.js`     | `BoundedPngDecoderOptions`                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
-| `./bounded-jpeg.js`    | `BoundedJpegDecoderOptions`                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
-| `./image-probe.js`     | `ImageDimensions`                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| File                       | Imports                                                                                                                                                                                                                                                                        | Type                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| `./emitter.js`             | `DEFAULT_PARTICLE_LIFETIME_SECONDS, DEFAULT_PARTICLE_RESTITUTION, DEFAULT_PARTICLE_SEED, DEFAULT_PARTICLE_SIZE, PARTICLE_DRAWS_PER_SPAWN, ParticleEmitter`                                                                                                                     | Re-export             |
+| `./pool.js`                | `ParticlePool`                                                                                                                                                                                                                                                                 | Re-export             |
+| `./fields.js`              | `DEFAULT_GRAVITY_Y, DEFAULT_RADIAL_MIN_DISTANCE, DEFAULT_TURBULENCE_AMPLITUDE, DEFAULT_TURBULENCE_FREQUENCY, DEFAULT_VORTEX_MIN_DISTANCE, TURBULENCE_DIFFERENCE_CELLS, dragField, radialField, turbulenceField, uniformGravityField, volumeField, vortexField, windField`      | Re-export             |
+| `./particle-renderable.js` | `PARTICLE_INSTANCE_FLOATS, PARTICLE_ROTATION_OFFSET, PARTICLE_SOFTNESS_OFFSET, PARTICLE_TRAIL_VERTEX_FLOATS, PARTICLE_WIDE_INSTANCE_FLOATS, ParticleRenderable`                                                                                                                | Re-export             |
+| `./particle-system.js`     | `PRIORITY_PARTICLES, ParticleSystem`                                                                                                                                                                                                                                           | Re-export             |
+| `./random.js`              | `SeededRandom`                                                                                                                                                                                                                                                                 | Re-export             |
+| `./trail.js`               | `DEFAULT_TRAIL_LENGTH, DEFAULT_TRAIL_MIN_DISTANCE, DEFAULT_TRAIL_TAIL_WIDTH_FACTOR, DEFAULT_TRAIL_WIDTH, ParticleTrailStore, TRAIL_VERTEX_FLOATS, buildTrailRibbonMesh, resolveTrailOptions`                                                                                   | Re-export             |
+| `./types.js`               | `evaluateLifetimeRampColor, evaluateLifetimeRampColorInto, evaluateLifetimeRampNumber`                                                                                                                                                                                         | Re-export             |
+| `./emitter.js`             | `ParticleEmitterOptions`                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./fields.js`              | `BoxFieldVolume, FieldVolume, RadialFieldOptions, SphereFieldVolume, TurbulenceFieldOptions, VortexFieldOptions`                                                                                                                                                               | Re-export (type-only) |
+| `./particle-renderable.js` | `ParticleRenderableOptions`                                                                                                                                                                                                                                                    | Re-export (type-only) |
+| `./particle-system.js`     | `ParticleFixedUpdateContext, ParticleStepTime, ParticleSystemOptions, SteppableEmitter`                                                                                                                                                                                        | Re-export (type-only) |
+| `./trail.js`               | `ParticleTrailOptions`                                                                                                                                                                                                                                                         | Re-export (type-only) |
+| `./types.js`               | `ParticleBurst, ParticleCollisionMode, ParticleColor, ParticleForceField, ParticleGpuIntegrateExtras, ParticleGpuRadialField, ParticleGpuSimulation, MutableParticleColor, ParticleLifetimeRamp, ParticleLifetimeStop, ParticleRange, ParticleSimulationMode, ParticleTexture` | Re-export (type-only) |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `ASSET_LOADERS`, `AssetLoaderRegistry`, `AssetManager`, `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`, `CONTENT_HASH_ALGORITHM`, `loadFromManifest`, `manifestLoader`, `manifestUrl`, `parseAssetManifest`, `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`, `TextureAsset`, `createTextureDecoder`, `createTextureLoader`, `GltfAsset`, `createGltfLoader`, `ImageAsset`, `binaryLoader`, `createImageLoader`, `jsonLoader`, `textLoader`, `createGzipLoader`, `createBoundedPngDecoder`, `DEFAULT_IMAGE_WORKING_BYTES`, `createBoundedJpegDecoder`, `probeImage`, `probeJpeg`, `probePng`, `probeWebp`, `RegisteredAssetLoader`, `AbortHandle`, `AbortSignalLike`, `AssetGraph`, `AssetGraphLoadOptions`, `AssetLoadOptions`, `AssetLoadContext`, `AssetLoader`, `AssetManagerOptions`, `AssetProgressEvent`, `AssetWatchLike`, `AssetWithDependencies`, `ByteReaderLike`, `FetchInit`, `FetchLike`, `FetchResponse`, `ReadableBodyLike`, `ResponseHeadersLike`, `TimerLike`, `WorkerLike`, `DigestLike`, `TextDecodeLike`, `AssetManifest`, `AssetManifestEntry`, `ManifestLoadOptions`, `ManifestParseOptions`, `DecodedTexels`, `TexelDecodeLike`, `TexelProbeLike`, `TextureColorSpace`, `TextureFilterMode`, `TextureLoaderOptions`, `TextureWrapMode`, `GltfAnimationRecord`, `GltfChannelPath`, `GltfChannelRecord`, `GltfLoaderOptions`, `GltfMaterialRecord`, `GltfMeshRecord`, `GltfNodeRecord`, `GltfPrimitiveMode`, `GltfPrimitiveRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `ImageBitmapLike`, `ImageDecodeLike`, `ImageLoaderOptions`, `GzipDecodeLike`, `GzipLoaderOptions`, `GzipReader`, `BoundedPngDecoderOptions`, `BoundedJpegDecoderOptions`, `ImageDimensions`
+- Re-exports: `DEFAULT_PARTICLE_LIFETIME_SECONDS`, `DEFAULT_PARTICLE_RESTITUTION`, `DEFAULT_PARTICLE_SEED`, `DEFAULT_PARTICLE_SIZE`, `PARTICLE_DRAWS_PER_SPAWN`, `ParticleEmitter`, `ParticlePool`, `DEFAULT_GRAVITY_Y`, `DEFAULT_RADIAL_MIN_DISTANCE`, `DEFAULT_TURBULENCE_AMPLITUDE`, `DEFAULT_TURBULENCE_FREQUENCY`, `DEFAULT_VORTEX_MIN_DISTANCE`, `TURBULENCE_DIFFERENCE_CELLS`, `dragField`, `radialField`, `turbulenceField`, `uniformGravityField`, `volumeField`, `vortexField`, `windField`, `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_TRAIL_VERTEX_FLOATS`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `ParticleRenderable`, `PRIORITY_PARTICLES`, `ParticleSystem`, `SeededRandom`, `DEFAULT_TRAIL_LENGTH`, `DEFAULT_TRAIL_MIN_DISTANCE`, `DEFAULT_TRAIL_TAIL_WIDTH_FACTOR`, `DEFAULT_TRAIL_WIDTH`, `ParticleTrailStore`, `TRAIL_VERTEX_FLOATS`, `buildTrailRibbonMesh`, `resolveTrailOptions`, `evaluateLifetimeRampColor`, `evaluateLifetimeRampColorInto`, `evaluateLifetimeRampNumber`, `ParticleEmitterOptions`, `BoxFieldVolume`, `FieldVolume`, `RadialFieldOptions`, `SphereFieldVolume`, `TurbulenceFieldOptions`, `VortexFieldOptions`, `ParticleRenderableOptions`, `ParticleFixedUpdateContext`, `ParticleStepTime`, `ParticleSystemOptions`, `SteppableEmitter`, `ParticleTrailOptions`, `ParticleBurst`, `ParticleCollisionMode`, `ParticleColor`, `ParticleForceField`, `ParticleGpuIntegrateExtras`, `ParticleGpuRadialField`, `ParticleGpuSimulation`, `MutableParticleColor`, `ParticleLifetimeRamp`, `ParticleLifetimeStop`, `ParticleRange`, `ParticleSimulationMode`, `ParticleTexture`
 
 ---
 
-### `packages/assets/src/loader-registry.ts` - The §81 asset-format registry — a named map of {@link AssetLoader}s a
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                 | Imports       | Type               |
-| -------------------- | ------------- | ------------------ |
-| `./asset-manager.js` | `AssetLoader` | Import (type-only) |
+### `packages/particles/src/trail.ts` - Per-particle position history and ribbon mesh generation (§36 trails, plan P9).
 
 **Exports:**
 
-- Classes: `AssetLoaderRegistry`
-- Types: `RegisteredAssetLoader`
+- Classes: `ParticleTrailStore`
+- Interfaces: `ParticleTrailOptions`
+- Functions: `buildTrailRibbonMesh`, `resolveTrailOptions`
+- Constants: `TRAIL_VERTEX_FLOATS`, `DEFAULT_TRAIL_LENGTH`, `DEFAULT_TRAIL_WIDTH`, `DEFAULT_TRAIL_MIN_DISTANCE`, `DEFAULT_TRAIL_TAIL_WIDTH_FACTOR`
 
 ---
 
-### `packages/assets/src/loaders.ts` - The built-in loaders (§76) — text, JSON, binary, image.
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                | Type               |
-| -------------------- | -------------------------------------------------------------------------------------- | ------------------ |
-| `./asset-manager.js` | `AssetLoader, FetchResponse`                                                           | Import (type-only) |
-| `./image-memory.js`  | `assertImageDecoderMemory`                                                             | Import             |
-| `./texture.js`       | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO, TextureLoaderOptions` | Import             |
-
-**Exports:**
-
-- Classes: `ImageAsset`
-- Interfaces: `ImageBitmapLike`, `ImageLoaderOptions`
-- Types: `ImageDecodeLike`
-- Functions: `createImageLoader`
-- Constants: `textLoader`, `jsonLoader`, `binaryLoader`
-
----
-
-### `packages/assets/src/manifest.ts` - The §79 asset manifest — logical key → URL + content hash.
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                         | Type               |
-| -------------------- | ------------------------------- | ------------------ |
-| `./asset-manager.js` | `AssetLoader, AssetLoadOptions` | Import (type-only) |
-| `./asset-manager.js` | `AssetManager`                  | Import             |
-
-**Exports:**
-
-- Interfaces: `AssetManifestEntry`, `ManifestLoadOptions`, `ManifestParseOptions`
-- Types: `AssetManifest`
-- Functions: `parseAssetManifest`, `loadFromManifest`, `manifestUrl`
-- Constants: `manifestLoader`
-
----
-
-### `packages/assets/src/texture.ts` - The texture loader tier (§77's asset half, A-19 — 2026-08-21).
-
-**Workspace Dependencies:**
-
-| Package        | Import                  |
-| -------------- | ----------------------- |
-| `@fourjs/core` | `FourError, Disposable` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                      | Type               |
-| -------------------- | ---------------------------- | ------------------ |
-| `./asset-manager.js` | `AssetLoader, FetchResponse` | Import (type-only) |
-| `./image-memory.js`  | `assertImageDecoderMemory`   | Import             |
-
-**Exports:**
-
-- Classes: `TextureAsset`
-- Interfaces: `DecodedTexels`, `TextureLoaderOptions`
-- Types: `TextureColorSpace`, `TextureFilterMode`, `TextureWrapMode`, `TexelDecodeLike`, `TexelProbeLike`
-- Functions: `createTextureDecoder`, `createTextureLoader`
-- Constants: `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`
-
----
-
-### `packages/assets/src/wasm-memory.ts` - Copies a single-memory Wasm32 codec and caps its declared linear memory.
+### `packages/particles/src/particle-system.ts` - `ParticleSystem` (§39, §36, plan WP-9.4) — the fixed-step driver that steps
 
 **Workspace Dependencies:**
 
@@ -878,1048 +321,68 @@ graph LR
 
 **Exports:**
 
-- Functions: `limitWasmMemory`
+- Classes: `ParticleSystem`
+- Interfaces: `ParticleStepTime`, `ParticleFixedUpdateContext`, `SteppableEmitter`, `ParticleSystemOptions`
+- Constants: `PRIORITY_PARTICLES`
 
 ---
 
-<a id="packages-core-dependencies"></a>
+### `packages/particles/src/fields.ts` - The §27 built-in force fields, MVP tier (plan P9-2, WP-9.2).
 
-## Packages/core Dependencies
+**Workspace Dependencies:**
 
-### `packages/core/src/component.ts` - Component model (§6a, plan D2).
+| Package        | Import              |
+| -------------- | ------------------- |
+| `@fourjs/core` | `DEFAULT_GRAVITY_Y` |
+| `@fourjs/math` | `Vector3`           |
+| `@fourjs/core` | `DEFAULT_GRAVITY_Y` |
 
 **Internal Dependencies:**
 
-| File          | Imports        | Type   |
-| ------------- | -------------- | ------ |
-| `./dev.js`    | `DEV, devWarn` | Import |
-| `./errors.js` | `FourError`    | Import |
+| File          | Imports              | Type               |
+| ------------- | -------------------- | ------------------ |
+| `./random.js` | `SeededRandom`       | Import             |
+| `./types.js`  | `ParticleForceField` | Import (type-only) |
 
 **Exports:**
 
-- Classes: `ComponentRegistry`
-- Interfaces: `ComponentHost`, `Component`, `ComponentHostBinding`
-- Types: `ComponentType`
+- Interfaces: `RadialFieldOptions`, `VortexFieldOptions`, `TurbulenceFieldOptions`, `SphereFieldVolume`, `BoxFieldVolume`
+- Types: `FieldVolume`
+- Functions: `uniformGravityField`, `dragField`, `windField`, `radialField`, `vortexField`, `turbulenceField`, `volumeField`
+- Constants: `DEFAULT_RADIAL_MIN_DISTANCE`, `DEFAULT_VORTEX_MIN_DISTANCE`, `DEFAULT_TURBULENCE_FREQUENCY`, `DEFAULT_TURBULENCE_AMPLITUDE`, `TURBULENCE_DIFFERENCE_CELLS`
+- Re-exports: `DEFAULT_GRAVITY_Y`
 
 ---
 
-### `packages/core/src/conventions.ts` - Normative default constants shared across pillars (Appendix A, §7a).
+### `packages/particles/src/random.ts` - `SeededRandom` for particles — a re-export of `@fourjs/core`.
+
+**Workspace Dependencies:**
+
+| Package        | Import         |
+| -------------- | -------------- |
+| `@fourjs/core` | `SeededRandom` |
 
 **Exports:**
 
-- Constants: `DEFAULT_GRAVITY_Y`
+- Re-exports: `SeededRandom`
 
 ---
 
-### `packages/core/src/dev.ts` - The build-mode flag (§85, A-4, 2026-08-07) — one place that answers "is this
-
-**Internal Dependencies:**
-
-| File          | Imports         | Type               |
-| ------------- | --------------- | ------------------ |
-| `./errors.js` | `FourError`     | Import             |
-| `./errors.js` | `FourErrorCode` | Import (type-only) |
-
-**Exports:**
-
-- Functions: `devWarn`, `devWarnOnce`, `resetDevWarnings`, `devAssert`
-- Constants: `DEV`, `DEV_WARNING_PREFIX`
-
----
-
-### `packages/core/src/disposable.ts` - Explicit disposal (§83).
-
-**Exports:**
-
-- Interfaces: `Disposable`
-- Functions: `disposeAll`
-
----
-
-### `packages/core/src/errors.ts` - Error model (§89).
-
-**Exports:**
-
-- Classes: `FourError`
-- Interfaces: `FourErrorOptions`
-- Types: `FourErrorCode`
-- Functions: `isFourError`
-
----
-
-### `packages/core/src/events.ts` - Typed event emitter (§6b).
-
-**Exports:**
-
-- Classes: `EventEmitter`
-- Types: `EventListener`, `Unsubscribe`
-
----
-
-### `packages/core/src/index.ts` - §83 FinalizationRegistry leak bookkeeping (A-4 remainder, 2026-09-06).
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                                                                                                                                                                                                                                  | Type                  |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
-| `./conventions.js`   | `DEFAULT_GRAVITY_Y`                                                                                                                                                                                                                                                                                                      | Re-export             |
-| `./json.js`          | `cloneJsonValue`                                                                                                                                                                                                                                                                                                         | Re-export             |
-| `./random.js`        | `SeededRandom`                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./component.js`     | `ComponentRegistry`                                                                                                                                                                                                                                                                                                      | Re-export             |
-| `./disposable.js`    | `disposeAll`                                                                                                                                                                                                                                                                                                             | Re-export             |
-| `./leak-registry.js` | `auditFinalizedLeaks, disposeTracked, reportFinalized, resetLeakRegistry, trackDisposable, trackedDisposableId`                                                                                                                                                                                                          | Re-export             |
-| `./dev.js`           | `DEV, DEV_WARNING_PREFIX, devAssert, devWarn, devWarnOnce, resetDevWarnings`                                                                                                                                                                                                                                             | Re-export             |
-| `./errors.js`        | `FourError, isFourError`                                                                                                                                                                                                                                                                                                 | Re-export             |
-| `./events.js`        | `EventEmitter`                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./plugin.js`        | `PLUGIN_API_VERSION, PluginHost, bindCapability, defineCapability, installPlugins, satisfiesPluginRange`                                                                                                                                                                                                                 | Re-export             |
-| `./space.js`         | `DEFAULT_SPACE_MODE, SPACE_MODES, isSimulationSpaceMode`                                                                                                                                                                                                                                                                 | Re-export             |
-| `./units.js`         | `SI_UNITS, angleFromDisplay, angleToDisplay, formatAngle, formatLength, formatMass, formatTime, kilogramsToWorldMass, lengthFromDisplay, lengthToDisplay, massFromDisplay, massToDisplay, metersToWorldLength, resolveUnitSystem, timeFromDisplay, timeToDisplay, unitSymbol, worldLengthToMeters, worldMassToKilograms` | Re-export             |
-| `./untrusted.js`     | `DEFAULT_MAXIMUM_DEPTH, DEFAULT_MAXIMUM_TEXT_LENGTH, parseUntrustedJson`                                                                                                                                                                                                                                                 | Re-export             |
-| `./json.js`          | `JsonValue`                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
-| `./component.js`     | `Component, ComponentHost, ComponentHostBinding, ComponentType`                                                                                                                                                                                                                                                          | Re-export (type-only) |
-| `./disposable.js`    | `Disposable`                                                                                                                                                                                                                                                                                                             | Re-export (type-only) |
-| `./errors.js`        | `FourErrorCode, FourErrorOptions`                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
-| `./events.js`        | `EventListener, Unsubscribe`                                                                                                                                                                                                                                                                                             | Re-export (type-only) |
-| `./plugin.js`        | `DefineCapabilityOptions, FourPlugin, PluginCapability, PluginCapabilityBinding, PluginContext, PluginDependency`                                                                                                                                                                                                        | Re-export (type-only) |
-| `./space.js`         | `SpaceMode`                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
-| `./units.js`         | `AngleUnit, LengthUnit, MassUnit, TimeUnit, UnitQuantity, UnitScale, UnitSystem, UnitSystemInit`                                                                                                                                                                                                                         | Re-export (type-only) |
-| `./untrusted.js`     | `UntrustedJsonLimits`                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `DEFAULT_GRAVITY_Y`, `cloneJsonValue`, `SeededRandom`, `ComponentRegistry`, `disposeAll`, `auditFinalizedLeaks`, `disposeTracked`, `reportFinalized`, `resetLeakRegistry`, `trackDisposable`, `trackedDisposableId`, `DEV`, `DEV_WARNING_PREFIX`, `devAssert`, `devWarn`, `devWarnOnce`, `resetDevWarnings`, `FourError`, `isFourError`, `EventEmitter`, `PLUGIN_API_VERSION`, `PluginHost`, `bindCapability`, `defineCapability`, `installPlugins`, `satisfiesPluginRange`, `DEFAULT_SPACE_MODE`, `SPACE_MODES`, `isSimulationSpaceMode`, `SI_UNITS`, `angleFromDisplay`, `angleToDisplay`, `formatAngle`, `formatLength`, `formatMass`, `formatTime`, `kilogramsToWorldMass`, `lengthFromDisplay`, `lengthToDisplay`, `massFromDisplay`, `massToDisplay`, `metersToWorldLength`, `resolveUnitSystem`, `timeFromDisplay`, `timeToDisplay`, `unitSymbol`, `worldLengthToMeters`, `worldMassToKilograms`, `DEFAULT_MAXIMUM_DEPTH`, `DEFAULT_MAXIMUM_TEXT_LENGTH`, `parseUntrustedJson`, `JsonValue`, `Component`, `ComponentHost`, `ComponentHostBinding`, `ComponentType`, `Disposable`, `FourErrorCode`, `FourErrorOptions`, `EventListener`, `Unsubscribe`, `DefineCapabilityOptions`, `FourPlugin`, `PluginCapability`, `PluginCapabilityBinding`, `PluginContext`, `PluginDependency`, `SpaceMode`, `AngleUnit`, `LengthUnit`, `MassUnit`, `TimeUnit`, `UnitQuantity`, `UnitScale`, `UnitSystem`, `UnitSystemInit`, `UntrustedJsonLimits`
-
----
-
-### `packages/core/src/json.ts` - JSON value typing and validation shared by every document format (§34, §79).
-
-**Internal Dependencies:**
-
-| File          | Imports     | Type   |
-| ------------- | ----------- | ------ |
-| `./errors.js` | `FourError` | Import |
-
-**Exports:**
-
-- Types: `JsonValue`
-- Functions: `cloneJsonValue`
-
----
-
-### `packages/core/src/leak-registry.ts` - §83's **leaked-resource** development warning via `FinalizationRegistry`
-
-**Internal Dependencies:**
-
-| File       | Imports            | Type   |
-| ---------- | ------------------ | ------ |
-| `./dev.js` | `DEV, devWarnOnce` | Import |
-
-**Exports:**
-
-- Functions: `trackDisposable`, `disposeTracked`, `trackedDisposableId`, `reportFinalized`, `auditFinalizedLeaks`, `resetLeakRegistry`
-
----
-
-### `packages/core/src/plugin.ts` - The §81 plugin system (RFC 0002, accepted 2026-08-21; gap `A-3`).
-
-**Internal Dependencies:**
-
-| File          | Imports     | Type   |
-| ------------- | ----------- | ------ |
-| `./errors.js` | `FourError` | Import |
-
-**Exports:**
-
-- Classes: `PluginHost`
-- Interfaces: `PluginDependency`, `FourPlugin`, `PluginCapability`, `DefineCapabilityOptions`, `PluginCapabilityBinding`, `PluginContext`
-- Functions: `defineCapability`, `bindCapability`, `satisfiesPluginRange`, `installPlugins`
-- Constants: `PLUGIN_API_VERSION`
-
----
-
-### `packages/core/src/random.ts` - Seeded pseudo-random numbers for deterministic engine code (§33, plan P8-3).
-
-**Exports:**
-
-- Classes: `SeededRandom`
-
----
-
-### `packages/core/src/space.ts` - §8 _Space Modes_ — the vocabulary, and the one rule §8 states (PH-12,
-
-**Exports:**
-
-- Types: `SpaceMode`
-- Functions: `isSimulationSpaceMode`
-- Constants: `DEFAULT_SPACE_MODE`, `SPACE_MODES`
-
----
-
-### `packages/core/src/units.ts` - The §40 unit system — **display and authoring conversion only** (§40, §98).
-
-**Internal Dependencies:**
-
-| File          | Imports     | Type   |
-| ------------- | ----------- | ------ |
-| `./errors.js` | `FourError` | Import |
-
-**Exports:**
-
-- Interfaces: `UnitScale`, `UnitSystem`, `UnitSystemInit`
-- Types: `LengthUnit`, `MassUnit`, `TimeUnit`, `AngleUnit`, `UnitQuantity`
-- Functions: `resolveUnitSystem`, `angleToDisplay`, `angleFromDisplay`, `timeToDisplay`, `timeFromDisplay`, `lengthToDisplay`, `lengthFromDisplay`, `massToDisplay`, `massFromDisplay`, `worldLengthToMeters`, `metersToWorldLength`, `worldMassToKilograms`, `kilogramsToWorldMass`, `unitSymbol`, `formatLength`, `formatMass`, `formatTime`, `formatAngle`
-- Constants: `SI_UNITS`
-
----
-
-### `packages/core/src/untrusted.ts` - Untrusted-input guards for the document formats (§96).
-
-**Internal Dependencies:**
-
-| File          | Imports     | Type   |
-| ------------- | ----------- | ------ |
-| `./errors.js` | `FourError` | Import |
-
-**Exports:**
-
-- Interfaces: `UntrustedJsonLimits`
-- Functions: `parseUntrustedJson`
-- Constants: `DEFAULT_MAXIMUM_TEXT_LENGTH`, `DEFAULT_MAXIMUM_DEPTH`
-
----
-
-<a id="packages-diagnostics-dependencies"></a>
-
-## Packages/diagnostics Dependencies
-
-### `packages/diagnostics/src/allocation-audit.ts` - §83's "excessive per-frame allocations" development warning (A-4/A-5,
+### `packages/particles/src/pool.ts` - The particle pool (§36, plan P9-1) — a fixed-capacity, structure-of-arrays
 
 **Workspace Dependencies:**
 
 | Package        | Import             |
 | -------------- | ------------------ |
-| `@fourjs/core` | `DEV, devWarnOnce` |
+| `@fourjs/math` | `Vector3, Vector4` |
 
 **Exports:**
 
-- Interfaces: `FrameAllocationReport`, `AuditFrameAllocationsOptions`
-- Functions: `auditFrameAllocations`
-- Constants: `NO_FRAME_ALLOCATIONS`
+- Classes: `ParticlePool`
 
 ---
 
-### `packages/diagnostics/src/checksum.ts` - Deterministic checksums over float sequences (§33, plan D6).
-
-**Exports:**
-
-- Interfaces: `Checksum`
-- Functions: `createChecksum`, `hashFloats`
-
----
-
-### `packages/diagnostics/src/debug-draw.ts` - Debug-draw data providers (§113, plan P10-3) — the diagnostic visualization
-
-**Workspace Dependencies:**
-
-| Package        | Import                |
-| -------------- | --------------------- |
-| `@fourjs/math` | `Quaternion, Vector3` |
-
-**Exports:**
-
-- Classes: `DebugDrawBuffer`
-- Interfaces: `Vector3Like`, `DebugDrawBufferOptions`, `DebugDrawStreams`, `DebugGeometrySink`, `DebugBodyAccess`, `DebugJointAccess`, `DebugContactPoint`, `DebugCollisionEventLike`, `DebugPhysicsEventLike`, `CollectBodyVelocitiesOptions`, `CollectBodyOriginsOptions`, `DebugCenterOfMassAccess`, `CollectCentersOfMassOptions`, `CollectContactPointsOptions`, `CollectContactImpulsesOptions`, `SolverStatistics`, `SolverJointStatistics`, `StagedVisualization`
-- Types: `DebugColor`
-- Functions: `debugDrawStreams`, `applyDebugDrawStreams`, `collectBodyVelocities`, `collectBodyOrigins`, `collectCentersOfMass`, `collectContactPoints`, `collectContactImpulses`, `solverJointStatistics`
-- Constants: `DEBUG_VERTEX_FLOATS`, `DEBUG_SEGMENT_FLOATS`, `DEBUG_POSITION_FLOATS_PER_SEGMENT`, `DEBUG_COLOR_FLOATS_PER_SEGMENT`, `DEFAULT_DEBUG_BUFFER_CAPACITY`, `DEBUG_DRAW_DEFAULT_COLORS`, `DEBUG_DRAW_STAGED`
-
----
-
-### `packages/diagnostics/src/index.ts` - --- PH-20 (§33 rollback) ---------------------------------------------------
-
-**Internal Dependencies:**
-
-| File                    | Imports                                                                                                                                                                                                                                                                                                                                                                                                                               | Type                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./checksum.js`         | `createChecksum, hashFloats`                                                                                                                                                                                                                                                                                                                                                                                                          | Re-export             |
-| `./recorder.js`         | `ReplayRecorder`                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
-| `./rollback.js`         | `RollbackBuffer`                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
-| `./replay-format.js`    | `LATEST_REPLAY_FORMAT_VERSION, MINIMUM_REPLAY_FORMAT_VERSION, REPLAY_FORMAT_VERSION, SUPPORTED_REPLAY_FORMAT_VERSIONS, assertReplayCompatible, cloneJsonValue, decodeBase64, decodeReplayRecording, encodeBase64, encodeReplayRecording, isReplayCompatible, validateReplayRecording`                                                                                                                                                 | Re-export             |
-| `./replay-player.js`    | `DEFAULT_REPLAY_MAXIMUM_SUB_STEPS, ReplayPlayer`                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
-| `./debug-draw.js`       | `DEBUG_COLOR_FLOATS_PER_SEGMENT, DEBUG_DRAW_DEFAULT_COLORS, DEBUG_DRAW_STAGED, DEBUG_POSITION_FLOATS_PER_SEGMENT, DEBUG_SEGMENT_FLOATS, DEBUG_VERTEX_FLOATS, DEFAULT_DEBUG_BUFFER_CAPACITY, DebugDrawBuffer, applyDebugDrawStreams, collectBodyOrigins, collectBodyVelocities, collectCentersOfMass, collectContactImpulses, collectContactPoints, debugDrawStreams, solverJointStatistics`                                           | Re-export             |
-| `./resource-audit.js`   | `NO_RESOURCE_LEAKS, auditResourceLeaks`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
-| `./leak-registry.js`    | `auditFinalizedLeaks, disposeTracked, reportFinalized, resetLeakRegistry, trackDisposable, trackedDisposableId`                                                                                                                                                                                                                                                                                                                       | Re-export             |
-| `./validation.js`       | `COORDINATE_ENVELOPE, NEAR_ZERO_SCALE, UNSTABLE_SCALE_RATIO, assertFinite, assertFiniteVec3, assertNoSceneGraphCycle, validateSceneNode, validateSceneSubtree, warnCoordinateEnvelope, warnImpossibleInertia, warnImpossibleMass, warnSingularScale, warnUnstableScale, warnVersionMismatch`                                                                                                                                          | Re-export             |
-| `./allocation-audit.js` | `NO_FRAME_ALLOCATIONS, auditFrameAllocations`                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
-| `./stats.js`            | `copyFrameStats, createFrameStats, createMonotonicClock, monotonicNowSeconds, recordRenderStatistics, recordResourceMemory, recordSolverStatistics, resetFrameStats, solverStatistics`                                                                                                                                                                                                                                                | Re-export             |
-| `./checksum.js`         | `Checksum`                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
-| `./recorder.js`         | `ReplayRecorderOptions, ReplaySnapshot, ReplayTarget`                                                                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
-| `./rollback.js`         | `RollbackBufferOptions, RollbackTarget`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
-| `./replay-format.js`    | `JsonValue, ReplayAdapterIdentity, ReplayFrameRecord, ReplayInputRecord, ReplayRecording, ReplaySnapshotRecord, UntrustedJsonLimits`                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./replay-player.js`    | `ReplayPlayerOptions, ReplayStepEvent, ReplayStepListener`                                                                                                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
-| `./debug-draw.js`       | `CollectBodyOriginsOptions, CollectBodyVelocitiesOptions, CollectCentersOfMassOptions, CollectContactImpulsesOptions, CollectContactPointsOptions, DebugBodyAccess, DebugCenterOfMassAccess, DebugCollisionEventLike, DebugColor, DebugContactPoint, DebugDrawBufferOptions, DebugDrawStreams, DebugGeometrySink, DebugJointAccess, DebugPhysicsEventLike, SolverJointStatistics, SolverStatistics, StagedVisualization, Vector3Like` | Re-export (type-only) |
-| `./resource-audit.js`   | `AuditResourceLeaksOptions, LiveResourceCounts, ResourceLeakReport`                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
-| `./validation.js`       | `ValidationCatalogueOptions, ValidationCheckOptions, ValidationNodeLike, ValidationTransformLike`                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
-| `./allocation-audit.js` | `AuditFrameAllocationsOptions, FrameAllocationReport`                                                                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
-| `./stats.js`            | `ClockSource, FrameStats, RenderStatisticsLike`                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `createChecksum`, `hashFloats`, `ReplayRecorder`, `RollbackBuffer`, `LATEST_REPLAY_FORMAT_VERSION`, `MINIMUM_REPLAY_FORMAT_VERSION`, `REPLAY_FORMAT_VERSION`, `SUPPORTED_REPLAY_FORMAT_VERSIONS`, `assertReplayCompatible`, `cloneJsonValue`, `decodeBase64`, `decodeReplayRecording`, `encodeBase64`, `encodeReplayRecording`, `isReplayCompatible`, `validateReplayRecording`, `DEFAULT_REPLAY_MAXIMUM_SUB_STEPS`, `ReplayPlayer`, `DEBUG_COLOR_FLOATS_PER_SEGMENT`, `DEBUG_DRAW_DEFAULT_COLORS`, `DEBUG_DRAW_STAGED`, `DEBUG_POSITION_FLOATS_PER_SEGMENT`, `DEBUG_SEGMENT_FLOATS`, `DEBUG_VERTEX_FLOATS`, `DEFAULT_DEBUG_BUFFER_CAPACITY`, `DebugDrawBuffer`, `applyDebugDrawStreams`, `collectBodyOrigins`, `collectBodyVelocities`, `collectCentersOfMass`, `collectContactImpulses`, `collectContactPoints`, `debugDrawStreams`, `solverJointStatistics`, `NO_RESOURCE_LEAKS`, `auditResourceLeaks`, `auditFinalizedLeaks`, `disposeTracked`, `reportFinalized`, `resetLeakRegistry`, `trackDisposable`, `trackedDisposableId`, `COORDINATE_ENVELOPE`, `NEAR_ZERO_SCALE`, `UNSTABLE_SCALE_RATIO`, `assertFinite`, `assertFiniteVec3`, `assertNoSceneGraphCycle`, `validateSceneNode`, `validateSceneSubtree`, `warnCoordinateEnvelope`, `warnImpossibleInertia`, `warnImpossibleMass`, `warnSingularScale`, `warnUnstableScale`, `warnVersionMismatch`, `NO_FRAME_ALLOCATIONS`, `auditFrameAllocations`, `copyFrameStats`, `createFrameStats`, `createMonotonicClock`, `monotonicNowSeconds`, `recordRenderStatistics`, `recordResourceMemory`, `recordSolverStatistics`, `resetFrameStats`, `solverStatistics`, `Checksum`, `ReplayRecorderOptions`, `ReplaySnapshot`, `ReplayTarget`, `RollbackBufferOptions`, `RollbackTarget`, `JsonValue`, `ReplayAdapterIdentity`, `ReplayFrameRecord`, `ReplayInputRecord`, `ReplayRecording`, `ReplaySnapshotRecord`, `UntrustedJsonLimits`, `ReplayPlayerOptions`, `ReplayStepEvent`, `ReplayStepListener`, `CollectBodyOriginsOptions`, `CollectBodyVelocitiesOptions`, `CollectCentersOfMassOptions`, `CollectContactImpulsesOptions`, `CollectContactPointsOptions`, `DebugBodyAccess`, `DebugCenterOfMassAccess`, `DebugCollisionEventLike`, `DebugColor`, `DebugContactPoint`, `DebugDrawBufferOptions`, `DebugDrawStreams`, `DebugGeometrySink`, `DebugJointAccess`, `DebugPhysicsEventLike`, `SolverJointStatistics`, `SolverStatistics`, `StagedVisualization`, `Vector3Like`, `AuditResourceLeaksOptions`, `LiveResourceCounts`, `ResourceLeakReport`, `ValidationCatalogueOptions`, `ValidationCheckOptions`, `ValidationNodeLike`, `ValidationTransformLike`, `AuditFrameAllocationsOptions`, `FrameAllocationReport`, `ClockSource`, `FrameStats`, `RenderStatisticsLike`
-
----
-
-### `packages/diagnostics/src/leak-registry.ts` - Re-export of `@fourjs/core`'s §83 FinalizationRegistry leak bookkeeping.
-
-**Workspace Dependencies:**
-
-| Package        | Import                                                                                                          |
-| -------------- | --------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core` | `auditFinalizedLeaks, disposeTracked, reportFinalized, resetLeakRegistry, trackDisposable, trackedDisposableId` |
-
-**Exports:**
-
-- Re-exports: `auditFinalizedLeaks`, `disposeTracked`, `reportFinalized`, `resetLeakRegistry`, `trackDisposable`, `trackedDisposableId`
-
----
-
-### `packages/diagnostics/src/recorder.ts` - Session recording (§33–34, plan P10-1) — the producing half of the replay
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                                                                                       | Type   |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./replay-format.js` | `LATEST_REPLAY_FORMAT_VERSION, JsonValue, ReplayFrameRecord, ReplayInputRecord, ReplayRecording, ReplaySnapshotRecord, cloneJsonValue, encodeBase64, validateReplayRecording` | Import |
-
-**Exports:**
-
-- Classes: `ReplayRecorder`
-- Interfaces: `ReplaySnapshot`, `ReplayTarget`, `ReplayRecorderOptions`
-
----
-
-### `packages/diagnostics/src/replay-format.ts` - The §34 replay document — its types, its JSON encoding, and its validation
-
-**Workspace Dependencies:**
-
-| Package        | Import                                                                          |
-| -------------- | ------------------------------------------------------------------------------- |
-| `@fourjs/core` | `FourError, cloneJsonValue, parseUntrustedJson, JsonValue, UntrustedJsonLimits` |
-| `@fourjs/core` | `cloneJsonValue`                                                                |
-| `@fourjs/core` | `JsonValue`                                                                     |
-| `@fourjs/core` | `UntrustedJsonLimits`                                                           |
-
-**Exports:**
-
-- Interfaces: `ReplayInputRecord`, `ReplayFrameRecord`, `ReplaySnapshotRecord`, `ReplayAdapterIdentity`, `ReplayRecording`
-- Functions: `encodeBase64`, `decodeBase64`, `validateReplayRecording`, `encodeReplayRecording`, `decodeReplayRecording`, `assertReplayCompatible`, `isReplayCompatible`
-- Constants: `LATEST_REPLAY_FORMAT_VERSION`, `MINIMUM_REPLAY_FORMAT_VERSION`, `REPLAY_FORMAT_VERSION`, `SUPPORTED_REPLAY_FORMAT_VERSIONS`
-- Re-exports: `cloneJsonValue`, `JsonValue`, `UntrustedJsonLimits`
-
----
-
-### `packages/diagnostics/src/replay-player.ts` - Replay playback and inspection (§33–34, §113; plan P10-3) — the consuming
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                          | Type               |
-| -------------------- | -------------------------------------------------------------------------------- | ------------------ |
-| `./recorder.js`      | `ReplaySnapshot, ReplayTarget`                                                   | Import (type-only) |
-| `./replay-format.js` | `ReplayRecording, assertReplayCompatible, decodeBase64, validateReplayRecording` | Import             |
-
-**Exports:**
-
-- Classes: `ReplayPlayer`
-- Interfaces: `ReplayStepEvent`, `ReplayPlayerOptions`
-- Types: `ReplayStepListener`
-- Constants: `DEFAULT_REPLAY_MAXIMUM_SUB_STEPS`
-
----
-
-### `packages/diagnostics/src/resource-audit.ts` - §83's first development warning — **leaked textures and buffers** (A-4/A-5,
-
-**Workspace Dependencies:**
-
-| Package        | Import             |
-| -------------- | ------------------ |
-| `@fourjs/core` | `DEV, devWarnOnce` |
-
-**Exports:**
-
-- Interfaces: `LiveResourceCounts`, `ResourceLeakReport`, `AuditResourceLeaksOptions`
-- Functions: `auditResourceLeaks`
-- Constants: `NO_RESOURCE_LEAKS`
-
----
-
-### `packages/diagnostics/src/rollback.ts` - `RollbackBuffer` (§33 _"rollback"_, §34; PH-20, 2026-08-21) — a bounded ring
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File            | Imports          | Type               |
-| --------------- | ---------------- | ------------------ |
-| `./recorder.js` | `ReplaySnapshot` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `RollbackBuffer`
-- Interfaces: `RollbackTarget`, `RollbackBufferOptions`
-
----
-
-### `packages/diagnostics/src/stats.ts` - §84 runtime statistics — the record behind `app.stats` (A-1, 2026-08-07).
-
-**Internal Dependencies:**
-
-| File              | Imports                             | Type               |
-| ----------------- | ----------------------------------- | ------------------ |
-| `./debug-draw.js` | `DebugBodyAccess, SolverStatistics` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `FrameStats`, `RenderStatisticsLike`, `ClockSource`
-- Functions: `createFrameStats`, `resetFrameStats`, `copyFrameStats`, `recordRenderStatistics`, `recordResourceMemory`, `solverStatistics`, `recordSolverStatistics`, `createMonotonicClock`
-- Constants: `monotonicNowSeconds`
-
----
-
-### `packages/diagnostics/src/validation.ts` - §85's validation catalogue (A-4 remainder step 2, 2026-09-06).
-
-**Workspace Dependencies:**
-
-| Package        | Import                        |
-| -------------- | ----------------------------- |
-| `@fourjs/core` | `DEV, devAssert, devWarnOnce` |
-
-**Exports:**
-
-- Interfaces: `ValidationCheckOptions`, `ValidationCatalogueOptions`, `ValidationNodeLike`, `ValidationTransformLike`
-- Functions: `warnCoordinateEnvelope`, `warnSingularScale`, `warnUnstableScale`, `assertFinite`, `assertFiniteVec3`, `warnImpossibleMass`, `warnImpossibleInertia`, `warnVersionMismatch`, `assertNoSceneGraphCycle`, `validateSceneNode`, `validateSceneSubtree`
-- Constants: `COORDINATE_ENVELOPE`, `UNSTABLE_SCALE_RATIO`, `NEAR_ZERO_SCALE`
-
----
-
-<a id="packages-fourjs-dependencies"></a>
-
-## Packages/fourjs Dependencies
-
-### `packages/fourjs/src/animation.ts` - animation module
-
-**Workspace Dependencies:**
-
-| Package             | Import |
-| ------------------- | ------ |
-| `@fourjs/animation` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/animation`
-
----
-
-### `packages/fourjs/src/application.ts` - The `Application` composition root (§45, plan D4).
-
-**Workspace Dependencies:**
-
-| Package               | Import                                                                                                                                                                                                |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`        | `DEV, EventEmitter, FourError, bindCapability, devWarnOnce, installPlugins, FourPlugin, PluginCapabilityBinding, PluginContext`                                                                       |
-| `@fourjs/diagnostics` | `auditFrameAllocations, createFrameStats, monotonicNowSeconds, recordRenderStatistics, recordResourceMemory, recordSolverStatistics, resetFrameStats, solverStatistics, FrameStats, SolverStatistics` |
-| `@fourjs/geometry`    | `geometryMemoryBytes`                                                                                                                                                                                 |
-| `@fourjs/motion`      | `DEFAULT_FIXED_DELTA_TIME, DEFAULT_MAXIMUM_SUB_STEPS, PRIORITY_PHYSICS_SOLVE, Scheduler, SystemRegistry, Detach, ReadonlyTimeState, SimulationSystem`                                                 |
-| `@fourjs/math`        | `constructionCount, DepthRange`                                                                                                                                                                       |
-| `@fourjs/assets`      | `AssetManager`                                                                                                                                                                                        |
-| `@fourjs/physics`     | `PhysicsWorld`                                                                                                                                                                                        |
-| `@fourjs/scene`       | `PerspectiveCamera, PoseBuffer, Scene, createSnapshotSystem, resolveWorldTransforms, Camera, SurfaceSizedCamera, Viewport, WorldTransformStats`                                                       |
-| `@fourjs/render`      | `RenderStatistics, Renderer, RendererCapabilityDeclaration, RendererCapabilityShortfall, RendererFallbackReport, RendererRegistry, RendererSelection`                                                 |
-| `@fourjs/render`      | `resolveRenderer, textureMemoryBytes`                                                                                                                                                                 |
-
-**Internal Dependencies:**
-
-| File           | Imports                                 | Type   |
-| -------------- | --------------------------------------- | ------ |
-| `./plugins.js` | `RENDERER_REGISTRY, SIMULATION_SYSTEMS` | Import |
-
-**Exports:**
-
-- Classes: `Application`
-- Interfaces: `ApplicationEventMap`, `PhysicsWorldContext`, `ApplicationOptions`
-- Types: `PhysicsWorldFactory`, `SurfaceResize`, `SurfaceObserver`
-
----
-
-### `packages/fourjs/src/assets.ts` - assets module
-
-**Workspace Dependencies:**
-
-| Package          | Import |
-| ---------------- | ------ |
-| `@fourjs/assets` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/assets`
-
----
-
-### `packages/fourjs/src/capabilities.ts` - The umbrella's own §81 capability token (RFC 0002).
-
-**Workspace Dependencies:**
-
-| Package        | Import             |
-| -------------- | ------------------ |
-| `@fourjs/core` | `defineCapability` |
-
-**Internal Dependencies:**
-
-| File                | Imports              | Type               |
-| ------------------- | -------------------- | ------------------ |
-| `./editor-tools.js` | `EditorToolRegistry` | Import (type-only) |
-
-**Exports:**
-
-- Constants: `EDITOR_TOOLS`
-
----
-
-### `packages/fourjs/src/compute-pass.ts` - §82's `Four.ComputePass` — the named-map sugar over `@fourjs/render`'s
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                 |
-| ---------------- | ------------------------------------------------------ |
-| `@fourjs/render` | `ComputeBinding, ComputeBuffer, ComputePassDescriptor` |
-
-**Exports:**
-
-- Classes: `ComputePass`
-- Interfaces: `ComputePassOptions`
-- Types: `ComputePassBindingEntry`, `ComputePassBindings`
-
----
-
-### `packages/fourjs/src/core.ts` - core module
-
-**Workspace Dependencies:**
-
-| Package        | Import |
-| -------------- | ------ |
-| `@fourjs/core` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/core`
-
----
-
-### `packages/fourjs/src/diagnostics.ts` - diagnostics module
-
-**Workspace Dependencies:**
-
-| Package               | Import |
-| --------------------- | ------ |
-| `@fourjs/diagnostics` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/diagnostics`
-
----
-
-### `packages/fourjs/src/editor-tools.ts` - The §81 editor-tool registry — a named map of tool factories the **host**
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Exports:**
-
-- Classes: `EditorToolRegistry`
-- Types: `EditorToolFactory`
-
----
-
-### `packages/fourjs/src/geometry.ts` - geometry module
-
-**Workspace Dependencies:**
-
-| Package            | Import |
-| ------------------ | ------ |
-| `@fourjs/geometry` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/geometry`
-
----
-
-### `packages/fourjs/src/gltf.ts` - §78 glTF assembly — `instantiateGltf` (A-19's closing packet, 2026-08-29).
-
-**Workspace Dependencies:**
-
-| Package             | Import                                                                                 |
-| ------------------- | -------------------------------------------------------------------------------------- |
-| `@fourjs/assets`    | `GltfAsset`                                                                            |
-| `@fourjs/animation` | `AnimationClip, AnimationTrack, quaternionAdapter, vector3Adapter, AnimationTrackLike` |
-| `@fourjs/core`      | `FourError`                                                                            |
-| `@fourjs/geometry`  | `BufferGeometry`                                                                       |
-| `@fourjs/materials` | `StandardMaterial`                                                                     |
-| `@fourjs/math`      | `Matrix4, Quaternion, Vector3`                                                         |
-| `@fourjs/render`    | `Mesh, Texture`                                                                        |
-| `@fourjs/scene`     | `Bone, Group, MorphWeights, Skeleton, Node`                                            |
-
-**Exports:**
-
-- Interfaces: `GltfInstance`
-- Functions: `instantiateGltf`
-
----
-
-### `packages/fourjs/src/index.ts` - The umbrella package (§98): one namespace per workspace package, plus the
-
-**Internal Dependencies:**
-
-| File                        | Imports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Type                  |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./application.js`          | `Application`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
-| `./live-resource-counts.js` | `readLiveResourceCounts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Re-export             |
-| `./plugins.js`              | `ASSET_LOADERS, COMPONENT_SERIALIZERS, COMPUTE_WORKLOADS, EDITOR_TOOLS, RENDERER_REGISTRY, RENDER_GRAPH, SCENE_MIGRATIONS, SHADER_OPERATORS, SIMULATION_SYSTEMS, PATH_PLANNERS, SOLVER_REGISTRY, UI_CONTROLS`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
-| `./plugins.js`              | `EditorToolRegistry`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
-| `./scene-serializers.js`    | `BUTTON_NODE_TYPE, CHECKBOX_NODE_TYPE, CIRCLE_NODE_TYPE, DIRECTIONAL_LIGHT_NODE_TYPE, HEMISPHERE_LIGHT_NODE_TYPE, ELLIPSE_NODE_TYPE, IMAGE_NODE_TYPE, LABEL_NODE_TYPE, ORTHOGRAPHIC_CAMERA_NODE_TYPE, PANEL_NODE_TYPE, PATH_SHAPE_NODE_TYPE, PERSPECTIVE_CAMERA_NODE_TYPE, POINT_LIGHT_NODE_TYPE, POLYGON_NODE_TYPE, PROGRESS_NODE_TYPE, RADIO_BUTTON_NODE_TYPE, RECTANGLE_NODE_TYPE, REGULAR_POLYGON_NODE_TYPE, RENDERABLE_NODE_TYPE, RING_NODE_TYPE, SECTOR_NODE_TYPE, SLIDER_NODE_TYPE, SPOT_LIGHT_NODE_TYPE, SPRITE_NODE_TYPE, STAR_NODE_TYPE, TEXT_NODE_TYPE, TOGGLE_NODE_TYPE, composeSceneNodeTypes, registerPhysicsSerializers, registerRenderSerializers, registerSceneNodeTypes, registerShapeSerializers, registerTextSerializers, registerUISerializers, resourceCatalog, restoreNodeId` | Re-export             |
-| `./text-node.js`            | `Text`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
-| `./compute-pass.js`         | `ComputePass`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
-| `./gltf.js`                 | `instantiateGltf`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
-| `./pick-provider.js`        | `createPickProvider`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
-| `./manifest-catalog.js`     | `preloadManifestIntoCatalog`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
-| `./application.js`          | `ApplicationEventMap, ApplicationOptions, PhysicsWorldContext, PhysicsWorldFactory, SurfaceObserver, SurfaceResize`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./plugins.js`              | `EditorToolFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./scene-serializers.js`    | `SceneNodeTypeOptions, SceneNodeTypeSupport, SceneResourceCatalog, SceneSerializationSupport, UnknownResourcePolicy`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
-| `./text-node.js`            | `TextOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
-| `./compute-pass.js`         | `ComputePassBindingEntry, ComputePassBindings, ComputePassOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
-| `./gltf.js`                 | `GltfInstance`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./manifest-catalog.js`     | `PreloadManifestIntoCatalogOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
-
-**Exports:**
-
-- Re-exports: `Application`, `readLiveResourceCounts`, `ASSET_LOADERS`, `COMPONENT_SERIALIZERS`, `COMPUTE_WORKLOADS`, `EDITOR_TOOLS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `SCENE_MIGRATIONS`, `SHADER_OPERATORS`, `SIMULATION_SYSTEMS`, `PATH_PLANNERS`, `SOLVER_REGISTRY`, `UI_CONTROLS`, `EditorToolRegistry`, `BUTTON_NODE_TYPE`, `CHECKBOX_NODE_TYPE`, `CIRCLE_NODE_TYPE`, `DIRECTIONAL_LIGHT_NODE_TYPE`, `HEMISPHERE_LIGHT_NODE_TYPE`, `ELLIPSE_NODE_TYPE`, `IMAGE_NODE_TYPE`, `LABEL_NODE_TYPE`, `ORTHOGRAPHIC_CAMERA_NODE_TYPE`, `PANEL_NODE_TYPE`, `PATH_SHAPE_NODE_TYPE`, `PERSPECTIVE_CAMERA_NODE_TYPE`, `POINT_LIGHT_NODE_TYPE`, `POLYGON_NODE_TYPE`, `PROGRESS_NODE_TYPE`, `RADIO_BUTTON_NODE_TYPE`, `RECTANGLE_NODE_TYPE`, `REGULAR_POLYGON_NODE_TYPE`, `RENDERABLE_NODE_TYPE`, `RING_NODE_TYPE`, `SECTOR_NODE_TYPE`, `SLIDER_NODE_TYPE`, `SPOT_LIGHT_NODE_TYPE`, `SPRITE_NODE_TYPE`, `STAR_NODE_TYPE`, `TEXT_NODE_TYPE`, `TOGGLE_NODE_TYPE`, `composeSceneNodeTypes`, `registerPhysicsSerializers`, `registerRenderSerializers`, `registerSceneNodeTypes`, `registerShapeSerializers`, `registerTextSerializers`, `registerUISerializers`, `resourceCatalog`, `restoreNodeId`, `Text`, `ComputePass`, `instantiateGltf`, `createPickProvider`, `preloadManifestIntoCatalog`, `ApplicationEventMap`, `ApplicationOptions`, `PhysicsWorldContext`, `PhysicsWorldFactory`, `SurfaceObserver`, `SurfaceResize`, `EditorToolFactory`, `SceneNodeTypeOptions`, `SceneNodeTypeSupport`, `SceneResourceCatalog`, `SceneSerializationSupport`, `UnknownResourcePolicy`, `TextOptions`, `ComputePassBindingEntry`, `ComputePassBindings`, `ComputePassOptions`, `GltfInstance`, `PreloadManifestIntoCatalogOptions`
-
----
-
-### `packages/fourjs/src/input.ts` - input module
-
-**Workspace Dependencies:**
-
-| Package         | Import |
-| --------------- | ------ |
-| `@fourjs/input` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/input`
-
----
-
-### `packages/fourjs/src/live-resource-counts.ts` - Aggregates §83 live-resource counts for `auditResourceLeaks`.
-
-**Workspace Dependencies:**
-
-| Package               | Import                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------- |
-| `@fourjs/diagnostics` | `LiveResourceCounts`                                                                        |
-| `@fourjs/geometry`    | `geometryMemoryBytes, liveGeometryCount`                                                    |
-| `@fourjs/materials`   | `liveMaterialCount`                                                                         |
-| `@fourjs/physics`     | `liveSolverBodyCount, liveSolverColliderCount, liveSolverHandleCount, liveSolverJointCount` |
-| `@fourjs/render`      | `liveRenderTargetCount, liveTextureCount, textureMemoryBytes`                               |
-
-**Exports:**
-
-- Functions: `readLiveResourceCounts`
-
----
-
-### `packages/fourjs/src/manifest-catalog.ts` - Preload a §79 manifest into a synchronous {@link SceneResourceCatalog}
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                            |
-| ---------------- | --------------------------------------------------------------------------------- |
-| `@fourjs/assets` | `loadFromManifest, AssetLoader, AssetManager, AssetManifest, ManifestLoadOptions` |
-
-**Internal Dependencies:**
-
-| File                     | Imports                                 | Type   |
-| ------------------------ | --------------------------------------- | ------ |
-| `./scene-serializers.js` | `resourceCatalog, SceneResourceCatalog` | Import |
-
-**Exports:**
-
-- Interfaces: `PreloadManifestIntoCatalogOptions`
-- Functions: `preloadManifestIntoCatalog`, `preloadManifestIntoCatalog`, `preloadManifestIntoCatalog`
-
----
-
-### `packages/fourjs/src/materials.ts` - materials module
-
-**Workspace Dependencies:**
-
-| Package             | Import |
-| ------------------- | ------ |
-| `@fourjs/materials` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/materials`
-
----
-
-### `packages/fourjs/src/math.ts` - math module
-
-**Workspace Dependencies:**
-
-| Package        | Import |
-| -------------- | ------ |
-| `@fourjs/math` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/math`
-
----
-
-### `packages/fourjs/src/motion.ts` - motion module
-
-**Workspace Dependencies:**
-
-| Package          | Import |
-| ---------------- | ------ |
-| `@fourjs/motion` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/motion`
-
----
-
-### `packages/fourjs/src/particles.ts` - particles module
-
-**Workspace Dependencies:**
-
-| Package             | Import |
-| ------------------- | ------ |
-| `@fourjs/particles` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/particles`
-
----
-
-### `packages/fourjs/src/physics-box2d.ts` - physics-box2d module
-
-**Workspace Dependencies:**
-
-| Package                 | Import |
-| ----------------------- | ------ |
-| `@fourjs/physics-box2d` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/physics-box2d`
-
----
-
-### `packages/fourjs/src/physics-rapier.ts` - physics-rapier module
-
-**Workspace Dependencies:**
-
-| Package                  | Import |
-| ------------------------ | ------ |
-| `@fourjs/physics-rapier` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/physics-rapier`
-
----
-
-### `packages/fourjs/src/physics-soft.ts` - physics-soft module
-
-**Workspace Dependencies:**
-
-| Package                | Import |
-| ---------------------- | ------ |
-| `@fourjs/physics-soft` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/physics-soft`
-
----
-
-### `packages/fourjs/src/physics.ts` - physics module
-
-**Workspace Dependencies:**
-
-| Package           | Import |
-| ----------------- | ------ |
-| `@fourjs/physics` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/physics`
-
----
-
-### `packages/fourjs/src/pick-provider.ts` - The four-line adapter RFC 0005 §2 promised (§71, §45; 2026-08-28): a
-
-**Workspace Dependencies:**
-
-| Package          | Import           |
-| ---------------- | ---------------- |
-| `@fourjs/input`  | `PickProvider`   |
-| `@fourjs/render` | `PickingService` |
-| `@fourjs/scene`  | `Viewport`       |
-
-**Exports:**
-
-- Functions: `createPickProvider`
-
----
-
-### `packages/fourjs/src/plugins.ts` - The §81 capability tokens (RFC 0002, accepted 2026-08-21; gap `A-3`) —
-
-**Workspace Dependencies:**
-
-| Package                 | Import                                               |
-| ----------------------- | ---------------------------------------------------- |
-| `@fourjs/assets`        | `ASSET_LOADERS`                                      |
-| `@fourjs/materials`     | `SHADER_OPERATORS`                                   |
-| `@fourjs/motion`        | `PATH_PLANNERS, SIMULATION_SYSTEMS`                  |
-| `@fourjs/physics`       | `SOLVER_REGISTRY`                                    |
-| `@fourjs/render`        | `COMPUTE_WORKLOADS, RENDERER_REGISTRY, RENDER_GRAPH` |
-| `@fourjs/serialization` | `COMPONENT_SERIALIZERS, SCENE_MIGRATIONS`            |
-| `@fourjs/ui`            | `UI_CONTROLS`                                        |
-
-**Internal Dependencies:**
-
-| File                | Imports              | Type                  |
-| ------------------- | -------------------- | --------------------- |
-| `./capabilities.js` | `EDITOR_TOOLS`       | Re-export             |
-| `./editor-tools.js` | `EditorToolRegistry` | Re-export             |
-| `./editor-tools.js` | `EditorToolFactory`  | Re-export (type-only) |
-
-**Exports:**
-
-- Re-exports: `ASSET_LOADERS`, `SHADER_OPERATORS`, `PATH_PLANNERS`, `SIMULATION_SYSTEMS`, `SOLVER_REGISTRY`, `COMPUTE_WORKLOADS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `COMPONENT_SERIALIZERS`, `SCENE_MIGRATIONS`, `UI_CONTROLS`, `EDITOR_TOOLS`, `EditorToolRegistry`, `EditorToolFactory`
-
----
-
-### `packages/fourjs/src/render-canvas.ts` - render-canvas module
-
-**Workspace Dependencies:**
-
-| Package                 | Import |
-| ----------------------- | ------ |
-| `@fourjs/render-canvas` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/render-canvas`
-
----
-
-### `packages/fourjs/src/render-svg.ts` - render-svg module
-
-**Workspace Dependencies:**
-
-| Package              | Import |
-| -------------------- | ------ |
-| `@fourjs/render-svg` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/render-svg`
-
----
-
-### `packages/fourjs/src/render-webgl.ts` - render-webgl module
-
-**Workspace Dependencies:**
-
-| Package                | Import |
-| ---------------------- | ------ |
-| `@fourjs/render-webgl` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/render-webgl`
-
----
-
-### `packages/fourjs/src/render-webgpu.ts` - render-webgpu module
-
-**Workspace Dependencies:**
-
-| Package                 | Import |
-| ----------------------- | ------ |
-| `@fourjs/render-webgpu` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/render-webgpu`
-
----
-
-### `packages/fourjs/src/render.ts` - render module
-
-**Workspace Dependencies:**
-
-| Package          | Import |
-| ---------------- | ------ |
-| `@fourjs/render` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/render`
-
----
-
-### `packages/fourjs/src/scene-serializers.ts` - §79 node types and component serializers for the classes the engine itself
-
-**Workspace Dependencies:**
-
-| Package                 | Import                                                                                                                                                                                                                                                                                                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@fourjs/core`          | `FourError, JsonValue`                                                                                                                                                                                                                                                                                                                                             |
-| `@fourjs/geometry`      | `Path, BufferGeometry, Point2D`                                                                                                                                                                                                                                                                                                                                    |
-| `@fourjs/materials`     | `Material, MaterialTexture, SpriteMaterial, UnlitMaterial`                                                                                                                                                                                                                                                                                                         |
-| `@fourjs/motion`        | `CAMERA_SHAKE_SERIALIZER, CHARACTER_CONTROLLER_SERIALIZER, CameraShake, CharacterController, FIRST_PERSON_LOOK_SERIALIZER, FOLLOW_RIG_SERIALIZER, FirstPersonLook, FollowRig, KINEMATIC_CONTROLLER_SERIALIZER, KinematicController, LOOK_AT_CONSTRAINT_SERIALIZER, LookAtConstraint, MOTION_COMPONENT_SERIALIZER, MotionComponent, ORBIT_RIG_SERIALIZER, OrbitRig` |
-| `@fourjs/physics`       | `COLLIDER_SERIALIZER, Collider, RIGID_BODY_SERIALIZER, RigidBody, SWEPT_CHARACTER_CONTROLLER_SERIALIZER, SweptCharacterController`                                                                                                                                                                                                                                 |
-| `@fourjs/render`        | `Arc, Circle, Ellipse, Line, Mesh, PathShape, Polygon, Polyline, Rectangle, RegularPolygon, Renderable, Ring, Sector, Shape2D, Sprite, Star, resolveShapePaintSupport, restoreMeshSkeleton`                                                                                                                                                                        |
-| `@fourjs/render`        | `GradientStop, Paint, ResolvedPaint, ResolvedShapeFill, ResolvedStrokeStyle, ScissorRect`                                                                                                                                                                                                                                                                          |
-| `@fourjs/scene`         | `Bone, DirectionalLight, HemisphereLight, MORPH_WEIGHTS_SERIALIZER, MorphWeights, NODE_SPACE_SERIALIZER, NodeSpace, OrthographicCamera, PerspectiveCamera, PointLight, SCREEN_ORIGINS, SCREEN_UNITS, ScreenCamera, SpotLight, restoreNodeId, HitTestMode, Node`                                                                                                    |
-| `@fourjs/serialization` | `ComponentSerializerRegistry, createDefaultComponentSerializers, InstantiateSceneOptions, SceneNodeDocument, SerializeSceneOptions`                                                                                                                                                                                                                                |
-| `@fourjs/text`          | `GlyphAtlas, TextAlign`                                                                                                                                                                                                                                                                                                                                            |
-| `@fourjs/ui`            | `Button, CanvasViewWidget, Checkbox, ImageWidget, Label, Panel, ProgressIndicator, RadioButton, Slider, Toggle, UIWidget, CheckableWidget, UIWidgetOptions, WidgetAccessibility`                                                                                                                                                                                   |
-
-**Internal Dependencies:**
-
-| File             | Imports | Type   |
-| ---------------- | ------- | ------ |
-| `./text-node.js` | `Text`  | Import |
-
-**Exports:**
-
-- Interfaces: `SceneResourceCatalog`, `SceneNodeTypeOptions`, `SceneNodeTypeSupport`, `SceneSerializationSupport`
-- Types: `UnknownResourcePolicy`
-- Functions: `resourceCatalog`, `registerUISerializers`, `registerRenderSerializers`, `registerShapeSerializers`, `registerTextSerializers`, `composeSceneNodeTypes`, `registerPhysicsSerializers`, `registerSceneNodeTypes`
-- Constants: `PANEL_NODE_TYPE`, `LABEL_NODE_TYPE`, `BUTTON_NODE_TYPE`, `TOGGLE_NODE_TYPE`, `CHECKBOX_NODE_TYPE`, `RADIO_BUTTON_NODE_TYPE`, `SLIDER_NODE_TYPE`, `PROGRESS_NODE_TYPE`, `IMAGE_NODE_TYPE`, `CANVAS_VIEW_NODE_TYPE`, `RENDERABLE_NODE_TYPE`, `SPRITE_NODE_TYPE`, `MESH_NODE_TYPE`, `BONE_NODE_TYPE`, `TEXT_NODE_TYPE`, `PERSPECTIVE_CAMERA_NODE_TYPE`, `ORTHOGRAPHIC_CAMERA_NODE_TYPE`, `SCREEN_CAMERA_NODE_TYPE`, `DIRECTIONAL_LIGHT_NODE_TYPE`, `POINT_LIGHT_NODE_TYPE`, `SPOT_LIGHT_NODE_TYPE`, `HEMISPHERE_LIGHT_NODE_TYPE`, `CIRCLE_NODE_TYPE`, `ELLIPSE_NODE_TYPE`, `RECTANGLE_NODE_TYPE`, `REGULAR_POLYGON_NODE_TYPE`, `POLYGON_NODE_TYPE`, `STAR_NODE_TYPE`, `SECTOR_NODE_TYPE`, `RING_NODE_TYPE`, `PATH_SHAPE_NODE_TYPE`, `LINE_NODE_TYPE`, `POLYLINE_NODE_TYPE`, `ARC_NODE_TYPE`
-
----
-
-### `packages/fourjs/src/scene.ts` - scene module
-
-**Workspace Dependencies:**
-
-| Package         | Import |
-| --------------- | ------ |
-| `@fourjs/scene` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/scene`
-
----
-
-### `packages/fourjs/src/serialization.ts` - serialization module
-
-**Workspace Dependencies:**
-
-| Package                 | Import |
-| ----------------------- | ------ |
-| `@fourjs/serialization` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/serialization`
-
----
-
-### `packages/fourjs/src/text-node.ts` - `Text` (§49, §56) — a string, a font atlas and a material become **one** draw
-
-**Workspace Dependencies:**
-
-| Package             | Import                                          |
-| ------------------- | ----------------------------------------------- |
-| `@fourjs/text`      | `TextLayoutOptions`                             |
-| `@fourjs/geometry`  | `BufferGeometry`                                |
-| `@fourjs/materials` | `UnlitMaterial`                                 |
-| `@fourjs/render`    | `Renderable, RenderableOptions`                 |
-| `@fourjs/text`      | `layoutText, GlyphAtlas, TextAlign, TextLayout` |
-| `@fourjs/core`      | `Disposable`                                    |
-
-**Exports:**
-
-- Classes: `Text`
-- Interfaces: `TextOptions`
-
----
-
-### `packages/fourjs/src/text.ts` - text module
-
-**Workspace Dependencies:**
-
-| Package        | Import |
-| -------------- | ------ |
-| `@fourjs/text` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/text`
-
----
-
-### `packages/fourjs/src/ui.ts` - ui module
-
-**Workspace Dependencies:**
-
-| Package      | Import |
-| ------------ | ------ |
-| `@fourjs/ui` | `*`    |
-
-**Exports:**
-
-- Re-exports: `* from @fourjs/ui`
-
----
-
-<a id="packages-geometry-dependencies"></a>
-
-## Packages/geometry Dependencies
-
-### `packages/geometry/src/buffer-geometry.ts` - `BufferGeometry` (§53) — CPU-side vertex data, in the one shape the MVP
+### `packages/particles/src/types.ts` - Shared particle types (§27, §36) — the vocabulary WP-9.1's pool and emitter
 
 **Workspace Dependencies:**
 
@@ -1927,447 +390,11 @@ graph LR
 | -------------- | --------- |
 | `@fourjs/math` | `Vector3` |
 
-**Internal Dependencies:**
-
-| File                   | Imports                                                            | Type   |
-| ---------------------- | ------------------------------------------------------------------ | ------ |
-| `./geometry.js`        | `Geometry, BoundingVolume, MutableBoundingVolume`                  | Import |
-| `./resource-memory.js` | `noteGeometry, releaseGeometryDisposable, trackGeometryDisposable` | Import |
-
 **Exports:**
 
-- Classes: `BufferGeometry`
-- Interfaces: `BufferGeometryOptions`
-- Types: `GeometryDrawMode`, `GeometryIndexArray`, `GeometryBounds`
-
----
-
-### `packages/geometry/src/cpu-skinning.ts` - Reusable CPU linear-blend skinning (§54, RFC 0003).
-
-**Internal Dependencies:**
-
-| File                   | Imports          | Type   |
-| ---------------------- | ---------------- | ------ |
-| `./buffer-geometry.js` | `BufferGeometry` | Import |
-
-**Exports:**
-
-- Classes: `CpuSkinning`
-
----
-
-### `packages/geometry/src/geometry.ts` - §53's `Geometry` base and its `BoundingVolume` — the two declarations the
-
-**Workspace Dependencies:**
-
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/core` | `Disposable` |
-| `@fourjs/math` | `Vector3`    |
-
-**Exports:**
-
-- Interfaces: `BoundingVolume`, `MutableBoundingVolume`
-- Functions: `nextGeometryIdentifier`
-
----
-
-### `packages/geometry/src/index.ts` - --- R-21: §53 geometry base + bounding volume (begin) ---
-
-**Internal Dependencies:**
-
-| File                   | Imports                                                                                                                                                                                                          | Type                  |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./buffer-geometry.js` | `BufferGeometry`                                                                                                                                                                                                 | Re-export             |
-| `./geometry.js`        | `Geometry`                                                                                                                                                                                                       | Re-export             |
-| `./primitives-3d.js`   | `capsuleGeometry, coneGeometry, cylinderGeometry, extrudeGeometry, heightFieldGeometry, latheGeometry, sphereGeometry, torusGeometry, tubeGeometry`                                                              | Re-export             |
-| `./path.js`            | `DEFAULT_FLATTEN_TOLERANCE, MAX_SUBDIVISION_DEPTH, Path, booleanOp`                                                                                                                                              | Re-export             |
-| `./svg-document.js`    | `DEFAULT_MAXIMUM_SVG_DOCUMENT_LENGTH, parseSvgDocument`                                                                                                                                                          | Re-export             |
-| `./svg-path.js`        | `DEFAULT_MAXIMUM_PATH_DATA_LENGTH, formatSvgPathData, parseSvgPathData`                                                                                                                                          | Re-export             |
-| `./primitives.js`      | `boxGeometry, circleGeometry2D, planeGeometry, polygonGeometry2D`                                                                                                                                                | Re-export             |
-| `./resource-memory.js` | `geometryMemoryBytes, liveGeometryCount`                                                                                                                                                                         | Re-export             |
-| `./tessellation.js`    | `DEFAULT_MITER_LIMIT, earClippingTessellator, expandStroke, triangulatePolygon`                                                                                                                                  | Re-export             |
-| `./cpu-skinning.js`    | `CpuSkinning`                                                                                                                                                                                                    | Re-export             |
-| `./buffer-geometry.js` | `BufferGeometryOptions, GeometryBounds, GeometryDrawMode, GeometryIndexArray`                                                                                                                                    | Re-export (type-only) |
-| `./geometry.js`        | `BoundingVolume`                                                                                                                                                                                                 | Re-export (type-only) |
-| `./primitives-3d.js`   | `CapsuleGeometryOptions, ExtrudeGeometryOptions, HeightFieldGeometryOptions, LatheGeometryOptions, Point3D, SphereGeometryOptions, TaperedGeometryOptions, TorusGeometryOptions, TubeGeometryOptions`            | Re-export (type-only) |
-| `./path.js`            | `BooleanOp, FillRule, PathArcCommand, PathClosestPoint, PathCloseCommand, PathCommand, PathCubicCommand, PathFillRings, PathLineCommand, PathMoveCommand, PathOptions, PathQuadraticCommand, PathSegmentCommand` | Re-export (type-only) |
-| `./svg-document.js`    | `SvgDocument, SvgDocumentParseOptions, SvgDocumentPath, SvgViewBox`                                                                                                                                              | Re-export (type-only) |
-| `./svg-path.js`        | `SvgPathFormatOptions, SvgPathParseOptions`                                                                                                                                                                      | Re-export (type-only) |
-| `./primitives.js`      | `BoxGeometryOptions, CircleGeometry2DOptions, PlaneGeometryOptions, PolygonGeometry2DOptions`                                                                                                                    | Re-export (type-only) |
-| `./tessellation.js`    | `Point2D, PolygonTessellator, Polyline2D, StrokeAlignment, StrokeGeometryOptions, StrokeLineCap, StrokeLineJoin, StrokeMesh`                                                                                     | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `BufferGeometry`, `Geometry`, `capsuleGeometry`, `coneGeometry`, `cylinderGeometry`, `extrudeGeometry`, `heightFieldGeometry`, `latheGeometry`, `sphereGeometry`, `torusGeometry`, `tubeGeometry`, `DEFAULT_FLATTEN_TOLERANCE`, `MAX_SUBDIVISION_DEPTH`, `Path`, `booleanOp`, `DEFAULT_MAXIMUM_SVG_DOCUMENT_LENGTH`, `parseSvgDocument`, `DEFAULT_MAXIMUM_PATH_DATA_LENGTH`, `formatSvgPathData`, `parseSvgPathData`, `boxGeometry`, `circleGeometry2D`, `planeGeometry`, `polygonGeometry2D`, `geometryMemoryBytes`, `liveGeometryCount`, `DEFAULT_MITER_LIMIT`, `earClippingTessellator`, `expandStroke`, `triangulatePolygon`, `CpuSkinning`, `BufferGeometryOptions`, `GeometryBounds`, `GeometryDrawMode`, `GeometryIndexArray`, `BoundingVolume`, `CapsuleGeometryOptions`, `ExtrudeGeometryOptions`, `HeightFieldGeometryOptions`, `LatheGeometryOptions`, `Point3D`, `SphereGeometryOptions`, `TaperedGeometryOptions`, `TorusGeometryOptions`, `TubeGeometryOptions`, `BooleanOp`, `FillRule`, `PathArcCommand`, `PathClosestPoint`, `PathCloseCommand`, `PathCommand`, `PathCubicCommand`, `PathFillRings`, `PathLineCommand`, `PathMoveCommand`, `PathOptions`, `PathQuadraticCommand`, `PathSegmentCommand`, `SvgDocument`, `SvgDocumentParseOptions`, `SvgDocumentPath`, `SvgViewBox`, `SvgPathFormatOptions`, `SvgPathParseOptions`, `BoxGeometryOptions`, `CircleGeometry2DOptions`, `PlaneGeometryOptions`, `PolygonGeometry2DOptions`, `Point2D`, `PolygonTessellator`, `Polyline2D`, `StrokeAlignment`, `StrokeGeometryOptions`, `StrokeLineCap`, `StrokeLineJoin`, `StrokeMesh`
-
----
-
-### `packages/geometry/src/path-boolean.ts` - §51 Boolean operations on flattened closed contours.
-
-**Internal Dependencies:**
-
-| File                | Imports    | Type               |
-| ------------------- | ---------- | ------------------ |
-| `./path.js`         | `FillRule` | Import (type-only) |
-| `./tessellation.js` | `Point2D`  | Import (type-only) |
-
-**Exports:**
-
-- Types: `BooleanOp`
-- Functions: `booleanPolygons`, `isConvex`, `sutherlandHodgman`, `ringsContain`
-
----
-
-### `packages/geometry/src/path.ts` - The §51 path model — the vector-level source data every 2D shape, stroke,
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Matrix3` |
-
-**Internal Dependencies:**
-
-| File                     | Imports                      | Type                  |
-| ------------------------ | ---------------------------- | --------------------- |
-| `./path-boolean.js`      | `booleanPolygons, BooleanOp` | Import                |
-| `./primitive-support.js` | `requirePositive`            | Import                |
-| `./tessellation.js`      | `Point2D, Polyline2D`        | Import (type-only)    |
-| `./path-boolean.js`      | `BooleanOp`                  | Re-export (type-only) |
-
-**Exports:**
-
-- Classes: `Path`
-- Interfaces: `PathMoveCommand`, `PathLineCommand`, `PathQuadraticCommand`, `PathCubicCommand`, `PathArcCommand`, `PathCloseCommand`, `PathOptions`, `PathFillRings`, `PathClosestPoint`, `PathCursor`
-- Types: `FillRule`, `PathSegmentCommand`, `PathCommand`
-- Functions: `booleanOp`, `arcPoint`, `newCursor`, `advance`
-- Constants: `DEFAULT_FLATTEN_TOLERANCE`, `MAX_SUBDIVISION_DEPTH`
-- Re-exports: `BooleanOp`
-
----
-
-### `packages/geometry/src/primitive-support.ts` - Shared building blocks of the §53 primitive builders — index allocation,
-
-**Exports:**
-
-- Types: `IndexArray`
-- Functions: `createIndices`, `requirePositive`, `requireNonNegative`, `requireSegments`, `gridIndices`, `writeCap`
-
----
-
-### `packages/geometry/src/primitives-3d.ts` - The nine 3D primitives §53 requires beyond the box and the plane — sphere,
-
-**Internal Dependencies:**
-
-| File                     | Imports                                                                                                  | Type   |
-| ------------------------ | -------------------------------------------------------------------------------------------------------- | ------ |
-| `./buffer-geometry.js`   | `BufferGeometry`                                                                                         | Import |
-| `./primitive-support.js` | `createIndices, gridIndices, requireNonNegative, requirePositive, requireSegments, writeCap, IndexArray` | Import |
-| `./tessellation.js`      | `triangulatePolygon, Point2D`                                                                            | Import |
-
-**Exports:**
-
-- Interfaces: `Point3D`, `SphereGeometryOptions`, `TaperedGeometryOptions`, `CapsuleGeometryOptions`, `TorusGeometryOptions`, `LatheGeometryOptions`, `ExtrudeGeometryOptions`, `TubeGeometryOptions`, `HeightFieldGeometryOptions`
-- Functions: `sphereGeometry`, `cylinderGeometry`, `coneGeometry`, `capsuleGeometry`, `torusGeometry`, `latheGeometry`, `extrudeGeometry`, `tubeGeometry`, `heightFieldGeometry`
-
----
-
-### `packages/geometry/src/primitives.ts` - Primitive geometry builders (§53) — the box, the plane, and the 2D circle.
-
-**Internal Dependencies:**
-
-| File                     | Imports                          | Type   |
-| ------------------------ | -------------------------------- | ------ |
-| `./buffer-geometry.js`   | `BufferGeometry`                 | Import |
-| `./primitive-support.js` | `createIndices, requirePositive` | Import |
-| `./tessellation.js`      | `triangulatePolygon, Point2D`    | Import |
-
-**Exports:**
-
-- Interfaces: `BoxGeometryOptions`, `PlaneGeometryOptions`, `CircleGeometry2DOptions`, `PolygonGeometry2DOptions`
-- Functions: `boxGeometry`, `planeGeometry`, `circleGeometry2D`, `polygonGeometry2D`
-
----
-
-### `packages/geometry/src/resource-memory.ts` - §83 resource accounting for geometries — how many are live, and how many
-
-**Workspace Dependencies:**
-
-| Package        | Import                                 |
-| -------------- | -------------------------------------- |
-| `@fourjs/core` | `DEV, disposeTracked, trackDisposable` |
-
-**Exports:**
-
-- Functions: `noteGeometry`, `geometryMemoryBytes`, `liveGeometryCount`, `trackGeometryDisposable`, `releaseGeometryDisposable`
-
----
-
-### `packages/geometry/src/svg-document.ts` - §50's SVG **document** tier: a small XML tokenizer that turns `<svg>`
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-| `@fourjs/math` | `Matrix3`   |
-
-**Internal Dependencies:**
-
-| File            | Imports                                                                   | Type   |
-| --------------- | ------------------------------------------------------------------------- | ------ |
-| `./path.js`     | `Path, FillRule`                                                          | Import |
-| `./svg-path.js` | `DEFAULT_MAXIMUM_PATH_DATA_LENGTH, parseSvgPathData, SvgPathParseOptions` | Import |
-
-**Exports:**
-
-- Interfaces: `SvgDocumentParseOptions`, `SvgViewBox`, `SvgDocumentPath`, `SvgDocument`
-- Functions: `parseSvgDocument`, `parseTransform`
-- Constants: `DEFAULT_MAXIMUM_SVG_DOCUMENT_LENGTH`
-
----
-
-### `packages/geometry/src/svg-path.ts` - §50's _"SVG import/export compatibility"_, at the **path-data tier**: the
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File        | Imports                                                          | Type   |
-| ----------- | ---------------------------------------------------------------- | ------ |
-| `./path.js` | `Path, advance, arcPoint, newCursor, PathArcCommand, PathCursor` | Import |
-
-**Exports:**
-
-- Interfaces: `SvgPathFormatOptions`, `SvgPathParseOptions`
-- Functions: `parseSvgPathData`, `formatSvgPathData`
-- Constants: `DEFAULT_MAXIMUM_PATH_DATA_LENGTH`
-
----
-
-### `packages/geometry/src/tessellation.ts` - Polygon tessellation (§52) — the isolated module that turns a closed 2D
-
-**Internal Dependencies:**
-
-| File                     | Imports                          | Type               |
-| ------------------------ | -------------------------------- | ------------------ |
-| `./buffer-geometry.js`   | `GeometryIndexArray`             | Import (type-only) |
-| `./primitive-support.js` | `createIndices, requirePositive` | Import             |
-
-**Exports:**
-
-- Interfaces: `Point2D`, `PolygonTessellator`, `Polyline2D`, `StrokeGeometryOptions`, `StrokeMesh`
-- Types: `StrokeAlignment`, `StrokeLineCap`, `StrokeLineJoin`
-- Functions: `triangulatePolygon`, `expandStroke`
-- Constants: `earClippingTessellator`, `DEFAULT_MITER_LIMIT`
-
----
-
-<a id="packages-input-dependencies"></a>
-
-## Packages/input Dependencies
-
-### `packages/input/src/drag.ts` - Dragging (§72, §120): press a node, move the pointer, get world-space deltas.
-
-**Workspace Dependencies:**
-
-| Package         | Import                                |
-| --------------- | ------------------------------------- |
-| `@fourjs/core`  | `Unsubscribe`                         |
-| `@fourjs/math`  | `Vector3, DepthRange`                 |
-| `@fourjs/scene` | `resolveWorldTransform, Camera, Node` |
-
-**Internal Dependencies:**
-
-| File                  | Imports             | Type               |
-| --------------------- | ------------------- | ------------------ |
-| `./pick.js`           | `createPickRay`     | Import             |
-| `./pointer-events.js` | `ScenePointerEvent` | Import (type-only) |
-| `./pointer-input.js`  | `PointerInput`      | Import (type-only) |
-
-**Exports:**
-
-- Classes: `DragManager`
-- Interfaces: `DragManagerOptions`
-- Types: `DragListener`
-
----
-
-### `packages/input/src/index.ts` - Polled key state -- "is W down?" -- which is what `@fourjs/input` most
-
-**Internal Dependencies:**
-
-| File                  | Imports                                                                                         | Type                  |
-| --------------------- | ----------------------------------------------------------------------------------------------- | --------------------- |
-| `./drag.js`           | `DragManager`                                                                                   | Re-export             |
-| `./key-events.js`     | `SceneKeyEvent, dispatchKeyEvent`                                                               | Re-export             |
-| `./keyboard-input.js` | `KeyboardInput`                                                                                 | Re-export             |
-| `./keyboard-state.js` | `KeyboardState`                                                                                 | Re-export             |
-| `./pick.js`           | `createPickRay, pick`                                                                           | Re-export             |
-| `./pointer-events.js` | `CAPTURE_KEY_PREFIX, ScenePointerEvent, dispatchPointerEvent`                                   | Re-export             |
-| `./pointer-input.js`  | `DEFAULT_CLICK_MOVE_THRESHOLD, PointerInput`                                                    | Re-export             |
-| `./propagation.js`    | `SceneInputEvent, buildPropagationPath, dispatchThreePhase`                                     | Re-export             |
-| `./drag.js`           | `DragListener, DragManagerOptions`                                                              | Re-export (type-only) |
-| `./key-events.js`     | `KeyDefaultSuppressor, KeyModifiers, SceneKeyEventInit, SceneKeyEventType`                      | Re-export (type-only) |
-| `./keyboard-input.js` | `KeySurface, KeyboardInputOptions, SurfaceKeyEvent, SurfaceKeyListener`                         | Re-export (type-only) |
-| `./pick.js`           | `PickHit, Pickable, PickableAlphaMask, PickableTriangles, PickProvider`                         | Re-export (type-only) |
-| `./pointer-events.js` | `PointerDeviceType, PropagatingPointerEventType, ScenePointerEventInit, ScenePointerEventType`  | Re-export (type-only) |
-| `./pointer-input.js`  | `PointerInputOptions, PointerSurface, SurfacePointerEvent, SurfacePointerListener, SurfaceRect` | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `DragManager`, `SceneKeyEvent`, `dispatchKeyEvent`, `KeyboardInput`, `KeyboardState`, `createPickRay`, `pick`, `CAPTURE_KEY_PREFIX`, `ScenePointerEvent`, `dispatchPointerEvent`, `DEFAULT_CLICK_MOVE_THRESHOLD`, `PointerInput`, `SceneInputEvent`, `buildPropagationPath`, `dispatchThreePhase`, `DragListener`, `DragManagerOptions`, `KeyDefaultSuppressor`, `KeyModifiers`, `SceneKeyEventInit`, `SceneKeyEventType`, `KeySurface`, `KeyboardInputOptions`, `SurfaceKeyEvent`, `SurfaceKeyListener`, `PickHit`, `Pickable`, `PickableAlphaMask`, `PickableTriangles`, `PickProvider`, `PointerDeviceType`, `PropagatingPointerEventType`, `ScenePointerEventInit`, `ScenePointerEventType`, `PointerInputOptions`, `PointerSurface`, `SurfacePointerEvent`, `SurfacePointerListener`, `SurfaceRect`
-
----
-
-### `packages/input/src/key-events.ts` - Key events and their propagation through the scene graph (§72, §6b,
-
-**Workspace Dependencies:**
-
-| Package         | Import |
-| --------------- | ------ |
-| `@fourjs/scene` | `Node` |
-
-**Internal Dependencies:**
-
-| File               | Imports                               | Type   |
-| ------------------ | ------------------------------------- | ------ |
-| `./propagation.js` | `SceneInputEvent, dispatchThreePhase` | Import |
-
-**Exports:**
-
-- Classes: `SceneKeyEvent`
-- Interfaces: `KeyModifiers`, `KeyDefaultSuppressor`, `SceneKeyEventInit`
-- Types: `SceneKeyEventType`
-- Functions: `dispatchKeyEvent`
-
----
-
-### `packages/input/src/keyboard-input.ts` - The keyboard source (§72, 2026-08-07, A-10): platform key events in, scene
-
-**Workspace Dependencies:**
-
-| Package         | Import           |
-| --------------- | ---------------- |
-| `@fourjs/scene` | `Node`           |
-| `@fourjs/core`  | `DEV, FourError` |
-
-**Internal Dependencies:**
-
-| File               | Imports                                                                    | Type   |
-| ------------------ | -------------------------------------------------------------------------- | ------ |
-| `./key-events.js`  | `SceneKeyEvent, dispatchKeyEvent, KeyDefaultSuppressor, SceneKeyEventType` | Import |
-| `./propagation.js` | `buildPropagationPath`                                                     | Import |
-
-**Exports:**
-
-- Classes: `KeyboardInput`
-- Interfaces: `SurfaceKeyEvent`, `KeySurface`, `KeyboardInputOptions`
-- Types: `SurfaceKeyListener`
-
----
-
-### `packages/input/src/keyboard-state.ts` - §72 — polled keyboard state: "is this key held right now?"
-
-**Internal Dependencies:**
-
-| File                  | Imports                          | Type               |
-| --------------------- | -------------------------------- | ------------------ |
-| `./keyboard-input.js` | `KeySurface, SurfaceKeyListener` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `KeyboardState`
-
----
-
-### `packages/input/src/pick.ts` - Picking and hit testing (§71) — the bounds tier.
-
-**Workspace Dependencies:**
-
-| Package         | Import                                |
-| --------------- | ------------------------------------- |
-| `@fourjs/core`  | `FourError`                           |
-| `@fourjs/math`  | `Matrix4, Vector3, DepthRange`        |
-| `@fourjs/scene` | `resolveWorldTransform, Camera, Node` |
-
-**Exports:**
-
-- Interfaces: `PickProvider`, `PickableAlphaMask`, `PickableTriangles`, `Pickable`, `PickHit`
-- Functions: `createPickRay`, `pick`
-
----
-
-### `packages/input/src/pointer-events.ts` - Pointer events and their propagation through the scene graph (§72, §6b).
-
-**Workspace Dependencies:**
-
-| Package         | Import    |
-| --------------- | --------- |
-| `@fourjs/math`  | `Vector3` |
-| `@fourjs/scene` | `Node`    |
-
-**Internal Dependencies:**
-
-| File               | Imports                               | Type      |
-| ------------------ | ------------------------------------- | --------- |
-| `./propagation.js` | `SceneInputEvent, dispatchThreePhase` | Import    |
-| `./propagation.js` | `buildPropagationPath`                | Re-export |
-
-**Exports:**
-
-- Classes: `ScenePointerEvent`
-- Interfaces: `ScenePointerEventInit`
-- Types: `PropagatingPointerEventType`, `ScenePointerEventType`, `PointerDeviceType`
-- Functions: `dispatchPointerEvent`
-- Constants: `CAPTURE_KEY_PREFIX`
-- Re-exports: `buildPropagationPath`
-
----
-
-### `packages/input/src/pointer-input.ts` - The pointer source (§72): platform pointer events in, scene pointer events
-
-**Workspace Dependencies:**
-
-| Package         | Import                |
-| --------------- | --------------------- |
-| `@fourjs/math`  | `Vector3, DepthRange` |
-| `@fourjs/scene` | `Camera, Node`        |
-
-**Internal Dependencies:**
-
-| File                  | Imports                                                                                                                                | Type   |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./pick.js`           | `pick, PickHit, Pickable, PickProvider`                                                                                                | Import |
-| `./pointer-events.js` | `ScenePointerEvent, buildPropagationPath, dispatchPointerEvent, PointerDeviceType, PropagatingPointerEventType, ScenePointerEventType` | Import |
-
-**Exports:**
-
-- Classes: `PointerInput`
-- Interfaces: `SurfacePointerEvent`, `SurfaceRect`, `PointerSurface`, `PointerInputOptions`
-- Types: `SurfacePointerListener`
-- Constants: `DEFAULT_CLICK_MOVE_THRESHOLD`
-
----
-
-### `packages/input/src/propagation.ts` - The propagation machinery every scene input event shares (§72, §6b) — the
-
-**Workspace Dependencies:**
-
-| Package         | Import               |
-| --------------- | -------------------- |
-| `@fourjs/scene` | `Node, NodeEventMap` |
-
-**Exports:**
-
-- Functions: `buildPropagationPath`, `dispatchThreePhase`
+- Interfaces: `ParticleForceField`, `ParticleGpuRadialField`, `ParticleGpuIntegrateExtras`, `ParticleGpuSimulation`, `ParticleRange`, `ParticleLifetimeStop`, `ParticleLifetimeRamp`, `MutableParticleColor`, `ParticleColor`, `ParticleBurst`
+- Types: `ParticleSimulationMode`, `ParticleCollisionMode`, `ParticleTexture`
+- Functions: `evaluateLifetimeRampNumber`, `evaluateLifetimeRampColor`, `evaluateLifetimeRampColorInto`
 
 ---
 
@@ -2437,7 +464,47 @@ graph LR
 
 ---
 
-### `packages/materials/src/lit-material.ts` - `LitMaterial` (§57, §68, §120) — one RGBA color that responds to lights.
+### `packages/materials/src/shader-variants.ts` - A finite, declarative family of compile-time graph alternatives. Each key
+
+**Internal Dependencies:**
+
+| File                | Imports                                              | Type   |
+| ------------------- | ---------------------------------------------------- | ------ |
+| `./shader-graph.js` | `analyzeShaderGraph, freezeShaderGraph, ShaderGraph` | Import |
+
+**Exports:**
+
+- Classes: `ShaderVariantSet`
+
+---
+
+### `packages/materials/src/texture.ts` - The read surface of a texture as a **material** and a rendering backend see
+
+**Workspace Dependencies:**
+
+| Package        | Import                   |
+| -------------- | ------------------------ |
+| `@fourjs/math` | `ColorSpace, Rectangle2` |
+
+**Exports:**
+
+- Interfaces: `MaterialTexture`
+- Types: `MaterialTextureFilter`, `MaterialTextureMinFilter`, `MaterialTextureWrap`
+
+---
+
+### `packages/materials/src/stencil-state.ts` - `StencilState` (§57, §67) — the per-material stencil test, write mask, and
+
+**Exports:**
+
+- Classes: `StencilState`
+- Interfaces: `StencilStateOptions`
+- Types: `StencilFunc`, `StencilOp`
+- Constants: `MAX_STENCIL_VALUE`
+
+---
+
+### `packages/materials/src/sprite-material.ts` - `SpriteMaterial` (§55, §57) — one texture, one tint.
 
 **Internal Dependencies:**
 
@@ -2449,30 +516,89 @@ graph LR
 
 **Exports:**
 
-- Classes: `LitMaterial`
-- Interfaces: `LitMaterialOptions`
+- Classes: `SpriteMaterial`
+- Interfaces: `SpriteMaterialOptions`
+- Types: `SpriteTexture`
 
 ---
 
-### `packages/materials/src/material.ts` - `Material` (§57) — the abstract base every material family member extends,
-
-**Workspace Dependencies:**
-
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/core` | `Disposable` |
-
-**Internal Dependencies:**
-
-| File                   | Imports                                                            | Type               |
-| ---------------------- | ------------------------------------------------------------------ | ------------------ |
-| `./resource-memory.js` | `noteMaterial, releaseMaterialDisposable, trackMaterialDisposable` | Import             |
-| `./stencil-state.js`   | `StencilState`                                                     | Import (type-only) |
+### `packages/materials/src/shader-source-map.ts` - Maps the compiler's deterministic local declarations without changing shader
 
 **Exports:**
 
-- Interfaces: `MaterialOptions`
-- Types: `BlendMode`
+- Interfaces: `ShaderSourceLocation`
+- Types: `ShaderSourceMap`
+- Functions: `createShaderSourceMap`
+
+---
+
+### `packages/materials/src/standard-material.ts` - `StandardMaterial` (§59) — the metallic-roughness workflow, at the tier this
+
+**Workspace Dependencies:**
+
+| Package        | Import                |
+| -------------- | --------------------- |
+| `@fourjs/math` | `ColorRGB, ColorRGBA` |
+| `@fourjs/math` | `ColorRGB`            |
+
+**Internal Dependencies:**
+
+| File            | Imports                     | Type               |
+| --------------- | --------------------------- | ------------------ |
+| `./material.js` | `Material, MaterialOptions` | Import             |
+| `./texture.js`  | `MaterialTexture`           | Import (type-only) |
+
+**Exports:**
+
+- Classes: `StandardMaterial`
+- Interfaces: `StandardMaterialOptions`
+- Re-exports: `ColorRGB`
+
+---
+
+### `packages/materials/src/shader-operators.ts` - The §81 materials / shader-node registry — a named map of operator
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                   | Imports                                    | Type               |
+| ---------------------- | ------------------------------------------ | ------------------ |
+| `./shader-function.js` | `ShaderFunction, ShaderFunctionDefinition` | Import             |
+| `./shader-graph.js`    | `ShaderNode, ShaderNodeId`                 | Import (type-only) |
+
+**Exports:**
+
+- Classes: `ShaderOperatorRegistry`
+- Types: `ShaderOperatorFactory`
+
+---
+
+### `packages/materials/src/unlit-material.ts` - `UnlitMaterial` (§57) — a flat RGBA color, optionally multiplied by a texture
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/math` | `ColorRGBA` |
+| `@fourjs/math` | `ColorRGBA` |
+
+**Internal Dependencies:**
+
+| File            | Imports                     | Type               |
+| --------------- | --------------------------- | ------------------ |
+| `./material.js` | `Material, MaterialOptions` | Import             |
+| `./texture.js`  | `MaterialTexture`           | Import (type-only) |
+
+**Exports:**
+
+- Classes: `UnlitMaterial`
+- Interfaces: `UnlitMaterialOptions`
+- Re-exports: `ColorRGBA`
 
 ---
 
@@ -2510,20 +636,6 @@ graph LR
 
 ---
 
-### `packages/materials/src/resource-memory.ts` - §83 resource accounting for materials — how many are live (A-5 follow-up).
-
-**Workspace Dependencies:**
-
-| Package        | Import                                 |
-| -------------- | -------------------------------------- |
-| `@fourjs/core` | `DEV, disposeTracked, trackDisposable` |
-
-**Exports:**
-
-- Functions: `noteMaterial`, `liveMaterialCount`, `trackMaterialDisposable`, `releaseMaterialDisposable`
-
----
-
 ### `packages/materials/src/shader-function.ts` - A reusable, data-declared operator lowered to the existing closed IR. No
 
 **Internal Dependencies:**
@@ -2551,53 +663,43 @@ graph LR
 
 ---
 
-### `packages/materials/src/shader-operators.ts` - The §81 materials / shader-node registry — a named map of operator
+### `packages/materials/src/material.ts` - `Material` (§57) — the abstract base every material family member extends,
 
 **Workspace Dependencies:**
 
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/core` | `Disposable` |
 
 **Internal Dependencies:**
 
-| File                   | Imports                                    | Type               |
-| ---------------------- | ------------------------------------------ | ------------------ |
-| `./shader-function.js` | `ShaderFunction, ShaderFunctionDefinition` | Import             |
-| `./shader-graph.js`    | `ShaderNode, ShaderNodeId`                 | Import (type-only) |
+| File                   | Imports                                                            | Type               |
+| ---------------------- | ------------------------------------------------------------------ | ------------------ |
+| `./resource-memory.js` | `noteMaterial, releaseMaterialDisposable, trackMaterialDisposable` | Import             |
+| `./stencil-state.js`   | `StencilState`                                                     | Import (type-only) |
 
 **Exports:**
 
-- Classes: `ShaderOperatorRegistry`
-- Types: `ShaderOperatorFactory`
+- Interfaces: `MaterialOptions`
+- Types: `BlendMode`
 
 ---
 
-### `packages/materials/src/shader-source-map.ts` - Maps the compiler's deterministic local declarations without changing shader
+### `packages/materials/src/resource-memory.ts` - §83 resource accounting for materials — how many are live (A-5 follow-up).
+
+**Workspace Dependencies:**
+
+| Package        | Import                                 |
+| -------------- | -------------------------------------- |
+| `@fourjs/core` | `DEV, disposeTracked, trackDisposable` |
 
 **Exports:**
 
-- Interfaces: `ShaderSourceLocation`
-- Types: `ShaderSourceMap`
-- Functions: `createShaderSourceMap`
+- Functions: `noteMaterial`, `liveMaterialCount`, `trackMaterialDisposable`, `releaseMaterialDisposable`
 
 ---
 
-### `packages/materials/src/shader-variants.ts` - A finite, declarative family of compile-time graph alternatives. Each key
-
-**Internal Dependencies:**
-
-| File                | Imports                                              | Type   |
-| ------------------- | ---------------------------------------------------- | ------ |
-| `./shader-graph.js` | `analyzeShaderGraph, freezeShaderGraph, ShaderGraph` | Import |
-
-**Exports:**
-
-- Classes: `ShaderVariantSet`
-
----
-
-### `packages/materials/src/sprite-material.ts` - `SpriteMaterial` (§55, §57) — one texture, one tint.
+### `packages/materials/src/lit-material.ts` - `LitMaterial` (§57, §68, §120) — one RGBA color that responds to lights.
 
 **Internal Dependencies:**
 
@@ -2609,83 +711,459 @@ graph LR
 
 **Exports:**
 
-- Classes: `SpriteMaterial`
-- Interfaces: `SpriteMaterialOptions`
-- Types: `SpriteTexture`
+- Classes: `LitMaterial`
+- Interfaces: `LitMaterialOptions`
 
 ---
 
-### `packages/materials/src/standard-material.ts` - `StandardMaterial` (§59) — the metallic-roughness workflow, at the tier this
+<a id="packages-ui-dependencies"></a>
+
+## Packages/ui Dependencies
+
+### `packages/ui/src/label.ts` - `Label` (§73) — a widget whose intrinsic size is its text (§74, §56).
 
 **Workspace Dependencies:**
 
-| Package        | Import                |
-| -------------- | --------------------- |
-| `@fourjs/math` | `ColorRGB, ColorRGBA` |
-| `@fourjs/math` | `ColorRGB`            |
+| Package        | Import                               |
+| -------------- | ------------------------------------ |
+| `@fourjs/text` | `TextLayoutOptions`                  |
+| `@fourjs/math` | `Vector2`                            |
+| `@fourjs/text` | `layoutText, GlyphAtlas, TextLayout` |
 
 **Internal Dependencies:**
 
-| File            | Imports                     | Type               |
-| --------------- | --------------------------- | ------------------ |
-| `./material.js` | `Material, MaterialOptions` | Import             |
-| `./texture.js`  | `MaterialTexture`           | Import (type-only) |
+| File          | Imports                     | Type   |
+| ------------- | --------------------------- | ------ |
+| `./widget.js` | `UIWidget, UIWidgetOptions` | Import |
 
 **Exports:**
 
-- Classes: `StandardMaterial`
-- Interfaces: `StandardMaterialOptions`
-- Re-exports: `ColorRGB`
+- Classes: `Label`
+- Interfaces: `LabelOptions`
 
 ---
 
-### `packages/materials/src/stencil-state.ts` - `StencilState` (§57, §67) — the per-material stencil test, write mask, and
+### `packages/ui/src/canvas-view.ts` - `CanvasViewWidget` (§73's "canvas view"; RFC 0004, accepted 2026-08-21) — a
+
+**Internal Dependencies:**
+
+| File           | Imports                     | Type   |
+| -------------- | --------------------------- | ------ |
+| `./numbers.js` | `requireFinite`             | Import |
+| `./widget.js`  | `UIWidget, UIWidgetOptions` | Import |
 
 **Exports:**
 
-- Classes: `StencilState`
-- Interfaces: `StencilStateOptions`
-- Types: `StencilFunc`, `StencilOp`
-- Constants: `MAX_STENCIL_VALUE`
+- Classes: `CanvasViewWidget`
+- Interfaces: `CanvasViewWidgetOptions`
 
 ---
 
-### `packages/materials/src/texture.ts` - The read surface of a texture as a **material** and a rendering backend see
+### `packages/ui/src/slider.ts` - `Slider` (§73) — a value dragged along a track (§72) or stepped with the
 
 **Workspace Dependencies:**
 
-| Package        | Import                   |
-| -------------- | ------------------------ |
-| `@fourjs/math` | `ColorSpace, Rectangle2` |
+| Package         | Import                             |
+| --------------- | ---------------------------------- |
+| `@fourjs/input` | `ScenePointerEvent, SceneKeyEvent` |
+| `@fourjs/math`  | `Matrix4, Vector3`                 |
+| `@fourjs/scene` | `resolveWorldTransform`            |
+
+**Internal Dependencies:**
+
+| File           | Imports                                   | Type   |
+| -------------- | ----------------------------------------- | ------ |
+| `./numbers.js` | `fractionOf, requireFinite, resolveValue` | Import |
+| `./panel.js`   | `Panel, PanelOptions`                     | Import |
 
 **Exports:**
 
-- Interfaces: `MaterialTexture`
-- Types: `MaterialTextureFilter`, `MaterialTextureMinFilter`, `MaterialTextureWrap`
+- Classes: `Slider`
+- Interfaces: `SliderOptions`
+- Types: `SliderOrientation`
 
 ---
 
-### `packages/materials/src/unlit-material.ts` - `UnlitMaterial` (§57) — a flat RGBA color, optionally multiplied by a texture
+### `packages/ui/src/capabilities.ts` - This package's §81 capability token (RFC 0002).
+
+**Workspace Dependencies:**
+
+| Package        | Import             |
+| -------------- | ------------------ |
+| `@fourjs/core` | `defineCapability` |
+
+**Internal Dependencies:**
+
+| File                    | Imports             | Type               |
+| ----------------------- | ------------------- | ------------------ |
+| `./control-registry.js` | `UIControlRegistry` | Import (type-only) |
+
+**Exports:**
+
+- Constants: `UI_CONTROLS`
+
+---
+
+### `packages/ui/src/radio.ts` - `RadioButton` (§73's "radio control") and its group mechanism (2026-08-07,
+
+**Workspace Dependencies:**
+
+| Package         | Import          |
+| --------------- | --------------- |
+| `@fourjs/input` | `SceneKeyEvent` |
+| `@fourjs/scene` | `Node`          |
+
+**Internal Dependencies:**
+
+| File             | Imports                                   | Type   |
+| ---------------- | ----------------------------------------- | ------ |
+| `./checkable.js` | `CheckableWidget, CheckableWidgetOptions` | Import |
+
+**Exports:**
+
+- Classes: `RadioButton`
+- Interfaces: `RadioButtonOptions`
+- Functions: `collectRadioGroup`, `checkedRadio`
+
+---
+
+### `packages/ui/src/index.ts` - `@fourjs/ui` — retained-mode UI at §113a's MVP tier (§73–§75).
+
+**Internal Dependencies:**
+
+| File                    | Imports                                                                                                                                                                                                           | Type                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./capabilities.js`     | `UI_CONTROLS`                                                                                                                                                                                                     | Re-export             |
+| `./control-registry.js` | `UIControlRegistry`                                                                                                                                                                                               | Re-export             |
+| `./accessibility.js`    | `accessibilityElementId, installAccessibilityMirror, prefersReducedMotion`                                                                                                                                        | Re-export             |
+| `./button.js`           | `Button`                                                                                                                                                                                                          | Re-export             |
+| `./canvas-view.js`      | `CanvasViewWidget`                                                                                                                                                                                                | Re-export             |
+| `./checkable.js`        | `CheckableWidget, Checkbox, Toggle`                                                                                                                                                                               | Re-export             |
+| `./image.js`            | `ImageWidget`                                                                                                                                                                                                     | Re-export             |
+| `./keyboard.js`         | `collectFocusOrder, installKeyboardTraversal, keyboardFocusTarget`                                                                                                                                                | Re-export             |
+| `./label.js`            | `Label`                                                                                                                                                                                                           | Re-export             |
+| `./panel.js`            | `Panel`                                                                                                                                                                                                           | Re-export             |
+| `./progress.js`         | `ProgressIndicator`                                                                                                                                                                                               | Re-export             |
+| `./radio.js`            | `RadioButton, checkedRadio, collectRadioGroup`                                                                                                                                                                    | Re-export             |
+| `./slider.js`           | `Slider`                                                                                                                                                                                                          | Re-export             |
+| `./widget.js`           | `Insets, UIWidget, UI_LAYOUT_AUTHORITY, UI_STAGED, applyInsets, collectPickables, focusedWidget, isUIWidget, registerAccessibilitySync`                                                                           | Re-export             |
+| `./control-registry.js` | `UIControlConstructor`                                                                                                                                                                                            | Re-export (type-only) |
+| `./accessibility.js`    | `AccessibilityMirror, AccessibilityMirrorOptions, AccessibilityMirrorRoot, DocumentLike, ElementLike, ElementStyleLike`                                                                                           | Re-export (type-only) |
+| `./button.js`           | `ButtonOptions`                                                                                                                                                                                                   | Re-export (type-only) |
+| `./canvas-view.js`      | `CanvasViewWidgetOptions`                                                                                                                                                                                         | Re-export (type-only) |
+| `./checkable.js`        | `CheckableWidgetOptions, CheckboxOptions, ToggleOptions`                                                                                                                                                          | Re-export (type-only) |
+| `./image.js`            | `ImageWidgetOptions`                                                                                                                                                                                              | Re-export (type-only) |
+| `./keyboard.js`         | `KeyboardTraversalOptions`                                                                                                                                                                                        | Re-export (type-only) |
+| `./label.js`            | `LabelOptions`                                                                                                                                                                                                    | Re-export (type-only) |
+| `./panel.js`            | `LayoutAlign, LayoutDirection, LayoutJustify, LayoutType, PanelLayout, PanelOptions`                                                                                                                              | Re-export (type-only) |
+| `./progress.js`         | `ProgressIndicatorOptions`                                                                                                                                                                                        | Re-export (type-only) |
+| `./radio.js`            | `RadioButtonOptions`                                                                                                                                                                                              | Re-export (type-only) |
+| `./slider.js`           | `SliderOptions, SliderOrientation`                                                                                                                                                                                | Re-export (type-only) |
+| `./widget.js`           | `AccessibilitySync, InsetsInit, UIFocusEvent, UIWidgetOptions, WidgetAccessibility, WidgetActivateEvent, WidgetActivationSource, WidgetSkin, WidgetStateChangeEvent, WidgetStateSnapshot, WidgetValueChangeEvent` | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `UI_CONTROLS`, `UIControlRegistry`, `accessibilityElementId`, `installAccessibilityMirror`, `prefersReducedMotion`, `Button`, `CanvasViewWidget`, `CheckableWidget`, `Checkbox`, `Toggle`, `ImageWidget`, `collectFocusOrder`, `installKeyboardTraversal`, `keyboardFocusTarget`, `Label`, `Panel`, `ProgressIndicator`, `RadioButton`, `checkedRadio`, `collectRadioGroup`, `Slider`, `Insets`, `UIWidget`, `UI_LAYOUT_AUTHORITY`, `UI_STAGED`, `applyInsets`, `collectPickables`, `focusedWidget`, `isUIWidget`, `registerAccessibilitySync`, `UIControlConstructor`, `AccessibilityMirror`, `AccessibilityMirrorOptions`, `AccessibilityMirrorRoot`, `DocumentLike`, `ElementLike`, `ElementStyleLike`, `ButtonOptions`, `CanvasViewWidgetOptions`, `CheckableWidgetOptions`, `CheckboxOptions`, `ToggleOptions`, `ImageWidgetOptions`, `KeyboardTraversalOptions`, `LabelOptions`, `LayoutAlign`, `LayoutDirection`, `LayoutJustify`, `LayoutType`, `PanelLayout`, `PanelOptions`, `ProgressIndicatorOptions`, `RadioButtonOptions`, `SliderOptions`, `SliderOrientation`, `AccessibilitySync`, `InsetsInit`, `UIFocusEvent`, `UIWidgetOptions`, `WidgetAccessibility`, `WidgetActivateEvent`, `WidgetActivationSource`, `WidgetSkin`, `WidgetStateChangeEvent`, `WidgetStateSnapshot`, `WidgetValueChangeEvent`
+
+---
+
+### `packages/ui/src/accessibility.ts` - §75's hidden DOM accessibility mirror (2026-09-06, A-13 remainder).
+
+**Workspace Dependencies:**
+
+| Package         | Import                    |
+| --------------- | ------------------------- |
+| `@fourjs/core`  | `Disposable, Unsubscribe` |
+| `@fourjs/scene` | `Node`                    |
+
+**Internal Dependencies:**
+
+| File             | Imports                                                    | Type   |
+| ---------------- | ---------------------------------------------------------- | ------ |
+| `./button.js`    | `Button`                                                   | Import |
+| `./checkable.js` | `Checkbox, Toggle`                                         | Import |
+| `./progress.js`  | `ProgressIndicator`                                        | Import |
+| `./radio.js`     | `RadioButton`                                              | Import |
+| `./slider.js`    | `Slider`                                                   | Import |
+| `./widget.js`    | `registerAccessibilitySync, UIWidget, WidgetAccessibility` | Import |
+
+**Exports:**
+
+- Interfaces: `DocumentLike`, `ElementStyleLike`, `ElementLike`, `AccessibilityMirrorOptions`, `AccessibilityMirror`
+- Types: `AccessibilityMirrorRoot`
+- Functions: `prefersReducedMotion`, `installAccessibilityMirror`, `accessibilityElementId`
+
+---
+
+### `packages/ui/src/widget.ts` - `UIWidget` (§73–§75) — the retained-mode UI layer's base class: a scene node
+
+**Workspace Dependencies:**
+
+| Package         | Import                                                                                       |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| `@fourjs/core`  | `Disposable, Unsubscribe`                                                                    |
+| `@fourjs/input` | `Pickable, ScenePointerEvent`                                                                |
+| `@fourjs/math`  | `Vector2, Vector3`                                                                           |
+| `@fourjs/scene` | `Node, beginOwnedTransformWrite, endOwnedTransformWrite, warnAuthorityConflict, NodeOptions` |
+
+**Exports:**
+
+- Classes: `Insets`
+- Interfaces: `WidgetStateSnapshot`, `WidgetStateChangeEvent`, `WidgetActivateEvent`, `WidgetValueChangeEvent`, `UIFocusEvent`, `WidgetAccessibility`, `WidgetSkin`, `UIWidgetOptions`
+- Types: `InsetsInit`, `WidgetActivationSource`, `AccessibilitySync`
+- Functions: `applyInsets`, `registerAccessibilitySync`, `focusedWidget`, `isUIWidget`, `collectPickables`
+- Constants: `UI_LAYOUT_AUTHORITY`, `UI_STAGED`
+
+---
+
+### `packages/ui/src/image.ts` - `ImageWidget` (§73's "image") — a box, a source key, and an intrinsic size
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Vector2` |
+
+**Internal Dependencies:**
+
+| File           | Imports                     | Type   |
+| -------------- | --------------------------- | ------ |
+| `./numbers.js` | `requireNonNegative`        | Import |
+| `./widget.js`  | `UIWidget, UIWidgetOptions` | Import |
+
+**Exports:**
+
+- Classes: `ImageWidget`
+- Interfaces: `ImageWidgetOptions`
+
+---
+
+### `packages/ui/src/control-registry.ts` - The §81 UI-control registry — a named map of widget constructors a host
 
 **Workspace Dependencies:**
 
 | Package        | Import      |
 | -------------- | ----------- |
-| `@fourjs/math` | `ColorRGBA` |
-| `@fourjs/math` | `ColorRGBA` |
+| `@fourjs/core` | `FourError` |
 
 **Internal Dependencies:**
 
-| File            | Imports                     | Type               |
-| --------------- | --------------------------- | ------------------ |
-| `./material.js` | `Material, MaterialOptions` | Import             |
-| `./texture.js`  | `MaterialTexture`           | Import (type-only) |
+| File          | Imports    | Type               |
+| ------------- | ---------- | ------------------ |
+| `./widget.js` | `UIWidget` | Import (type-only) |
 
 **Exports:**
 
-- Classes: `UnlitMaterial`
-- Interfaces: `UnlitMaterialOptions`
-- Re-exports: `ColorRGBA`
+- Classes: `UIControlRegistry`
+- Types: `UIControlConstructor`
+
+---
+
+### `packages/ui/src/button.ts` - `Button` (§73) — the one control in this MVP that _does_ something: a §72
+
+**Workspace Dependencies:**
+
+| Package         | Import                             |
+| --------------- | ---------------------------------- |
+| `@fourjs/input` | `ScenePointerEvent, SceneKeyEvent` |
+
+**Internal Dependencies:**
+
+| File          | Imports                  | Type               |
+| ------------- | ------------------------ | ------------------ |
+| `./panel.js`  | `Panel, PanelOptions`    | Import             |
+| `./widget.js` | `WidgetActivationSource` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `Button`
+- Types: `ButtonOptions`
+
+---
+
+### `packages/ui/src/checkable.ts` - `Toggle` and `Checkbox` (§73), over the checkable base they share
+
+**Internal Dependencies:**
+
+| File          | Imports                 | Type   |
+| ------------- | ----------------------- | ------ |
+| `./button.js` | `Button, ButtonOptions` | Import |
+
+**Exports:**
+
+- Classes: `Toggle`, `Checkbox`
+- Interfaces: `CheckableWidgetOptions`
+- Types: `ToggleOptions`, `CheckboxOptions`
+
+---
+
+### `packages/ui/src/panel.ts` - `Panel` (§73) and the layout engine (§74) — the container widget, and the
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Vector2` |
+
+**Internal Dependencies:**
+
+| File          | Imports                                              | Type   |
+| ------------- | ---------------------------------------------------- | ------ |
+| `./widget.js` | `UIWidget, applyInsets, InsetsInit, UIWidgetOptions` | Import |
+
+**Exports:**
+
+- Classes: `Panel`
+- Interfaces: `PanelLayout`, `PanelOptions`
+- Types: `LayoutType`, `LayoutDirection`, `LayoutJustify`, `LayoutAlign`
+
+---
+
+### `packages/ui/src/numbers.ts` - Numeric guards and range arithmetic shared by the §73 controls that carry a
+
+**Exports:**
+
+- Functions: `requireFinite`, `requireNonNegative`, `resolveValue`, `fractionOf`
+
+---
+
+### `packages/ui/src/keyboard.ts` - §75's keyboard navigation: Tab traversal over a widget tree (2026-08-07,
+
+**Workspace Dependencies:**
+
+| Package         | Import          |
+| --------------- | --------------- |
+| `@fourjs/core`  | `Unsubscribe`   |
+| `@fourjs/input` | `SceneKeyEvent` |
+| `@fourjs/scene` | `Node`          |
+
+**Internal Dependencies:**
+
+| File          | Imports                   | Type   |
+| ------------- | ------------------------- | ------ |
+| `./widget.js` | `UIWidget, focusedWidget` | Import |
+
+**Exports:**
+
+- Interfaces: `KeyboardTraversalOptions`
+- Functions: `collectFocusOrder`, `keyboardFocusTarget`, `installKeyboardTraversal`
+
+---
+
+### `packages/ui/src/progress.ts` - `ProgressIndicator` (§73) — a value shown, never edited (2026-08-07, A-12).
+
+**Internal Dependencies:**
+
+| File           | Imports                     | Type   |
+| -------------- | --------------------------- | ------ |
+| `./numbers.js` | `fractionOf, requireFinite` | Import |
+| `./panel.js`   | `Panel, PanelOptions`       | Import |
+
+**Exports:**
+
+- Classes: `ProgressIndicator`
+- Interfaces: `ProgressIndicatorOptions`
+
+---
+
+<a id="packages-text-dependencies"></a>
+
+## Packages/text Dependencies
+
+### `packages/text/src/index.ts` - `@fourjs/text` — bitmap text at §56's MVP tier.
+
+**Internal Dependencies:**
+
+| File               | Imports                                                                | Type                  |
+| ------------------ | ---------------------------------------------------------------------- | --------------------- |
+| `./bitmap-font.js` | `BUILTIN_FONT, createBitmapFont, glyphFor, glyphPixel, glyphToAscii`   | Re-export             |
+| `./glyph-atlas.js` | `buildGlyphAtlas`                                                      | Re-export             |
+| `./text-layout.js` | `layoutText`                                                           | Re-export             |
+| `./line-break.js`  | `canBreakAfter, canBreakBefore, lineBreakOpportunity, wrapToWidth`     | Re-export             |
+| `./shaping.js`     | `IdentityShapingEngine, DEFAULT_MAXIMUM_FONT_BYTES, validateFontBytes` | Re-export             |
+| `./bitmap-font.js` | `BitmapFont, BitmapFontOptions, BitmapGlyph`                           | Re-export (type-only) |
+| `./glyph-atlas.js` | `GlyphAtlas, GlyphAtlasEntry, GlyphAtlasOptions`                       | Re-export (type-only) |
+| `./text-layout.js` | `TextAlign, TextLayout, TextLayoutOptions, TextQuad`                   | Re-export (type-only) |
+| `./line-break.js`  | `LineBreakOpportunity, Wrappable`                                      | Re-export (type-only) |
+| `./shaping.js`     | `ShapingDirection, ShapedGlyph, ShapedRun, ShapeQuery, ShapingEngine`  | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `BUILTIN_FONT`, `createBitmapFont`, `glyphFor`, `glyphPixel`, `glyphToAscii`, `buildGlyphAtlas`, `layoutText`, `canBreakAfter`, `canBreakBefore`, `lineBreakOpportunity`, `wrapToWidth`, `IdentityShapingEngine`, `DEFAULT_MAXIMUM_FONT_BYTES`, `validateFontBytes`, `BitmapFont`, `BitmapFontOptions`, `BitmapGlyph`, `GlyphAtlas`, `GlyphAtlasEntry`, `GlyphAtlasOptions`, `TextAlign`, `TextLayout`, `TextLayoutOptions`, `TextQuad`, `LineBreakOpportunity`, `Wrappable`, `ShapingDirection`, `ShapedGlyph`, `ShapedRun`, `ShapeQuery`, `ShapingEngine`
+
+---
+
+### `packages/text/src/line-break.ts` - UAX #14-lite line breaking for {@link layoutText}'s `wrapWidth` packet
+
+**Exports:**
+
+- Interfaces: `Wrappable`
+- Types: `LineBreakOpportunity`
+- Functions: `lineBreakOpportunity`, `canBreakAfter`, `canBreakBefore`, `wrapToWidth`
+
+---
+
+### `packages/text/src/glyph-atlas.ts` - `buildGlyphAtlas` (§56 MVP tier) — every glyph of a {@link BitmapFont} packed
+
+**Internal Dependencies:**
+
+| File               | Imports                    | Type               |
+| ------------------ | -------------------------- | ------------------ |
+| `./bitmap-font.js` | `BitmapFont, BitmapGlyph`  | Import (type-only) |
+| `./bitmap-font.js` | `BUILTIN_FONT, glyphPixel` | Import             |
+
+**Exports:**
+
+- Interfaces: `GlyphAtlasEntry`, `GlyphAtlas`, `GlyphAtlasOptions`
+- Functions: `buildGlyphAtlas`
+
+---
+
+### `packages/text/src/text-layout.ts` - `layoutText` (§56 MVP tier) — a string plus a {@link GlyphAtlas} becomes a
+
+**Internal Dependencies:**
+
+| File               | Imports                                                  | Type               |
+| ------------------ | -------------------------------------------------------- | ------------------ |
+| `./shaping.js`     | `IdentityShapingEngine, ShapingEngine, ShapingDirection` | Import             |
+| `./glyph-atlas.js` | `GlyphAtlas, GlyphAtlasEntry`                            | Import (type-only) |
+| `./line-break.js`  | `canBreakAfter, canBreakBefore, wrapToWidth, Wrappable`  | Import             |
+
+**Exports:**
+
+- Interfaces: `TextQuad`, `TextLayoutOptions`, `TextLayout`
+- Types: `TextAlign`
+- Functions: `layoutText`
+
+---
+
+### `packages/text/src/shaping.ts` - shaping module
+
+**Workspace Dependencies:**
+
+| Package        | Import                  |
+| -------------- | ----------------------- |
+| `@fourjs/core` | `FourError, Disposable` |
+
+**Exports:**
+
+- Classes: `IdentityShapingEngine`
+- Interfaces: `ShapedGlyph`, `ShapedRun`, `ShapeQuery`, `ShapingEngine`
+- Types: `ShapingDirection`
+- Functions: `validateFontBytes`, `validateShapingDirection`
+- Constants: `DEFAULT_MAXIMUM_FONT_BYTES`
+
+---
+
+### `packages/text/src/bitmap-font.ts` - A built-in, dependency-free monospace bitmap font (§56 MVP tier).
+
+**Exports:**
+
+- Interfaces: `BitmapGlyph`, `BitmapFont`, `BitmapFontOptions`
+- Functions: `createBitmapFont`, `glyphFor`, `glyphPixel`, `glyphToAscii`
+- Constants: `BUILTIN_FONT`
 
 ---
 
@@ -2693,36 +1171,19 @@ graph LR
 
 ## Packages/math Dependencies
 
-### `packages/math/src/alloc-counter.ts` - Allocation instrumentation for the math types (§7b, §83).
-
-**Exports:**
-
-- Functions: `noteConstruction`, `constructionCount`, `resetConstructionCount`
-
----
-
-### `packages/math/src/color.ts` - Colour value types, the sRGB transfer functions, and CSS colour-string
-
-**Exports:**
-
-- Types: `ColorRGB`, `ColorRGBA`, `ColorSpace`
-- Functions: `srgbToLinear`, `linearToSrgb`, `srgbToLinearRGB`, `linearToSrgbRGB`, `srgbToLinearRGBA`, `linearToSrgbRGBA`, `parseColor`, `parseColorRGB`
-
----
-
-### `packages/math/src/frustum.ts` - The six clip planes of a view-projection matrix (§87) — the primitive a
+### `packages/math/src/quaternion.ts` - Above this dot product the two ends of a {@link Quaternion.slerp} are treated
 
 **Internal Dependencies:**
 
-| File                 | Imports               | Type               |
-| -------------------- | --------------------- | ------------------ |
-| `./alloc-counter.js` | `noteConstruction`    | Import             |
-| `./matrix4.js`       | `DepthRange, Matrix4` | Import (type-only) |
-| `./vector3.js`       | `Vector3`             | Import (type-only) |
+| File                 | Imports            | Type               |
+| -------------------- | ------------------ | ------------------ |
+| `./alloc-counter.js` | `noteConstruction` | Import             |
+| `./vector3.js`       | `Vector3`          | Import (type-only) |
 
 **Exports:**
 
-- Classes: `Frustum`
+- Classes: `Quaternion`
+- Functions: `setQuaternionFromBasis`
 
 ---
 
@@ -2752,7 +1213,7 @@ graph LR
 
 ---
 
-### `packages/math/src/matrix3.ts` - Mutable 3×3 matrix stored **column-major** in a `Float64Array(9)` (§7b).
+### `packages/math/src/matrix3.ts` - Default tolerance for {@link Matrix3.equalsApprox}. See `vector2.ts` for the
 
 **Internal Dependencies:**
 
@@ -2767,39 +1228,6 @@ graph LR
 
 ---
 
-### `packages/math/src/matrix4.ts` - Clip-space depth convention of a projection matrix (plan D8).
-
-**Internal Dependencies:**
-
-| File                 | Imports                              | Type               |
-| -------------------- | ------------------------------------ | ------------------ |
-| `./alloc-counter.js` | `noteConstruction`                   | Import             |
-| `./quaternion.js`    | `setQuaternionFromBasis, Quaternion` | Import             |
-| `./vector3.js`       | `Vector3`                            | Import (type-only) |
-
-**Exports:**
-
-- Classes: `Matrix4`
-- Types: `DepthRange`
-
----
-
-### `packages/math/src/quaternion.ts` - Above this dot product the two ends of a {@link Quaternion.slerp} are treated
-
-**Internal Dependencies:**
-
-| File                 | Imports            | Type               |
-| -------------------- | ------------------ | ------------------ |
-| `./alloc-counter.js` | `noteConstruction` | Import             |
-| `./vector3.js`       | `Vector3`          | Import (type-only) |
-
-**Exports:**
-
-- Classes: `Quaternion`
-- Functions: `setQuaternionFromBasis`
-
----
-
 ### `packages/math/src/rectangle2.ts` - Default tolerance for {@link Rectangle2.equalsApprox}. See `vector2.ts` for
 
 **Internal Dependencies:**
@@ -2811,6 +1239,23 @@ graph LR
 **Exports:**
 
 - Classes: `Rectangle2`
+
+---
+
+### `packages/math/src/color.ts` - Colour value types, the sRGB transfer functions, and CSS colour-string
+
+**Exports:**
+
+- Types: `ColorRGB`, `ColorRGBA`, `ColorSpace`
+- Functions: `srgbToLinear`, `linearToSrgb`, `srgbToLinearRGB`, `linearToSrgbRGB`, `srgbToLinearRGBA`, `linearToSrgbRGBA`, `parseColor`, `parseColorRGB`
+
+---
+
+### `packages/math/src/alloc-counter.ts` - Allocation instrumentation for the math types (§7b, §83).
+
+**Exports:**
+
+- Functions: `noteConstruction`, `constructionCount`, `resetConstructionCount`
 
 ---
 
@@ -2832,13 +1277,47 @@ graph LR
 
 **Internal Dependencies:**
 
-| File                 | Imports            | Type   |
-| -------------------- | ------------------ | ------ |
-| `./alloc-counter.js` | `noteConstruction` | Import |
+| File                 | Imports            | Type               |
+| -------------------- | ------------------ | ------------------ |
+| `./alloc-counter.js` | `noteConstruction` | Import             |
+| `./matrix4.js`       | `Matrix4`          | Import (type-only) |
 
 **Exports:**
 
 - Classes: `Vector3`
+
+---
+
+### `packages/math/src/matrix4.ts` - Default tolerance for {@link Matrix4.equalsApprox}. See `vector2.ts` for the
+
+**Internal Dependencies:**
+
+| File                 | Imports                              | Type               |
+| -------------------- | ------------------------------------ | ------------------ |
+| `./alloc-counter.js` | `noteConstruction`                   | Import             |
+| `./quaternion.js`    | `setQuaternionFromBasis, Quaternion` | Import             |
+| `./vector3.js`       | `Vector3`                            | Import (type-only) |
+
+**Exports:**
+
+- Classes: `Matrix4`
+- Types: `DepthRange`
+
+---
+
+### `packages/math/src/frustum.ts` - The six clip planes of a view-projection matrix (§87) — the primitive a
+
+**Internal Dependencies:**
+
+| File                 | Imports               | Type               |
+| -------------------- | --------------------- | ------------------ |
+| `./alloc-counter.js` | `noteConstruction`    | Import             |
+| `./matrix4.js`       | `DepthRange, Matrix4` | Import (type-only) |
+| `./vector3.js`       | `Vector3`             | Import (type-only) |
+
+**Exports:**
+
+- Classes: `Frustum`
 
 ---
 
@@ -2856,1337 +1335,15 @@ graph LR
 
 ---
 
-<a id="packages-motion-dependencies"></a>
+<a id="packages-render-svg-dependencies"></a>
 
-## Packages/motion Dependencies
+## Packages/render svg Dependencies
 
-### `packages/motion/src/camera-rigs.ts` - §44 camera rigs: {@link OrbitRig} (orbit) and {@link FollowRig} (follow target
-
-**Workspace Dependencies:**
-
-| Package         | Import                        |
-| --------------- | ----------------------------- |
-| `@fourjs/core`  | `Component, ComponentHost`    |
-| `@fourjs/math`  | `Vector3`                     |
-| `@fourjs/scene` | `resolveWorldTransform, Node` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                   | Type               |
-| -------------------- | ------------------------------------------------------------------------- | ------------------ |
-| `./rig-target.js`    | `placeAtWorldPosition, resolveTargetPosition, worldPositionOf, RigTarget` | Import             |
-| `./spring-damper.js` | `SpringDamper, SpringDamperVector3Result`                                 | Import (type-only) |
-
-**Exports:**
-
-- Classes: `OrbitRig`, `FollowRig`
-- Interfaces: `OrbitRigOptions`, `FollowRigOptions`
-- Types: `FollowFrame`
-- Constants: `DEFAULT_ORBIT_PITCH_LIMIT`, `DEFAULT_ORBIT_MIN_DISTANCE`
-
----
-
-### `packages/motion/src/camera-shake.ts` - §44 camera shake: an additive pose offset driven by interpolated value
-
-**Workspace Dependencies:**
-
-| Package         | Import                     |
-| --------------- | -------------------------- |
-| `@fourjs/core`  | `Component, ComponentHost` |
-| `@fourjs/math`  | `Quaternion, Vector3`      |
-| `@fourjs/scene` | `Node`                     |
-
-**Internal Dependencies:**
-
-| File              | Imports                                 | Type   |
-| ----------------- | --------------------------------------- | ------ |
-| `./random.js`     | `SeededRandom`                          | Import |
-| `./rig-target.js` | `placeAtWorldPosition, worldPositionOf` | Import |
-
-**Exports:**
-
-- Classes: `CameraShake`
-- Interfaces: `CameraShakeOptions`
-
----
-
-### `packages/motion/src/capabilities.ts` - This package's §81 capability token (RFC 0002; declared here since
-
-**Workspace Dependencies:**
-
-| Package        | Import             |
-| -------------- | ------------------ |
-| `@fourjs/core` | `defineCapability` |
-
-**Internal Dependencies:**
-
-| File                 | Imports               | Type               |
-| -------------------- | --------------------- | ------------------ |
-| `./systems.js`       | `SystemRegistry`      | Import (type-only) |
-| `./path-planning.js` | `PathPlannerRegistry` | Import (type-only) |
-
-**Exports:**
-
-- Constants: `SIMULATION_SYSTEMS`, `PATH_PLANNERS`
-
----
-
-### `packages/motion/src/character-controller.ts` - §12's **character controllers** — {@link CharacterController}, the one yaw
-
-**Workspace Dependencies:**
-
-| Package         | Import                     |
-| --------------- | -------------------------- |
-| `@fourjs/core`  | `Component, ComponentHost` |
-| `@fourjs/scene` | `Transform`                |
-
-**Exports:**
-
-- Classes: `CharacterController`, `FirstPersonLook`
-- Interfaces: `CharacterControllerOptions`, `FirstPersonLookOptions`
-- Constants: `DEFAULT_CHARACTER_GRAVITY`, `DEFAULT_FIRST_PERSON_PITCH_LIMIT`
-
----
-
-### `packages/motion/src/clock.ts` - Clock and time domains (§9).
-
-**Exports:**
-
-- Interfaces: `TimeState`, `TimeStateOptions`
-- Types: `ReadonlyTimeState`, `Clock`, `ReadonlyClock`
-- Functions: `createTimeState`, `copyTimeState`, `assertFixedDeltaTime`, `assertTimeScale`
-- Constants: `DEFAULT_FIXED_DELTA_TIME`, `DEFAULT_MAXIMUM_SUB_STEPS`
-
----
-
-### `packages/motion/src/constraints.ts` - §12's look-at constraint and the §39 step-7 system that runs it, together
-
-**Workspace Dependencies:**
-
-| Package         | Import                                                                       |
-| --------------- | ---------------------------------------------------------------------------- |
-| `@fourjs/core`  | `FourError, Component, ComponentHost`                                        |
-| `@fourjs/math`  | `Quaternion, Vector3`                                                        |
-| `@fourjs/scene` | `resolveWorldTransform, runOwnedTransformWrite, warnAuthorityConflict, Node` |
-
-**Internal Dependencies:**
-
-| File                | Imports                                                      | Type   |
-| ------------------- | ------------------------------------------------------------ | ------ |
-| `./camera-rigs.js`  | `FollowRig, OrbitRig`                                        | Import |
-| `./camera-shake.js` | `CameraShake`                                                | Import |
-| `./rig-target.js`   | `resolveTargetPosition, RigTarget`                           | Import |
-| `./systems.js`      | `PRIORITY_CONSTRAINTS, FixedUpdateContext, SimulationSystem` | Import |
-
-**Exports:**
-
-- Classes: `LookAtConstraint`, `ConstraintSystem`
-- Interfaces: `LookAtConstraintOptions`, `ConstraintSystemOptions`
-
----
-
-### `packages/motion/src/ik.ts` - Analytic two-bone inverse kinematics (§111 "inverse kinematics"; plan P8-1).
-
-**Workspace Dependencies:**
-
-| Package         | Import                        |
-| --------------- | ----------------------------- |
-| `@fourjs/math`  | `Vector3`                     |
-| `@fourjs/scene` | `resolveWorldTransform, Node` |
-
-**Exports:**
-
-- Interfaces: `TwoBoneIKSolution`, `JointLimit`, `IKSolveOptions`, `IKSolveResult`
-- Types: `IKChain`
-- Functions: `createTwoBoneIKSolution`, `solveTwoBoneIK`, `solveCCD`, `solveFABRIK`
-- Constants: `DEFAULT_IK_TOLERANCE`, `DEFAULT_IK_MAX_ITERATIONS`
-
----
-
-### `packages/motion/src/index.ts` - §81's motion-side capability token (RFC 0002), declared by the package that
-
-**Internal Dependencies:**
-
-| File                          | Imports                                                                                                                                                                                                                                                                      | Type                  |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./capabilities.js`           | `SIMULATION_SYSTEMS`                                                                                                                                                                                                                                                         | Re-export             |
-| `./camera-rigs.js`            | `DEFAULT_ORBIT_PITCH_LIMIT, FollowRig, OrbitRig`                                                                                                                                                                                                                             | Re-export             |
-| `./camera-shake.js`           | `CameraShake`                                                                                                                                                                                                                                                                | Re-export             |
-| `./character-controller.js`   | `CharacterController, DEFAULT_CHARACTER_GRAVITY, DEFAULT_FIRST_PERSON_PITCH_LIMIT, FirstPersonLook`                                                                                                                                                                          | Re-export             |
-| `./clock.js`                  | `DEFAULT_FIXED_DELTA_TIME, DEFAULT_MAXIMUM_SUB_STEPS, assertFixedDeltaTime, assertTimeScale, copyTimeState, createTimeState`                                                                                                                                                 | Re-export             |
-| `./constraints.js`            | `ConstraintSystem, LookAtConstraint`                                                                                                                                                                                                                                         | Re-export             |
-| `./ik.js`                     | `DEFAULT_IK_MAX_ITERATIONS, DEFAULT_IK_TOLERANCE, createTwoBoneIKSolution, solveCCD, solveFABRIK, solveTwoBoneIK`                                                                                                                                                            | Re-export             |
-| `./integrators.js`            | `DEFAULT_INTEGRATOR, INTEGRATORS, explicitEuler, rk2, rk4, semiImplicitEuler, velocityVerlet`                                                                                                                                                                                | Re-export             |
-| `./kinematic-controller.js`   | `KINEMATIC_COMPLETION_TOLERANCE, KinematicController, KinematicSystem`                                                                                                                                                                                                       | Re-export             |
-| `./motion-component.js`       | `MotionComponent, MotionSystem`                                                                                                                                                                                                                                              | Re-export             |
-| `./serializers.js`            | `CHARACTER_CONTROLLER_SERIALIZER, FIRST_PERSON_LOOK_SERIALIZER, CAMERA_SHAKE_SERIALIZER, FOLLOW_RIG_SERIALIZER, KINEMATIC_CONTROLLER_SERIALIZER, LOOK_AT_CONSTRAINT_SERIALIZER, MOTION_COMPONENT_SERIALIZER, ORBIT_RIG_SERIALIZER`                                           | Re-export             |
-| `./pid.js`                    | `DEFAULT_PID_OUTPUT_LIMITS, PIDController`                                                                                                                                                                                                                                   | Re-export             |
-| `./prediction.js`             | `ballisticApexHeight, ballisticTimeOfFlightToPlane, ballisticTimeToApex, interceptPoint, interceptTime, predictBallistic, predictLinear`                                                                                                                                     | Re-export             |
-| `./random.js`                 | `SeededRandom`                                                                                                                                                                                                                                                               | Re-export             |
-| `./scheduler.js`              | `Scheduler`                                                                                                                                                                                                                                                                  | Re-export             |
-| `./spring-damper.js`          | `SpringDamper`                                                                                                                                                                                                                                                               | Re-export             |
-| `./spatial-hash.js`           | `SpatialHash`                                                                                                                                                                                                                                                                | Re-export             |
-| `./steering.js`               | `SteeringAgent, WanderState, alignment, arrive, cohesion, evade, flee, pursue, seek, separation, truncate, wander, wanderSpherical`                                                                                                                                          | Re-export             |
-| `./systems.js`                | `PRIORITY_ANIMATION_TARGETS, PRIORITY_COMMANDS, PRIORITY_CONSTRAINTS, PRIORITY_EVENT_DISPATCH, PRIORITY_FORCES, PRIORITY_INPUT, PRIORITY_KINEMATICS, PRIORITY_PHYSICS_SOLVE, PRIORITY_RENDER_INTERPOLATION, PRIORITY_SENSOR_UPDATE, PRIORITY_SNAPSHOT, SystemRegistry`       | Re-export             |
-| `./trajectories.js`           | `BallisticTrajectory, CENTRAL_DIFFERENCE_STEP, CatmullRomTrajectory, CircularTrajectory, CubicBezierTrajectory, DEFAULT_BALLISTIC_ACCELERATION_Y, DampedSpringTrajectory, EllipticalTrajectory, LinearTrajectory, ParabolicTrajectory, ParametricTrajectory`                 | Re-export             |
-| `./path-planning.js`          | `freezePlannedPath, validatePathQuery, plannedPathToTrajectory, PathPlannerRegistry`                                                                                                                                                                                         | Re-export             |
-| `./waypoint-graph-planner.js` | `WaypointGraphPlanner`                                                                                                                                                                                                                                                       | Re-export             |
-| `./steering.js`               | `followWaypoints`                                                                                                                                                                                                                                                            | Re-export             |
-| `./capabilities.js`           | `PATH_PLANNERS`                                                                                                                                                                                                                                                              | Re-export             |
-| `./camera-rigs.js`            | `FollowFrame, FollowRigOptions, OrbitRigOptions`                                                                                                                                                                                                                             | Re-export (type-only) |
-| `./camera-shake.js`           | `CameraShakeOptions`                                                                                                                                                                                                                                                         | Re-export (type-only) |
-| `./character-controller.js`   | `CharacterControllerOptions, FirstPersonLookOptions`                                                                                                                                                                                                                         | Re-export (type-only) |
-| `./clock.js`                  | `Clock, ReadonlyClock, ReadonlyTimeState, TimeState, TimeStateOptions`                                                                                                                                                                                                       | Re-export (type-only) |
-| `./constraints.js`            | `ConstraintSystemOptions, LookAtConstraintOptions`                                                                                                                                                                                                                           | Re-export (type-only) |
-| `./ik.js`                     | `IKChain, IKSolveOptions, IKSolveResult, JointLimit, TwoBoneIKSolution`                                                                                                                                                                                                      | Re-export (type-only) |
-| `./integrators.js`            | `AccelerationFn, Integrator, IntegratorFn, IntegratorState`                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./kinematic-controller.js`   | `KinematicSystemOptions, MoveOptions, PathFollowOptions, RotateOptions`                                                                                                                                                                                                      | Re-export (type-only) |
-| `./motion-component.js`       | `MotionComponentOptions, MotionSystemOptions`                                                                                                                                                                                                                                | Re-export (type-only) |
-| `./rig-target.js`             | `RigTarget`                                                                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./serializers.js`            | `ComponentSerializerShape`                                                                                                                                                                                                                                                   | Re-export (type-only) |
-| `./pid.js`                    | `PIDControllerOptions, PIDDerivativeSource`                                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./prediction.js`             | `InterceptTimeOptions`                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./scheduler.js`              | `SchedulerCallback, SchedulerOptions`                                                                                                                                                                                                                                        | Re-export (type-only) |
-| `./spring-damper.js`          | `SpringDamperCoefficientOptions, SpringDamperFrequencyOptions, SpringDamperOptions, SpringDamperResult, SpringDamperVector3Result`                                                                                                                                           | Re-export (type-only) |
-| `./spatial-hash.js`           | `SpatialHashEntry, SpatialHashOptions`                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./steering.js`               | `SteeringAgentOptions, SteeringContext, SteeringNeighbor, WanderStateOptions`                                                                                                                                                                                                | Re-export (type-only) |
-| `./systems.js`                | `Detach, FixedUpdateContext, SimulationContext, SimulationSystem, Unregister`                                                                                                                                                                                                | Re-export (type-only) |
-| `./trajectories.js`           | `BallisticTrajectoryOptions, CatmullRomTrajectoryOptions, CircularTrajectoryOptions, CubicBezierTrajectoryOptions, DampedSpringTrajectoryOptions, EllipticalTrajectoryOptions, LinearTrajectoryOptions, ParabolicTrajectoryOptions, ParametricTrajectoryOptions, Trajectory` | Re-export (type-only) |
-| `./path-planning.js`          | `PlannedPath, PathQuery, PathPlannerDeterminism, PathPlannerCapabilities, PathPlannerAdapter, PlannedPathToTrajectoryOptions`                                                                                                                                                | Re-export (type-only) |
-| `./waypoint-graph-planner.js` | `WaypointGraphOptions`                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./steering.js`               | `WaypointCursor, FollowWaypointsOptions`                                                                                                                                                                                                                                     | Re-export (type-only) |
+### `packages/render-svg/src/index.ts` - Entry point exporting 1 symbols
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `SIMULATION_SYSTEMS`, `DEFAULT_ORBIT_PITCH_LIMIT`, `FollowRig`, `OrbitRig`, `CameraShake`, `CharacterController`, `DEFAULT_CHARACTER_GRAVITY`, `DEFAULT_FIRST_PERSON_PITCH_LIMIT`, `FirstPersonLook`, `DEFAULT_FIXED_DELTA_TIME`, `DEFAULT_MAXIMUM_SUB_STEPS`, `assertFixedDeltaTime`, `assertTimeScale`, `copyTimeState`, `createTimeState`, `ConstraintSystem`, `LookAtConstraint`, `DEFAULT_IK_MAX_ITERATIONS`, `DEFAULT_IK_TOLERANCE`, `createTwoBoneIKSolution`, `solveCCD`, `solveFABRIK`, `solveTwoBoneIK`, `DEFAULT_INTEGRATOR`, `INTEGRATORS`, `explicitEuler`, `rk2`, `rk4`, `semiImplicitEuler`, `velocityVerlet`, `KINEMATIC_COMPLETION_TOLERANCE`, `KinematicController`, `KinematicSystem`, `MotionComponent`, `MotionSystem`, `CHARACTER_CONTROLLER_SERIALIZER`, `FIRST_PERSON_LOOK_SERIALIZER`, `CAMERA_SHAKE_SERIALIZER`, `FOLLOW_RIG_SERIALIZER`, `KINEMATIC_CONTROLLER_SERIALIZER`, `LOOK_AT_CONSTRAINT_SERIALIZER`, `MOTION_COMPONENT_SERIALIZER`, `ORBIT_RIG_SERIALIZER`, `DEFAULT_PID_OUTPUT_LIMITS`, `PIDController`, `ballisticApexHeight`, `ballisticTimeOfFlightToPlane`, `ballisticTimeToApex`, `interceptPoint`, `interceptTime`, `predictBallistic`, `predictLinear`, `SeededRandom`, `Scheduler`, `SpringDamper`, `SpatialHash`, `SteeringAgent`, `WanderState`, `alignment`, `arrive`, `cohesion`, `evade`, `flee`, `pursue`, `seek`, `separation`, `truncate`, `wander`, `wanderSpherical`, `PRIORITY_ANIMATION_TARGETS`, `PRIORITY_COMMANDS`, `PRIORITY_CONSTRAINTS`, `PRIORITY_EVENT_DISPATCH`, `PRIORITY_FORCES`, `PRIORITY_INPUT`, `PRIORITY_KINEMATICS`, `PRIORITY_PHYSICS_SOLVE`, `PRIORITY_RENDER_INTERPOLATION`, `PRIORITY_SENSOR_UPDATE`, `PRIORITY_SNAPSHOT`, `SystemRegistry`, `BallisticTrajectory`, `CENTRAL_DIFFERENCE_STEP`, `CatmullRomTrajectory`, `CircularTrajectory`, `CubicBezierTrajectory`, `DEFAULT_BALLISTIC_ACCELERATION_Y`, `DampedSpringTrajectory`, `EllipticalTrajectory`, `LinearTrajectory`, `ParabolicTrajectory`, `ParametricTrajectory`, `freezePlannedPath`, `validatePathQuery`, `plannedPathToTrajectory`, `PathPlannerRegistry`, `WaypointGraphPlanner`, `followWaypoints`, `PATH_PLANNERS`, `FollowFrame`, `FollowRigOptions`, `OrbitRigOptions`, `CameraShakeOptions`, `CharacterControllerOptions`, `FirstPersonLookOptions`, `Clock`, `ReadonlyClock`, `ReadonlyTimeState`, `TimeState`, `TimeStateOptions`, `ConstraintSystemOptions`, `LookAtConstraintOptions`, `IKChain`, `IKSolveOptions`, `IKSolveResult`, `JointLimit`, `TwoBoneIKSolution`, `AccelerationFn`, `Integrator`, `IntegratorFn`, `IntegratorState`, `KinematicSystemOptions`, `MoveOptions`, `PathFollowOptions`, `RotateOptions`, `MotionComponentOptions`, `MotionSystemOptions`, `RigTarget`, `ComponentSerializerShape`, `PIDControllerOptions`, `PIDDerivativeSource`, `InterceptTimeOptions`, `SchedulerCallback`, `SchedulerOptions`, `SpringDamperCoefficientOptions`, `SpringDamperFrequencyOptions`, `SpringDamperOptions`, `SpringDamperResult`, `SpringDamperVector3Result`, `SpatialHashEntry`, `SpatialHashOptions`, `SteeringAgentOptions`, `SteeringContext`, `SteeringNeighbor`, `WanderStateOptions`, `Detach`, `FixedUpdateContext`, `SimulationContext`, `SimulationSystem`, `Unregister`, `BallisticTrajectoryOptions`, `CatmullRomTrajectoryOptions`, `CircularTrajectoryOptions`, `CubicBezierTrajectoryOptions`, `DampedSpringTrajectoryOptions`, `EllipticalTrajectoryOptions`, `LinearTrajectoryOptions`, `ParabolicTrajectoryOptions`, `ParametricTrajectoryOptions`, `Trajectory`, `PlannedPath`, `PathQuery`, `PathPlannerDeterminism`, `PathPlannerCapabilities`, `PathPlannerAdapter`, `PlannedPathToTrajectoryOptions`, `WaypointGraphOptions`, `WaypointCursor`, `FollowWaypointsOptions`
-
----
-
-### `packages/motion/src/integrators.ts` - Numerical integrators (§38).
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector3` |
-
-**Exports:**
-
-- Types: `Integrator`, `IntegratorState`, `AccelerationFn`, `IntegratorFn`
-- Constants: `explicitEuler`, `semiImplicitEuler`, `velocityVerlet`, `rk2`, `rk4`, `INTEGRATORS`, `DEFAULT_INTEGRATOR`
-
----
-
-### `packages/motion/src/kinematic-controller.ts` - Kinematic motion (§12) — the {@link KinematicController} component and the
-
-**Workspace Dependencies:**
-
-| Package         | Import                                                           |
-| --------------- | ---------------------------------------------------------------- |
-| `@fourjs/core`  | `FourError, Component, ComponentHost`                            |
-| `@fourjs/math`  | `Quaternion, Vector3`                                            |
-| `@fourjs/scene` | `runOwnedTransformWrite, warnAuthorityConflict, Node, Transform` |
-
-**Internal Dependencies:**
-
-| File                        | Imports                                                     | Type               |
-| --------------------------- | ----------------------------------------------------------- | ------------------ |
-| `./character-controller.js` | `CharacterController, FirstPersonLook`                      | Import             |
-| `./systems.js`              | `PRIORITY_KINEMATICS, FixedUpdateContext, SimulationSystem` | Import             |
-| `./trajectories.js`         | `Trajectory`                                                | Import (type-only) |
-
-**Exports:**
-
-- Classes: `KinematicController`, `KinematicSystem`
-- Interfaces: `MoveOptions`, `RotateOptions`, `PathFollowOptions`, `KinematicSystemOptions`
-- Constants: `KINEMATIC_COMPLETION_TOLERANCE`
-
----
-
-### `packages/motion/src/motion-component.ts` - `MotionComponent` (§11) and the system that advances it (§39 step 4).
-
-**Workspace Dependencies:**
-
-| Package         | Import                                                |
-| --------------- | ----------------------------------------------------- |
-| `@fourjs/core`  | `FourError, Component, ComponentHost`                 |
-| `@fourjs/math`  | `Quaternion, Vector3`                                 |
-| `@fourjs/scene` | `runOwnedTransformWrite, warnAuthorityConflict, Node` |
-
-**Internal Dependencies:**
-
-| File           | Imports                                                     | Type   |
-| -------------- | ----------------------------------------------------------- | ------ |
-| `./systems.js` | `PRIORITY_KINEMATICS, FixedUpdateContext, SimulationSystem` | Import |
-
-**Exports:**
-
-- Classes: `MotionComponent`, `MotionSystem`
-- Interfaces: `MotionComponentOptions`, `MotionSystemOptions`
-
----
-
-### `packages/motion/src/path-planning.ts` - path-planning module
-
-**Workspace Dependencies:**
-
-| Package        | Import                  |
-| -------------- | ----------------------- |
-| `@fourjs/core` | `FourError, Disposable` |
-| `@fourjs/math` | `Vector3`               |
-
-**Internal Dependencies:**
-
-| File                | Imports                                                  | Type   |
-| ------------------- | -------------------------------------------------------- | ------ |
-| `./trajectories.js` | `CatmullRomTrajectory, ParametricTrajectory, Trajectory` | Import |
-
-**Exports:**
-
-- Classes: `PathPlannerRegistry`
-- Interfaces: `PlannedPath`, `PathQuery`, `PathPlannerCapabilities`, `PathPlannerAdapter`, `PlannedPathToTrajectoryOptions`
-- Types: `PathPlannerDeterminism`
-- Functions: `validatePathQuery`, `freezePlannedPath`, `plannedPathToTrajectory`
-
----
-
-### `packages/motion/src/pid.ts` - PID controller utility (§111).
-
-**Exports:**
-
-- Classes: `PIDController`
-- Interfaces: `PIDControllerOptions`
-- Types: `PIDDerivativeSource`
-- Constants: `DEFAULT_PID_OUTPUT_LIMITS`
-
----
-
-### `packages/motion/src/prediction.ts` - Trajectory prediction (§111 "trajectory prediction"; plan P8-1).
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector3` |
-
-**Exports:**
-
-- Interfaces: `InterceptTimeOptions`
-- Functions: `predictBallistic`, `predictLinear`, `ballisticTimeToApex`, `ballisticApexHeight`, `ballisticTimeOfFlightToPlane`, `interceptTime`, `interceptPoint`
-
----
-
-### `packages/motion/src/random.ts` - `SeededRandom`'s original home (WP-8.2), now a re-export of `@fourjs/core`.
-
-**Workspace Dependencies:**
-
-| Package        | Import         |
-| -------------- | -------------- |
-| `@fourjs/core` | `SeededRandom` |
-
-**Exports:**
-
-- Re-exports: `SeededRandom`
-
----
-
-### `packages/motion/src/rig-target.ts` - What a rig aims at, and how a rig writes a world-space placement back onto a
-
-**Workspace Dependencies:**
-
-| Package         | Import                        |
-| --------------- | ----------------------------- |
-| `@fourjs/math`  | `Matrix4, Vector3`            |
-| `@fourjs/scene` | `resolveWorldTransform, Node` |
-
-**Exports:**
-
-- Types: `RigTarget`
-- Functions: `resolveTargetPosition`, `worldPositionOf`, `placeAtWorldPosition`
-
----
-
-### `packages/motion/src/scheduler.ts` - Fixed-step scheduler (§10).
-
-**Internal Dependencies:**
-
-| File         | Imports                                                                                                                                     | Type   |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./clock.js` | `DEFAULT_FIXED_DELTA_TIME, DEFAULT_MAXIMUM_SUB_STEPS, assertFixedDeltaTime, assertTimeScale, createTimeState, ReadonlyTimeState, TimeState` | Import |
-
-**Exports:**
-
-- Classes: `Scheduler`
-- Interfaces: `SchedulerOptions`
-- Types: `SchedulerCallback`
-
----
-
-### `packages/motion/src/serializers.ts` - The §79 serializers for this package's components (PH-17, 2026-08-06;
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `JsonValue` |
-| `@fourjs/math` | `Vector3`   |
-
-**Internal Dependencies:**
-
-| File                        | Imports                                                                                             | Type               |
-| --------------------------- | --------------------------------------------------------------------------------------------------- | ------------------ |
-| `./camera-rigs.js`          | `DEFAULT_ORBIT_MIN_DISTANCE, DEFAULT_ORBIT_PITCH_LIMIT, FollowRig, OrbitRig`                        | Import             |
-| `./camera-shake.js`         | `CameraShake`                                                                                       | Import             |
-| `./character-controller.js` | `CharacterController, DEFAULT_CHARACTER_GRAVITY, DEFAULT_FIRST_PERSON_PITCH_LIMIT, FirstPersonLook` | Import             |
-| `./constraints.js`          | `LookAtConstraint`                                                                                  | Import             |
-| `./kinematic-controller.js` | `KinematicController`                                                                               | Import             |
-| `./motion-component.js`     | `MotionComponent`                                                                                   | Import             |
-| `./rig-target.js`           | `RigTarget`                                                                                         | Import (type-only) |
-| `./spring-damper.js`        | `SpringDamper`                                                                                      | Import             |
-
-**Exports:**
-
-- Interfaces: `ComponentSerializerShape`
-- Constants: `MOTION_COMPONENT_SERIALIZER`, `KINEMATIC_CONTROLLER_SERIALIZER`, `ORBIT_RIG_SERIALIZER`, `FOLLOW_RIG_SERIALIZER`, `LOOK_AT_CONSTRAINT_SERIALIZER`, `CHARACTER_CONTROLLER_SERIALIZER`, `FIRST_PERSON_LOOK_SERIALIZER`, `CAMERA_SHAKE_SERIALIZER`
-
----
-
-### `packages/motion/src/spatial-hash.ts` - Uniform-grid spatial hash for radius neighbour queries (§12 flocking, §36
-
-**Exports:**
-
-- Classes: `SpatialHash`
-- Interfaces: `SpatialHashOptions`, `SpatialHashEntry`
-
----
-
-### `packages/motion/src/spring-damper.ts` - Spring-damper controller (§111), the game-smoothing primitive.
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector3` |
-
-**Exports:**
-
-- Classes: `SpringDamper`
-- Interfaces: `SpringDamperCoefficientOptions`, `SpringDamperFrequencyOptions`, `SpringDamperResult`, `SpringDamperVector3Result`
-- Types: `SpringDamperOptions`
-
----
-
-### `packages/motion/src/steering.ts` - Steering behaviours and flocking (§12 "steering behaviours", §111), plan
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector3` |
-
-**Internal Dependencies:**
-
-| File                 | Imports         | Type               |
-| -------------------- | --------------- | ------------------ |
-| `./path-planning.js` | `PlannedPath`   | Import (type-only) |
-| `./prediction.js`    | `interceptTime` | Import             |
-| `./random.js`        | `SeededRandom`  | Import (type-only) |
-
-**Exports:**
-
-- Classes: `WanderState`, `SteeringAgent`
-- Interfaces: `SteeringNeighbor`, `SteeringContext`, `WanderStateOptions`, `SteeringAgentOptions`, `WaypointCursor`, `FollowWaypointsOptions`
-- Functions: `truncate`, `seek`, `flee`, `arrive`, `pursue`, `evade`, `wander`, `wanderSpherical`, `separation`, `cohesion`, `alignment`, `followWaypoints`
-
----
-
-### `packages/motion/src/systems.ts` - Simulation systems and the priority registry (§39).
-
-**Internal Dependencies:**
-
-| File             | Imports                        | Type               |
-| ---------------- | ------------------------------ | ------------------ |
-| `./clock.js`     | `ReadonlyTimeState`            | Import (type-only) |
-| `./scheduler.js` | `Scheduler, SchedulerCallback` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `SystemRegistry`
-- Interfaces: `SimulationContext`, `FixedUpdateContext`, `SimulationSystem`
-- Types: `Unregister`, `Detach`
-- Constants: `PRIORITY_INPUT`, `PRIORITY_COMMANDS`, `PRIORITY_ANIMATION_TARGETS`, `PRIORITY_KINEMATICS`, `PRIORITY_FORCES`, `PRIORITY_PHYSICS_SOLVE`, `PRIORITY_CONSTRAINTS`, `PRIORITY_SENSOR_UPDATE`, `PRIORITY_EVENT_DISPATCH`, `PRIORITY_SNAPSHOT`, `PRIORITY_RENDER_INTERPOLATION`
-
----
-
-### `packages/motion/src/trajectories.ts` - Trajectory system (§13).
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector3` |
-
-**Exports:**
-
-- Classes: `LinearTrajectory`, `ParabolicTrajectory`, `BallisticTrajectory`, `CircularTrajectory`, `EllipticalTrajectory`, `CubicBezierTrajectory`, `CatmullRomTrajectory`, `DampedSpringTrajectory`, `ParametricTrajectory`
-- Interfaces: `Trajectory`, `LinearTrajectoryOptions`, `ParabolicTrajectoryOptions`, `BallisticTrajectoryOptions`, `CircularTrajectoryOptions`, `EllipticalTrajectoryOptions`, `CubicBezierTrajectoryOptions`, `CatmullRomTrajectoryOptions`, `DampedSpringTrajectoryOptions`, `ParametricTrajectoryOptions`
-- Constants: `CENTRAL_DIFFERENCE_STEP`, `DEFAULT_BALLISTIC_ACCELERATION_Y`
-
----
-
-### `packages/motion/src/waypoint-graph-planner.ts` - waypoint-graph-planner module
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-| `@fourjs/math` | `Vector3`   |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                     | Type   |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- | ------ |
-| `./path-planning.js` | `freezePlannedPath, validatePathQuery, PathPlannerAdapter, PathPlannerCapabilities, PathQuery, PlannedPath` | Import |
-
-**Exports:**
-
-- Classes: `WaypointGraphPlanner`
-- Interfaces: `WaypointGraphOptions`
-
----
-
-<a id="packages-particles-dependencies"></a>
-
-## Packages/particles Dependencies
-
-### `packages/particles/src/emitter.ts` - `ParticleEmitter` — the CPU particle simulation (§36, plan P9-1, WP-9.1).
-
-**Workspace Dependencies:**
-
-| Package        | Import             |
-| -------------- | ------------------ |
-| `@fourjs/core` | `FourError`        |
-| `@fourjs/math` | `Vector3, Vector4` |
-
-**Internal Dependencies:**
-
-| File          | Imports                                                                                                                                                                                                                                                  | Type               |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./pool.js`   | `ParticlePool`                                                                                                                                                                                                                                           | Import             |
-| `./random.js` | `SeededRandom`                                                                                                                                                                                                                                           | Import             |
-| `./trail.js`  | `ParticleTrailStore, resolveTrailOptions, ParticleTrailOptions`                                                                                                                                                                                          | Import             |
-| `./types.js`  | `ParticleBurst, ParticleCollisionMode, ParticleColor, ParticleForceField, ParticleGpuIntegrateExtras, ParticleGpuRadialField, ParticleGpuSimulation, ParticleLifetimeRamp, ParticleLifetimeStop, ParticleRange, ParticleSimulationMode, ParticleTexture` | Import (type-only) |
-| `./types.js`  | `evaluateLifetimeRampColor, evaluateLifetimeRampNumber`                                                                                                                                                                                                  | Import             |
-
-**Exports:**
-
-- Classes: `ParticleEmitter`
-- Interfaces: `ParticleEmitterOptions`
-- Constants: `PARTICLE_DRAWS_PER_SPAWN`, `DEFAULT_PARTICLE_SEED`, `DEFAULT_PARTICLE_LIFETIME_SECONDS`, `DEFAULT_PARTICLE_SIZE`, `DEFAULT_PARTICLE_RESTITUTION`
-
----
-
-### `packages/particles/src/fields.ts` - The §27 built-in force fields, MVP tier (plan P9-2, WP-9.2).
-
-**Workspace Dependencies:**
-
-| Package        | Import              |
-| -------------- | ------------------- |
-| `@fourjs/core` | `DEFAULT_GRAVITY_Y` |
-| `@fourjs/math` | `Vector3`           |
-| `@fourjs/core` | `DEFAULT_GRAVITY_Y` |
-
-**Internal Dependencies:**
-
-| File          | Imports              | Type               |
-| ------------- | -------------------- | ------------------ |
-| `./random.js` | `SeededRandom`       | Import             |
-| `./types.js`  | `ParticleForceField` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `RadialFieldOptions`, `VortexFieldOptions`, `TurbulenceFieldOptions`, `SphereFieldVolume`, `BoxFieldVolume`
-- Types: `FieldVolume`
-- Functions: `uniformGravityField`, `dragField`, `windField`, `radialField`, `vortexField`, `turbulenceField`, `volumeField`
-- Constants: `DEFAULT_RADIAL_MIN_DISTANCE`, `DEFAULT_VORTEX_MIN_DISTANCE`, `DEFAULT_TURBULENCE_FREQUENCY`, `DEFAULT_TURBULENCE_AMPLITUDE`, `TURBULENCE_DIFFERENCE_CELLS`
-- Re-exports: `DEFAULT_GRAVITY_Y`
-
----
-
-### `packages/particles/src/index.ts` - --- WP-9.2: §27 force fields (begin) ---
-
-**Internal Dependencies:**
-
-| File                       | Imports                                                                                                                                                                                                                                                                   | Type                  |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./emitter.js`             | `DEFAULT_PARTICLE_LIFETIME_SECONDS, DEFAULT_PARTICLE_RESTITUTION, DEFAULT_PARTICLE_SEED, DEFAULT_PARTICLE_SIZE, PARTICLE_DRAWS_PER_SPAWN, ParticleEmitter`                                                                                                                | Re-export             |
-| `./pool.js`                | `ParticlePool`                                                                                                                                                                                                                                                            | Re-export             |
-| `./fields.js`              | `DEFAULT_GRAVITY_Y, DEFAULT_RADIAL_MIN_DISTANCE, DEFAULT_TURBULENCE_AMPLITUDE, DEFAULT_TURBULENCE_FREQUENCY, DEFAULT_VORTEX_MIN_DISTANCE, TURBULENCE_DIFFERENCE_CELLS, dragField, radialField, turbulenceField, uniformGravityField, volumeField, vortexField, windField` | Re-export             |
-| `./particle-renderable.js` | `PARTICLE_INSTANCE_FLOATS, PARTICLE_ROTATION_OFFSET, PARTICLE_SOFTNESS_OFFSET, PARTICLE_TRAIL_VERTEX_FLOATS, PARTICLE_WIDE_INSTANCE_FLOATS, ParticleRenderable`                                                                                                           | Re-export             |
-| `./particle-system.js`     | `PRIORITY_PARTICLES, ParticleSystem`                                                                                                                                                                                                                                      | Re-export             |
-| `./random.js`              | `SeededRandom`                                                                                                                                                                                                                                                            | Re-export             |
-| `./trail.js`               | `DEFAULT_TRAIL_LENGTH, DEFAULT_TRAIL_MIN_DISTANCE, DEFAULT_TRAIL_TAIL_WIDTH_FACTOR, DEFAULT_TRAIL_WIDTH, ParticleTrailStore, TRAIL_VERTEX_FLOATS, buildTrailRibbonMesh, resolveTrailOptions`                                                                              | Re-export             |
-| `./types.js`               | `evaluateLifetimeRampColor, evaluateLifetimeRampNumber`                                                                                                                                                                                                                   | Re-export             |
-| `./emitter.js`             | `ParticleEmitterOptions`                                                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./fields.js`              | `BoxFieldVolume, FieldVolume, RadialFieldOptions, SphereFieldVolume, TurbulenceFieldOptions, VortexFieldOptions`                                                                                                                                                          | Re-export (type-only) |
-| `./particle-renderable.js` | `ParticleRenderableOptions`                                                                                                                                                                                                                                               | Re-export (type-only) |
-| `./particle-system.js`     | `ParticleFixedUpdateContext, ParticleStepTime, ParticleSystemOptions, SteppableEmitter`                                                                                                                                                                                   | Re-export (type-only) |
-| `./trail.js`               | `ParticleTrailOptions`                                                                                                                                                                                                                                                    | Re-export (type-only) |
-| `./types.js`               | `ParticleBurst, ParticleCollisionMode, ParticleColor, ParticleForceField, ParticleGpuIntegrateExtras, ParticleGpuRadialField, ParticleGpuSimulation, ParticleLifetimeRamp, ParticleLifetimeStop, ParticleRange, ParticleSimulationMode, ParticleTexture`                  | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `DEFAULT_PARTICLE_LIFETIME_SECONDS`, `DEFAULT_PARTICLE_RESTITUTION`, `DEFAULT_PARTICLE_SEED`, `DEFAULT_PARTICLE_SIZE`, `PARTICLE_DRAWS_PER_SPAWN`, `ParticleEmitter`, `ParticlePool`, `DEFAULT_GRAVITY_Y`, `DEFAULT_RADIAL_MIN_DISTANCE`, `DEFAULT_TURBULENCE_AMPLITUDE`, `DEFAULT_TURBULENCE_FREQUENCY`, `DEFAULT_VORTEX_MIN_DISTANCE`, `TURBULENCE_DIFFERENCE_CELLS`, `dragField`, `radialField`, `turbulenceField`, `uniformGravityField`, `volumeField`, `vortexField`, `windField`, `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_TRAIL_VERTEX_FLOATS`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `ParticleRenderable`, `PRIORITY_PARTICLES`, `ParticleSystem`, `SeededRandom`, `DEFAULT_TRAIL_LENGTH`, `DEFAULT_TRAIL_MIN_DISTANCE`, `DEFAULT_TRAIL_TAIL_WIDTH_FACTOR`, `DEFAULT_TRAIL_WIDTH`, `ParticleTrailStore`, `TRAIL_VERTEX_FLOATS`, `buildTrailRibbonMesh`, `resolveTrailOptions`, `evaluateLifetimeRampColor`, `evaluateLifetimeRampNumber`, `ParticleEmitterOptions`, `BoxFieldVolume`, `FieldVolume`, `RadialFieldOptions`, `SphereFieldVolume`, `TurbulenceFieldOptions`, `VortexFieldOptions`, `ParticleRenderableOptions`, `ParticleFixedUpdateContext`, `ParticleStepTime`, `ParticleSystemOptions`, `SteppableEmitter`, `ParticleTrailOptions`, `ParticleBurst`, `ParticleCollisionMode`, `ParticleColor`, `ParticleForceField`, `ParticleGpuIntegrateExtras`, `ParticleGpuRadialField`, `ParticleGpuSimulation`, `ParticleLifetimeRamp`, `ParticleLifetimeStop`, `ParticleRange`, `ParticleSimulationMode`, `ParticleTexture`
-
----
-
-### `packages/particles/src/particle-renderable.ts` - `ParticleRenderable` (§36, §49, plan P9-3) — the scene node that puts a
-
-**Workspace Dependencies:**
-
-| Package         | Import             |
-| --------------- | ------------------ |
-| `@fourjs/math`  | `Vector3, Vector4` |
-| `@fourjs/scene` | `Node`             |
-
-**Internal Dependencies:**
-
-| File           | Imports                                     | Type               |
-| -------------- | ------------------------------------------- | ------------------ |
-| `./emitter.js` | `ParticleEmitter`                           | Import (type-only) |
-| `./types.js`   | `ParticleTexture`                           | Import (type-only) |
-| `./trail.js`   | `TRAIL_VERTEX_FLOATS, buildTrailRibbonMesh` | Import             |
-
-**Exports:**
-
-- Classes: `ParticleRenderable`
-- Interfaces: `ParticleRenderableOptions`
-- Constants: `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_TRAIL_VERTEX_FLOATS`
-
----
-
-### `packages/particles/src/particle-system.ts` - `ParticleSystem` (§39, §36, plan WP-9.4) — the fixed-step driver that steps
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Exports:**
-
-- Classes: `ParticleSystem`
-- Interfaces: `ParticleStepTime`, `ParticleFixedUpdateContext`, `SteppableEmitter`, `ParticleSystemOptions`
-- Constants: `PRIORITY_PARTICLES`
-
----
-
-### `packages/particles/src/pool.ts` - The particle pool (§36, plan P9-1) — a fixed-capacity, structure-of-arrays
-
-**Workspace Dependencies:**
-
-| Package        | Import             |
-| -------------- | ------------------ |
-| `@fourjs/math` | `Vector3, Vector4` |
-
-**Exports:**
-
-- Classes: `ParticlePool`
-
----
-
-### `packages/particles/src/random.ts` - `SeededRandom` for particles — a re-export of `@fourjs/core`.
-
-**Workspace Dependencies:**
-
-| Package        | Import         |
-| -------------- | -------------- |
-| `@fourjs/core` | `SeededRandom` |
-
-**Exports:**
-
-- Re-exports: `SeededRandom`
-
----
-
-### `packages/particles/src/trail.ts` - Per-particle position history and ribbon mesh generation (§36 trails, plan P9).
-
-**Exports:**
-
-- Classes: `ParticleTrailStore`
-- Interfaces: `ParticleTrailOptions`
-- Functions: `buildTrailRibbonMesh`, `resolveTrailOptions`
-- Constants: `TRAIL_VERTEX_FLOATS`, `DEFAULT_TRAIL_LENGTH`, `DEFAULT_TRAIL_WIDTH`, `DEFAULT_TRAIL_MIN_DISTANCE`, `DEFAULT_TRAIL_TAIL_WIDTH_FACTOR`
-
----
-
-### `packages/particles/src/types.ts` - Shared particle types (§27, §36) — the vocabulary WP-9.1's pool and emitter
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector3` |
-
-**Exports:**
-
-- Interfaces: `ParticleForceField`, `ParticleGpuRadialField`, `ParticleGpuIntegrateExtras`, `ParticleGpuSimulation`, `ParticleRange`, `ParticleLifetimeStop`, `ParticleLifetimeRamp`, `ParticleColor`, `ParticleBurst`
-- Types: `ParticleSimulationMode`, `ParticleCollisionMode`, `ParticleTexture`
-- Functions: `evaluateLifetimeRampNumber`, `evaluateLifetimeRampColor`
-
----
-
-<a id="packages-physics-dependencies"></a>
-
-## Packages/physics Dependencies
-
-### `packages/physics/src/adapter.ts` - The solver adapter contract (§37) — the seam every physics backend
-
-**Workspace Dependencies:**
-
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/core` | `Disposable` |
-
-**Internal Dependencies:**
-
-| File               | Imports                                                                                                     | Type               |
-| ------------------ | ----------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./descriptors.js` | `ColliderDescriptor, JointDescriptor, PhysicsWorldOptions, RigidBodyDescriptor`                             | Import (type-only) |
-| `./events.js`      | `PhysicsEvent`                                                                                              | Import (type-only) |
-| `./queries.js`     | `OverlapHit, OverlapQuery, PointHit, PointQuery, RaycastHit, RaycastQuery, ShapeCastHit, ShapeCastQuery`    | Import (type-only) |
-| `./types.js`       | `CCDMode, DeterminismLevel, PhysicsBodyHandle, PhysicsColliderHandle, PhysicsDimension, PhysicsJointHandle` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `PhysicsQueryCapabilities`, `PhysicsTuningCapabilities`, `PhysicsCapabilities`, `PhysicsEventInterest`, `PhysicsSolverAdapter`
-- Functions: `resolveTuningCapabilities`
-- Constants: `NO_TUNING_CAPABILITIES`
-
----
-
-### `packages/physics/src/body-access.ts` - Per-handle access to a solver's bodies — the seam §37's two `sync*` methods
-
-**Workspace Dependencies:**
-
-| Package        | Import                         |
-| -------------- | ------------------------------ |
-| `@fourjs/math` | `Matrix3, Quaternion, Vector3` |
-
-**Internal Dependencies:**
-
-| File         | Imports                                                                                                                              | Type               |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
-| `./types.js` | `AngularVelocityInput, BodyType, CCDMode, PhysicsBodyHandle, PhysicsColliderHandle, PhysicsJointHandle, RotationInput, Vector3Input` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `SolverBodyAccess`, `SolverBodyTuningAccess`, `SolverJointMotor`, `SolverJointAccess`
-- Functions: `supportsSolverJointAccess`, `missingSolverJointAccess`, `supportsSolverBodyTuning`, `missingSolverBodyTuning`
-
----
-
-### `packages/physics/src/capabilities.ts` - This package's §81 capability token (RFC 0002; declared here since
-
-**Workspace Dependencies:**
-
-| Package        | Import             |
-| -------------- | ------------------ |
-| `@fourjs/core` | `defineCapability` |
-
-**Internal Dependencies:**
-
-| File                   | Imports          | Type               |
-| ---------------------- | ---------------- | ------------------ |
-| `./solver-registry.js` | `SolverRegistry` | Import (type-only) |
-
-**Exports:**
-
-- Constants: `SOLVER_REGISTRY`
-
----
-
-### `packages/physics/src/collider.ts` - The `Collider` component (§6a, §24) and its §25 effective-material
-
-**Workspace Dependencies:**
-
-| Package         | Import                                              |
-| --------------- | --------------------------------------------------- |
-| `@fourjs/core`  | `EventEmitter, FourError, Component, ComponentHost` |
-| `@fourjs/scene` | `Node, Transform`                                   |
-
-**Internal Dependencies:**
-
-| File               | Imports                                                 | Type               |
-| ------------------ | ------------------------------------------------------- | ------------------ |
-| `./descriptors.js` | `ColliderDescriptor`                                    | Import (type-only) |
-| `./events.js`      | `CollisionEvent, TriggerEvent`                          | Import (type-only) |
-| `./material.js`    | `PhysicsMaterial`                                       | Import (type-only) |
-| `./material.js`    | `DEFAULT_FRICTION, DEFAULT_RESTITUTION, resolveDensity` | Import             |
-| `./queries.js`     | `ALL_COLLISION_GROUPS`                                  | Import             |
-| `./rigid-body.js`  | `RigidBody`                                             | Import             |
-| `./shapes.js`      | `CollisionShape`                                        | Import (type-only) |
-| `./shapes.js`      | `shapeSupportsDimension, validateCollisionShape`        | Import             |
-| `./types.js`       | `PhysicsBodyHandle, PhysicsDimension`                   | Import (type-only) |
-| `./validation.js`  | `validateColliderDescriptor`                            | Import             |
-
-**Exports:**
-
-- Classes: `Collider`
-- Interfaces: `ColliderEventMap`
-- Types: `ColliderOptions`, `ColliderTriggerEvent`, `RigidBodyCollisionEvent`
-
----
-
-### `packages/physics/src/descriptors.ts` - The descriptors an adapter is built from (§37) and the §21 widening helpers
-
-**Workspace Dependencies:**
-
-| Package         | Import                                    |
-| --------------- | ----------------------------------------- |
-| `@fourjs/core`  | `DEFAULT_GRAVITY_Y, FourError, SpaceMode` |
-| `@fourjs/math`  | `Quaternion, Vector3`                     |
-| `@fourjs/math`  | `Matrix3`                                 |
-| `@fourjs/scene` | `Transform`                               |
-| `@fourjs/core`  | `DEFAULT_GRAVITY_Y`                       |
-
-**Internal Dependencies:**
-
-| File               | Imports                                                                                                                                       | Type               |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./material.js`    | `PhysicsMaterial`                                                                                                                             | Import (type-only) |
-| `./shapes.js`      | `CollisionShape`                                                                                                                              | Import (type-only) |
-| `./types.js`       | `AngularVelocityInput, BodyType, CCDMode, DeterminismLevel, PhysicsBodyHandle, PhysicsDimension, RotationInput, SleepingConfig, Vector3Input` | Import (type-only) |
-| `./types.js`       | `DEFAULT_SLEEPING_CONFIG`                                                                                                                     | Import             |
-| `./world-units.js` | `PhysicsWorldUnits`                                                                                                                           | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `RigidBodyDescriptor`, `ColliderDescriptor`, `JointLimits`, `AngularJointMotor`, `LinearJointMotor`, `SphericalJointLimits`, `JointDescriptorBase`, `FixedJointDescriptor`, `RevoluteJointDescriptor`, `PrismaticJointDescriptor`, `RopeJointDescriptor`, `SpringJointDescriptor`, `SphericalJointDescriptor`, `PhysicsWorldOptions`, `LocalPlane`
-- Types: `JointType`, `ShippedJointType`, `StagedJointType`, `JointDescriptor`
-- Functions: `jointTypeSupportsDimension`, `widenToVector3`, `resolveGravity`, `resolveRotation`, `resolveAngularVelocity`, `resolveSleepingConfig`
-- Constants: `JOINT_TYPES`, `SHIPPED_JOINT_TYPES`, `SHIPPED_JOINT_TYPES_2D`, `SHIPPED_JOINT_TYPES_3D`, `STAGED_JOINT_TYPES`
-- Re-exports: `DEFAULT_GRAVITY_Y`
-
----
-
-### `packages/physics/src/events.ts` - Collision, trigger, and sleep event payloads (§29, §32, §37).
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector3` |
-
-**Internal Dependencies:**
-
-| File         | Imports                                                        | Type               |
-| ------------ | -------------------------------------------------------------- | ------------------ |
-| `./types.js` | `PhysicsBodyHandle, PhysicsColliderHandle, PhysicsJointHandle` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `ContactPoint`, `CollisionEvent`, `TriggerEvent`, `SleepEvent`, `JointBreakEvent`
-- Types: `CollisionPhase`, `TriggerPhase`, `SleepPhase`, `JointPhase`, `PhysicsEventType`, `PhysicsEvent`
-
----
-
-### `packages/physics/src/force-field.ts` - §27 force fields for rigid bodies, through §26's force API (PH-8,
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                  |
-| ---------------- | ------------------------------------------------------- |
-| `@fourjs/core`   | `DEV_WARNING_PREFIX`                                    |
-| `@fourjs/math`   | `Vector3`                                               |
-| `@fourjs/motion` | `PRIORITY_FORCES, FixedUpdateContext, SimulationSystem` |
-
-**Internal Dependencies:**
-
-| File              | Imports        | Type               |
-| ----------------- | -------------- | ------------------ |
-| `./rigid-body.js` | `RigidBody`    | Import (type-only) |
-| `./world.js`      | `PhysicsWorld` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `ForceFieldSystem`
-- Interfaces: `ForceField`, `ForceFieldAddOptions`, `ForceFieldEntry`, `ForceFieldSystemOptions`
-- Types: `ForceFieldUnits`
-
----
-
-### `packages/physics/src/index.ts` - `@fourjs/physics` — the stable, solver-independent physics API (§101, Part IV).
-
-**Internal Dependencies:**
-
-| File                              | Imports                                                                                                                                                                                                                                                                                                                                                                               | Type                  |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./capabilities.js`               | `SOLVER_REGISTRY`                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
-| `./adapter.js`                    | `NO_TUNING_CAPABILITIES, resolveTuningCapabilities`                                                                                                                                                                                                                                                                                                                                   | Re-export             |
-| `./body-access.js`                | `missingSolverBodyTuning, missingSolverJointAccess, supportsSolverBodyTuning, supportsSolverJointAccess`                                                                                                                                                                                                                                                                              | Re-export             |
-| `./collider.js`                   | `Collider`                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
-| `./descriptors.js`                | `DEFAULT_GRAVITY_Y, JOINT_TYPES, SHIPPED_JOINT_TYPES, SHIPPED_JOINT_TYPES_2D, SHIPPED_JOINT_TYPES_3D, STAGED_JOINT_TYPES, jointTypeSupportsDimension, resolveAngularVelocity, resolveGravity, resolveRotation, resolveSleepingConfig, widenToVector3`                                                                                                                                 | Re-export             |
-| `./force-field.js`                | `ForceFieldSystem`                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
-| `./joints.js`                     | `BallJoint, FixedJoint, HingeJoint, Joint, PrismaticJoint, RevoluteJoint, RopeJoint, SliderJoint, SphericalJoint, SpringJoint, worldAnchorToLocal, worldAxisToLocal`                                                                                                                                                                                                                  | Re-export             |
-| `./physics-event-system.js`       | `PhysicsEventSystem`                                                                                                                                                                                                                                                                                                                                                                  | Re-export             |
-| `./physics-system.js`             | `PhysicsSystem`                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
-| `./stale-handle.js`               | `rejectStalePhysicsHandle, resetStaleHandleWarnings`                                                                                                                                                                                                                                                                                                                                  | Re-export             |
-| `./material.js`                   | `DEFAULT_DENSITY, DEFAULT_FRICTION, DEFAULT_FRICTION_COMBINE_MODE, DEFAULT_RESTITUTION, DEFAULT_RESTITUTION_COMBINE_MODE, PhysicsMaterial, combineFriction, combineRestitution, combineValues, resolveDensity`                                                                                                                                                                        | Re-export             |
-| `./queries.js`                    | `ALL_COLLISION_GROUPS, passesQueryFilter, resolveQueryOptions, sortHitsByDistance`                                                                                                                                                                                                                                                                                                    | Re-export             |
-| `./serializers.js`                | `COLLIDER_SERIALIZER, RIGID_BODY_SERIALIZER, SWEPT_CHARACTER_CONTROLLER_SERIALIZER, deserializeCollisionShape, serializeCollisionShape`                                                                                                                                                                                                                                               | Re-export             |
-| `./rigid-body.js`                 | `RigidBody`                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./solver-registry.js`            | `SolverRegistry, clearRegisteredSolvers, registerSolver, registeredSolvers, resolveSolver`                                                                                                                                                                                                                                                                                            | Re-export             |
-| `./shapes.js`                     | `COLLISION_SHAPE_TYPES_2D, COLLISION_SHAPE_TYPES_3D, COMPOSITE_COLLISION_SHAPE_TYPES, shapeIsConvex, shapeMaximumExtent, shapeSupportsDimension, validateCollisionShape, validateQueryShape`                                                                                                                                                                                          | Re-export             |
-| `./types.js`                      | `BODY_TYPES, CCD_MODES, COMBINE_MODES, DEFAULT_CCD_MODE, DEFAULT_DETERMINISM_LEVEL, DEFAULT_ENABLED_CCD_MODE, DEFAULT_SLEEPING_CONFIG, DETERMINISM_LEVELS, PHYSICS_DIMENSIONS`                                                                                                                                                                                                        | Re-export             |
-| `./validation.js`                 | `validateAngularJointMotor, validateColliderDescriptor, validateInertiaTensor, validateJointBreakThreshold, validateJointDescriptor, validateJointLimits, validateLinearJointMotor, validateMass, validatePhysicsWorldOptions, validateRigidBodyDescriptor, validateSphericalJointLimits`                                                                                             | Re-export             |
-| `./swept-character-controller.js` | `DEFAULT_GROUND_SNAP_DISTANCE, DEFAULT_MAX_SLIDES, DEFAULT_PUSH_IMPULSE_SCALE, DEFAULT_PUSH_MASS, DEFAULT_SKIN_WIDTH, DEFAULT_SLOPE_LIMIT, DEFAULT_STEP_HEIGHT, SweptCharacterController, SweptCharacterSystem`                                                                                                                                                                       | Re-export             |
-| `./local-plane.js`                | `DEFAULT_LOCAL_PLANE, isDefaultLocalPlane, planeToWorld, planeToWorldVec, resolveLocalPlane, worldToPlane, worldToPlaneVec`                                                                                                                                                                                                                                                           | Re-export             |
-| `./world-units.js`                | `fromSiLength, fromSiMass, resolvePhysicsWorldUnits, toSiLength, toSiMass`                                                                                                                                                                                                                                                                                                            | Re-export             |
-| `./world.js`                      | `POSE_TARGET_CAPTURE_PRIORITY, PhysicsWorld, createPoseTargetCaptureSystem`                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./resource-memory.js`            | `liveSolverBodyCount, liveSolverColliderCount, liveSolverHandleCount, liveSolverJointCount`                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./adapter.js`                    | `PhysicsCapabilities, PhysicsQueryCapabilities, PhysicsEventInterest, PhysicsSolverAdapter, PhysicsTuningCapabilities`                                                                                                                                                                                                                                                                | Re-export (type-only) |
-| `./body-access.js`                | `SolverBodyAccess, SolverBodyTuningAccess, SolverJointAccess, SolverJointMotor`                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./collider.js`                   | `ColliderEventMap, ColliderOptions, ColliderTriggerEvent, RigidBodyCollisionEvent`                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
-| `./descriptors.js`                | `AngularJointMotor, ColliderDescriptor, FixedJointDescriptor, JointDescriptor, JointDescriptorBase, JointLimits, JointType, LinearJointMotor, LocalPlane, PhysicsWorldOptions, PrismaticJointDescriptor, RevoluteJointDescriptor, RigidBodyDescriptor, RopeJointDescriptor, ShippedJointType, SphericalJointDescriptor, SphericalJointLimits, SpringJointDescriptor, StagedJointType` | Re-export (type-only) |
-| `./events.js`                     | `CollisionEvent, CollisionPhase, ContactPoint, JointBreakEvent, JointPhase, PhysicsEvent, PhysicsEventType, SleepEvent, SleepPhase, TriggerEvent, TriggerPhase`                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./force-field.js`                | `ForceField, ForceFieldAddOptions, ForceFieldEntry, ForceFieldSystemOptions, ForceFieldUnits`                                                                                                                                                                                                                                                                                         | Re-export (type-only) |
-| `./joints.js`                     | `HingeJointOptions, JointBinding, JointBreakPayload, JointCommands, JointEventMap, JointOptions, RopeJointOptions, SliderJointOptions, SphericalJointOptions, SpringJointOptions`                                                                                                                                                                                                     | Re-export (type-only) |
-| `./material.js`                   | `PhysicsMaterialOptions`                                                                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
-| `./physics-event-system.js`       | `PhysicsEventSystemOptions`                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
-| `./physics-system.js`             | `PhysicsSystemOptions`                                                                                                                                                                                                                                                                                                                                                                | Re-export (type-only) |
-| `./stale-handle.js`               | `StalePhysicsHandleKind`                                                                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
-| `./queries.js`                    | `OverlapHit, OverlapQuery, PointHit, PointQuery, QueryCandidate, QueryFilter, QueryHit, QueryHitMode, QueryOptions, RaycastHit, RaycastQuery, ResolvedQueryOptions, ShapeCastHit, ShapeCastQuery`                                                                                                                                                                                     | Re-export (type-only) |
-| `./serializers.js`                | `ColliderDocument, PhysicsMaterialDocument, RigidBodyDocument`                                                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
-| `./rigid-body.js`                 | `BlendWeights, PointLoad, RigidBodyCommands, RigidBodyEventMap, RigidBodySleepEvent, SleepCommand, TorqueInput`                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./solver-registry.js`            | `SolverName, SolverRegistration, SolverRejectionReason, SolverRejectionReport, SolverResolveOptions, SolverSelection`                                                                                                                                                                                                                                                                 | Re-export (type-only) |
-| `./shapes.js`                     | `BoxShape, CapsuleShape, ChainShape, CircleShape, CollisionShape, CollisionShape2D, CollisionShape3D, CollisionShapeType, ConeShape, ConvexHullShape, CylinderShape, HeightFieldShape, PolygonShape, PolylineShape, RectangleShape, SphereShape, TriangleMeshShape`                                                                                                                   | Re-export (type-only) |
-| `./types.js`                      | `AngularVelocityInput, BodyType, CCDMode, CombineMode, DeterminismLevel, PhysicsBodyHandle, PhysicsColliderHandle, PhysicsDimension, PhysicsHandle, PhysicsJointHandle, RotationInput, SleepingConfig, Vector3Input`                                                                                                                                                                  | Re-export (type-only) |
-| `./swept-character-controller.js` | `SweptCharacterControllerOptions, SweptCharacterSystemOptions`                                                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
-| `./local-plane.js`                | `ResolvedLocalPlane`                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./world-units.js`                | `PhysicsWorldUnits`                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
-| `./world.js`                      | `ActiveBodyVisitor, BodyControlModeOptions, PhysicsSnapshot, PhysicsSnapshotConfiguration, PhysicsWorldAdapter, PhysicsWorldInit, PoseTargetCaptureSystemOptions, WorldOverlapHit, WorldPhysicsEvent, WorldPointHit, WorldQueryHit, WorldRaycastHit, WorldShapeCastHit`                                                                                                               | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `SOLVER_REGISTRY`, `NO_TUNING_CAPABILITIES`, `resolveTuningCapabilities`, `missingSolverBodyTuning`, `missingSolverJointAccess`, `supportsSolverBodyTuning`, `supportsSolverJointAccess`, `Collider`, `DEFAULT_GRAVITY_Y`, `JOINT_TYPES`, `SHIPPED_JOINT_TYPES`, `SHIPPED_JOINT_TYPES_2D`, `SHIPPED_JOINT_TYPES_3D`, `STAGED_JOINT_TYPES`, `jointTypeSupportsDimension`, `resolveAngularVelocity`, `resolveGravity`, `resolveRotation`, `resolveSleepingConfig`, `widenToVector3`, `ForceFieldSystem`, `BallJoint`, `FixedJoint`, `HingeJoint`, `Joint`, `PrismaticJoint`, `RevoluteJoint`, `RopeJoint`, `SliderJoint`, `SphericalJoint`, `SpringJoint`, `worldAnchorToLocal`, `worldAxisToLocal`, `PhysicsEventSystem`, `PhysicsSystem`, `rejectStalePhysicsHandle`, `resetStaleHandleWarnings`, `DEFAULT_DENSITY`, `DEFAULT_FRICTION`, `DEFAULT_FRICTION_COMBINE_MODE`, `DEFAULT_RESTITUTION`, `DEFAULT_RESTITUTION_COMBINE_MODE`, `PhysicsMaterial`, `combineFriction`, `combineRestitution`, `combineValues`, `resolveDensity`, `ALL_COLLISION_GROUPS`, `passesQueryFilter`, `resolveQueryOptions`, `sortHitsByDistance`, `COLLIDER_SERIALIZER`, `RIGID_BODY_SERIALIZER`, `SWEPT_CHARACTER_CONTROLLER_SERIALIZER`, `deserializeCollisionShape`, `serializeCollisionShape`, `RigidBody`, `SolverRegistry`, `clearRegisteredSolvers`, `registerSolver`, `registeredSolvers`, `resolveSolver`, `COLLISION_SHAPE_TYPES_2D`, `COLLISION_SHAPE_TYPES_3D`, `COMPOSITE_COLLISION_SHAPE_TYPES`, `shapeIsConvex`, `shapeMaximumExtent`, `shapeSupportsDimension`, `validateCollisionShape`, `validateQueryShape`, `BODY_TYPES`, `CCD_MODES`, `COMBINE_MODES`, `DEFAULT_CCD_MODE`, `DEFAULT_DETERMINISM_LEVEL`, `DEFAULT_ENABLED_CCD_MODE`, `DEFAULT_SLEEPING_CONFIG`, `DETERMINISM_LEVELS`, `PHYSICS_DIMENSIONS`, `validateAngularJointMotor`, `validateColliderDescriptor`, `validateInertiaTensor`, `validateJointBreakThreshold`, `validateJointDescriptor`, `validateJointLimits`, `validateLinearJointMotor`, `validateMass`, `validatePhysicsWorldOptions`, `validateRigidBodyDescriptor`, `validateSphericalJointLimits`, `DEFAULT_GROUND_SNAP_DISTANCE`, `DEFAULT_MAX_SLIDES`, `DEFAULT_PUSH_IMPULSE_SCALE`, `DEFAULT_PUSH_MASS`, `DEFAULT_SKIN_WIDTH`, `DEFAULT_SLOPE_LIMIT`, `DEFAULT_STEP_HEIGHT`, `SweptCharacterController`, `SweptCharacterSystem`, `DEFAULT_LOCAL_PLANE`, `isDefaultLocalPlane`, `planeToWorld`, `planeToWorldVec`, `resolveLocalPlane`, `worldToPlane`, `worldToPlaneVec`, `fromSiLength`, `fromSiMass`, `resolvePhysicsWorldUnits`, `toSiLength`, `toSiMass`, `POSE_TARGET_CAPTURE_PRIORITY`, `PhysicsWorld`, `createPoseTargetCaptureSystem`, `liveSolverBodyCount`, `liveSolverColliderCount`, `liveSolverHandleCount`, `liveSolverJointCount`, `PhysicsCapabilities`, `PhysicsQueryCapabilities`, `PhysicsEventInterest`, `PhysicsSolverAdapter`, `PhysicsTuningCapabilities`, `SolverBodyAccess`, `SolverBodyTuningAccess`, `SolverJointAccess`, `SolverJointMotor`, `ColliderEventMap`, `ColliderOptions`, `ColliderTriggerEvent`, `RigidBodyCollisionEvent`, `AngularJointMotor`, `ColliderDescriptor`, `FixedJointDescriptor`, `JointDescriptor`, `JointDescriptorBase`, `JointLimits`, `JointType`, `LinearJointMotor`, `LocalPlane`, `PhysicsWorldOptions`, `PrismaticJointDescriptor`, `RevoluteJointDescriptor`, `RigidBodyDescriptor`, `RopeJointDescriptor`, `ShippedJointType`, `SphericalJointDescriptor`, `SphericalJointLimits`, `SpringJointDescriptor`, `StagedJointType`, `CollisionEvent`, `CollisionPhase`, `ContactPoint`, `JointBreakEvent`, `JointPhase`, `PhysicsEvent`, `PhysicsEventType`, `SleepEvent`, `SleepPhase`, `TriggerEvent`, `TriggerPhase`, `ForceField`, `ForceFieldAddOptions`, `ForceFieldEntry`, `ForceFieldSystemOptions`, `ForceFieldUnits`, `HingeJointOptions`, `JointBinding`, `JointBreakPayload`, `JointCommands`, `JointEventMap`, `JointOptions`, `RopeJointOptions`, `SliderJointOptions`, `SphericalJointOptions`, `SpringJointOptions`, `PhysicsMaterialOptions`, `PhysicsEventSystemOptions`, `PhysicsSystemOptions`, `StalePhysicsHandleKind`, `OverlapHit`, `OverlapQuery`, `PointHit`, `PointQuery`, `QueryCandidate`, `QueryFilter`, `QueryHit`, `QueryHitMode`, `QueryOptions`, `RaycastHit`, `RaycastQuery`, `ResolvedQueryOptions`, `ShapeCastHit`, `ShapeCastQuery`, `ColliderDocument`, `PhysicsMaterialDocument`, `RigidBodyDocument`, `BlendWeights`, `PointLoad`, `RigidBodyCommands`, `RigidBodyEventMap`, `RigidBodySleepEvent`, `SleepCommand`, `TorqueInput`, `SolverName`, `SolverRegistration`, `SolverRejectionReason`, `SolverRejectionReport`, `SolverResolveOptions`, `SolverSelection`, `BoxShape`, `CapsuleShape`, `ChainShape`, `CircleShape`, `CollisionShape`, `CollisionShape2D`, `CollisionShape3D`, `CollisionShapeType`, `ConeShape`, `ConvexHullShape`, `CylinderShape`, `HeightFieldShape`, `PolygonShape`, `PolylineShape`, `RectangleShape`, `SphereShape`, `TriangleMeshShape`, `AngularVelocityInput`, `BodyType`, `CCDMode`, `CombineMode`, `DeterminismLevel`, `PhysicsBodyHandle`, `PhysicsColliderHandle`, `PhysicsDimension`, `PhysicsHandle`, `PhysicsJointHandle`, `RotationInput`, `SleepingConfig`, `Vector3Input`, `SweptCharacterControllerOptions`, `SweptCharacterSystemOptions`, `ResolvedLocalPlane`, `PhysicsWorldUnits`, `ActiveBodyVisitor`, `BodyControlModeOptions`, `PhysicsSnapshot`, `PhysicsSnapshotConfiguration`, `PhysicsWorldAdapter`, `PhysicsWorldInit`, `PoseTargetCaptureSystemOptions`, `WorldOverlapHit`, `WorldPhysicsEvent`, `WorldPointHit`, `WorldQueryHit`, `WorldRaycastHit`, `WorldShapeCastHit`
-
----
-
-### `packages/physics/src/joints.ts` - The §28 joint classes — `FixedJoint`, `HingeJoint`, `SliderJoint`,
-
-**Workspace Dependencies:**
-
-| Package        | Import                    |
-| -------------- | ------------------------- |
-| `@fourjs/core` | `EventEmitter, FourError` |
-| `@fourjs/math` | `Quaternion, Vector3`     |
-
-**Internal Dependencies:**
-
-| File               | Imports                                                                                                                                                                                                                                                                         | Type               |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./body-access.js` | `SolverJointMotor`                                                                                                                                                                                                                                                              | Import (type-only) |
-| `./descriptors.js` | `AngularJointMotor, FixedJointDescriptor, JointDescriptor, JointDescriptorBase, JointLimits, LinearJointMotor, PrismaticJointDescriptor, RevoluteJointDescriptor, RopeJointDescriptor, ShippedJointType, SphericalJointDescriptor, SphericalJointLimits, SpringJointDescriptor` | Import (type-only) |
-| `./descriptors.js` | `widenToVector3`                                                                                                                                                                                                                                                                | Import             |
-| `./events.js`      | `JointBreakEvent`                                                                                                                                                                                                                                                               | Import (type-only) |
-| `./rigid-body.js`  | `RigidBody`                                                                                                                                                                                                                                                                     | Import (type-only) |
-| `./types.js`       | `PhysicsBodyHandle, PhysicsDimension, Vector3Input`                                                                                                                                                                                                                             | Import (type-only) |
-| `./validation.js`  | `validateAngularJointMotor, validateJointBreakThreshold, validateJointLimits, validateLinearJointMotor, validateSphericalJointLimits`                                                                                                                                           | Import             |
-
-**Exports:**
-
-- Classes: `FixedJoint`, `HingeJoint`, `SliderJoint`, `RopeJoint`, `SpringJoint`, `SphericalJoint`
-- Interfaces: `JointEventMap`, `JointBinding`, `JointCommands`, `JointOptions`, `HingeJointOptions`, `SliderJointOptions`, `RopeJointOptions`, `SpringJointOptions`, `SphericalJointOptions`
-- Types: `JointBreakPayload`, `RevoluteJoint`, `PrismaticJoint`, `BallJoint`
-- Functions: `worldAnchorToLocal`, `worldAxisToLocal`, `bindJoint`, `unbindJoint`, `setJointBroken`, `clearJointCommands`, `readJointAnchors`, `readJointLimits`, `readJointMotor`
-- Constants: `RevoluteJoint`, `PrismaticJoint`, `BallJoint`
-
----
-
-### `packages/physics/src/local-plane.ts` - §21's `"local-plane"` simulation frame (PH-12 remainder).
-
-**Workspace Dependencies:**
-
-| Package        | Import                |
-| -------------- | --------------------- |
-| `@fourjs/core` | `FourError`           |
-| `@fourjs/math` | `Quaternion, Vector3` |
-
-**Internal Dependencies:**
-
-| File               | Imports                      | Type   |
-| ------------------ | ---------------------------- | ------ |
-| `./descriptors.js` | `widenToVector3, LocalPlane` | Import |
-
-**Exports:**
-
-- Interfaces: `ResolvedLocalPlane`
-- Functions: `isDefaultLocalPlane`, `resolveLocalPlane`, `planeToWorld`, `worldToPlane`, `planeToWorldVec`, `worldToPlaneVec`
-- Constants: `DEFAULT_LOCAL_PLANE`
-
----
-
-### `packages/physics/src/material.ts` - Physics materials and the §25 combination rules.
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File         | Imports       | Type               |
-| ------------ | ------------- | ------------------ |
-| `./types.js` | `CombineMode` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `PhysicsMaterial`
-- Interfaces: `PhysicsMaterialOptions`
-- Functions: `combineValues`, `combineFriction`, `combineRestitution`, `resolveDensity`
-- Constants: `DEFAULT_FRICTION`, `DEFAULT_RESTITUTION`, `DEFAULT_DENSITY`, `DEFAULT_FRICTION_COMBINE_MODE`, `DEFAULT_RESTITUTION_COMBINE_MODE`
-
----
-
-### `packages/physics/src/physics-event-system.ts` - `PhysicsEventSystem` (§39 step 9, PH-21) — the optional occupant of
-
-**Workspace Dependencies:**
-
-| Package          | Import                                      |
-| ---------------- | ------------------------------------------- |
-| `@fourjs/core`   | `FourError`                                 |
-| `@fourjs/motion` | `PRIORITY_EVENT_DISPATCH, SimulationSystem` |
-
-**Internal Dependencies:**
-
-| File                  | Imports         | Type               |
-| --------------------- | --------------- | ------------------ |
-| `./physics-system.js` | `PhysicsSystem` | Import (type-only) |
-| `./world.js`          | `PhysicsWorld`  | Import (type-only) |
-
-**Exports:**
-
-- Classes: `PhysicsEventSystem`
-- Interfaces: `PhysicsEventSystemOptions`
-
----
-
-### `packages/physics/src/physics-system.ts` - `PhysicsSystem` (§39 step 6, plan P5-2) — the `SimulationSystem` that steps
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                         |
-| ---------------- | -------------------------------------------------------------- |
-| `@fourjs/core`   | `FourError`                                                    |
-| `@fourjs/motion` | `PRIORITY_PHYSICS_SOLVE, FixedUpdateContext, SimulationSystem` |
-
-**Internal Dependencies:**
-
-| File         | Imports        | Type               |
-| ------------ | -------------- | ------------------ |
-| `./world.js` | `PhysicsWorld` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `PhysicsSystem`
-- Interfaces: `PhysicsSystemOptions`
-
----
-
-### `packages/physics/src/queries.ts` - Spatial queries (§30) — options, filter semantics, and result shapes.
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector3` |
-
-**Internal Dependencies:**
-
-| File          | Imports                                                                 | Type               |
-| ------------- | ----------------------------------------------------------------------- | ------------------ |
-| `./shapes.js` | `CollisionShape`                                                        | Import (type-only) |
-| `./types.js`  | `PhysicsBodyHandle, PhysicsColliderHandle, RotationInput, Vector3Input` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `QueryFilter`, `QueryOptions`, `ResolvedQueryOptions`, `QueryCandidate`, `RaycastQuery`, `ShapeCastQuery`, `OverlapQuery`, `PointQuery`, `QueryHit`, `RaycastHit`, `ShapeCastHit`, `PointHit`
-- Types: `QueryHitMode`, `OverlapHit`
-- Functions: `resolveQueryOptions`, `passesQueryFilter`, `sortHitsByDistance`
-- Constants: `ALL_COLLISION_GROUPS`
-
----
-
-### `packages/physics/src/resource-memory.ts` - §83 resource accounting for solver handles — how many bodies, colliders,
-
-**Exports:**
-
-- Functions: `noteSolverBody`, `noteSolverCollider`, `noteSolverJoint`, `liveSolverBodyCount`, `liveSolverColliderCount`, `liveSolverJointCount`, `liveSolverHandleCount`
-
----
-
-### `packages/physics/src/rigid-body.ts` - The `RigidBody` component (§6a, §23) and its §26 force/impulse command
-
-**Workspace Dependencies:**
-
-| Package        | Import                                                                                                 |
-| -------------- | ------------------------------------------------------------------------------------------------------ |
-| `@fourjs/core` | `DEFAULT_SPACE_MODE, DEV_WARNING_PREFIX, EventEmitter, FourError, Component, ComponentHost, SpaceMode` |
-| `@fourjs/math` | `Matrix3, Quaternion, Vector3`                                                                         |
-
-**Internal Dependencies:**
-
-| File               | Imports                                                   | Type               |
-| ------------------ | --------------------------------------------------------- | ------------------ |
-| `./descriptors.js` | `RigidBodyDescriptor`                                     | Import (type-only) |
-| `./descriptors.js` | `resolveAngularVelocity, resolveRotation, widenToVector3` | Import             |
-| `./events.js`      | `SleepEvent`                                              | Import (type-only) |
-| `./types.js`       | `BodyType, CCDMode, PhysicsDimension, Vector3Input`       | Import (type-only) |
-| `./types.js`       | `DEFAULT_CCD_MODE, DEFAULT_ENABLED_CCD_MODE`              | Import             |
-| `./validation.js`  | `validateMass, validateRigidBodyDescriptor`               | Import             |
-
-**Exports:**
-
-- Classes: `RigidBody`
-- Interfaces: `BlendWeights`, `PointLoad`, `RigidBodyCommands`, `RigidBodyEventMap`
-- Types: `TorqueInput`, `SleepCommand`, `RigidBodySleepEvent`
-- Functions: `clearRigidBodyCommands`, `setRigidBodyRegistered`, `drainRigidBodySolverWrites`, `setRigidBodyType`, `setRigidBodyDerivedMass`, `setRigidBodySleeping`
-- Constants: `RIGID_BODY_MASS_PROPERTIES_DIRTY`, `RIGID_BODY_DAMPING_DIRTY`, `RIGID_BODY_GRAVITY_SCALE_DIRTY`, `RIGID_BODY_CCD_DIRTY`
-
----
-
-### `packages/physics/src/serializers.ts` - The §79 serializers for this package's two components — `RigidBody` (§23) and
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                |
-| ---------------- | ----------------------------------------------------- |
-| `@fourjs/core`   | `SPACE_MODES, FourError, JsonValue, SpaceMode`        |
-| `@fourjs/math`   | `Matrix3, Quaternion, Vector2, Vector3`               |
-| `@fourjs/motion` | `DEFAULT_CHARACTER_GRAVITY, ComponentSerializerShape` |
-| `@fourjs/scene`  | `Transform`                                           |
-
-**Internal Dependencies:**
-
-| File                              | Imports                                                                                                                                                                                   | Type               |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./collider.js`                   | `Collider, ColliderOptions`                                                                                                                                                               | Import             |
-| `./descriptors.js`                | `RigidBodyDescriptor`                                                                                                                                                                     | Import (type-only) |
-| `./material.js`                   | `DEFAULT_DENSITY, DEFAULT_FRICTION, DEFAULT_RESTITUTION, PhysicsMaterial, PhysicsMaterialOptions`                                                                                         | Import             |
-| `./queries.js`                    | `ALL_COLLISION_GROUPS`                                                                                                                                                                    | Import             |
-| `./rigid-body.js`                 | `RigidBody`                                                                                                                                                                               | Import             |
-| `./swept-character-controller.js` | `DEFAULT_GROUND_SNAP_DISTANCE, DEFAULT_MAX_SLIDES, DEFAULT_PUSH_IMPULSE_SCALE, DEFAULT_PUSH_MASS, DEFAULT_SKIN_WIDTH, DEFAULT_SLOPE_LIMIT, DEFAULT_STEP_HEIGHT, SweptCharacterController` | Import             |
-| `./shapes.js`                     | `CollisionShape`                                                                                                                                                                          | Import (type-only) |
-| `./types.js`                      | `BODY_TYPES, CCD_MODES, DEFAULT_CCD_MODE`                                                                                                                                                 | Import             |
-| `./types.js`                      | `BodyType, CCDMode`                                                                                                                                                                       | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `RigidBodyDocument`, `PhysicsMaterialDocument`, `ColliderDocument`
-- Functions: `serializeCollisionShape`, `deserializeCollisionShape`
-- Constants: `RIGID_BODY_SERIALIZER`, `COLLIDER_SERIALIZER`, `SWEPT_CHARACTER_CONTROLLER_SERIALIZER`
-
----
-
-### `packages/physics/src/shapes.ts` - Collision shapes (§24) and their §85 parameter validation.
-
-**Workspace Dependencies:**
-
-| Package        | Import             |
-| -------------- | ------------------ |
-| `@fourjs/core` | `FourError`        |
-| `@fourjs/math` | `Vector2, Vector3` |
-
-**Internal Dependencies:**
-
-| File         | Imports            | Type               |
-| ------------ | ------------------ | ------------------ |
-| `./types.js` | `PhysicsDimension` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `CircleShape`, `RectangleShape`, `CapsuleShape`, `PolygonShape`, `PolylineShape`, `ChainShape`, `SphereShape`, `BoxShape`, `CylinderShape`, `ConeShape`, `ConvexHullShape`, `TriangleMeshShape`, `HeightFieldShape`
-- Types: `CollisionShape2D`, `CollisionShape3D`, `CollisionShape`, `CollisionShapeType`
-- Functions: `shapeIsConvex`, `shapeSupportsDimension`, `shapeMaximumExtent`, `validateQueryShape`, `validateCollisionShape`
-- Constants: `COLLISION_SHAPE_TYPES_2D`, `COLLISION_SHAPE_TYPES_3D`, `COMPOSITE_COLLISION_SHAPE_TYPES`, `MAXIMUM_SHAPE_POINTS`
-
----
-
-### `packages/physics/src/solver-registry.ts` - The §37 solver registry — how `solver: "auto"` becomes an adapter without
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File               | Imports                                         | Type               |
-| ------------------ | ----------------------------------------------- | ------------------ |
-| `./adapter.js`     | `PhysicsSolverAdapter`                          | Import (type-only) |
-| `./descriptors.js` | `PhysicsWorldOptions`                           | Import (type-only) |
-| `./types.js`       | `DeterminismLevel`                              | Import (type-only) |
-| `./types.js`       | `DEFAULT_DETERMINISM_LEVEL, DETERMINISM_LEVELS` | Import             |
-| `./world.js`       | `PhysicsWorldAdapter`                           | Import (type-only) |
-
-**Exports:**
-
-- Classes: `SolverRegistry`
-- Interfaces: `SolverRegistration`, `SolverRejectionReport`, `SolverResolveOptions`
-- Types: `SolverName`, `SolverSelection`, `SolverRejectionReason`
-- Functions: `registerSolver`, `registeredSolvers`, `clearRegisteredSolvers`, `resolveSolver`
-
----
-
-### `packages/physics/src/stale-handle.ts` - §83's stale physics handle development warning (A-4/A-5).
-
-**Workspace Dependencies:**
-
-| Package        | Import                                         |
-| -------------- | ---------------------------------------------- |
-| `@fourjs/core` | `DEV_WARNING_PREFIX, FourError, FourErrorCode` |
-
-**Exports:**
-
-- Types: `StalePhysicsHandleKind`
-- Functions: `resetStaleHandleWarnings`, `rejectStalePhysicsHandle`
-
----
-
-### `packages/physics/src/swept-character-controller.ts` - §12's **solver-backed** character controller — {@link SweptCharacterController}
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                           |
-| ---------------- | -------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEV_WARNING_PREFIX, FourError`                                                  |
-| `@fourjs/core`   | `Component, ComponentHost`                                                       |
-| `@fourjs/math`   | `Vector3`                                                                        |
-| `@fourjs/motion` | `CharacterController, PRIORITY_KINEMATICS, FixedUpdateContext, SimulationSystem` |
-| `@fourjs/scene`  | `runOwnedTransformWrite, warnAuthorityConflict, Node`                            |
-
-**Internal Dependencies:**
-
-| File              | Imports                           | Type               |
-| ----------------- | --------------------------------- | ------------------ |
-| `./queries.js`    | `ALL_COLLISION_GROUPS`            | Import             |
-| `./rigid-body.js` | `RigidBody`                       | Import (type-only) |
-| `./shapes.js`     | `CollisionShape`                  | Import (type-only) |
-| `./types.js`      | `PhysicsBodyHandle`               | Import (type-only) |
-| `./world.js`      | `PhysicsWorld, WorldShapeCastHit` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `SweptCharacterController`, `SweptCharacterSystem`
-- Interfaces: `SweptCharacterControllerOptions`, `SweptCharacterSystemOptions`
-- Constants: `DEFAULT_SLOPE_LIMIT`, `DEFAULT_STEP_HEIGHT`, `DEFAULT_SKIN_WIDTH`, `DEFAULT_GROUND_SNAP_DISTANCE`, `DEFAULT_MAX_SLIDES`, `DEFAULT_PUSH_MASS`, `DEFAULT_PUSH_IMPULSE_SCALE`
-
----
-
-### `packages/physics/src/types.ts` - The physics vocabulary (§21, §22, §25, §31, §32, §33) and the opaque solver
-
-**Workspace Dependencies:**
-
-| Package        | Import                         |
-| -------------- | ------------------------------ |
-| `@fourjs/math` | `Quaternion, Vector2, Vector3` |
-
-**Exports:**
-
-- Interfaces: `SleepingConfig`, `PhysicsBodyHandle`, `PhysicsColliderHandle`, `PhysicsJointHandle`
-- Types: `PhysicsDimension`, `BodyType`, `CCDMode`, `DeterminismLevel`, `CombineMode`, `Vector3Input`, `RotationInput`, `AngularVelocityInput`, `PhysicsHandle`
-- Constants: `PHYSICS_DIMENSIONS`, `BODY_TYPES`, `CCD_MODES`, `DEFAULT_CCD_MODE`, `DEFAULT_ENABLED_CCD_MODE`, `DETERMINISM_LEVELS`, `DEFAULT_DETERMINISM_LEVEL`, `COMBINE_MODES`, `DEFAULT_SLEEPING_CONFIG`
-
----
-
-### `packages/physics/src/validation.ts` - Descriptor validation (§85), for the physics half of the checklist.
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-| `@fourjs/math` | `Matrix3`   |
-
-**Internal Dependencies:**
-
-| File               | Imports                                                                                                                                                                   | Type               |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./descriptors.js` | `AngularJointMotor, ColliderDescriptor, JointDescriptor, JointLimits, LinearJointMotor, PhysicsWorldOptions, RigidBodyDescriptor, ShippedJointType, SphericalJointLimits` | Import (type-only) |
-| `./descriptors.js` | `JOINT_TYPES, SHIPPED_JOINT_TYPES, STAGED_JOINT_TYPES, jointTypeSupportsDimension, resolveGravity, resolveRotation`                                                       | Import             |
-| `./shapes.js`      | `validateCollisionShape`                                                                                                                                                  | Import             |
-| `./types.js`       | `BodyType, PhysicsDimension, Vector3Input`                                                                                                                                | Import (type-only) |
-| `./types.js`       | `BODY_TYPES, CCD_MODES, DEFAULT_ENABLED_CCD_MODE, DETERMINISM_LEVELS, PHYSICS_DIMENSIONS`                                                                                 | Import             |
-
-**Exports:**
-
-- Functions: `validateMass`, `validateInertiaTensor`, `validateRigidBodyDescriptor`, `validateColliderDescriptor`, `validateJointLimits`, `validateSphericalJointLimits`, `validateAngularJointMotor`, `validateLinearJointMotor`, `validateJointBreakThreshold`, `validateJointDescriptor`, `validatePhysicsWorldOptions`
-
----
-
-### `packages/physics/src/world-units.ts` - §40 scale factors a {@link PhysicsWorld} may apply at the authoring boundary.
-
-**Exports:**
-
-- Interfaces: `PhysicsWorldUnits`
-- Functions: `resolvePhysicsWorldUnits`, `toSiLength`, `fromSiLength`, `toSiMass`, `fromSiMass`
-
----
-
-### `packages/physics/src/world.ts` - `PhysicsWorld` (§20, §30, §32, §33, §34, §37, §39, §42, §43) — the object an
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                                            |
-| ---------------- | ------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEFAULT_SPACE_MODE, DEV_WARNING_PREFIX, FourError, isSimulationSpaceMode`                        |
-| `@fourjs/math`   | `Quaternion, Vector2, Vector3`                                                                    |
-| `@fourjs/motion` | `PRIORITY_ANIMATION_TARGETS, SimulationSystem`                                                    |
-| `@fourjs/scene`  | `PoseTarget, runOwnedTransformWrite, warnAuthorityConflict, Node, PoseBuffer, TransformAuthority` |
-
-**Internal Dependencies:**
-
-| File                   | Imports                                                                                                                                                                                                                                                                    | Type               |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./adapter.js`         | `PhysicsSolverAdapter, PhysicsTuningCapabilities`                                                                                                                                                                                                                          | Import (type-only) |
-| `./adapter.js`         | `resolveTuningCapabilities`                                                                                                                                                                                                                                                | Import             |
-| `./body-access.js`     | `SolverBodyAccess, SolverBodyTuningAccess, SolverJointAccess`                                                                                                                                                                                                              | Import (type-only) |
-| `./body-access.js`     | `missingSolverJointAccess, supportsSolverBodyTuning, supportsSolverJointAccess`                                                                                                                                                                                            | Import             |
-| `./collider.js`        | `Collider`                                                                                                                                                                                                                                                                 | Import             |
-| `./collider.js`        | `ColliderTriggerEvent, RigidBodyCollisionEvent`                                                                                                                                                                                                                            | Import (type-only) |
-| `./descriptors.js`     | `PhysicsWorldOptions, RigidBodyDescriptor`                                                                                                                                                                                                                                 | Import (type-only) |
-| `./descriptors.js`     | `resolveAngularVelocity, resolveGravity, resolveRotation, resolveSleepingConfig, widenToVector3`                                                                                                                                                                           | Import             |
-| `./local-plane.js`     | `planeToWorld, planeToWorldVec, resolveLocalPlane, worldToPlane, worldToPlaneVec, ResolvedLocalPlane`                                                                                                                                                                      | Import             |
-| `./world-units.js`     | `fromSiLength, fromSiMass, resolvePhysicsWorldUnits, toSiLength, toSiMass, PhysicsWorldUnits`                                                                                                                                                                              | Import             |
-| `./events.js`          | `JointBreakEvent, PhysicsEvent`                                                                                                                                                                                                                                            | Import (type-only) |
-| `./joints.js`          | `Joint, JointBinding, JointBreakPayload`                                                                                                                                                                                                                                   | Import (type-only) |
-| `./joints.js`          | `bindJoint, clearJointCommands, readJointAnchors, readJointLimits, readJointMotor, setJointBroken, unbindJoint, worldAnchorToLocal, worldAxisToLocal`                                                                                                                      | Import             |
-| `./queries.js`         | `OverlapQuery, PointQuery, QueryOptions, RaycastQuery, ShapeCastQuery`                                                                                                                                                                                                     | Import (type-only) |
-| `./rigid-body.js`      | `BlendWeights, RigidBodySleepEvent`                                                                                                                                                                                                                                        | Import (type-only) |
-| `./rigid-body.js`      | `RIGID_BODY_CCD_DIRTY, RIGID_BODY_DAMPING_DIRTY, RIGID_BODY_GRAVITY_SCALE_DIRTY, RIGID_BODY_MASS_PROPERTIES_DIRTY, RigidBody, clearRigidBodyCommands, drainRigidBodySolverWrites, setRigidBodyDerivedMass, setRigidBodyRegistered, setRigidBodySleeping, setRigidBodyType` | Import             |
-| `./shapes.js`          | `CollisionShape`                                                                                                                                                                                                                                                           | Import (type-only) |
-| `./shapes.js`          | `shapeMaximumExtent`                                                                                                                                                                                                                                                       | Import             |
-| `./solver-registry.js` | `SolverRegistry, SolverRejectionReport, SolverSelection`                                                                                                                                                                                                                   | Import (type-only) |
-| `./solver-registry.js` | `resolveSolver`                                                                                                                                                                                                                                                            | Import             |
-| `./types.js`           | `AngularVelocityInput, BodyType, DeterminismLevel, PhysicsBodyHandle, PhysicsColliderHandle, PhysicsDimension, PhysicsJointHandle, RotationInput, SleepingConfig, Vector3Input`                                                                                            | Import (type-only) |
-| `./types.js`           | `DEFAULT_DETERMINISM_LEVEL, DEFAULT_SLEEPING_CONFIG, DETERMINISM_LEVELS`                                                                                                                                                                                                   | Import             |
-| `./validation.js`      | `validateJointDescriptor, validateMass, validatePhysicsWorldOptions`                                                                                                                                                                                                       | Import             |
-| `./resource-memory.js` | `noteSolverBody, noteSolverCollider, noteSolverJoint`                                                                                                                                                                                                                      | Import             |
-
-**Exports:**
-
-- Classes: `PhysicsWorld`
-- Interfaces: `PhysicsWorldInit`, `WorldQueryHit`, `WorldRaycastHit`, `WorldShapeCastHit`, `WorldPointHit`, `PhysicsSnapshot`, `PhysicsSnapshotConfiguration`, `BodyControlModeOptions`, `PoseTargetCaptureSystemOptions`
-- Types: `PhysicsWorldAdapter`, `ActiveBodyVisitor`, `WorldOverlapHit`, `WorldPhysicsEvent`
-- Functions: `createPoseTargetCaptureSystem`
-- Constants: `POSE_TARGET_CAPTURE_PRIORITY`
 
 ---
 
@@ -4195,6 +1352,724 @@ graph LR
 ## Packages/physics box2d Dependencies
 
 ### `packages/physics-box2d/src/index.ts` - Entry point exporting 1 symbols
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+
+---
+
+<a id="packages-scene-dependencies"></a>
+
+## Packages/scene Dependencies
+
+### `packages/scene/src/transform.ts` - Local/world transform of a scene node (§7).
+
+**Workspace Dependencies:**
+
+| Package        | Import                         |
+| -------------- | ------------------------------ |
+| `@fourjs/math` | `Matrix4, Quaternion, Vector3` |
+
+**Internal Dependencies:**
+
+| File             | Imports                                        | Type   |
+| ---------------- | ---------------------------------------------- | ------ |
+| `./authority.js` | `warnApplicationTransformWrite, AuthorityNode` | Import |
+
+**Exports:**
+
+- Classes: `Transform`
+
+---
+
+### `packages/scene/src/layers.ts` - Symbolic layers and their compiled masks (§46).
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Exports:**
+
+- Interfaces: `LayeredNode`
+- Types: `LayerMask`
+- Functions: `defineLayer`, `layerIndex`, `layerName`, `layerNames`, `layerMask`, `layerMaskNames`, `layersMatch`, `isLayerMask`, `assertLayerMask`, `applyLayers`, `resetLayers`
+- Constants: `LAYER_COUNT`, `DEFAULT_LAYER_NAME`, `DEFAULT_LAYER`, `DEFAULT_LAYER_MASK`, `ALL_LAYERS`, `NO_LAYERS`
+
+---
+
+### `packages/scene/src/node-space.ts` - §8's node-level space declaration — {@link NodeSpace} (PH-12 remainder).
+
+**Workspace Dependencies:**
+
+| Package        | Import                                                                            |
+| -------------- | --------------------------------------------------------------------------------- |
+| `@fourjs/core` | `DEFAULT_SPACE_MODE, SPACE_MODES, Component, ComponentHost, JsonValue, SpaceMode` |
+| `@fourjs/math` | `Vector3`                                                                         |
+
+**Exports:**
+
+- Classes: `NodeSpace`
+- Interfaces: `NodeSpaceSerializerShape`, `NodeSpaceOptions`
+- Constants: `NODE_SPACE_SERIALIZER`
+
+---
+
+### `packages/scene/src/index.ts` - Package entry point for @fourjs/scene (re-exports 91 symbols)
+
+**Internal Dependencies:**
+
+| File                    | Imports                                                                                                                                                                                                                                     | Type                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./authority.js`        | `DEFAULT_TRANSFORM_AUTHORITY, TRANSFORM_AUTHORITIES, beginOwnedTransformWrite, endOwnedTransformWrite, isOwnedTransformWrite, runOwnedTransformWrite, warnApplicationTransformWrite, warnAuthorityConflict`                                 | Re-export             |
+| `./camera.js`           | `Camera, OrthographicCamera, PerspectiveCamera`                                                                                                                                                                                             | Re-export             |
+| `./screen-camera.js`    | `DEFAULT_SCREEN_FAR, DEFAULT_SCREEN_NEAR, DEFAULT_SCREEN_ORIGIN, DEFAULT_SCREEN_UNITS, SCREEN_ORIGINS, SCREEN_UNITS, ScreenCamera`                                                                                                          | Re-export             |
+| `./trackball.js`        | `DEFAULT_TRACKBALL_RADIUS, TrackballRig`                                                                                                                                                                                                    | Re-export             |
+| `./group.js`            | `Group`                                                                                                                                                                                                                                     | Re-export             |
+| `./node-space.js`       | `NODE_SPACE_SERIALIZER, NodeSpace`                                                                                                                                                                                                          | Re-export             |
+| `./layers.js`           | `ALL_LAYERS, DEFAULT_LAYER, DEFAULT_LAYER_MASK, DEFAULT_LAYER_NAME, LAYER_COUNT, NO_LAYERS, applyLayers, assertLayerMask, defineLayer, isLayerMask, layerIndex, layerMask, layerMaskNames, layerName, layerNames, layersMatch, resetLayers` | Re-export             |
+| `./light.js`            | `DirectionalLight, DirectionalLightShadow, HemisphereLight, PointLight, PunctualLight, SpotLight`                                                                                                                                           | Re-export             |
+| `./interpolation.js`    | `POSE_SNAPSHOT_PRIORITY, PoseBuffer, createSnapshotSystem`                                                                                                                                                                                  | Re-export             |
+| `./node.js`             | `Node, restoreNodeId`                                                                                                                                                                                                                       | Re-export             |
+| `./pose-target.js`      | `PoseTarget`                                                                                                                                                                                                                                | Re-export             |
+| `./skeleton.js`         | `Bone, MORPH_WEIGHTS_SERIALIZER, MorphWeights, Skeleton`                                                                                                                                                                                    | Re-export             |
+| `./scene.js`            | `Scene`                                                                                                                                                                                                                                     | Re-export             |
+| `./transform.js`        | `Transform`                                                                                                                                                                                                                                 | Re-export             |
+| `./viewport.js`         | `createFullscreenViewport`                                                                                                                                                                                                                  | Re-export             |
+| `./world-transforms.js` | `resolveWorldTransform, resolveWorldTransforms`                                                                                                                                                                                             | Re-export             |
+| `./authority.js`        | `AuthorityNode, TransformAuthority`                                                                                                                                                                                                         | Re-export (type-only) |
+| `./camera.js`           | `OrthographicCameraOptions, PerspectiveCameraOptions`                                                                                                                                                                                       | Re-export (type-only) |
+| `./screen-camera.js`    | `ScreenCameraOptions, ScreenOrigin, ScreenUnits, SurfaceSizedCamera`                                                                                                                                                                        | Re-export (type-only) |
+| `./trackball.js`        | `TrackballRigOptions`                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./node-space.js`       | `NodeSpaceOptions, NodeSpaceSerializerShape`                                                                                                                                                                                                | Re-export (type-only) |
+| `./layers.js`           | `LayerMask, LayeredNode`                                                                                                                                                                                                                    | Re-export (type-only) |
+| `./light.js`            | `ColorRGB, DirectionalLightOptions, HemisphereLightOptions, LightColorInput, DirectionalLightShadowOptions, PunctualLightOptions, SpotLightOptions`                                                                                         | Re-export (type-only) |
+| `./interpolation.js`    | `PoseSnapshotSystem, SnapshotSystemOptions`                                                                                                                                                                                                 | Re-export (type-only) |
+| `./node.js`             | `HitTestMode, NodeEventMap, NodeHierarchyEvent, NodeOptions, NodeType`                                                                                                                                                                      | Re-export (type-only) |
+| `./skeleton.js`         | `MorphWeightsSerializerShape`                                                                                                                                                                                                               | Re-export (type-only) |
+| `./viewport.js`         | `Viewport`                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./world-transforms.js` | `WorldTransformStats`                                                                                                                                                                                                                       | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `DEFAULT_TRANSFORM_AUTHORITY`, `TRANSFORM_AUTHORITIES`, `beginOwnedTransformWrite`, `endOwnedTransformWrite`, `isOwnedTransformWrite`, `runOwnedTransformWrite`, `warnApplicationTransformWrite`, `warnAuthorityConflict`, `Camera`, `OrthographicCamera`, `PerspectiveCamera`, `DEFAULT_SCREEN_FAR`, `DEFAULT_SCREEN_NEAR`, `DEFAULT_SCREEN_ORIGIN`, `DEFAULT_SCREEN_UNITS`, `SCREEN_ORIGINS`, `SCREEN_UNITS`, `ScreenCamera`, `DEFAULT_TRACKBALL_RADIUS`, `TrackballRig`, `Group`, `NODE_SPACE_SERIALIZER`, `NodeSpace`, `ALL_LAYERS`, `DEFAULT_LAYER`, `DEFAULT_LAYER_MASK`, `DEFAULT_LAYER_NAME`, `LAYER_COUNT`, `NO_LAYERS`, `applyLayers`, `assertLayerMask`, `defineLayer`, `isLayerMask`, `layerIndex`, `layerMask`, `layerMaskNames`, `layerName`, `layerNames`, `layersMatch`, `resetLayers`, `DirectionalLight`, `DirectionalLightShadow`, `HemisphereLight`, `PointLight`, `PunctualLight`, `SpotLight`, `POSE_SNAPSHOT_PRIORITY`, `PoseBuffer`, `createSnapshotSystem`, `Node`, `restoreNodeId`, `PoseTarget`, `Bone`, `MORPH_WEIGHTS_SERIALIZER`, `MorphWeights`, `Skeleton`, `Scene`, `Transform`, `createFullscreenViewport`, `resolveWorldTransform`, `resolveWorldTransforms`, `AuthorityNode`, `TransformAuthority`, `OrthographicCameraOptions`, `PerspectiveCameraOptions`, `ScreenCameraOptions`, `ScreenOrigin`, `ScreenUnits`, `SurfaceSizedCamera`, `TrackballRigOptions`, `NodeSpaceOptions`, `NodeSpaceSerializerShape`, `LayerMask`, `LayeredNode`, `ColorRGB`, `DirectionalLightOptions`, `HemisphereLightOptions`, `LightColorInput`, `DirectionalLightShadowOptions`, `PunctualLightOptions`, `SpotLightOptions`, `PoseSnapshotSystem`, `SnapshotSystemOptions`, `HitTestMode`, `NodeEventMap`, `NodeHierarchyEvent`, `NodeOptions`, `NodeType`, `MorphWeightsSerializerShape`, `Viewport`, `WorldTransformStats`
+
+---
+
+### `packages/scene/src/skeleton.ts` - Bones, skeletons, and morph weights (§54, §14, §17; RFC 0003 — gaps PH-10 +
+
+**Workspace Dependencies:**
+
+| Package        | Import                                           |
+| -------------- | ------------------------------------------------ |
+| `@fourjs/core` | `FourError, Component, ComponentHost, JsonValue` |
+| `@fourjs/math` | `Matrix4`                                        |
+
+**Internal Dependencies:**
+
+| File                    | Imports                 | Type   |
+| ----------------------- | ----------------------- | ------ |
+| `./node.js`             | `Node`                  | Import |
+| `./world-transforms.js` | `resolveWorldTransform` | Import |
+
+**Exports:**
+
+- Classes: `Bone`, `Skeleton`, `MorphWeights`
+- Interfaces: `MorphWeightsSerializerShape`
+- Constants: `MORPH_WEIGHTS_SERIALIZER`
+
+---
+
+### `packages/scene/src/group.ts` - `Group` (§6, §104) — a concrete {@link Node} with no behavior of its own.
+
+**Internal Dependencies:**
+
+| File        | Imports | Type   |
+| ----------- | ------- | ------ |
+| `./node.js` | `Node`  | Import |
+
+**Exports:**
+
+- Classes: `Group`
+
+---
+
+### `packages/scene/src/screen-camera.ts` - §47's `ScreenCamera` — the pixel-rectangle camera (R-37, 2026-08-21).
+
+**Workspace Dependencies:**
+
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/core` | `FourError`  |
+| `@fourjs/math` | `DepthRange` |
+
+**Internal Dependencies:**
+
+| File          | Imports  | Type   |
+| ------------- | -------- | ------ |
+| `./camera.js` | `Camera` | Import |
+
+**Exports:**
+
+- Classes: `ScreenCamera`
+- Interfaces: `SurfaceSizedCamera`, `ScreenCameraOptions`
+- Types: `ScreenOrigin`, `ScreenUnits`
+- Constants: `SCREEN_ORIGINS`, `SCREEN_UNITS`, `DEFAULT_SCREEN_ORIGIN`, `DEFAULT_SCREEN_UNITS`, `DEFAULT_SCREEN_NEAR`, `DEFAULT_SCREEN_FAR`
+
+---
+
+### `packages/scene/src/light.ts` - Lights (§68) — the multi-light tier: directional, point, and spot nodes.
+
+**Workspace Dependencies:**
+
+| Package        | Import                                                       |
+| -------------- | ------------------------------------------------------------ |
+| `@fourjs/math` | `Matrix4, parseColorRGB, srgbToLinearRGB, ColorRGB, Vector3` |
+| `@fourjs/math` | `ColorRGB`                                                   |
+
+**Internal Dependencies:**
+
+| File                    | Imports                 | Type   |
+| ----------------------- | ----------------------- | ------ |
+| `./node.js`             | `Node`                  | Import |
+| `./world-transforms.js` | `resolveWorldTransform` | Import |
+
+**Exports:**
+
+- Classes: `DirectionalLightShadow`, `DirectionalLight`, `HemisphereLight`, `PointLight`, `SpotLight`
+- Interfaces: `DirectionalLightShadowOptions`, `DirectionalLightOptions`, `HemisphereLightOptions`, `PunctualLightOptions`, `SpotLightOptions`
+- Types: `LightColorInput`
+- Re-exports: `ColorRGB`
+
+---
+
+### `packages/scene/src/trackball.ts` - §44/§47's **trackball** rig (R-37, 2026-08-21) — the last of the seven camera
+
+**Workspace Dependencies:**
+
+| Package        | Import                |
+| -------------- | --------------------- |
+| `@fourjs/math` | `Quaternion, Vector3` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                   | Type               |
+| -------------------- | ------------------------------------------------------------------------- | ------------------ |
+| `./authority.js`     | `beginOwnedTransformWrite, endOwnedTransformWrite, warnAuthorityConflict` | Import             |
+| `./node.js`          | `Node`                                                                    | Import (type-only) |
+| `./screen-camera.js` | `DEFAULT_SCREEN_ORIGIN, ScreenOrigin`                                     | Import             |
+
+**Exports:**
+
+- Classes: `TrackballRig`
+- Interfaces: `TrackballRigOptions`
+- Constants: `DEFAULT_TRACKBALL_RADIUS`
+
+---
+
+### `packages/scene/src/world-transforms.ts` - World-transform resolution (§7) — the single writer of every
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Matrix4` |
+
+**Internal Dependencies:**
+
+| File             | Imports     | Type               |
+| ---------------- | ----------- | ------------------ |
+| `./node.js`      | `Node`      | Import (type-only) |
+| `./transform.js` | `Transform` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `WorldTransformStats`
+- Functions: `resolveWorldTransforms`, `resolveWorldTransform`
+
+---
+
+### `packages/scene/src/pose-target.ts` - The `PoseTarget` component (§6a, §19, §42) — the pose animation _asks_ for,
+
+**Workspace Dependencies:**
+
+| Package        | Import                     |
+| -------------- | -------------------------- |
+| `@fourjs/core` | `Component, ComponentHost` |
+| `@fourjs/math` | `Quaternion, Vector3`      |
+
+**Internal Dependencies:**
+
+| File             | Imports     | Type               |
+| ---------------- | ----------- | ------------------ |
+| `./transform.js` | `Transform` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `PoseTarget`
+
+---
+
+### `packages/scene/src/scene.ts` - `Scene` (§6, §46, §104) — the root node, plus the indexed lookups of §46.
+
+**Workspace Dependencies:**
+
+| Package        | Import                     |
+| -------------- | -------------------------- |
+| `@fourjs/core` | `Component, ComponentType` |
+
+**Internal Dependencies:**
+
+| File         | Imports          | Type               |
+| ------------ | ---------------- | ------------------ |
+| `./light.js` | `ColorRGB`       | Import (type-only) |
+| `./node.js`  | `Node, NodeType` | Import             |
+
+**Exports:**
+
+- Classes: `Scene`
+
+---
+
+### `packages/scene/src/camera.ts` - Cameras (§47).
+
+**Workspace Dependencies:**
+
+| Package        | Import                |
+| -------------- | --------------------- |
+| `@fourjs/math` | `Matrix4, DepthRange` |
+
+**Internal Dependencies:**
+
+| File                    | Imports                 | Type   |
+| ----------------------- | ----------------------- | ------ |
+| `./layers.js`           | `ALL_LAYERS, LayerMask` | Import |
+| `./node.js`             | `Node`                  | Import |
+| `./world-transforms.js` | `resolveWorldTransform` | Import |
+
+**Exports:**
+
+- Classes: `PerspectiveCamera`, `OrthographicCamera`
+- Interfaces: `PerspectiveCameraOptions`, `OrthographicCameraOptions`
+
+---
+
+### `packages/scene/src/authority.ts` - Transform authority (§42).
+
+**Workspace Dependencies:**
+
+| Package        | Import               |
+| -------------- | -------------------- |
+| `@fourjs/core` | `DEV_WARNING_PREFIX` |
+
+**Exports:**
+
+- Interfaces: `AuthorityNode`
+- Types: `TransformAuthority`
+- Functions: `isOwnedTransformWrite`, `beginOwnedTransformWrite`, `endOwnedTransformWrite`, `runOwnedTransformWrite`, `warnApplicationTransformWrite`, `warnAuthorityConflict`
+- Constants: `TRANSFORM_AUTHORITIES`, `DEFAULT_TRANSFORM_AUTHORITY`
+
+---
+
+### `packages/scene/src/interpolation.ts` - Previous/current pose storage and render interpolation (§43).
+
+**Workspace Dependencies:**
+
+| Package        | Import                |
+| -------------- | --------------------- |
+| `@fourjs/math` | `Quaternion, Vector3` |
+
+**Internal Dependencies:**
+
+| File        | Imports | Type               |
+| ----------- | ------- | ------------------ |
+| `./node.js` | `Node`  | Import (type-only) |
+
+**Exports:**
+
+- Classes: `PoseBuffer`
+- Interfaces: `SnapshotSystemOptions`, `PoseSnapshotSystem`
+- Functions: `createSnapshotSystem`
+- Constants: `POSE_SNAPSHOT_PRIORITY`
+
+---
+
+### `packages/scene/src/viewport.ts` - Viewports (§48).
+
+**Internal Dependencies:**
+
+| File          | Imports     | Type               |
+| ------------- | ----------- | ------------------ |
+| `./camera.js` | `Camera`    | Import (type-only) |
+| `./layers.js` | `LayerMask` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `Viewport`
+- Functions: `createFullscreenViewport`
+
+---
+
+### `packages/scene/src/node.ts` - The unified node model (§6), its component delegation (§6a), and its event
+
+**Workspace Dependencies:**
+
+| Package        | Import                                                                                                    |
+| -------------- | --------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core` | `ComponentRegistry, DEV_WARNING_PREFIX, EventEmitter, FourError, Component, ComponentHost, ComponentType` |
+| `@fourjs/math` | `Quaternion, Vector3`                                                                                     |
+
+**Internal Dependencies:**
+
+| File                    | Imports                                           | Type   |
+| ----------------------- | ------------------------------------------------- | ------ |
+| `./authority.js`        | `DEFAULT_TRANSFORM_AUTHORITY, TransformAuthority` | Import |
+| `./layers.js`           | `DEFAULT_LAYER_MASK, LayerMask`                   | Import |
+| `./transform.js`        | `Transform`                                       | Import |
+| `./world-transforms.js` | `resolveWorldTransform`                           | Import |
+
+**Exports:**
+
+- Interfaces: `NodeHierarchyEvent`, `NodeEventMap`, `NodeOptions`
+- Types: `NodeType`, `HitTestMode`
+- Functions: `restoreNodeId`
+
+---
+
+<a id="packages-assets-dependencies"></a>
+
+## Packages/assets Dependencies
+
+### `packages/assets/src/image-probe.ts` - Header probes for encoded raster formats (§96).
+
+**Exports:**
+
+- Interfaces: `ImageDimensions`
+- Functions: `probePng`, `probeJpeg`, `probeWebp`, `probeImage`
+
+---
+
+### `packages/assets/src/gltf.ts` - The §78 glTF 2.0 loader — the **parse tier** (A-19's last half, 2026-08-29).
+
+**Workspace Dependencies:**
+
+| Package        | Import                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| `@fourjs/core` | `FourError, cloneJsonValue, devWarnOnce, isFourError, parseUntrustedJson, Disposable, JsonValue` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                   | Type   |
+| -------------------- | --------------------------------------------------------------------------------------------------------- | ------ |
+| `./image-memory.js`  | `assertImageDecoderMemory`                                                                                | Import |
+| `./asset-manager.js` | `DEFAULT_MAXIMUM_BYTES, resolveGlobalFetch, AssetLoadContext, AssetLoader, FetchLike, FetchResponse`      | Import |
+| `./content-hash.js`  | `resolveGlobalTextDecoder, TextDecodeLike`                                                                | Import |
+| `./texture.js`       | `createTextureDecoder, TexelDecodeLike, TexelProbeLike, TextureAsset, TextureFilterMode, TextureWrapMode` | Import |
+
+**Exports:**
+
+- Classes: `GltfAsset`
+- Interfaces: `GltfPrimitiveRecord`, `GltfMeshRecord`, `GltfMaterialRecord`, `GltfNodeRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `GltfChannelRecord`, `GltfAnimationRecord`, `GltfLoaderOptions`
+- Types: `GltfPrimitiveMode`, `GltfChannelPath`
+- Functions: `createGltfLoader`
+
+---
+
+### `packages/assets/src/image-memory.ts` - Only decoder implementations that establish the runtime's memory ceiling
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Exports:**
+
+- Functions: `registerBoundedImageDecoder`, `assertImageDecoderMemory`
+
+---
+
+### `packages/assets/src/capabilities.ts` - This package's §81 capability token (RFC 0002).
+
+**Workspace Dependencies:**
+
+| Package        | Import             |
+| -------------- | ------------------ |
+| `@fourjs/core` | `defineCapability` |
+
+**Internal Dependencies:**
+
+| File                   | Imports               | Type               |
+| ---------------------- | --------------------- | ------------------ |
+| `./loader-registry.js` | `AssetLoaderRegistry` | Import (type-only) |
+
+**Exports:**
+
+- Constants: `ASSET_LOADERS`
+
+---
+
+### `packages/assets/src/index.ts` - `@fourjs/assets` — the asset system (§76–78).
+
+**Internal Dependencies:**
+
+| File                   | Imports                                                                                                                                                                                                                                                                                                               | Type                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./capabilities.js`    | `ASSET_LOADERS`                                                                                                                                                                                                                                                                                                       | Re-export             |
+| `./loader-registry.js` | `AssetLoaderRegistry`                                                                                                                                                                                                                                                                                                 | Re-export             |
+| `./asset-manager.js`   | `AssetManager, DEFAULT_MAXIMUM_BYTES, DEFAULT_TIMEOUT_SECONDS`                                                                                                                                                                                                                                                        | Re-export             |
+| `./content-hash.js`    | `CONTENT_HASH_ALGORITHM`                                                                                                                                                                                                                                                                                              | Re-export             |
+| `./manifest.js`        | `loadFromManifest, manifestLoader, manifestUrl, parseAssetManifest`                                                                                                                                                                                                                                                   | Re-export             |
+| `./texture.js`         | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO, TextureAsset, createTextureDecoder, createTextureLoader`                                                                                                                                                                                             | Re-export             |
+| `./gltf.js`            | `GltfAsset, createGltfLoader`                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./loaders.js`         | `ImageAsset, binaryLoader, createImageLoader, jsonLoader, textLoader`                                                                                                                                                                                                                                                 | Re-export             |
+| `./gzip.js`            | `createGzipLoader`                                                                                                                                                                                                                                                                                                    | Re-export             |
+| `./bounded-png.js`     | `createBoundedPngDecoder, DEFAULT_IMAGE_WORKING_BYTES`                                                                                                                                                                                                                                                                | Re-export             |
+| `./bounded-jpeg.js`    | `createBoundedJpegDecoder`                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./image-probe.js`     | `probeImage, probeJpeg, probePng, probeWebp`                                                                                                                                                                                                                                                                          | Re-export             |
+| `./loader-registry.js` | `RegisteredAssetLoader`                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
+| `./asset-manager.js`   | `AbortHandle, AbortSignalLike, AssetGraph, AssetGraphLoadOptions, AssetLoadOptions, AssetLoadContext, AssetLoader, AssetManagerOptions, AssetProgressEvent, AssetWatchLike, AssetWithDependencies, ByteReaderLike, FetchInit, FetchLike, FetchResponse, ReadableBodyLike, ResponseHeadersLike, TimerLike, WorkerLike` | Re-export (type-only) |
+| `./content-hash.js`    | `DigestLike, TextDecodeLike`                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
+| `./manifest.js`        | `AssetManifest, AssetManifestEntry, ManifestLoadOptions, ManifestParseOptions`                                                                                                                                                                                                                                        | Re-export (type-only) |
+| `./texture.js`         | `DecodedTexels, TexelDecodeLike, TexelProbeLike, TextureColorSpace, TextureFilterMode, TextureLoaderOptions, TextureWrapMode`                                                                                                                                                                                         | Re-export (type-only) |
+| `./gltf.js`            | `GltfAnimationRecord, GltfChannelPath, GltfChannelRecord, GltfLoaderOptions, GltfMaterialRecord, GltfMeshRecord, GltfNodeRecord, GltfPrimitiveMode, GltfPrimitiveRecord, GltfSceneRecord, GltfSkinRecord`                                                                                                             | Re-export (type-only) |
+| `./loaders.js`         | `ImageBitmapLike, ImageDecodeLike, ImageLoaderOptions`                                                                                                                                                                                                                                                                | Re-export (type-only) |
+| `./gzip.js`            | `GzipDecodeLike, GzipLoaderOptions, GzipReader`                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./bounded-png.js`     | `BoundedPngDecoderOptions`                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
+| `./bounded-jpeg.js`    | `BoundedJpegDecoderOptions`                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./image-probe.js`     | `ImageDimensions`                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `ASSET_LOADERS`, `AssetLoaderRegistry`, `AssetManager`, `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`, `CONTENT_HASH_ALGORITHM`, `loadFromManifest`, `manifestLoader`, `manifestUrl`, `parseAssetManifest`, `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`, `TextureAsset`, `createTextureDecoder`, `createTextureLoader`, `GltfAsset`, `createGltfLoader`, `ImageAsset`, `binaryLoader`, `createImageLoader`, `jsonLoader`, `textLoader`, `createGzipLoader`, `createBoundedPngDecoder`, `DEFAULT_IMAGE_WORKING_BYTES`, `createBoundedJpegDecoder`, `probeImage`, `probeJpeg`, `probePng`, `probeWebp`, `RegisteredAssetLoader`, `AbortHandle`, `AbortSignalLike`, `AssetGraph`, `AssetGraphLoadOptions`, `AssetLoadOptions`, `AssetLoadContext`, `AssetLoader`, `AssetManagerOptions`, `AssetProgressEvent`, `AssetWatchLike`, `AssetWithDependencies`, `ByteReaderLike`, `FetchInit`, `FetchLike`, `FetchResponse`, `ReadableBodyLike`, `ResponseHeadersLike`, `TimerLike`, `WorkerLike`, `DigestLike`, `TextDecodeLike`, `AssetManifest`, `AssetManifestEntry`, `ManifestLoadOptions`, `ManifestParseOptions`, `DecodedTexels`, `TexelDecodeLike`, `TexelProbeLike`, `TextureColorSpace`, `TextureFilterMode`, `TextureLoaderOptions`, `TextureWrapMode`, `GltfAnimationRecord`, `GltfChannelPath`, `GltfChannelRecord`, `GltfLoaderOptions`, `GltfMaterialRecord`, `GltfMeshRecord`, `GltfNodeRecord`, `GltfPrimitiveMode`, `GltfPrimitiveRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `ImageBitmapLike`, `ImageDecodeLike`, `ImageLoaderOptions`, `GzipDecodeLike`, `GzipLoaderOptions`, `GzipReader`, `BoundedPngDecoderOptions`, `BoundedJpegDecoderOptions`, `ImageDimensions`
+
+---
+
+### `packages/assets/src/texture.ts` - The texture loader tier (§77's asset half, A-19 — 2026-08-21).
+
+**Workspace Dependencies:**
+
+| Package        | Import                  |
+| -------------- | ----------------------- |
+| `@fourjs/core` | `FourError, Disposable` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                      | Type               |
+| -------------------- | ---------------------------- | ------------------ |
+| `./asset-manager.js` | `AssetLoader, FetchResponse` | Import (type-only) |
+| `./image-memory.js`  | `assertImageDecoderMemory`   | Import             |
+
+**Exports:**
+
+- Classes: `TextureAsset`
+- Interfaces: `DecodedTexels`, `TextureLoaderOptions`
+- Types: `TextureColorSpace`, `TextureFilterMode`, `TextureWrapMode`, `TexelDecodeLike`, `TexelProbeLike`
+- Functions: `createTextureDecoder`, `createTextureLoader`
+- Constants: `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`
+
+---
+
+### `packages/assets/src/asset-manager.ts` - The asset manager (§76) — one cache, one refcount, one fetch per asset.
+
+**Workspace Dependencies:**
+
+| Package        | Import                                                             |
+| -------------- | ------------------------------------------------------------------ |
+| `@fourjs/core` | `DEV, FourError, devWarnOnce, disposeAll, isFourError, Disposable` |
+
+**Internal Dependencies:**
+
+| File                | Imports                                                                     | Type   |
+| ------------------- | --------------------------------------------------------------------------- | ------ |
+| `./content-hash.js` | `resolveGlobalDigest, resolveGlobalTextDecoder, DigestLike, TextDecodeLike` | Import |
+
+**Exports:**
+
+- Classes: `AssetManager`
+- Interfaces: `FetchResponse`, `ReadableBodyLike`, `ByteReaderLike`, `AssetProgressEvent`, `WorkerLike`, `AssetWithDependencies`, `AssetGraph`, `AssetGraphLoadOptions`, `ResponseHeadersLike`, `TimerLike`, `AssetLoadContext`, `FetchInit`, `AbortHandle`, `AbortSignalLike`, `AssetLoadOptions`, `AssetLoader`, `AssetManagerOptions`
+- Types: `AssetWatchLike`, `FetchLike`
+- Functions: `resolveGlobalFetch`
+- Constants: `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`
+
+---
+
+### `packages/assets/src/loader-registry.ts` - The §81 asset-format registry — a named map of {@link AssetLoader}s a
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                 | Imports       | Type               |
+| -------------------- | ------------- | ------------------ |
+| `./asset-manager.js` | `AssetLoader` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `AssetLoaderRegistry`
+- Types: `RegisteredAssetLoader`
+
+---
+
+### `packages/assets/src/manifest.ts` - The §79 asset manifest — logical key → URL + content hash.
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                         | Type               |
+| -------------------- | ------------------------------- | ------------------ |
+| `./asset-manager.js` | `AssetLoader, AssetLoadOptions` | Import (type-only) |
+| `./asset-manager.js` | `AssetManager`                  | Import             |
+
+**Exports:**
+
+- Interfaces: `AssetManifestEntry`, `ManifestLoadOptions`, `ManifestParseOptions`
+- Types: `AssetManifest`
+- Functions: `parseAssetManifest`, `loadFromManifest`, `manifestUrl`
+- Constants: `manifestLoader`
+
+---
+
+### `packages/assets/src/content-hash.ts` - Content hashing (§76's last-but-one capability, §79's manifest half).
+
+**Exports:**
+
+- Types: `DigestLike`, `TextDecodeLike`
+- Functions: `resolveGlobalDigest`, `resolveGlobalTextDecoder`
+- Constants: `CONTENT_HASH_ALGORITHM`
+
+---
+
+### `packages/assets/src/bounded-png.ts` - Application-pinned `squoosh_png_bg.wasm` from `@jsquash/png@3.1.1`.
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                | Imports                                                                                          | Type   |
+| ------------------- | ------------------------------------------------------------------------------------------------ | ------ |
+| `./image-memory.js` | `registerBoundedImageDecoder`                                                                    | Import |
+| `./texture.js`      | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO, DecodedTexels, TexelDecodeLike` | Import |
+| `./wasm-memory.js`  | `limitWasmMemory`                                                                                | Import |
+
+**Exports:**
+
+- Interfaces: `BoundedPngDecoderOptions`
+- Functions: `createBoundedPngDecoder`
+- Constants: `DEFAULT_IMAGE_WORKING_BYTES`
+
+---
+
+### `packages/assets/src/gzip.ts` - Host gzip decoder. Must validate the complete stream and checksum, rejecting
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                          | Type               |
+| -------------------- | ---------------------------------------------------------------- | ------------------ |
+| `./asset-manager.js` | `AssetLoader, ByteReaderLike`                                    | Import (type-only) |
+| `./texture.js`       | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO` | Import             |
+
+**Exports:**
+
+- Interfaces: `GzipReader`, `GzipLoaderOptions`
+- Types: `GzipDecodeLike`
+- Functions: `createGzipLoader`
+
+---
+
+### `packages/assets/src/wasm-memory.ts` - Copies a single-memory Wasm32 codec and caps its declared linear memory.
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Exports:**
+
+- Functions: `limitWasmMemory`
+
+---
+
+### `packages/assets/src/bounded-jpeg.ts` - Application-pinned `squoosh_jpg_bg.wasm` from `@jsquash/jpeg@1.6.0`.
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                | Imports                                                                                          | Type   |
+| ------------------- | ------------------------------------------------------------------------------------------------ | ------ |
+| `./image-memory.js` | `registerBoundedImageDecoder`                                                                    | Import |
+| `./image-probe.js`  | `probeJpeg`                                                                                      | Import |
+| `./texture.js`      | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO, DecodedTexels, TexelDecodeLike` | Import |
+| `./wasm-memory.js`  | `limitWasmMemory`                                                                                | Import |
+| `./bounded-png.js`  | `DEFAULT_IMAGE_WORKING_BYTES`                                                                    | Import |
+
+**Exports:**
+
+- Interfaces: `BoundedJpegDecoderOptions`
+- Functions: `createBoundedJpegDecoder`
+
+---
+
+### `packages/assets/src/loaders.ts` - The built-in loaders (§76) — text, JSON, binary, image.
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                | Type               |
+| -------------------- | -------------------------------------------------------------------------------------- | ------------------ |
+| `./asset-manager.js` | `AssetLoader, FetchResponse`                                                           | Import (type-only) |
+| `./image-memory.js`  | `assertImageDecoderMemory`                                                             | Import             |
+| `./texture.js`       | `DEFAULT_MAXIMUM_DECODED_BYTES, DEFAULT_MAXIMUM_EXPANSION_RATIO, TextureLoaderOptions` | Import             |
+
+**Exports:**
+
+- Classes: `ImageAsset`
+- Interfaces: `ImageBitmapLike`, `ImageLoaderOptions`
+- Types: `ImageDecodeLike`
+- Functions: `createImageLoader`
+- Constants: `textLoader`, `jsonLoader`, `binaryLoader`
+
+---
+
+<a id="packages-physics-soft-dependencies"></a>
+
+## Packages/physics soft Dependencies
+
+### `packages/physics-soft/src/index.ts` - Entry point exporting 1 symbols
 
 **Exports:**
 
@@ -4218,57 +2093,6 @@ graph LR
 **Exports:**
 
 - Functions: `resolveCcdMode`
-
----
-
-### `packages/physics-rapier/src/conversions2d.ts` - The §21/P5-3 mapping between the engine's 3D-typed physics API and Rapier's
-
-**Workspace Dependencies:**
-
-| Package           | Import                                                                        |
-| ----------------- | ----------------------------------------------------------------------------- |
-| `@fourjs/core`    | `FourError`                                                                   |
-| `@fourjs/math`    | `Quaternion, Vector3`                                                         |
-| `@fourjs/physics` | `ALL_COLLISION_GROUPS, resolveAngularVelocity, resolveRotation`               |
-| `@fourjs/physics` | `AngularVelocityInput, BodyType, CollisionShape, RotationInput, Vector3Input` |
-
-**Internal Dependencies:**
-
-| File        | Imports                                         | Type               |
-| ----------- | ----------------------------------------------- | ------------------ |
-| `./init.js` | `RAPIER_2D`                                     | Import             |
-| `./init.js` | `RapierColliderDesc, RapierShape, RapierVector` | Import (type-only) |
-
-**Exports:**
-
-- Types: `RapierVector2`
-- Functions: `createRapierVector2`, `toRapierVector2`, `fromRapierVector2`, `toRapierAngle`, `quaternionToAngleZ`, `fromRapierAngle`, `toRapierAngularScalar`, `toRapierBodyType`, `revoluteAxisSignZ`, `toRapierJointAxis2d`, `packInteractionGroups`, `createRapierShape`, `createRapierColliderDesc`, `requireHullDesc`
-
----
-
-### `packages/physics-rapier/src/conversions3d.ts` - The §21/P5-3 mapping between the engine's 3D-typed physics API and Rapier's
-
-**Workspace Dependencies:**
-
-| Package           | Import                                                                        |
-| ----------------- | ----------------------------------------------------------------------------- |
-| `@fourjs/core`    | `FourError`                                                                   |
-| `@fourjs/math`    | `Matrix3, Quaternion, Vector3`                                                |
-| `@fourjs/physics` | `ALL_COLLISION_GROUPS, resolveAngularVelocity, resolveRotation`               |
-| `@fourjs/physics` | `AngularVelocityInput, BodyType, CollisionShape, RotationInput, Vector3Input` |
-
-**Internal Dependencies:**
-
-| File        | Imports                                                               | Type                  |
-| ----------- | --------------------------------------------------------------------- | --------------------- |
-| `./init.js` | `RAPIER_3D`                                                           | Import                |
-| `./init.js` | `RapierColliderDesc3d, RapierRotation3, RapierShape3d, RapierVector3` | Import (type-only)    |
-| `./init.js` | `RapierRotation3, RapierVector3`                                      | Re-export (type-only) |
-
-**Exports:**
-
-- Functions: `createRapierVector3`, `createRapierRotation3`, `toRapierVector3`, `fromRapierVector3`, `toRapierRotation3`, `fromRapierRotation3`, `toRapierAngularVector3`, `toRapierBodyType3d`, `toPrincipalInertia3d`, `packInteractionGroups3d`, `createRapierShape3d`, `createRapierColliderDesc3d`, `requireHullDesc3d`, `rotateVectorByRotation3`
-- Re-exports: `RapierRotation3`, `RapierVector3`
 
 ---
 
@@ -4297,46 +2121,28 @@ graph LR
 
 ---
 
-### `packages/physics-rapier/src/init.ts` - Shared loading of the Rapier WebAssembly modules, and the typed view of them
+### `packages/physics-rapier/src/conversions2d.ts` - The §21/P5-3 mapping between the engine's 3D-typed physics API and Rapier's
 
-**External Dependencies:**
+**Workspace Dependencies:**
 
-| Package                     | Import     |
-| --------------------------- | ---------- |
-| `@dimforge/rapier2d-compat` | `RAPIER2D` |
-| `@dimforge/rapier3d-compat` | `RAPIER3D` |
+| Package           | Import                                                                        |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `@fourjs/core`    | `FourError`                                                                   |
+| `@fourjs/math`    | `Quaternion, Vector3`                                                         |
+| `@fourjs/physics` | `ALL_COLLISION_GROUPS, resolveAngularVelocity, resolveRotation`               |
+| `@fourjs/physics` | `AngularVelocityInput, BodyType, CollisionShape, RotationInput, Vector3Input` |
 
 **Internal Dependencies:**
 
-| File                        | Imports            | Type                  |
-| --------------------------- | ------------------ | --------------------- |
-| `@dimforge/rapier2d-compat` | `Vector`           | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `Shape`            | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `RigidBody`        | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `RigidBodyDesc`    | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `Collider`         | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `ColliderDesc`     | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `JointData`        | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `ImpulseJoint`     | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `UnitImpulseJoint` | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `EventQueue`       | Re-export (type-only) |
-| `@dimforge/rapier2d-compat` | `World`            | Re-export (type-only) |
-| `@dimforge/rapier3d-compat` | `Vector`           | Re-export (type-only) |
-| `@dimforge/rapier3d-compat` | `Rotation`         | Re-export (type-only) |
-| `@dimforge/rapier3d-compat` | `Shape`            | Re-export (type-only) |
-| `@dimforge/rapier3d-compat` | `RigidBody`        | Re-export (type-only) |
-| `@dimforge/rapier3d-compat` | `RigidBodyDesc`    | Re-export (type-only) |
-| `@dimforge/rapier3d-compat` | `Collider`         | Re-export (type-only) |
-| `@dimforge/rapier3d-compat` | `ColliderDesc`     | Re-export (type-only) |
-| `@dimforge/rapier3d-compat` | `EventQueue`       | Re-export (type-only) |
-| `@dimforge/rapier3d-compat` | `World`            | Re-export (type-only) |
+| File        | Imports                                         | Type               |
+| ----------- | ----------------------------------------------- | ------------------ |
+| `./init.js` | `RAPIER_2D`                                     | Import             |
+| `./init.js` | `RapierColliderDesc, RapierShape, RapierVector` | Import (type-only) |
 
 **Exports:**
 
-- Types: `Rapier2dModule`, `Rapier3dModule`
-- Functions: `initializeRapier2d`, `rapier2dModule`, `rapier2dVersion`, `initializeRapier3d`, `rapier3dModule`, `rapier3dVersion`
-- Constants: `RAPIER_2D`, `RAPIER_3D`
-- Re-exports: `Vector`, `Shape`, `RigidBody`, `RigidBodyDesc`, `Collider`, `ColliderDesc`, `JointData`, `ImpulseJoint`, `UnitImpulseJoint`, `EventQueue`, `World`, `Rotation`
+- Types: `RapierVector2`
+- Functions: `createRapierVector2`, `toRapierVector2`, `fromRapierVector2`, `toRapierAngle`, `quaternionToAngleZ`, `fromRapierAngle`, `toRapierAngularScalar`, `toRapierBodyType`, `revoluteAxisSignZ`, `toRapierJointAxis2d`, `packInteractionGroups`, `createRapierShape`, `createRapierColliderDesc`, `requireHullDesc`
 
 ---
 
@@ -4418,15 +2224,1581 @@ graph LR
 
 ---
 
-<a id="packages-physics-soft-dependencies"></a>
+### `packages/physics-rapier/src/conversions3d.ts` - The §21/P5-3 mapping between the engine's 3D-typed physics API and Rapier's
 
-## Packages/physics soft Dependencies
+**Workspace Dependencies:**
 
-### `packages/physics-soft/src/index.ts` - Entry point exporting 1 symbols
+| Package           | Import                                                                        |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `@fourjs/core`    | `FourError`                                                                   |
+| `@fourjs/math`    | `Matrix3, Quaternion, Vector3`                                                |
+| `@fourjs/physics` | `ALL_COLLISION_GROUPS, resolveAngularVelocity, resolveRotation`               |
+| `@fourjs/physics` | `AngularVelocityInput, BodyType, CollisionShape, RotationInput, Vector3Input` |
+
+**Internal Dependencies:**
+
+| File        | Imports                                                               | Type                  |
+| ----------- | --------------------------------------------------------------------- | --------------------- |
+| `./init.js` | `RAPIER_3D`                                                           | Import                |
+| `./init.js` | `RapierColliderDesc3d, RapierRotation3, RapierShape3d, RapierVector3` | Import (type-only)    |
+| `./init.js` | `RapierRotation3, RapierVector3`                                      | Re-export (type-only) |
+
+**Exports:**
+
+- Functions: `createRapierVector3`, `createRapierRotation3`, `toRapierVector3`, `fromRapierVector3`, `toRapierRotation3`, `fromRapierRotation3`, `toRapierAngularVector3`, `toRapierBodyType3d`, `toPrincipalInertia3d`, `packInteractionGroups3d`, `createRapierShape3d`, `createRapierColliderDesc3d`, `requireHullDesc3d`, `rotateVectorByRotation3`
+- Re-exports: `RapierRotation3`, `RapierVector3`
+
+---
+
+### `packages/physics-rapier/src/init.ts` - Shared loading of the Rapier WebAssembly modules, and the typed view of them
+
+**External Dependencies:**
+
+| Package                     | Import     |
+| --------------------------- | ---------- |
+| `@dimforge/rapier2d-compat` | `RAPIER2D` |
+| `@dimforge/rapier3d-compat` | `RAPIER3D` |
+
+**Internal Dependencies:**
+
+| File                        | Imports            | Type                  |
+| --------------------------- | ------------------ | --------------------- |
+| `@dimforge/rapier2d-compat` | `Vector`           | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `Shape`            | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `RigidBody`        | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `RigidBodyDesc`    | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `Collider`         | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `ColliderDesc`     | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `JointData`        | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `ImpulseJoint`     | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `UnitImpulseJoint` | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `EventQueue`       | Re-export (type-only) |
+| `@dimforge/rapier2d-compat` | `World`            | Re-export (type-only) |
+| `@dimforge/rapier3d-compat` | `Vector`           | Re-export (type-only) |
+| `@dimforge/rapier3d-compat` | `Rotation`         | Re-export (type-only) |
+| `@dimforge/rapier3d-compat` | `Shape`            | Re-export (type-only) |
+| `@dimforge/rapier3d-compat` | `RigidBody`        | Re-export (type-only) |
+| `@dimforge/rapier3d-compat` | `RigidBodyDesc`    | Re-export (type-only) |
+| `@dimforge/rapier3d-compat` | `Collider`         | Re-export (type-only) |
+| `@dimforge/rapier3d-compat` | `ColliderDesc`     | Re-export (type-only) |
+| `@dimforge/rapier3d-compat` | `EventQueue`       | Re-export (type-only) |
+| `@dimforge/rapier3d-compat` | `World`            | Re-export (type-only) |
+
+**Exports:**
+
+- Types: `Rapier2dModule`, `Rapier3dModule`
+- Functions: `initializeRapier2d`, `rapier2dModule`, `rapier2dVersion`, `initializeRapier3d`, `rapier3dModule`, `rapier3dVersion`
+- Constants: `RAPIER_2D`, `RAPIER_3D`
+- Re-exports: `Vector`, `Shape`, `RigidBody`, `RigidBodyDesc`, `Collider`, `ColliderDesc`, `JointData`, `ImpulseJoint`, `UnitImpulseJoint`, `EventQueue`, `World`, `Rotation`
+
+---
+
+<a id="packages-render-webgl-dependencies"></a>
+
+## Packages/render webgl Dependencies
+
+### `packages/render-webgl/src/gl-render-target.ts` - GPU-side render targets for the WebGL 2 backend: one framebuffer object per
+
+**Workspace Dependencies:**
+
+| Package          | Import              |
+| ---------------- | ------------------- |
+| `@fourjs/render` | `RenderTarget`      |
+| `@fourjs/render` | `warnDisposedInUse` |
+
+**Internal Dependencies:**
+
+| File              | Imports                                                      | Type   |
+| ----------------- | ------------------------------------------------------------ | ------ |
+| `./gl-program.js` | `GL, GlFramebuffer, GlRenderbuffer, GlTexture, WebglContext` | Import |
+
+**Exports:**
+
+- Classes: `RenderTargetCache`
+- Interfaces: `RenderTargetRecord`
+- Types: `CacheableRenderTarget`
+
+---
+
+### `packages/render-webgl/src/gl-picking.ts` - The WebGL 2 picking service (§71, §62; RFC 0005, 2026-08-28) — the id-buffer
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@fourjs/core`   | `DEV, FourError, devWarnOnce`                                                                                                                                                                                                  |
+| `@fourjs/math`   | `Frustum, Matrix4`                                                                                                                                                                                                             |
+| `@fourjs/render` | `RenderTarget, assertEncodableCandidateCount, buildRenderList, buildViewRenderList, collectPickCandidates, decodePickId, encodePickId, PickRequest, PickResult, PickingService, RenderItem, RenderItemClip, RenderItemStencil` |
+
+**Internal Dependencies:**
+
+| File                       | Imports                                                                                                    | Type               |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./gl-geometry.js`         | `GeometryCache`                                                                                            | Import (type-only) |
+| `./gl-particles.js`        | `PARTICLE_VERTEX_SHADER_SOURCE, ParticleBatchCache, ParticleGlContext`                                     | Import             |
+| `./gl-picking-registry.js` | `setPickingServiceFactory, PickingRendererHost`                                                            | Import             |
+| `./gl-program.js`          | `GL, createLinkedProgram, matrixScratch, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext` | Import             |
+| `./gl-render-target.js`    | `RenderTargetRecord`                                                                                       | Import (type-only) |
+| `./gl-skinning-glsl.js`    | `SKINNING_GLSL`                                                                                            | Import             |
+
+**Exports:**
+
+- Classes: `IdPassProgram`, `ParticleIdProgram`, `SkinnedIdProgram`, `WebglPickingService`
+- Functions: `registerPickingPipeline`
+- Constants: `PICKING_GL`
+
+---
+
+### `packages/render-webgl/src/gl-effect.ts` - The full-screen effect pipeline for the WebGL 2 backend — §70's blit, colour
+
+**Workspace Dependencies:**
+
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/core` | `Disposable` |
+
+**Internal Dependencies:**
+
+| File                      | Imports                                                                                 | Type   |
+| ------------------------- | --------------------------------------------------------------------------------------- | ------ |
+| `./gl-program.js`         | `createLinkedProgram, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext` | Import |
+| `./gl-effect-registry.js` | `EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT, setEffectPipelineFactory`                    | Import |
+
+**Exports:**
+
+- Classes: `EffectProgram`
+- Functions: `registerEffectPipeline`
+
+---
+
+### `packages/render-webgl/src/gl-shadow-registry.ts` - The shadow pipeline's registration slot (§69, §62; 2026-09-11) — the
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Matrix4` |
+
+**Internal Dependencies:**
+
+| File              | Imports        | Type               |
+| ----------------- | -------------- | ------------------ |
+| `./gl-program.js` | `WebglContext` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `ShadowCasterPipeline`, `ShadowPipelineFactory`
+- Functions: `setShadowPipelineFactory`, `resolveShadowPipelineFactory`, `clearRegisteredShadowPipeline`
+
+---
+
+### `packages/render-webgl/src/index.ts` - `@fourjs/render-webgl` — the WebGL 2 backend (§62 backend 2, §120's MVP tier).
+
+**Internal Dependencies:**
+
+| File                          | Imports                                                                                                                                                                                                                                                                                                                                                                                                                               | Type                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./gl-batch.js`               | `GlBatching, createGlBatching`                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./gl-effect-registry.js`     | `EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT, clearRegisteredEffectPipeline, resolveEffectPipelineFactory`                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./gl-effect.js`              | `EffectProgram, registerEffectPipeline`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./gl-geometry.js`            | `GeometryCache`                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
+| `./gl-particles-registry.js`  | `clearRegisteredParticlePipeline, particleItemFloats, resolveParticlePipelineFactory`                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
+| `./gl-particles.js`           | `PARTICLE_ATTRIBUTE_LOCATIONS, PARTICLE_DEPTH_TEXTURE_UNIT, PARTICLE_GL, PARTICLE_VERTEX_SHADER_SOURCE, ParticleAppearanceProgram, ParticleBatchCache, ParticleProgram, ParticleTrailBatchCache, ParticleTrailProgram, registerParticlePipeline`                                                                                                                                                                                      | Re-export             |
+| `./gl-program.js`             | `COLOR_ATTRIBUTE_LOCATION, GL, LitProgram, MAP_TEXTURE_UNIT, METAL_ROUGHNESS_TEXTURE_UNIT, EMISSIVE_TEXTURE_UNIT, NORMAL_ATTRIBUTE_LOCATION, POSITION_ATTRIBUTE_LOCATION, POSITION1_ATTRIBUTE_LOCATION, NORMAL1_ATTRIBUTE_LOCATION, HEMISPHERE_LIGHT_GLSL, HemisphereLightUniforms, PUNCTUAL_LIGHT_GLSL, PunctualLightUniforms, SHADOW_GLSL, SHADOW_TEXTURE_UNIT, ShadowUniforms, SpriteProgram, UV_ATTRIBUTE_LOCATION, UnlitProgram` | Re-export             |
+| `./gl-picking-registry.js`    | `clearRegisteredPickingPipeline, resolvePickingServiceFactory`                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./gl-picking.js`             | `IdPassProgram, PICKING_GL, ParticleIdProgram, SkinnedIdProgram, WebglPickingService, registerPickingPipeline`                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./gl-render-target.js`       | `RenderTargetCache`                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
+| `./gl-program.js`             | `JOINTS_ATTRIBUTE_LOCATION, WEIGHTS_ATTRIBUTE_LOCATION`                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./gl-skinning-registry.js`   | `clearRegisteredSkinningPipeline, resolveSkinningPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
+| `./gl-skinning.js`            | `SKINNING_GLSL, SkinnedLitProgram, SkinnedShadowProgram, SkinnedUnlitProgram, registerSkinningPipeline`                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./node-pipeline-registry.js` | `NODE_SURFACE_TEXTURE_UNIT_BASE, clearRegisteredNodeMaterialPipeline, resolveNodeMaterialPipelineFactory`                                                                                                                                                                                                                                                                                                                             | Re-export             |
+| `./gl-node-program.js`        | `GlNodeProgram, GlNodeProgramCache, emitShaderGraphGlsl, registerNodeMaterialPipeline`                                                                                                                                                                                                                                                                                                                                                | Re-export             |
+| `./gl-shadow-registry.js`     | `clearRegisteredShadowPipeline, resolveShadowPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./gl-shadow.js`              | `ShadowProgram, registerShadowPipeline`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./gl-standard-registry.js`   | `clearRegisteredStandardPipeline, resolveStandardPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
+| `./gl-standard.js`            | `StandardProgram, registerStandardPipeline`                                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
+| `./gl-texture.js`             | `TextureCache`                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./register.js`               | `isWebgl2Supported, registerWebglRenderer`                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./webgl-renderer.js`         | `WebglRenderer`                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
+| `./gl-batch.js`               | `BatchGlContext, RenderBatching`                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
+| `./gl-effect-registry.js`     | `EffectPipeline, EffectPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
+| `./gl-geometry.js`            | `CacheableGeometry, GeometryRecord`                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
+| `./gl-particles-registry.js`  | `ParticleAppearancePipeline, ParticleBillboardPipeline, ParticlePipelineFactory, ParticlePrograms`                                                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
+| `./gl-particles.js`           | `ParticleBatchRecord, ParticleGlContext, ParticleTrailBatchRecord`                                                                                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
+| `./gl-program.js`             | `GlBuffer, GlProgramHandle, GlShader, GlQuery, GlSync, GlTexture, GlUniformLocation, GlVertexArray, WebglContext`                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./gl-program.js`             | `GlFramebuffer, GlRenderbuffer`                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./gl-picking-registry.js`    | `PickingRendererHost, PickingServiceFactory`                                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
+| `./gl-render-target.js`       | `CacheableRenderTarget, RenderTargetRecord`                                                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./gl-skinning-registry.js`   | `SkinnedLitPipeline, SkinnedPrograms, SkinnedShadowPipeline, SkinnedUnlitPipeline, SkinningPipelineFactory`                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./node-pipeline-registry.js` | `NodeItemMaterial, NodeMaterialPipelineFactory, NodeMaterialProgram, NodeMaterialPrograms`                                                                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
+| `./gl-node-program.js`        | `EmittedNodeShader`                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
+| `./gl-shadow-registry.js`     | `ShadowCasterPipeline, ShadowPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                         | Re-export (type-only) |
+| `./gl-standard-registry.js`   | `StandardPipeline, StandardPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./gl-texture.js`             | `CacheableTexture, TextureRecord`                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./webgl-renderer.js`         | `WebglCanvas, WebglContextAttributes, WebglContextEventLike`                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
+- Re-exports: `GlBatching`, `createGlBatching`, `EFFECT_TEXTURE_UNIT`, `EFFECT_VERTEX_COUNT`, `clearRegisteredEffectPipeline`, `resolveEffectPipelineFactory`, `EffectProgram`, `registerEffectPipeline`, `GeometryCache`, `clearRegisteredParticlePipeline`, `particleItemFloats`, `resolveParticlePipelineFactory`, `PARTICLE_ATTRIBUTE_LOCATIONS`, `PARTICLE_DEPTH_TEXTURE_UNIT`, `PARTICLE_GL`, `PARTICLE_VERTEX_SHADER_SOURCE`, `ParticleAppearanceProgram`, `ParticleBatchCache`, `ParticleProgram`, `ParticleTrailBatchCache`, `ParticleTrailProgram`, `registerParticlePipeline`, `COLOR_ATTRIBUTE_LOCATION`, `GL`, `LitProgram`, `MAP_TEXTURE_UNIT`, `METAL_ROUGHNESS_TEXTURE_UNIT`, `EMISSIVE_TEXTURE_UNIT`, `NORMAL_ATTRIBUTE_LOCATION`, `POSITION_ATTRIBUTE_LOCATION`, `POSITION1_ATTRIBUTE_LOCATION`, `NORMAL1_ATTRIBUTE_LOCATION`, `HEMISPHERE_LIGHT_GLSL`, `HemisphereLightUniforms`, `PUNCTUAL_LIGHT_GLSL`, `PunctualLightUniforms`, `SHADOW_GLSL`, `SHADOW_TEXTURE_UNIT`, `ShadowUniforms`, `SpriteProgram`, `UV_ATTRIBUTE_LOCATION`, `UnlitProgram`, `clearRegisteredPickingPipeline`, `resolvePickingServiceFactory`, `IdPassProgram`, `PICKING_GL`, `ParticleIdProgram`, `SkinnedIdProgram`, `WebglPickingService`, `registerPickingPipeline`, `RenderTargetCache`, `JOINTS_ATTRIBUTE_LOCATION`, `WEIGHTS_ATTRIBUTE_LOCATION`, `clearRegisteredSkinningPipeline`, `resolveSkinningPipelineFactory`, `SKINNING_GLSL`, `SkinnedLitProgram`, `SkinnedShadowProgram`, `SkinnedUnlitProgram`, `registerSkinningPipeline`, `NODE_SURFACE_TEXTURE_UNIT_BASE`, `clearRegisteredNodeMaterialPipeline`, `resolveNodeMaterialPipelineFactory`, `GlNodeProgram`, `GlNodeProgramCache`, `emitShaderGraphGlsl`, `registerNodeMaterialPipeline`, `clearRegisteredShadowPipeline`, `resolveShadowPipelineFactory`, `ShadowProgram`, `registerShadowPipeline`, `clearRegisteredStandardPipeline`, `resolveStandardPipelineFactory`, `StandardProgram`, `registerStandardPipeline`, `TextureCache`, `isWebgl2Supported`, `registerWebglRenderer`, `WebglRenderer`, `BatchGlContext`, `RenderBatching`, `EffectPipeline`, `EffectPipelineFactory`, `CacheableGeometry`, `GeometryRecord`, `ParticleAppearancePipeline`, `ParticleBillboardPipeline`, `ParticlePipelineFactory`, `ParticlePrograms`, `ParticleBatchRecord`, `ParticleGlContext`, `ParticleTrailBatchRecord`, `GlBuffer`, `GlProgramHandle`, `GlShader`, `GlQuery`, `GlSync`, `GlTexture`, `GlUniformLocation`, `GlVertexArray`, `WebglContext`, `GlFramebuffer`, `GlRenderbuffer`, `PickingRendererHost`, `PickingServiceFactory`, `CacheableRenderTarget`, `RenderTargetRecord`, `SkinnedLitPipeline`, `SkinnedPrograms`, `SkinnedShadowPipeline`, `SkinnedUnlitPipeline`, `SkinningPipelineFactory`, `NodeItemMaterial`, `NodeMaterialPipelineFactory`, `NodeMaterialProgram`, `NodeMaterialPrograms`, `EmittedNodeShader`, `ShadowCasterPipeline`, `ShadowPipelineFactory`, `StandardPipeline`, `StandardPipelineFactory`, `CacheableTexture`, `TextureRecord`, `WebglCanvas`, `WebglContextAttributes`, `WebglContextEventLike`
+
+---
+
+### `packages/render-webgl/src/gl-standard-registry.ts` - The standard pipeline's registration slot (§59, §62; 2026-09-11) — the
+
+**Workspace Dependencies:**
+
+| Package          | Import        |
+| ---------------- | ------------- |
+| `@fourjs/math`   | `Matrix4`     |
+| `@fourjs/render` | `SceneLights` |
+
+**Internal Dependencies:**
+
+| File              | Imports        | Type               |
+| ----------------- | -------------- | ------------------ |
+| `./gl-program.js` | `WebglContext` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `StandardPipeline`, `StandardPipelineFactory`
+- Functions: `setStandardPipelineFactory`, `resolveStandardPipelineFactory`, `clearRegisteredStandardPipeline`
+
+---
+
+### `packages/render-webgl/src/gl-skinning-glsl.ts` - The vertex-stage skinning chunk both the colour/caster programs
+
+**Workspace Dependencies:**
+
+| Package          | Import                |
+| ---------------- | --------------------- |
+| `@fourjs/render` | `MAX_SKINNING_JOINTS` |
+
+**Exports:**
+
+- Constants: `SKINNING_GLSL`
+
+---
+
+### `packages/render-webgl/src/gl-particles.ts` - The batched particle pipeline for the WebGL 2 backend (§36, §64 stage 6,
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                                                                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `Disposable`                                                                                                                                                                                                                                   |
+| `@fourjs/math`   | `Matrix4`                                                                                                                                                                                                                                      |
+| `@fourjs/render` | `PARTICLE_COLOR_OFFSET, PARTICLE_POSITION_OFFSET, PARTICLE_ROTATION_OFFSET, PARTICLE_SIZE_OFFSET, PARTICLE_SOFTNESS_OFFSET, PARTICLE_WIDE_INSTANCE_FLOATS, TRAIL_COLOR_OFFSET, TRAIL_POSITION_OFFSET, TRAIL_VERTEX_FLOATS, ParticleRenderItem` |
+
+**Internal Dependencies:**
+
+| File                         | Imports                                                                                                                                                                            | Type   |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./gl-program.js`            | `GL, POSITION_ATTRIBUTE_LOCATION, MAP_TEXTURE_UNIT, createLinkedProgram, matrixScratch, requireUniform, GlBuffer, GlProgramHandle, GlUniformLocation, GlVertexArray, WebglContext` | Import |
+| `./gl-particles-registry.js` | `particleItemFloats, setParticlePipelineFactory, ParticlePrograms`                                                                                                                 | Import |
+
+**Exports:**
+
+- Classes: `ParticleProgram`, `ParticleAppearanceProgram`, `ParticleBatchCache`, `ParticleTrailProgram`, `ParticleTrailBatchCache`
+- Interfaces: `ParticleGlContext`, `ParticleBatchRecord`, `ParticleTrailBatchRecord`
+- Functions: `registerParticlePipeline`
+- Constants: `PARTICLE_GL`, `PARTICLE_ATTRIBUTE_LOCATIONS`, `PARTICLE_VERTEX_SHADER_SOURCE`, `PARTICLE_DEPTH_TEXTURE_UNIT`
+
+---
+
+### `packages/render-webgl/src/gl-picking-registry.ts` - The picking pipeline's registration slot (§71, §62; RFC 0005, 2026-08-28) —
+
+**Workspace Dependencies:**
+
+| Package          | Import           |
+| ---------------- | ---------------- |
+| `@fourjs/render` | `PickingService` |
+
+**Internal Dependencies:**
+
+| File                    | Imports              | Type               |
+| ----------------------- | -------------------- | ------------------ |
+| `./gl-geometry.js`      | `GeometryCache`      | Import (type-only) |
+| `./gl-particles.js`     | `ParticleBatchCache` | Import (type-only) |
+| `./gl-program.js`       | `WebglContext`       | Import (type-only) |
+| `./gl-render-target.js` | `RenderTargetCache`  | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `PickingRendererHost`, `PickingServiceFactory`
+- Functions: `setPickingServiceFactory`, `resolvePickingServiceFactory`, `clearRegisteredPickingPipeline`
+
+---
+
+### `packages/render-webgl/src/gl-geometry.ts` - GPU-side geometry for the WebGL 2 backend: one vertex array per
+
+**Workspace Dependencies:**
+
+| Package          | Import              |
+| ---------------- | ------------------- |
+| `@fourjs/render` | `RenderItem`        |
+| `@fourjs/render` | `warnDisposedInUse` |
+
+**Internal Dependencies:**
+
+| File              | Imports                                                                                                                                                                                                                                      | Type               |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./gl-program.js` | `COLOR_ATTRIBUTE_LOCATION, GL, JOINTS_ATTRIBUTE_LOCATION, NORMAL_ATTRIBUTE_LOCATION, NORMAL1_ATTRIBUTE_LOCATION, POSITION_ATTRIBUTE_LOCATION, POSITION1_ATTRIBUTE_LOCATION, UV_ATTRIBUTE_LOCATION, WEIGHTS_ATTRIBUTE_LOCATION, WebglContext` | Import             |
+| `./gl-program.js` | `GlBuffer, GlVertexArray`                                                                                                                                                                                                                    | Import (type-only) |
+
+**Exports:**
+
+- Classes: `GeometryCache`
+- Interfaces: `GeometryRecord`
+- Types: `CacheableGeometry`
+
+---
+
+### `packages/render-webgl/src/node-pipeline-registry.ts` - The node-material pipeline's registration slot (§60, §62; RFC 0001, gap
+
+**Workspace Dependencies:**
+
+| Package          | Import                        |
+| ---------------- | ----------------------------- |
+| `@fourjs/math`   | `Matrix4`                     |
+| `@fourjs/render` | `NodeRenderItem, ShaderGraph` |
+
+**Internal Dependencies:**
+
+| File              | Imports        | Type               |
+| ----------------- | -------------- | ------------------ |
+| `./gl-program.js` | `WebglContext` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `NodeMaterialProgram`, `NodeMaterialPrograms`, `NodeMaterialPipelineFactory`
+- Types: `NodeItemMaterial`
+- Functions: `setNodeMaterialPipelineFactory`, `resolveNodeMaterialPipelineFactory`, `clearRegisteredNodeMaterialPipeline`
+- Constants: `NODE_SURFACE_TEXTURE_UNIT_BASE`
+
+---
+
+### `packages/render-webgl/src/gl-standard.ts` - The metallic-roughness pipeline (§59, §68) — this backend's sixth program,
+
+**Workspace Dependencies:**
+
+| Package          | Import             |
+| ---------------- | ------------------ |
+| `@fourjs/core`   | `Disposable`       |
+| `@fourjs/math`   | `Matrix4, Vector3` |
+| `@fourjs/render` | `SceneLights`      |
+
+**Internal Dependencies:**
+
+| File                        | Imports                                                                                                                                                                                                                                                                                                                    | Type   |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./gl-program.js`           | `EMISSIVE_TEXTURE_UNIT, MAP_TEXTURE_UNIT, METAL_ROUGHNESS_TEXTURE_UNIT, HEMISPHERE_LIGHT_GLSL, HemisphereLightUniforms, PUNCTUAL_LIGHT_GLSL, PunctualLightUniforms, SHADOW_GLSL, ShadowUniforms, createLinkedProgram, matrixScratch, requireUniform, uploadNormalMatrix, GlProgramHandle, GlUniformLocation, WebglContext` | Import |
+| `./gl-standard-registry.js` | `setStandardPipelineFactory`                                                                                                                                                                                                                                                                                               | Import |
+
+**Exports:**
+
+- Classes: `StandardProgram`
+- Functions: `registerStandardPipeline`
+- Constants: `NORMAL_TEXTURE_UNIT`, `OCCLUSION_TEXTURE_UNIT`
+
+---
+
+### `packages/render-webgl/src/register.ts` - This backend's opt-in to §62's renderer registry (R-2, A-8).
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                |
+| ---------------- | ----------------------------------------------------- |
+| `@fourjs/render` | `registerRenderer, RendererOptions, RendererRegistry` |
+
+**Internal Dependencies:**
+
+| File                  | Imports         | Type   |
+| --------------------- | --------------- | ------ |
+| `./webgl-renderer.js` | `WebglRenderer` | Import |
+
+**Exports:**
+
+- Functions: `isWebgl2Supported`, `registerWebglRenderer`
+
+---
+
+### `packages/render-webgl/src/gl-particles-registry.ts` - The particle pipeline's registration slot (§36, §62; 2026-09-11) — the
+
+**Workspace Dependencies:**
+
+| Package          | Import                                         |
+| ---------------- | ---------------------------------------------- |
+| `@fourjs/render` | `PARTICLE_INSTANCE_FLOATS, ParticleRenderItem` |
+| `@fourjs/math`   | `Matrix4`                                      |
+
+**Internal Dependencies:**
+
+| File                | Imports                                                          | Type               |
+| ------------------- | ---------------------------------------------------------------- | ------------------ |
+| `./gl-particles.js` | `ParticleBatchCache, ParticleGlContext, ParticleTrailBatchCache` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `ParticleBillboardPipeline`, `ParticleAppearancePipeline`, `ParticlePrograms`, `ParticlePipelineFactory`
+- Functions: `particleItemFloats`, `setParticlePipelineFactory`, `resolveParticlePipelineFactory`, `clearRegisteredParticlePipeline`
+
+---
+
+### `packages/render-webgl/src/gl-node-program.ts` - The node-material pipeline (§60, §62; RFC 0001 — gap R-14): a GLSL ES 3.00
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                                                                                  |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEV, FourError, devWarnOnce, Disposable`                                                                                                                                               |
+| `@fourjs/math`   | `Matrix4`                                                                                                                                                                               |
+| `@fourjs/render` | `analyzeShaderGraph, createShaderSourceMap, ShaderSourceMap, ShaderAttributeName, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderUniformReflection, ShaderValueType` |
+
+**Internal Dependencies:**
+
+| File                          | Imports                                                                                                                       | Type   |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./gl-program.js`             | `createLinkedProgram, matrixScratch, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext`                        | Import |
+| `./node-pipeline-registry.js` | `NODE_SURFACE_TEXTURE_UNIT_BASE, setNodeMaterialPipelineFactory, NodeItemMaterial, NodeMaterialProgram, NodeMaterialPrograms` | Import |
+| `./gl-node-uniform-block.js`  | `GlNodeUniformBlock`                                                                                                          | Import |
+
+**Exports:**
+
+- Classes: `GlNodeProgram`, `GlNodeProgramCache`
+- Interfaces: `EmittedNodeShader`
+- Functions: `emitShaderGraphGlsl`, `registerNodeMaterialPipeline`
+
+---
+
+### `packages/render-webgl/src/gl-program.ts` - The WebGL 2 surface this backend uses, and the pipelines it draws with
+
+**Workspace Dependencies:**
+
+| Package          | Import                             |
+| ---------------- | ---------------------------------- |
+| `@fourjs/core`   | `FourError, Disposable`            |
+| `@fourjs/math`   | `Matrix3, Matrix4, Vector3`        |
+| `@fourjs/render` | `MAX_PUNCTUAL_LIGHTS, SceneLights` |
+
+**Exports:**
+
+- Classes: `HemisphereLightUniforms`, `PunctualLightUniforms`, `ShadowUniforms`, `UnlitProgram`, `SpriteProgram`, `LitProgram`
+- Interfaces: `WebglContext`
+- Types: `GlShader`, `GlProgramHandle`, `GlBuffer`, `GlVertexArray`, `GlUniformLocation`, `GlTexture`, `GlFramebuffer`, `GlRenderbuffer`, `GlSync`, `GlQuery`
+- Functions: `uploadNormalMatrix`, `createLinkedProgram`, `requireUniform`
+- Constants: `GL`, `POSITION_ATTRIBUTE_LOCATION`, `NORMAL_ATTRIBUTE_LOCATION`, `UV_ATTRIBUTE_LOCATION`, `COLOR_ATTRIBUTE_LOCATION`, `JOINTS_ATTRIBUTE_LOCATION`, `WEIGHTS_ATTRIBUTE_LOCATION`, `POSITION1_ATTRIBUTE_LOCATION`, `NORMAL1_ATTRIBUTE_LOCATION`, `JOINTS1_ATTRIBUTE_LOCATION`, `WEIGHTS1_ATTRIBUTE_LOCATION`, `MAP_TEXTURE_UNIT`, `SHADOW_TEXTURE_UNIT`, `METAL_ROUGHNESS_TEXTURE_UNIT`, `EMISSIVE_TEXTURE_UNIT`, `FRAGMENT_SHADER_SOURCE`, `PUNCTUAL_LIGHT_GLSL`, `HEMISPHERE_LIGHT_GLSL`, `SHADOW_GLSL`, `LIT_FRAGMENT_SHADER_SOURCE`, `matrixScratch`
+
+---
+
+### `packages/render-webgl/src/webgl-renderer.ts` - The WebGL 2 backend (§61, §62, §120) — the MVP's only renderer.
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEV, devWarnOnce, EventEmitter, FourError`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `@fourjs/math`   | `Frustum, Matrix4, Rectangle2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `@fourjs/render` | `MAX_SKINNING_JOINTS, RenderTarget, buildInterpolatedRenderList, buildRenderList, buildViewRenderList, collectSceneLights, createSceneLights, isLitItem, isNodeItem, isParticlesItem, isRenderTargetTexture, isSkinnedLitItem, isSkinnedUnlitItem, isSpriteItem, isStandardItem, intersectScissor, validateReadbackRegion, COLOR_GRADE_DEFAULTS, EffectRenderPass, GraphEffect, PickingService, RenderItem, RenderItemKind, RenderStatistics, Renderer, RendererCapabilities, ScissorRect, RendererEventMap, RendererOptions, ScreenEffectRenderer` |
+
+**Internal Dependencies:**
+
+| File                          | Imports                                                                                                                                              | Type               |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./gl-batch.js`               | `RenderBatching`                                                                                                                                     | Import (type-only) |
+| `./gl-effect-registry.js`     | `EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT, resolveEffectPipelineFactory, EffectPipeline`                                                             | Import             |
+| `./gl-geometry.js`            | `GeometryCache`                                                                                                                                      | Import             |
+| `./gl-gpu-timer.js`           | `GlGpuTimer, hasDisjointTimerQuery`                                                                                                                  | Import             |
+| `./gl-particles-registry.js`  | `particleItemFloats, resolveParticlePipelineFactory, ParticleAppearancePipeline, ParticleBillboardPipeline, ParticlePrograms`                        | Import             |
+| `./gl-particles.js`           | `ParticleGlContext`                                                                                                                                  | Import (type-only) |
+| `./gl-program.js`             | `GL, LitProgram, EMISSIVE_TEXTURE_UNIT, MAP_TEXTURE_UNIT, METAL_ROUGHNESS_TEXTURE_UNIT, SHADOW_TEXTURE_UNIT, SpriteProgram, UnlitProgram, GlTexture` | Import             |
+| `./gl-picking-registry.js`    | `resolvePickingServiceFactory, PickingRendererHost`                                                                                                  | Import             |
+| `./gl-render-target.js`       | `RenderTargetCache, RenderTargetRecord`                                                                                                              | Import             |
+| `./gl-skinning-registry.js`   | `resolveSkinningPipelineFactory, SkinnedPrograms, SkinnedShadowPipeline`                                                                             | Import             |
+| `./node-pipeline-registry.js` | `NODE_SURFACE_TEXTURE_UNIT_BASE, resolveNodeMaterialPipelineFactory, NodeMaterialProgram, NodeMaterialPrograms`                                      | Import             |
+| `./gl-standard.js`            | `NORMAL_TEXTURE_UNIT, OCCLUSION_TEXTURE_UNIT`                                                                                                        | Import             |
+| `./gl-shadow-registry.js`     | `resolveShadowPipelineFactory, ShadowCasterPipeline`                                                                                                 | Import             |
+| `./gl-standard-registry.js`   | `resolveStandardPipelineFactory, StandardPipeline`                                                                                                   | Import             |
+| `./gl-texture.js`             | `TextureCache, CacheableTexture`                                                                                                                     | Import             |
+
+**Exports:**
+
+- Classes: `WebglRenderer`
+- Interfaces: `WebglContextEventLike`, `WebglCanvas`, `WebglContextAttributes`
+
+---
+
+### `packages/render-webgl/src/gl-skinning-registry.ts` - The skinning pipeline's registration slot (§54, §62; RFC 0003, 2026-08-28)
+
+**Workspace Dependencies:**
+
+| Package          | Import        |
+| ---------------- | ------------- |
+| `@fourjs/math`   | `Matrix4`     |
+| `@fourjs/render` | `SceneLights` |
+
+**Internal Dependencies:**
+
+| File              | Imports        | Type               |
+| ----------------- | -------------- | ------------------ |
+| `./gl-program.js` | `WebglContext` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `SkinnedUnlitPipeline`, `SkinnedLitPipeline`, `SkinnedShadowPipeline`, `SkinnedPrograms`, `SkinningPipelineFactory`
+- Functions: `setSkinningPipelineFactory`, `resolveSkinningPipelineFactory`, `clearRegisteredSkinningPipeline`
+
+---
+
+### `packages/render-webgl/src/gl-skinning.ts` - The skinned pipelines (§54, §62; RFC 0003 — gaps PH-10 + R-22, 2026-08-28):
+
+**Workspace Dependencies:**
+
+| Package          | Import        |
+| ---------------- | ------------- |
+| `@fourjs/core`   | `Disposable`  |
+| `@fourjs/math`   | `Matrix4`     |
+| `@fourjs/render` | `SceneLights` |
+
+**Internal Dependencies:**
+
+| File                        | Imports                                                                                                                                                                                                                                      | Type   |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./gl-skinning-glsl.js`     | `SKINNING_GLSL`                                                                                                                                                                                                                              | Import |
+| `./gl-program.js`           | `FRAGMENT_SHADER_SOURCE, LIT_FRAGMENT_SHADER_SOURCE, MAP_TEXTURE_UNIT, HemisphereLightUniforms, PunctualLightUniforms, ShadowUniforms, createLinkedProgram, matrixScratch, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext` | Import |
+| `./gl-skinning-registry.js` | `setSkinningPipelineFactory, SkinnedLitPipeline, SkinnedPrograms, SkinnedShadowPipeline, SkinnedUnlitPipeline`                                                                                                                               | Import |
+
+**Exports:**
+
+- Classes: `SkinnedUnlitProgram`, `SkinnedLitProgram`, `SkinnedShadowProgram`
+- Functions: `registerSkinningPipeline`
+
+---
+
+### `packages/render-webgl/src/gl-batch.ts` - §65 batching for the WebGL 2 backend — the GPU half of `@fourjs/render`'s
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                       |
+| ---------------- | ------------------------------------------------------------ |
+| `@fourjs/math`   | `Matrix4`                                                    |
+| `@fourjs/render` | `RenderBatcher, RenderBatch, RenderBatchOptions, RenderItem` |
+
+**Internal Dependencies:**
+
+| File              | Imports                                                                                                                                 | Type   |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./gl-program.js` | `COLOR_ATTRIBUTE_LOCATION, GL, POSITION_ATTRIBUTE_LOCATION, UV_ATTRIBUTE_LOCATION, GlBuffer, GlVertexArray, UnlitProgram, WebglContext` | Import |
+
+**Exports:**
+
+- Classes: `GlBatching`
+- Interfaces: `BatchGlContext`, `RenderBatching`
+- Functions: `createGlBatching`
+
+---
+
+### `packages/render-webgl/src/gl-texture.ts` - GPU-side textures for the WebGL 2 backend: one `WebGLTexture` per
+
+**Workspace Dependencies:**
+
+| Package          | Import              |
+| ---------------- | ------------------- |
+| `@fourjs/core`   | `FourError`         |
+| `@fourjs/render` | `SpriteRenderItem`  |
+| `@fourjs/render` | `warnDisposedInUse` |
+
+**Internal Dependencies:**
+
+| File              | Imports                       | Type   |
+| ----------------- | ----------------------------- | ------ |
+| `./gl-program.js` | `GL, GlTexture, WebglContext` | Import |
+
+**Exports:**
+
+- Classes: `TextureCache`
+- Interfaces: `TextureRecord`
+- Types: `CacheableTexture`
+
+---
+
+### `packages/render-webgl/src/gl-node-uniform-block.ts` - Opt-in std140 transport. Scalars and vectors occupy one vec4 lane; matrices
+
+**Workspace Dependencies:**
+
+| Package          | Import                    |
+| ---------------- | ------------------------- |
+| `@fourjs/core`   | `FourError`               |
+| `@fourjs/render` | `ShaderUniformReflection` |
+
+**Internal Dependencies:**
+
+| File              | Imports                                   | Type               |
+| ----------------- | ----------------------------------------- | ------------------ |
+| `./gl-program.js` | `GlBuffer, GlProgramHandle, WebglContext` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `GlNodeUniformBlock`
+
+---
+
+### `packages/render-webgl/src/gl-effect-registry.ts` - The effect pipeline's registration slot (§70, §62; 2026-09-11) — the
+
+**Internal Dependencies:**
+
+| File              | Imports        | Type               |
+| ----------------- | -------------- | ------------------ |
+| `./gl-program.js` | `WebglContext` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `EffectPipeline`, `EffectPipelineFactory`
+- Functions: `setEffectPipelineFactory`, `resolveEffectPipelineFactory`, `clearRegisteredEffectPipeline`
+- Constants: `EFFECT_TEXTURE_UNIT`, `EFFECT_VERTEX_COUNT`
+
+---
+
+### `packages/render-webgl/src/gl-shadow.ts` - The depth-only caster pipeline (§69) — this backend's seventh program (R-18,
+
+**Workspace Dependencies:**
+
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/core` | `Disposable` |
+| `@fourjs/math` | `Matrix4`    |
+
+**Internal Dependencies:**
+
+| File                      | Imports                                                                                                | Type   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ | ------ |
+| `./gl-program.js`         | `createLinkedProgram, matrixScratch, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext` | Import |
+| `./gl-shadow-registry.js` | `setShadowPipelineFactory`                                                                             | Import |
+
+**Exports:**
+
+- Classes: `ShadowProgram`
+- Functions: `registerShadowPipeline`
+
+---
+
+### `packages/render-webgl/src/gl-gpu-timer.ts` - WebGL 2 GPU-frame timer — `EXT_disjoint_timer_query_webgl2` (A-1, §62, §84).
+
+**Internal Dependencies:**
+
+| File              | Imports       | Type   |
+| ----------------- | ------------- | ------ |
+| `./gl-program.js` | `GL, GlQuery` | Import |
+
+**Exports:**
+
+- Classes: `GlGpuTimer`
+- Functions: `hasDisjointTimerQuery`
+
+---
+
+<a id="packages-physics-dependencies"></a>
+
+## Packages/physics Dependencies
+
+### `packages/physics/src/solver-registry.ts` - The §37 solver registry — how `solver: "auto"` becomes an adapter without
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File               | Imports                                         | Type               |
+| ------------------ | ----------------------------------------------- | ------------------ |
+| `./adapter.js`     | `PhysicsSolverAdapter`                          | Import (type-only) |
+| `./descriptors.js` | `PhysicsWorldOptions`                           | Import (type-only) |
+| `./types.js`       | `DeterminismLevel`                              | Import (type-only) |
+| `./types.js`       | `DEFAULT_DETERMINISM_LEVEL, DETERMINISM_LEVELS` | Import             |
+| `./world.js`       | `PhysicsWorldAdapter`                           | Import (type-only) |
+
+**Exports:**
+
+- Classes: `SolverRegistry`
+- Interfaces: `SolverRegistration`, `SolverRejectionReport`, `SolverResolveOptions`
+- Types: `SolverName`, `SolverSelection`, `SolverRejectionReason`
+- Functions: `registerSolver`, `registeredSolvers`, `clearRegisteredSolvers`, `resolveSolver`
+
+---
+
+### `packages/physics/src/capabilities.ts` - This package's §81 capability token (RFC 0002; declared here since
+
+**Workspace Dependencies:**
+
+| Package        | Import             |
+| -------------- | ------------------ |
+| `@fourjs/core` | `defineCapability` |
+
+**Internal Dependencies:**
+
+| File                   | Imports          | Type               |
+| ---------------------- | ---------------- | ------------------ |
+| `./solver-registry.js` | `SolverRegistry` | Import (type-only) |
+
+**Exports:**
+
+- Constants: `SOLVER_REGISTRY`
+
+---
+
+### `packages/physics/src/index.ts` - `@fourjs/physics` — the stable, solver-independent physics API (§101, Part IV).
+
+**Internal Dependencies:**
+
+| File                              | Imports                                                                                                                                                                                                                                                                                                                                                                               | Type                  |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./capabilities.js`               | `SOLVER_REGISTRY`                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
+| `./adapter.js`                    | `NO_TUNING_CAPABILITIES, resolveTuningCapabilities`                                                                                                                                                                                                                                                                                                                                   | Re-export             |
+| `./body-access.js`                | `missingSolverBodyTuning, missingSolverJointAccess, supportsSolverBodyTuning, supportsSolverJointAccess`                                                                                                                                                                                                                                                                              | Re-export             |
+| `./collider.js`                   | `Collider`                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./descriptors.js`                | `DEFAULT_GRAVITY_Y, JOINT_TYPES, SHIPPED_JOINT_TYPES, SHIPPED_JOINT_TYPES_2D, SHIPPED_JOINT_TYPES_3D, STAGED_JOINT_TYPES, jointTypeSupportsDimension, resolveAngularVelocity, resolveGravity, resolveRotation, resolveSleepingConfig, widenToVector3`                                                                                                                                 | Re-export             |
+| `./force-field.js`                | `ForceFieldSystem`                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
+| `./joints.js`                     | `BallJoint, FixedJoint, HingeJoint, Joint, PrismaticJoint, RevoluteJoint, RopeJoint, SliderJoint, SphericalJoint, SpringJoint, worldAnchorToLocal, worldAxisToLocal`                                                                                                                                                                                                                  | Re-export             |
+| `./physics-event-system.js`       | `PhysicsEventSystem`                                                                                                                                                                                                                                                                                                                                                                  | Re-export             |
+| `./physics-system.js`             | `PhysicsSystem`                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
+| `./stale-handle.js`               | `rejectStalePhysicsHandle, resetStaleHandleWarnings`                                                                                                                                                                                                                                                                                                                                  | Re-export             |
+| `./material.js`                   | `DEFAULT_DENSITY, DEFAULT_FRICTION, DEFAULT_FRICTION_COMBINE_MODE, DEFAULT_RESTITUTION, DEFAULT_RESTITUTION_COMBINE_MODE, PhysicsMaterial, combineFriction, combineRestitution, combineValues, resolveDensity`                                                                                                                                                                        | Re-export             |
+| `./queries.js`                    | `ALL_COLLISION_GROUPS, passesQueryFilter, resolveQueryOptions, sortHitsByDistance`                                                                                                                                                                                                                                                                                                    | Re-export             |
+| `./serializers.js`                | `COLLIDER_SERIALIZER, RIGID_BODY_SERIALIZER, SWEPT_CHARACTER_CONTROLLER_SERIALIZER, deserializeCollisionShape, serializeCollisionShape`                                                                                                                                                                                                                                               | Re-export             |
+| `./rigid-body.js`                 | `RigidBody`                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
+| `./solver-registry.js`            | `SolverRegistry, clearRegisteredSolvers, registerSolver, registeredSolvers, resolveSolver`                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./shapes.js`                     | `COLLISION_SHAPE_TYPES_2D, COLLISION_SHAPE_TYPES_3D, COMPOSITE_COLLISION_SHAPE_TYPES, shapeIsConvex, shapeMaximumExtent, shapeSupportsDimension, validateCollisionShape, validateQueryShape`                                                                                                                                                                                          | Re-export             |
+| `./types.js`                      | `BODY_TYPES, CCD_MODES, COMBINE_MODES, DEFAULT_CCD_MODE, DEFAULT_DETERMINISM_LEVEL, DEFAULT_ENABLED_CCD_MODE, DEFAULT_SLEEPING_CONFIG, DETERMINISM_LEVELS, PHYSICS_DIMENSIONS`                                                                                                                                                                                                        | Re-export             |
+| `./validation.js`                 | `validateAngularJointMotor, validateColliderDescriptor, validateInertiaTensor, validateJointBreakThreshold, validateJointDescriptor, validateJointLimits, validateLinearJointMotor, validateMass, validatePhysicsWorldOptions, validateRigidBodyDescriptor, validateSphericalJointLimits`                                                                                             | Re-export             |
+| `./swept-character-controller.js` | `DEFAULT_GROUND_SNAP_DISTANCE, DEFAULT_MAX_SLIDES, DEFAULT_PUSH_IMPULSE_SCALE, DEFAULT_PUSH_MASS, DEFAULT_SKIN_WIDTH, DEFAULT_SLOPE_LIMIT, DEFAULT_STEP_HEIGHT, SweptCharacterController, SweptCharacterSystem`                                                                                                                                                                       | Re-export             |
+| `./local-plane.js`                | `DEFAULT_LOCAL_PLANE, isDefaultLocalPlane, planeToWorld, planeToWorldVec, resolveLocalPlane, worldToPlane, worldToPlaneVec`                                                                                                                                                                                                                                                           | Re-export             |
+| `./world-units.js`                | `fromSiLength, fromSiMass, resolvePhysicsWorldUnits, toSiLength, toSiMass`                                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./world.js`                      | `POSE_TARGET_CAPTURE_PRIORITY, PhysicsWorld, createPoseTargetCaptureSystem`                                                                                                                                                                                                                                                                                                           | Re-export             |
+| `./resource-memory.js`            | `liveSolverBodyCount, liveSolverColliderCount, liveSolverHandleCount, liveSolverJointCount`                                                                                                                                                                                                                                                                                           | Re-export             |
+| `./adapter.js`                    | `PhysicsCapabilities, PhysicsQueryCapabilities, PhysicsEventInterest, PhysicsSolverAdapter, PhysicsTuningCapabilities`                                                                                                                                                                                                                                                                | Re-export (type-only) |
+| `./body-access.js`                | `SolverBodyAccess, SolverBodyTuningAccess, SolverJointAccess, SolverJointMotor`                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./collider.js`                   | `ColliderEventMap, ColliderOptions, ColliderTriggerEvent, RigidBodyCollisionEvent`                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
+| `./descriptors.js`                | `AngularJointMotor, ColliderDescriptor, FixedJointDescriptor, JointDescriptor, JointDescriptorBase, JointLimits, JointType, LinearJointMotor, LocalPlane, PhysicsWorldOptions, PrismaticJointDescriptor, RevoluteJointDescriptor, RigidBodyDescriptor, RopeJointDescriptor, ShippedJointType, SphericalJointDescriptor, SphericalJointLimits, SpringJointDescriptor, StagedJointType` | Re-export (type-only) |
+| `./events.js`                     | `CollisionEvent, CollisionPhase, ContactPoint, JointBreakEvent, JointPhase, PhysicsEvent, PhysicsEventType, SleepEvent, SleepPhase, TriggerEvent, TriggerPhase`                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./force-field.js`                | `ForceField, ForceFieldAddOptions, ForceFieldEntry, ForceFieldSystemOptions, ForceFieldUnits`                                                                                                                                                                                                                                                                                         | Re-export (type-only) |
+| `./joints.js`                     | `HingeJointOptions, JointBinding, JointBreakPayload, JointCommands, JointEventMap, JointOptions, RopeJointOptions, SliderJointOptions, SphericalJointOptions, SpringJointOptions`                                                                                                                                                                                                     | Re-export (type-only) |
+| `./material.js`                   | `PhysicsMaterialOptions`                                                                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
+| `./physics-event-system.js`       | `PhysicsEventSystemOptions`                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./physics-system.js`             | `PhysicsSystemOptions`                                                                                                                                                                                                                                                                                                                                                                | Re-export (type-only) |
+| `./stale-handle.js`               | `StalePhysicsHandleKind`                                                                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
+| `./queries.js`                    | `OverlapHit, OverlapQuery, PointHit, PointQuery, QueryCandidate, QueryFilter, QueryHit, QueryHitMode, QueryOptions, RaycastHit, RaycastQuery, ResolvedQueryOptions, ShapeCastHit, ShapeCastQuery`                                                                                                                                                                                     | Re-export (type-only) |
+| `./serializers.js`                | `ColliderDocument, PhysicsMaterialDocument, RigidBodyDocument`                                                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
+| `./rigid-body.js`                 | `BlendWeights, PointLoad, RigidBodyCommands, RigidBodyEventMap, RigidBodySleepEvent, SleepCommand, TorqueInput`                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./solver-registry.js`            | `SolverName, SolverRegistration, SolverRejectionReason, SolverRejectionReport, SolverResolveOptions, SolverSelection`                                                                                                                                                                                                                                                                 | Re-export (type-only) |
+| `./shapes.js`                     | `BoxShape, CapsuleShape, ChainShape, CircleShape, CollisionShape, CollisionShape2D, CollisionShape3D, CollisionShapeType, ConeShape, ConvexHullShape, CylinderShape, HeightFieldShape, PolygonShape, PolylineShape, RectangleShape, SphereShape, TriangleMeshShape`                                                                                                                   | Re-export (type-only) |
+| `./types.js`                      | `AngularVelocityInput, BodyType, CCDMode, CombineMode, DeterminismLevel, PhysicsBodyHandle, PhysicsColliderHandle, PhysicsDimension, PhysicsHandle, PhysicsJointHandle, RotationInput, SleepingConfig, Vector3Input`                                                                                                                                                                  | Re-export (type-only) |
+| `./swept-character-controller.js` | `SweptCharacterControllerOptions, SweptCharacterSystemOptions`                                                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
+| `./local-plane.js`                | `ResolvedLocalPlane`                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./world-units.js`                | `PhysicsWorldUnits`                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
+| `./world.js`                      | `ActiveBodyVisitor, BodyControlModeOptions, PhysicsSnapshot, PhysicsSnapshotConfiguration, PhysicsWorldAdapter, PhysicsWorldInit, PoseTargetCaptureSystemOptions, WorldOverlapHit, WorldPhysicsEvent, WorldPointHit, WorldQueryHit, WorldRaycastHit, WorldShapeCastHit`                                                                                                               | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `SOLVER_REGISTRY`, `NO_TUNING_CAPABILITIES`, `resolveTuningCapabilities`, `missingSolverBodyTuning`, `missingSolverJointAccess`, `supportsSolverBodyTuning`, `supportsSolverJointAccess`, `Collider`, `DEFAULT_GRAVITY_Y`, `JOINT_TYPES`, `SHIPPED_JOINT_TYPES`, `SHIPPED_JOINT_TYPES_2D`, `SHIPPED_JOINT_TYPES_3D`, `STAGED_JOINT_TYPES`, `jointTypeSupportsDimension`, `resolveAngularVelocity`, `resolveGravity`, `resolveRotation`, `resolveSleepingConfig`, `widenToVector3`, `ForceFieldSystem`, `BallJoint`, `FixedJoint`, `HingeJoint`, `Joint`, `PrismaticJoint`, `RevoluteJoint`, `RopeJoint`, `SliderJoint`, `SphericalJoint`, `SpringJoint`, `worldAnchorToLocal`, `worldAxisToLocal`, `PhysicsEventSystem`, `PhysicsSystem`, `rejectStalePhysicsHandle`, `resetStaleHandleWarnings`, `DEFAULT_DENSITY`, `DEFAULT_FRICTION`, `DEFAULT_FRICTION_COMBINE_MODE`, `DEFAULT_RESTITUTION`, `DEFAULT_RESTITUTION_COMBINE_MODE`, `PhysicsMaterial`, `combineFriction`, `combineRestitution`, `combineValues`, `resolveDensity`, `ALL_COLLISION_GROUPS`, `passesQueryFilter`, `resolveQueryOptions`, `sortHitsByDistance`, `COLLIDER_SERIALIZER`, `RIGID_BODY_SERIALIZER`, `SWEPT_CHARACTER_CONTROLLER_SERIALIZER`, `deserializeCollisionShape`, `serializeCollisionShape`, `RigidBody`, `SolverRegistry`, `clearRegisteredSolvers`, `registerSolver`, `registeredSolvers`, `resolveSolver`, `COLLISION_SHAPE_TYPES_2D`, `COLLISION_SHAPE_TYPES_3D`, `COMPOSITE_COLLISION_SHAPE_TYPES`, `shapeIsConvex`, `shapeMaximumExtent`, `shapeSupportsDimension`, `validateCollisionShape`, `validateQueryShape`, `BODY_TYPES`, `CCD_MODES`, `COMBINE_MODES`, `DEFAULT_CCD_MODE`, `DEFAULT_DETERMINISM_LEVEL`, `DEFAULT_ENABLED_CCD_MODE`, `DEFAULT_SLEEPING_CONFIG`, `DETERMINISM_LEVELS`, `PHYSICS_DIMENSIONS`, `validateAngularJointMotor`, `validateColliderDescriptor`, `validateInertiaTensor`, `validateJointBreakThreshold`, `validateJointDescriptor`, `validateJointLimits`, `validateLinearJointMotor`, `validateMass`, `validatePhysicsWorldOptions`, `validateRigidBodyDescriptor`, `validateSphericalJointLimits`, `DEFAULT_GROUND_SNAP_DISTANCE`, `DEFAULT_MAX_SLIDES`, `DEFAULT_PUSH_IMPULSE_SCALE`, `DEFAULT_PUSH_MASS`, `DEFAULT_SKIN_WIDTH`, `DEFAULT_SLOPE_LIMIT`, `DEFAULT_STEP_HEIGHT`, `SweptCharacterController`, `SweptCharacterSystem`, `DEFAULT_LOCAL_PLANE`, `isDefaultLocalPlane`, `planeToWorld`, `planeToWorldVec`, `resolveLocalPlane`, `worldToPlane`, `worldToPlaneVec`, `fromSiLength`, `fromSiMass`, `resolvePhysicsWorldUnits`, `toSiLength`, `toSiMass`, `POSE_TARGET_CAPTURE_PRIORITY`, `PhysicsWorld`, `createPoseTargetCaptureSystem`, `liveSolverBodyCount`, `liveSolverColliderCount`, `liveSolverHandleCount`, `liveSolverJointCount`, `PhysicsCapabilities`, `PhysicsQueryCapabilities`, `PhysicsEventInterest`, `PhysicsSolverAdapter`, `PhysicsTuningCapabilities`, `SolverBodyAccess`, `SolverBodyTuningAccess`, `SolverJointAccess`, `SolverJointMotor`, `ColliderEventMap`, `ColliderOptions`, `ColliderTriggerEvent`, `RigidBodyCollisionEvent`, `AngularJointMotor`, `ColliderDescriptor`, `FixedJointDescriptor`, `JointDescriptor`, `JointDescriptorBase`, `JointLimits`, `JointType`, `LinearJointMotor`, `LocalPlane`, `PhysicsWorldOptions`, `PrismaticJointDescriptor`, `RevoluteJointDescriptor`, `RigidBodyDescriptor`, `RopeJointDescriptor`, `ShippedJointType`, `SphericalJointDescriptor`, `SphericalJointLimits`, `SpringJointDescriptor`, `StagedJointType`, `CollisionEvent`, `CollisionPhase`, `ContactPoint`, `JointBreakEvent`, `JointPhase`, `PhysicsEvent`, `PhysicsEventType`, `SleepEvent`, `SleepPhase`, `TriggerEvent`, `TriggerPhase`, `ForceField`, `ForceFieldAddOptions`, `ForceFieldEntry`, `ForceFieldSystemOptions`, `ForceFieldUnits`, `HingeJointOptions`, `JointBinding`, `JointBreakPayload`, `JointCommands`, `JointEventMap`, `JointOptions`, `RopeJointOptions`, `SliderJointOptions`, `SphericalJointOptions`, `SpringJointOptions`, `PhysicsMaterialOptions`, `PhysicsEventSystemOptions`, `PhysicsSystemOptions`, `StalePhysicsHandleKind`, `OverlapHit`, `OverlapQuery`, `PointHit`, `PointQuery`, `QueryCandidate`, `QueryFilter`, `QueryHit`, `QueryHitMode`, `QueryOptions`, `RaycastHit`, `RaycastQuery`, `ResolvedQueryOptions`, `ShapeCastHit`, `ShapeCastQuery`, `ColliderDocument`, `PhysicsMaterialDocument`, `RigidBodyDocument`, `BlendWeights`, `PointLoad`, `RigidBodyCommands`, `RigidBodyEventMap`, `RigidBodySleepEvent`, `SleepCommand`, `TorqueInput`, `SolverName`, `SolverRegistration`, `SolverRejectionReason`, `SolverRejectionReport`, `SolverResolveOptions`, `SolverSelection`, `BoxShape`, `CapsuleShape`, `ChainShape`, `CircleShape`, `CollisionShape`, `CollisionShape2D`, `CollisionShape3D`, `CollisionShapeType`, `ConeShape`, `ConvexHullShape`, `CylinderShape`, `HeightFieldShape`, `PolygonShape`, `PolylineShape`, `RectangleShape`, `SphereShape`, `TriangleMeshShape`, `AngularVelocityInput`, `BodyType`, `CCDMode`, `CombineMode`, `DeterminismLevel`, `PhysicsBodyHandle`, `PhysicsColliderHandle`, `PhysicsDimension`, `PhysicsHandle`, `PhysicsJointHandle`, `RotationInput`, `SleepingConfig`, `Vector3Input`, `SweptCharacterControllerOptions`, `SweptCharacterSystemOptions`, `ResolvedLocalPlane`, `PhysicsWorldUnits`, `ActiveBodyVisitor`, `BodyControlModeOptions`, `PhysicsSnapshot`, `PhysicsSnapshotConfiguration`, `PhysicsWorldAdapter`, `PhysicsWorldInit`, `PoseTargetCaptureSystemOptions`, `WorldOverlapHit`, `WorldPhysicsEvent`, `WorldPointHit`, `WorldQueryHit`, `WorldRaycastHit`, `WorldShapeCastHit`
+
+---
+
+### `packages/physics/src/world.ts` - `PhysicsWorld` (§20, §30, §32, §33, §34, §37, §39, §42, §43) — the object an
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEFAULT_SPACE_MODE, DEV_WARNING_PREFIX, FourError, isSimulationSpaceMode`                                                  |
+| `@fourjs/math`   | `Quaternion, Vector2, Vector3`                                                                                              |
+| `@fourjs/motion` | `PRIORITY_ANIMATION_TARGETS, SimulationSystem`                                                                              |
+| `@fourjs/scene`  | `PoseTarget, beginOwnedTransformWrite, endOwnedTransformWrite, warnAuthorityConflict, Node, PoseBuffer, TransformAuthority` |
+
+**Internal Dependencies:**
+
+| File                   | Imports                                                                                                                                                                                                                                                                    | Type               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./adapter.js`         | `PhysicsSolverAdapter, PhysicsTuningCapabilities`                                                                                                                                                                                                                          | Import (type-only) |
+| `./adapter.js`         | `resolveTuningCapabilities`                                                                                                                                                                                                                                                | Import             |
+| `./body-access.js`     | `SolverBodyAccess, SolverBodyTuningAccess, SolverJointAccess`                                                                                                                                                                                                              | Import (type-only) |
+| `./body-access.js`     | `missingSolverJointAccess, supportsSolverBodyTuning, supportsSolverJointAccess`                                                                                                                                                                                            | Import             |
+| `./collider.js`        | `Collider`                                                                                                                                                                                                                                                                 | Import             |
+| `./collider.js`        | `ColliderTriggerEvent, RigidBodyCollisionEvent`                                                                                                                                                                                                                            | Import (type-only) |
+| `./descriptors.js`     | `PhysicsWorldOptions, RigidBodyDescriptor`                                                                                                                                                                                                                                 | Import (type-only) |
+| `./descriptors.js`     | `resolveAngularVelocity, resolveGravity, resolveRotation, resolveSleepingConfig, widenToVector3`                                                                                                                                                                           | Import             |
+| `./local-plane.js`     | `planeToWorld, planeToWorldVec, resolveLocalPlane, worldToPlane, worldToPlaneVec, ResolvedLocalPlane`                                                                                                                                                                      | Import             |
+| `./world-units.js`     | `fromSiLength, fromSiMass, resolvePhysicsWorldUnits, toSiLength, toSiMass, PhysicsWorldUnits`                                                                                                                                                                              | Import             |
+| `./events.js`          | `JointBreakEvent, PhysicsEvent`                                                                                                                                                                                                                                            | Import (type-only) |
+| `./joints.js`          | `Joint, JointBinding, JointBreakPayload`                                                                                                                                                                                                                                   | Import (type-only) |
+| `./joints.js`          | `bindJoint, clearJointCommands, readJointAnchors, readJointLimits, readJointMotor, setJointBroken, unbindJoint, worldAnchorToLocal, worldAxisToLocal`                                                                                                                      | Import             |
+| `./queries.js`         | `OverlapQuery, PointQuery, QueryOptions, RaycastQuery, ShapeCastQuery`                                                                                                                                                                                                     | Import (type-only) |
+| `./rigid-body.js`      | `BlendWeights, RigidBodySleepEvent`                                                                                                                                                                                                                                        | Import (type-only) |
+| `./rigid-body.js`      | `RIGID_BODY_CCD_DIRTY, RIGID_BODY_DAMPING_DIRTY, RIGID_BODY_GRAVITY_SCALE_DIRTY, RIGID_BODY_MASS_PROPERTIES_DIRTY, RigidBody, clearRigidBodyCommands, drainRigidBodySolverWrites, setRigidBodyDerivedMass, setRigidBodyRegistered, setRigidBodySleeping, setRigidBodyType` | Import             |
+| `./shapes.js`          | `CollisionShape`                                                                                                                                                                                                                                                           | Import (type-only) |
+| `./shapes.js`          | `shapeMaximumExtent`                                                                                                                                                                                                                                                       | Import             |
+| `./solver-registry.js` | `SolverRegistry, SolverRejectionReport, SolverSelection`                                                                                                                                                                                                                   | Import (type-only) |
+| `./solver-registry.js` | `resolveSolver`                                                                                                                                                                                                                                                            | Import             |
+| `./types.js`           | `AngularVelocityInput, BodyType, DeterminismLevel, PhysicsBodyHandle, PhysicsColliderHandle, PhysicsDimension, PhysicsJointHandle, RotationInput, SleepingConfig, Vector3Input`                                                                                            | Import (type-only) |
+| `./types.js`           | `DEFAULT_DETERMINISM_LEVEL, DEFAULT_SLEEPING_CONFIG, DETERMINISM_LEVELS`                                                                                                                                                                                                   | Import             |
+| `./validation.js`      | `validateJointDescriptor, validateMass, validatePhysicsWorldOptions`                                                                                                                                                                                                       | Import             |
+| `./resource-memory.js` | `noteSolverBody, noteSolverCollider, noteSolverJoint`                                                                                                                                                                                                                      | Import             |
+
+**Exports:**
+
+- Classes: `PhysicsWorld`
+- Interfaces: `PhysicsWorldInit`, `WorldQueryHit`, `WorldRaycastHit`, `WorldShapeCastHit`, `WorldPointHit`, `PhysicsSnapshot`, `PhysicsSnapshotConfiguration`, `BodyControlModeOptions`, `PoseTargetCaptureSystemOptions`
+- Types: `PhysicsWorldAdapter`, `ActiveBodyVisitor`, `WorldOverlapHit`, `WorldPhysicsEvent`
+- Functions: `createPoseTargetCaptureSystem`
+- Constants: `POSE_TARGET_CAPTURE_PRIORITY`
+
+---
+
+### `packages/physics/src/rigid-body.ts` - The `RigidBody` component (§6a, §23) and its §26 force/impulse command
+
+**Workspace Dependencies:**
+
+| Package        | Import                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------ |
+| `@fourjs/core` | `DEFAULT_SPACE_MODE, DEV_WARNING_PREFIX, EventEmitter, FourError, Component, ComponentHost, SpaceMode` |
+| `@fourjs/math` | `Matrix3, Quaternion, Vector3`                                                                         |
+
+**Internal Dependencies:**
+
+| File               | Imports                                                   | Type               |
+| ------------------ | --------------------------------------------------------- | ------------------ |
+| `./descriptors.js` | `RigidBodyDescriptor`                                     | Import (type-only) |
+| `./descriptors.js` | `resolveAngularVelocity, resolveRotation, widenToVector3` | Import             |
+| `./events.js`      | `SleepEvent`                                              | Import (type-only) |
+| `./types.js`       | `BodyType, CCDMode, PhysicsDimension, Vector3Input`       | Import (type-only) |
+| `./types.js`       | `DEFAULT_CCD_MODE, DEFAULT_ENABLED_CCD_MODE`              | Import             |
+| `./validation.js`  | `validateMass, validateRigidBodyDescriptor`               | Import             |
+
+**Exports:**
+
+- Classes: `RigidBody`
+- Interfaces: `BlendWeights`, `PointLoad`, `RigidBodyCommands`, `RigidBodyEventMap`
+- Types: `TorqueInput`, `SleepCommand`, `RigidBodySleepEvent`
+- Functions: `clearRigidBodyCommands`, `setRigidBodyRegistered`, `drainRigidBodySolverWrites`, `setRigidBodyType`, `setRigidBodyDerivedMass`, `setRigidBodySleeping`
+- Constants: `RIGID_BODY_MASS_PROPERTIES_DIRTY`, `RIGID_BODY_DAMPING_DIRTY`, `RIGID_BODY_GRAVITY_SCALE_DIRTY`, `RIGID_BODY_CCD_DIRTY`
+
+---
+
+### `packages/physics/src/validation.ts` - Descriptor validation (§85), for the physics half of the checklist.
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+| `@fourjs/math` | `Matrix3`   |
+
+**Internal Dependencies:**
+
+| File               | Imports                                                                                                                                                                   | Type               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./descriptors.js` | `AngularJointMotor, ColliderDescriptor, JointDescriptor, JointLimits, LinearJointMotor, PhysicsWorldOptions, RigidBodyDescriptor, ShippedJointType, SphericalJointLimits` | Import (type-only) |
+| `./descriptors.js` | `JOINT_TYPES, SHIPPED_JOINT_TYPES, STAGED_JOINT_TYPES, jointTypeSupportsDimension, resolveGravity, resolveRotation`                                                       | Import             |
+| `./shapes.js`      | `validateCollisionShape`                                                                                                                                                  | Import             |
+| `./types.js`       | `BodyType, PhysicsDimension, Vector3Input`                                                                                                                                | Import (type-only) |
+| `./types.js`       | `BODY_TYPES, CCD_MODES, DEFAULT_ENABLED_CCD_MODE, DETERMINISM_LEVELS, PHYSICS_DIMENSIONS`                                                                                 | Import             |
+
+**Exports:**
+
+- Functions: `validateMass`, `validateInertiaTensor`, `validateRigidBodyDescriptor`, `validateColliderDescriptor`, `validateJointLimits`, `validateSphericalJointLimits`, `validateAngularJointMotor`, `validateLinearJointMotor`, `validateJointBreakThreshold`, `validateJointDescriptor`, `validatePhysicsWorldOptions`
+
+---
+
+### `packages/physics/src/joints.ts` - The §28 joint classes — `FixedJoint`, `HingeJoint`, `SliderJoint`,
+
+**Workspace Dependencies:**
+
+| Package        | Import                    |
+| -------------- | ------------------------- |
+| `@fourjs/core` | `EventEmitter, FourError` |
+| `@fourjs/math` | `Quaternion, Vector3`     |
+
+**Internal Dependencies:**
+
+| File               | Imports                                                                                                                                                                                                                                                                         | Type               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./body-access.js` | `SolverJointMotor`                                                                                                                                                                                                                                                              | Import (type-only) |
+| `./descriptors.js` | `AngularJointMotor, FixedJointDescriptor, JointDescriptor, JointDescriptorBase, JointLimits, LinearJointMotor, PrismaticJointDescriptor, RevoluteJointDescriptor, RopeJointDescriptor, ShippedJointType, SphericalJointDescriptor, SphericalJointLimits, SpringJointDescriptor` | Import (type-only) |
+| `./descriptors.js` | `widenToVector3`                                                                                                                                                                                                                                                                | Import             |
+| `./events.js`      | `JointBreakEvent`                                                                                                                                                                                                                                                               | Import (type-only) |
+| `./rigid-body.js`  | `RigidBody`                                                                                                                                                                                                                                                                     | Import (type-only) |
+| `./types.js`       | `PhysicsBodyHandle, PhysicsDimension, Vector3Input`                                                                                                                                                                                                                             | Import (type-only) |
+| `./validation.js`  | `validateAngularJointMotor, validateJointBreakThreshold, validateJointLimits, validateLinearJointMotor, validateSphericalJointLimits`                                                                                                                                           | Import             |
+
+**Exports:**
+
+- Classes: `FixedJoint`, `HingeJoint`, `SliderJoint`, `RopeJoint`, `SpringJoint`, `SphericalJoint`
+- Interfaces: `JointEventMap`, `JointBinding`, `JointCommands`, `JointOptions`, `HingeJointOptions`, `SliderJointOptions`, `RopeJointOptions`, `SpringJointOptions`, `SphericalJointOptions`
+- Types: `JointBreakPayload`, `RevoluteJoint`, `PrismaticJoint`, `BallJoint`
+- Functions: `worldAnchorToLocal`, `worldAxisToLocal`, `bindJoint`, `unbindJoint`, `setJointBroken`, `clearJointCommands`, `readJointAnchors`, `readJointLimits`, `readJointMotor`
+- Constants: `RevoluteJoint`, `PrismaticJoint`, `BallJoint`
+
+---
+
+### `packages/physics/src/descriptors.ts` - The descriptors an adapter is built from (§37) and the §21 widening helpers
+
+**Workspace Dependencies:**
+
+| Package         | Import                                    |
+| --------------- | ----------------------------------------- |
+| `@fourjs/core`  | `DEFAULT_GRAVITY_Y, FourError, SpaceMode` |
+| `@fourjs/math`  | `Quaternion, Vector3`                     |
+| `@fourjs/math`  | `Matrix3`                                 |
+| `@fourjs/scene` | `Transform`                               |
+| `@fourjs/core`  | `DEFAULT_GRAVITY_Y`                       |
+
+**Internal Dependencies:**
+
+| File               | Imports                                                                                                                                       | Type               |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./material.js`    | `PhysicsMaterial`                                                                                                                             | Import (type-only) |
+| `./shapes.js`      | `CollisionShape`                                                                                                                              | Import (type-only) |
+| `./types.js`       | `AngularVelocityInput, BodyType, CCDMode, DeterminismLevel, PhysicsBodyHandle, PhysicsDimension, RotationInput, SleepingConfig, Vector3Input` | Import (type-only) |
+| `./types.js`       | `DEFAULT_SLEEPING_CONFIG`                                                                                                                     | Import             |
+| `./world-units.js` | `PhysicsWorldUnits`                                                                                                                           | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `RigidBodyDescriptor`, `ColliderDescriptor`, `JointLimits`, `AngularJointMotor`, `LinearJointMotor`, `SphericalJointLimits`, `JointDescriptorBase`, `FixedJointDescriptor`, `RevoluteJointDescriptor`, `PrismaticJointDescriptor`, `RopeJointDescriptor`, `SpringJointDescriptor`, `SphericalJointDescriptor`, `PhysicsWorldOptions`, `LocalPlane`
+- Types: `JointType`, `ShippedJointType`, `StagedJointType`, `JointDescriptor`
+- Functions: `jointTypeSupportsDimension`, `widenToVector3`, `resolveGravity`, `resolveRotation`, `resolveAngularVelocity`, `resolveSleepingConfig`
+- Constants: `JOINT_TYPES`, `SHIPPED_JOINT_TYPES`, `SHIPPED_JOINT_TYPES_2D`, `SHIPPED_JOINT_TYPES_3D`, `STAGED_JOINT_TYPES`
+- Re-exports: `DEFAULT_GRAVITY_Y`
+
+---
+
+### `packages/physics/src/swept-character-controller.ts` - §12's **solver-backed** character controller — {@link SweptCharacterController}
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                           |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEV_WARNING_PREFIX, FourError`                                                  |
+| `@fourjs/core`   | `Component, ComponentHost`                                                       |
+| `@fourjs/math`   | `Vector3`                                                                        |
+| `@fourjs/motion` | `CharacterController, PRIORITY_KINEMATICS, FixedUpdateContext, SimulationSystem` |
+| `@fourjs/scene`  | `beginOwnedTransformWrite, endOwnedTransformWrite, warnAuthorityConflict, Node`  |
+
+**Internal Dependencies:**
+
+| File              | Imports                           | Type               |
+| ----------------- | --------------------------------- | ------------------ |
+| `./queries.js`    | `ALL_COLLISION_GROUPS`            | Import             |
+| `./rigid-body.js` | `RigidBody`                       | Import (type-only) |
+| `./shapes.js`     | `CollisionShape`                  | Import (type-only) |
+| `./types.js`      | `PhysicsBodyHandle`               | Import (type-only) |
+| `./world.js`      | `PhysicsWorld, WorldShapeCastHit` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `SweptCharacterController`, `SweptCharacterSystem`
+- Interfaces: `SweptCharacterControllerOptions`, `SweptCharacterSystemOptions`
+- Constants: `DEFAULT_SLOPE_LIMIT`, `DEFAULT_STEP_HEIGHT`, `DEFAULT_SKIN_WIDTH`, `DEFAULT_GROUND_SNAP_DISTANCE`, `DEFAULT_MAX_SLIDES`, `DEFAULT_PUSH_MASS`, `DEFAULT_PUSH_IMPULSE_SCALE`
+
+---
+
+### `packages/physics/src/physics-event-system.ts` - `PhysicsEventSystem` (§39 step 9, PH-21) — the optional occupant of
+
+**Workspace Dependencies:**
+
+| Package          | Import                                      |
+| ---------------- | ------------------------------------------- |
+| `@fourjs/core`   | `FourError`                                 |
+| `@fourjs/motion` | `PRIORITY_EVENT_DISPATCH, SimulationSystem` |
+
+**Internal Dependencies:**
+
+| File                  | Imports         | Type               |
+| --------------------- | --------------- | ------------------ |
+| `./physics-system.js` | `PhysicsSystem` | Import (type-only) |
+| `./world.js`          | `PhysicsWorld`  | Import (type-only) |
+
+**Exports:**
+
+- Classes: `PhysicsEventSystem`
+- Interfaces: `PhysicsEventSystemOptions`
+
+---
+
+### `packages/physics/src/serializers.ts` - The §79 serializers for this package's two components — `RigidBody` (§23) and
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                |
+| ---------------- | ----------------------------------------------------- |
+| `@fourjs/core`   | `SPACE_MODES, FourError, JsonValue, SpaceMode`        |
+| `@fourjs/math`   | `Matrix3, Quaternion, Vector2, Vector3`               |
+| `@fourjs/motion` | `DEFAULT_CHARACTER_GRAVITY, ComponentSerializerShape` |
+| `@fourjs/scene`  | `Transform`                                           |
+
+**Internal Dependencies:**
+
+| File                              | Imports                                                                                                                                                                                   | Type               |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./collider.js`                   | `Collider, ColliderOptions`                                                                                                                                                               | Import             |
+| `./descriptors.js`                | `RigidBodyDescriptor`                                                                                                                                                                     | Import (type-only) |
+| `./material.js`                   | `DEFAULT_DENSITY, DEFAULT_FRICTION, DEFAULT_RESTITUTION, PhysicsMaterial, PhysicsMaterialOptions`                                                                                         | Import             |
+| `./queries.js`                    | `ALL_COLLISION_GROUPS`                                                                                                                                                                    | Import             |
+| `./rigid-body.js`                 | `RigidBody`                                                                                                                                                                               | Import             |
+| `./swept-character-controller.js` | `DEFAULT_GROUND_SNAP_DISTANCE, DEFAULT_MAX_SLIDES, DEFAULT_PUSH_IMPULSE_SCALE, DEFAULT_PUSH_MASS, DEFAULT_SKIN_WIDTH, DEFAULT_SLOPE_LIMIT, DEFAULT_STEP_HEIGHT, SweptCharacterController` | Import             |
+| `./shapes.js`                     | `CollisionShape`                                                                                                                                                                          | Import (type-only) |
+| `./types.js`                      | `BODY_TYPES, CCD_MODES, DEFAULT_CCD_MODE`                                                                                                                                                 | Import             |
+| `./types.js`                      | `BodyType, CCDMode`                                                                                                                                                                       | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `RigidBodyDocument`, `PhysicsMaterialDocument`, `ColliderDocument`
+- Functions: `serializeCollisionShape`, `deserializeCollisionShape`
+- Constants: `RIGID_BODY_SERIALIZER`, `COLLIDER_SERIALIZER`, `SWEPT_CHARACTER_CONTROLLER_SERIALIZER`
+
+---
+
+### `packages/physics/src/body-access.ts` - Per-handle access to a solver's bodies — the seam §37's two `sync*` methods
+
+**Workspace Dependencies:**
+
+| Package        | Import                         |
+| -------------- | ------------------------------ |
+| `@fourjs/math` | `Matrix3, Quaternion, Vector3` |
+
+**Internal Dependencies:**
+
+| File         | Imports                                                                                                                              | Type               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `./types.js` | `AngularVelocityInput, BodyType, CCDMode, PhysicsBodyHandle, PhysicsColliderHandle, PhysicsJointHandle, RotationInput, Vector3Input` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `SolverBodyAccess`, `SolverBodyTuningAccess`, `SolverJointMotor`, `SolverJointAccess`
+- Functions: `supportsSolverJointAccess`, `missingSolverJointAccess`, `supportsSolverBodyTuning`, `missingSolverBodyTuning`
+
+---
+
+### `packages/physics/src/world-units.ts` - §40 scale factors a {@link PhysicsWorld} may apply at the authoring boundary.
+
+**Exports:**
+
+- Interfaces: `PhysicsWorldUnits`
+- Functions: `resolvePhysicsWorldUnits`, `toSiLength`, `fromSiLength`, `toSiMass`, `fromSiMass`
+
+---
+
+### `packages/physics/src/physics-system.ts` - `PhysicsSystem` (§39 step 6, plan P5-2) — the `SimulationSystem` that steps
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                         |
+| ---------------- | -------------------------------------------------------------- |
+| `@fourjs/core`   | `FourError`                                                    |
+| `@fourjs/motion` | `PRIORITY_PHYSICS_SOLVE, FixedUpdateContext, SimulationSystem` |
+
+**Internal Dependencies:**
+
+| File         | Imports        | Type               |
+| ------------ | -------------- | ------------------ |
+| `./world.js` | `PhysicsWorld` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `PhysicsSystem`
+- Interfaces: `PhysicsSystemOptions`
+
+---
+
+### `packages/physics/src/events.ts` - Collision, trigger, and sleep event payloads (§29, §32, §37).
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Vector3` |
+
+**Internal Dependencies:**
+
+| File         | Imports                                                        | Type               |
+| ------------ | -------------------------------------------------------------- | ------------------ |
+| `./types.js` | `PhysicsBodyHandle, PhysicsColliderHandle, PhysicsJointHandle` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `ContactPoint`, `CollisionEvent`, `TriggerEvent`, `SleepEvent`, `JointBreakEvent`
+- Types: `CollisionPhase`, `TriggerPhase`, `SleepPhase`, `JointPhase`, `PhysicsEventType`, `PhysicsEvent`
+
+---
+
+### `packages/physics/src/local-plane.ts` - §21's `"local-plane"` simulation frame (PH-12 remainder).
+
+**Workspace Dependencies:**
+
+| Package        | Import                |
+| -------------- | --------------------- |
+| `@fourjs/core` | `FourError`           |
+| `@fourjs/math` | `Quaternion, Vector3` |
+
+**Internal Dependencies:**
+
+| File               | Imports                      | Type   |
+| ------------------ | ---------------------------- | ------ |
+| `./descriptors.js` | `widenToVector3, LocalPlane` | Import |
+
+**Exports:**
+
+- Interfaces: `ResolvedLocalPlane`
+- Functions: `isDefaultLocalPlane`, `resolveLocalPlane`, `planeToWorld`, `worldToPlane`, `planeToWorldVec`, `worldToPlaneVec`
+- Constants: `DEFAULT_LOCAL_PLANE`
+
+---
+
+### `packages/physics/src/stale-handle.ts` - §83's stale physics handle development warning (A-4/A-5).
+
+**Workspace Dependencies:**
+
+| Package        | Import                                         |
+| -------------- | ---------------------------------------------- |
+| `@fourjs/core` | `DEV_WARNING_PREFIX, FourError, FourErrorCode` |
+
+**Exports:**
+
+- Types: `StalePhysicsHandleKind`
+- Functions: `resetStaleHandleWarnings`, `rejectStalePhysicsHandle`
+
+---
+
+### `packages/physics/src/adapter.ts` - The solver adapter contract (§37) — the seam every physics backend
+
+**Workspace Dependencies:**
+
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/core` | `Disposable` |
+
+**Internal Dependencies:**
+
+| File               | Imports                                                                                                     | Type               |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./descriptors.js` | `ColliderDescriptor, JointDescriptor, PhysicsWorldOptions, RigidBodyDescriptor`                             | Import (type-only) |
+| `./events.js`      | `PhysicsEvent`                                                                                              | Import (type-only) |
+| `./queries.js`     | `OverlapHit, OverlapQuery, PointHit, PointQuery, RaycastHit, RaycastQuery, ShapeCastHit, ShapeCastQuery`    | Import (type-only) |
+| `./types.js`       | `CCDMode, DeterminismLevel, PhysicsBodyHandle, PhysicsColliderHandle, PhysicsDimension, PhysicsJointHandle` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `PhysicsQueryCapabilities`, `PhysicsTuningCapabilities`, `PhysicsCapabilities`, `PhysicsEventInterest`, `PhysicsSolverAdapter`
+- Functions: `resolveTuningCapabilities`
+- Constants: `NO_TUNING_CAPABILITIES`
+
+---
+
+### `packages/physics/src/queries.ts` - Spatial queries (§30) — options, filter semantics, and result shapes.
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Vector3` |
+
+**Internal Dependencies:**
+
+| File          | Imports                                                                 | Type               |
+| ------------- | ----------------------------------------------------------------------- | ------------------ |
+| `./shapes.js` | `CollisionShape`                                                        | Import (type-only) |
+| `./types.js`  | `PhysicsBodyHandle, PhysicsColliderHandle, RotationInput, Vector3Input` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `QueryFilter`, `QueryOptions`, `ResolvedQueryOptions`, `QueryCandidate`, `RaycastQuery`, `ShapeCastQuery`, `OverlapQuery`, `PointQuery`, `QueryHit`, `RaycastHit`, `ShapeCastHit`, `PointHit`
+- Types: `QueryHitMode`, `OverlapHit`
+- Functions: `resolveQueryOptions`, `passesQueryFilter`, `sortHitsByDistance`
+- Constants: `ALL_COLLISION_GROUPS`
+
+---
+
+### `packages/physics/src/material.ts` - Physics materials and the §25 combination rules.
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File         | Imports       | Type               |
+| ------------ | ------------- | ------------------ |
+| `./types.js` | `CombineMode` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `PhysicsMaterial`
+- Interfaces: `PhysicsMaterialOptions`
+- Functions: `combineValues`, `combineFriction`, `combineRestitution`, `resolveDensity`
+- Constants: `DEFAULT_FRICTION`, `DEFAULT_RESTITUTION`, `DEFAULT_DENSITY`, `DEFAULT_FRICTION_COMBINE_MODE`, `DEFAULT_RESTITUTION_COMBINE_MODE`
+
+---
+
+### `packages/physics/src/resource-memory.ts` - §83 resource accounting for solver handles — how many bodies, colliders,
+
+**Exports:**
+
+- Functions: `noteSolverBody`, `noteSolverCollider`, `noteSolverJoint`, `liveSolverBodyCount`, `liveSolverColliderCount`, `liveSolverJointCount`, `liveSolverHandleCount`
+
+---
+
+### `packages/physics/src/force-field.ts` - §27 force fields for rigid bodies, through §26's force API (PH-8,
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                  |
+| ---------------- | ------------------------------------------------------- |
+| `@fourjs/core`   | `DEV_WARNING_PREFIX`                                    |
+| `@fourjs/math`   | `Vector3`                                               |
+| `@fourjs/motion` | `PRIORITY_FORCES, FixedUpdateContext, SimulationSystem` |
+
+**Internal Dependencies:**
+
+| File              | Imports        | Type               |
+| ----------------- | -------------- | ------------------ |
+| `./rigid-body.js` | `RigidBody`    | Import (type-only) |
+| `./world.js`      | `PhysicsWorld` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `ForceFieldSystem`
+- Interfaces: `ForceField`, `ForceFieldAddOptions`, `ForceFieldEntry`, `ForceFieldSystemOptions`
+- Types: `ForceFieldUnits`
+
+---
+
+### `packages/physics/src/shapes.ts` - Collision shapes (§24) and their §85 parameter validation.
+
+**Workspace Dependencies:**
+
+| Package        | Import             |
+| -------------- | ------------------ |
+| `@fourjs/core` | `FourError`        |
+| `@fourjs/math` | `Vector2, Vector3` |
+
+**Internal Dependencies:**
+
+| File         | Imports            | Type               |
+| ------------ | ------------------ | ------------------ |
+| `./types.js` | `PhysicsDimension` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `CircleShape`, `RectangleShape`, `CapsuleShape`, `PolygonShape`, `PolylineShape`, `ChainShape`, `SphereShape`, `BoxShape`, `CylinderShape`, `ConeShape`, `ConvexHullShape`, `TriangleMeshShape`, `HeightFieldShape`
+- Types: `CollisionShape2D`, `CollisionShape3D`, `CollisionShape`, `CollisionShapeType`
+- Functions: `shapeIsConvex`, `shapeSupportsDimension`, `shapeMaximumExtent`, `validateQueryShape`, `validateCollisionShape`
+- Constants: `COLLISION_SHAPE_TYPES_2D`, `COLLISION_SHAPE_TYPES_3D`, `COMPOSITE_COLLISION_SHAPE_TYPES`, `MAXIMUM_SHAPE_POINTS`
+
+---
+
+### `packages/physics/src/collider.ts` - The `Collider` component (§6a, §24) and its §25 effective-material
+
+**Workspace Dependencies:**
+
+| Package         | Import                                              |
+| --------------- | --------------------------------------------------- |
+| `@fourjs/core`  | `EventEmitter, FourError, Component, ComponentHost` |
+| `@fourjs/scene` | `Node, Transform`                                   |
+
+**Internal Dependencies:**
+
+| File               | Imports                                                 | Type               |
+| ------------------ | ------------------------------------------------------- | ------------------ |
+| `./descriptors.js` | `ColliderDescriptor`                                    | Import (type-only) |
+| `./events.js`      | `CollisionEvent, TriggerEvent`                          | Import (type-only) |
+| `./material.js`    | `PhysicsMaterial`                                       | Import (type-only) |
+| `./material.js`    | `DEFAULT_FRICTION, DEFAULT_RESTITUTION, resolveDensity` | Import             |
+| `./queries.js`     | `ALL_COLLISION_GROUPS`                                  | Import             |
+| `./rigid-body.js`  | `RigidBody`                                             | Import             |
+| `./shapes.js`      | `CollisionShape`                                        | Import (type-only) |
+| `./shapes.js`      | `shapeSupportsDimension, validateCollisionShape`        | Import             |
+| `./types.js`       | `PhysicsBodyHandle, PhysicsDimension`                   | Import (type-only) |
+| `./validation.js`  | `validateColliderDescriptor`                            | Import             |
+
+**Exports:**
+
+- Classes: `Collider`
+- Interfaces: `ColliderEventMap`
+- Types: `ColliderOptions`, `ColliderTriggerEvent`, `RigidBodyCollisionEvent`
+
+---
+
+### `packages/physics/src/types.ts` - The physics vocabulary (§21, §22, §25, §31, §32, §33) and the opaque solver
+
+**Workspace Dependencies:**
+
+| Package        | Import                         |
+| -------------- | ------------------------------ |
+| `@fourjs/math` | `Quaternion, Vector2, Vector3` |
+
+**Exports:**
+
+- Interfaces: `SleepingConfig`, `PhysicsBodyHandle`, `PhysicsColliderHandle`, `PhysicsJointHandle`
+- Types: `PhysicsDimension`, `BodyType`, `CCDMode`, `DeterminismLevel`, `CombineMode`, `Vector3Input`, `RotationInput`, `AngularVelocityInput`, `PhysicsHandle`
+- Constants: `PHYSICS_DIMENSIONS`, `BODY_TYPES`, `CCD_MODES`, `DEFAULT_CCD_MODE`, `DEFAULT_ENABLED_CCD_MODE`, `DETERMINISM_LEVELS`, `DEFAULT_DETERMINISM_LEVEL`, `COMBINE_MODES`, `DEFAULT_SLEEPING_CONFIG`
+
+---
+
+<a id="packages-geometry-dependencies"></a>
+
+## Packages/geometry Dependencies
+
+### `packages/geometry/src/index.ts` - --- R-21: §53 geometry base + bounding volume (begin) ---
+
+**Internal Dependencies:**
+
+| File                   | Imports                                                                                                                                                                                                          | Type                  |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./buffer-geometry.js` | `BufferGeometry`                                                                                                                                                                                                 | Re-export             |
+| `./geometry.js`        | `Geometry`                                                                                                                                                                                                       | Re-export             |
+| `./primitives-3d.js`   | `capsuleGeometry, coneGeometry, cylinderGeometry, extrudeGeometry, heightFieldGeometry, latheGeometry, sphereGeometry, torusGeometry, tubeGeometry`                                                              | Re-export             |
+| `./path.js`            | `DEFAULT_FLATTEN_TOLERANCE, MAX_SUBDIVISION_DEPTH, Path, booleanOp`                                                                                                                                              | Re-export             |
+| `./svg-document.js`    | `DEFAULT_MAXIMUM_SVG_DOCUMENT_LENGTH, parseSvgDocument`                                                                                                                                                          | Re-export             |
+| `./svg-path.js`        | `DEFAULT_MAXIMUM_PATH_DATA_LENGTH, formatSvgPathData, parseSvgPathData`                                                                                                                                          | Re-export             |
+| `./primitives.js`      | `boxGeometry, circleGeometry2D, planeGeometry, polygonGeometry2D`                                                                                                                                                | Re-export             |
+| `./resource-memory.js` | `geometryMemoryBytes, liveGeometryCount`                                                                                                                                                                         | Re-export             |
+| `./tessellation.js`    | `DEFAULT_MITER_LIMIT, earClippingTessellator, expandStroke, triangulatePolygon`                                                                                                                                  | Re-export             |
+| `./cpu-skinning.js`    | `CpuSkinning`                                                                                                                                                                                                    | Re-export             |
+| `./buffer-geometry.js` | `BufferGeometryOptions, GeometryBounds, GeometryDrawMode, GeometryIndexArray`                                                                                                                                    | Re-export (type-only) |
+| `./geometry.js`        | `BoundingVolume`                                                                                                                                                                                                 | Re-export (type-only) |
+| `./primitives-3d.js`   | `CapsuleGeometryOptions, ExtrudeGeometryOptions, HeightFieldGeometryOptions, LatheGeometryOptions, Point3D, SphereGeometryOptions, TaperedGeometryOptions, TorusGeometryOptions, TubeGeometryOptions`            | Re-export (type-only) |
+| `./path.js`            | `BooleanOp, FillRule, PathArcCommand, PathClosestPoint, PathCloseCommand, PathCommand, PathCubicCommand, PathFillRings, PathLineCommand, PathMoveCommand, PathOptions, PathQuadraticCommand, PathSegmentCommand` | Re-export (type-only) |
+| `./svg-document.js`    | `SvgDocument, SvgDocumentParseOptions, SvgDocumentPath, SvgViewBox`                                                                                                                                              | Re-export (type-only) |
+| `./svg-path.js`        | `SvgPathFormatOptions, SvgPathParseOptions`                                                                                                                                                                      | Re-export (type-only) |
+| `./primitives.js`      | `BoxGeometryOptions, CircleGeometry2DOptions, PlaneGeometryOptions, PolygonGeometry2DOptions`                                                                                                                    | Re-export (type-only) |
+| `./tessellation.js`    | `Point2D, PolygonTessellator, Polyline2D, StrokeAlignment, StrokeGeometryOptions, StrokeLineCap, StrokeLineJoin, StrokeMesh`                                                                                     | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `BufferGeometry`, `Geometry`, `capsuleGeometry`, `coneGeometry`, `cylinderGeometry`, `extrudeGeometry`, `heightFieldGeometry`, `latheGeometry`, `sphereGeometry`, `torusGeometry`, `tubeGeometry`, `DEFAULT_FLATTEN_TOLERANCE`, `MAX_SUBDIVISION_DEPTH`, `Path`, `booleanOp`, `DEFAULT_MAXIMUM_SVG_DOCUMENT_LENGTH`, `parseSvgDocument`, `DEFAULT_MAXIMUM_PATH_DATA_LENGTH`, `formatSvgPathData`, `parseSvgPathData`, `boxGeometry`, `circleGeometry2D`, `planeGeometry`, `polygonGeometry2D`, `geometryMemoryBytes`, `liveGeometryCount`, `DEFAULT_MITER_LIMIT`, `earClippingTessellator`, `expandStroke`, `triangulatePolygon`, `CpuSkinning`, `BufferGeometryOptions`, `GeometryBounds`, `GeometryDrawMode`, `GeometryIndexArray`, `BoundingVolume`, `CapsuleGeometryOptions`, `ExtrudeGeometryOptions`, `HeightFieldGeometryOptions`, `LatheGeometryOptions`, `Point3D`, `SphereGeometryOptions`, `TaperedGeometryOptions`, `TorusGeometryOptions`, `TubeGeometryOptions`, `BooleanOp`, `FillRule`, `PathArcCommand`, `PathClosestPoint`, `PathCloseCommand`, `PathCommand`, `PathCubicCommand`, `PathFillRings`, `PathLineCommand`, `PathMoveCommand`, `PathOptions`, `PathQuadraticCommand`, `PathSegmentCommand`, `SvgDocument`, `SvgDocumentParseOptions`, `SvgDocumentPath`, `SvgViewBox`, `SvgPathFormatOptions`, `SvgPathParseOptions`, `BoxGeometryOptions`, `CircleGeometry2DOptions`, `PlaneGeometryOptions`, `PolygonGeometry2DOptions`, `Point2D`, `PolygonTessellator`, `Polyline2D`, `StrokeAlignment`, `StrokeGeometryOptions`, `StrokeLineCap`, `StrokeLineJoin`, `StrokeMesh`
+
+---
+
+### `packages/geometry/src/tessellation.ts` - Polygon tessellation (§52) — the isolated module that turns a closed 2D
+
+**Internal Dependencies:**
+
+| File                     | Imports                          | Type               |
+| ------------------------ | -------------------------------- | ------------------ |
+| `./buffer-geometry.js`   | `GeometryIndexArray`             | Import (type-only) |
+| `./primitive-support.js` | `createIndices, requirePositive` | Import             |
+
+**Exports:**
+
+- Interfaces: `Point2D`, `PolygonTessellator`, `Polyline2D`, `StrokeGeometryOptions`, `StrokeMesh`
+- Types: `StrokeAlignment`, `StrokeLineCap`, `StrokeLineJoin`
+- Functions: `triangulatePolygon`, `expandStroke`
+- Constants: `earClippingTessellator`, `DEFAULT_MITER_LIMIT`
+
+---
+
+### `packages/geometry/src/path-boolean.ts` - §51 Boolean operations on flattened closed contours.
+
+**Internal Dependencies:**
+
+| File                | Imports    | Type               |
+| ------------------- | ---------- | ------------------ |
+| `./path.js`         | `FillRule` | Import (type-only) |
+| `./tessellation.js` | `Point2D`  | Import (type-only) |
+
+**Exports:**
+
+- Types: `BooleanOp`
+- Functions: `booleanPolygons`, `isConvex`, `sutherlandHodgman`, `ringsContain`
+
+---
+
+### `packages/geometry/src/path.ts` - The §51 path model — the vector-level source data every 2D shape, stroke,
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Matrix3` |
+
+**Internal Dependencies:**
+
+| File                     | Imports                      | Type                  |
+| ------------------------ | ---------------------------- | --------------------- |
+| `./path-boolean.js`      | `booleanPolygons, BooleanOp` | Import                |
+| `./primitive-support.js` | `requirePositive`            | Import                |
+| `./tessellation.js`      | `Point2D, Polyline2D`        | Import (type-only)    |
+| `./path-boolean.js`      | `BooleanOp`                  | Re-export (type-only) |
+
+**Exports:**
+
+- Classes: `Path`
+- Interfaces: `PathMoveCommand`, `PathLineCommand`, `PathQuadraticCommand`, `PathCubicCommand`, `PathArcCommand`, `PathCloseCommand`, `PathOptions`, `PathFillRings`, `PathClosestPoint`, `PathCursor`
+- Types: `FillRule`, `PathSegmentCommand`, `PathCommand`
+- Functions: `booleanOp`, `arcPoint`, `newCursor`, `advance`
+- Constants: `DEFAULT_FLATTEN_TOLERANCE`, `MAX_SUBDIVISION_DEPTH`
+- Re-exports: `BooleanOp`
+
+---
+
+### `packages/geometry/src/svg-document.ts` - §50's SVG **document** tier: a small XML tokenizer that turns `<svg>`
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+| `@fourjs/math` | `Matrix3`   |
+
+**Internal Dependencies:**
+
+| File            | Imports                                                                   | Type   |
+| --------------- | ------------------------------------------------------------------------- | ------ |
+| `./path.js`     | `Path, FillRule`                                                          | Import |
+| `./svg-path.js` | `DEFAULT_MAXIMUM_PATH_DATA_LENGTH, parseSvgPathData, SvgPathParseOptions` | Import |
+
+**Exports:**
+
+- Interfaces: `SvgDocumentParseOptions`, `SvgViewBox`, `SvgDocumentPath`, `SvgDocument`
+- Functions: `parseSvgDocument`, `parseTransform`
+- Constants: `DEFAULT_MAXIMUM_SVG_DOCUMENT_LENGTH`
+
+---
+
+### `packages/geometry/src/geometry.ts` - §53's `Geometry` base and its `BoundingVolume` — the two declarations the
+
+**Workspace Dependencies:**
+
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/core` | `Disposable` |
+| `@fourjs/math` | `Vector3`    |
+
+**Exports:**
+
+- Interfaces: `BoundingVolume`, `MutableBoundingVolume`
+- Functions: `nextGeometryIdentifier`
+
+---
+
+### `packages/geometry/src/primitives-3d.ts` - The nine 3D primitives §53 requires beyond the box and the plane — sphere,
+
+**Internal Dependencies:**
+
+| File                     | Imports                                                                                                  | Type   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- | ------ |
+| `./buffer-geometry.js`   | `BufferGeometry`                                                                                         | Import |
+| `./primitive-support.js` | `createIndices, gridIndices, requireNonNegative, requirePositive, requireSegments, writeCap, IndexArray` | Import |
+| `./tessellation.js`      | `triangulatePolygon, Point2D`                                                                            | Import |
+
+**Exports:**
+
+- Interfaces: `Point3D`, `SphereGeometryOptions`, `TaperedGeometryOptions`, `CapsuleGeometryOptions`, `TorusGeometryOptions`, `LatheGeometryOptions`, `ExtrudeGeometryOptions`, `TubeGeometryOptions`, `HeightFieldGeometryOptions`
+- Functions: `sphereGeometry`, `cylinderGeometry`, `coneGeometry`, `capsuleGeometry`, `torusGeometry`, `latheGeometry`, `extrudeGeometry`, `tubeGeometry`, `heightFieldGeometry`
+
+---
+
+### `packages/geometry/src/primitive-support.ts` - Shared building blocks of the §53 primitive builders — index allocation,
+
+**Exports:**
+
+- Types: `IndexArray`
+- Functions: `createIndices`, `requirePositive`, `requireNonNegative`, `requireSegments`, `gridIndices`, `writeCap`
+
+---
+
+### `packages/geometry/src/resource-memory.ts` - §83 resource accounting for geometries — how many are live, and how many
+
+**Workspace Dependencies:**
+
+| Package        | Import                                 |
+| -------------- | -------------------------------------- |
+| `@fourjs/core` | `DEV, disposeTracked, trackDisposable` |
+
+**Exports:**
+
+- Functions: `noteGeometry`, `geometryMemoryBytes`, `liveGeometryCount`, `trackGeometryDisposable`, `releaseGeometryDisposable`
+
+---
+
+### `packages/geometry/src/buffer-geometry.ts` - `BufferGeometry` (§53) — CPU-side vertex data, in the one shape the MVP
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Vector3` |
+
+**Internal Dependencies:**
+
+| File                   | Imports                                                            | Type   |
+| ---------------------- | ------------------------------------------------------------------ | ------ |
+| `./geometry.js`        | `Geometry, BoundingVolume, MutableBoundingVolume`                  | Import |
+| `./resource-memory.js` | `noteGeometry, releaseGeometryDisposable, trackGeometryDisposable` | Import |
+
+**Exports:**
+
+- Classes: `BufferGeometry`
+- Interfaces: `BufferGeometryOptions`
+- Types: `GeometryDrawMode`, `GeometryIndexArray`, `GeometryBounds`
+
+---
+
+### `packages/geometry/src/cpu-skinning.ts` - Reusable CPU linear-blend skinning (§54, RFC 0003).
+
+**Internal Dependencies:**
+
+| File                   | Imports          | Type   |
+| ---------------------- | ---------------- | ------ |
+| `./buffer-geometry.js` | `BufferGeometry` | Import |
+
+**Exports:**
+
+- Classes: `CpuSkinning`
+
+---
+
+### `packages/geometry/src/svg-path.ts` - §50's _"SVG import/export compatibility"_, at the **path-data tier**: the
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File        | Imports                                                          | Type   |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `./path.js` | `Path, advance, arcPoint, newCursor, PathArcCommand, PathCursor` | Import |
+
+**Exports:**
+
+- Interfaces: `SvgPathFormatOptions`, `SvgPathParseOptions`
+- Functions: `parseSvgPathData`, `formatSvgPathData`
+- Constants: `DEFAULT_MAXIMUM_PATH_DATA_LENGTH`
+
+---
+
+### `packages/geometry/src/primitives.ts` - Primitive geometry builders (§53) — the box, the plane, and the 2D circle.
+
+**Internal Dependencies:**
+
+| File                     | Imports                          | Type   |
+| ------------------------ | -------------------------------- | ------ |
+| `./buffer-geometry.js`   | `BufferGeometry`                 | Import |
+| `./primitive-support.js` | `createIndices, requirePositive` | Import |
+| `./tessellation.js`      | `triangulatePolygon, Point2D`    | Import |
+
+**Exports:**
+
+- Interfaces: `BoxGeometryOptions`, `PlaneGeometryOptions`, `CircleGeometry2DOptions`, `PolygonGeometry2DOptions`
+- Functions: `boxGeometry`, `planeGeometry`, `circleGeometry2D`, `polygonGeometry2D`
 
 ---
 
@@ -4434,47 +3806,80 @@ graph LR
 
 ## Packages/render Dependencies
 
-### `packages/render/src/batch.ts` - §65 batching — merging consecutive compatible draws into one (R-9,
+### `packages/render/src/read-pixels.ts` - §61's `readPixels` seam, backend-independent half (2026-08-29).
 
 **Workspace Dependencies:**
 
-| Package             | Import                                           |
-| ------------------- | ------------------------------------------------ |
-| `@fourjs/geometry`  | `BufferGeometry`                                 |
-| `@fourjs/materials` | `MaterialTexture, SpriteMaterial, UnlitMaterial` |
-| `@fourjs/math`      | `ColorRGBA`                                      |
-| `@fourjs/scene`     | `ALL_LAYERS, LayerMask`                          |
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/math` | `Rectangle2` |
 
 **Internal Dependencies:**
 
-| File               | Imports                                         | Type               |
-| ------------------ | ----------------------------------------------- | ------------------ |
-| `./clip.js`        | `RenderItemClip`                                | Import (type-only) |
-| `./scissor.js`     | `scissorsEqual, ScissorRect`                    | Import             |
-| `./render-list.js` | `RenderItem, SpriteRenderItem, UnlitRenderItem` | Import (type-only) |
+| File                 | Imports        | Type               |
+| -------------------- | -------------- | ------------------ |
+| `./render-target.js` | `RenderTarget` | Import (type-only) |
 
 **Exports:**
 
-- Classes: `RenderBatcher`
-- Interfaces: `RenderBatchOptions`, `RenderBatch`
-- Types: `BatchableMaterial`, `BatchableItem`
-- Constants: `DEFAULT_MAX_BATCH_VERTICES`
+- Interfaces: `PixelReader`
+- Functions: `supportsReadPixels`, `validateReadbackRegion`
 
 ---
 
-### `packages/render/src/bounds.ts` - World-space bounds of a drawable (§87) — the substrate a frustum test needs.
+### `packages/render/src/shape-paint.ts` - The §58 paint-object tier — validation and paint-to-graph lowering behind
 
 **Workspace Dependencies:**
 
-| Package            | Import             |
-| ------------------ | ------------------ |
-| `@fourjs/geometry` | `BufferGeometry`   |
-| `@fourjs/math`     | `Matrix4, Vector3` |
+| Package             | Import                                                             |
+| ------------------- | ------------------------------------------------------------------ |
+| `@fourjs/materials` | `NodeMaterialBuilder, Material, MaterialTexture, ShaderExpression` |
+| `@fourjs/math`      | `ColorRGBA`                                                        |
+| `@fourjs/geometry`  | `Point2D`                                                          |
+
+**Internal Dependencies:**
+
+| File         | Imports                                                                                                                                                                                                                                                                                                                                               | Type   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./shape.js` | `setShapePaintSupport, GradientStop, ConicGradientPaint, LinearGradientPaint, Paint, PatternPaint, RadialGradientPaint, ResolvedConicGradientPaint, ResolvedGradientStop, ResolvedLinearGradientPaint, ResolvedObjectPaint, ResolvedPaint, ResolvedPatternPaint, ResolvedRadialGradientPaint, ResolvedShapeFill, ResolvedStrokeStyle, ShapePaintPlan` | Import |
 
 **Exports:**
 
-- Interfaces: `BoundingSphere`
-- Functions: `computeWorldBoundingSphere`, `computeWorldBoundingSphereFromBox`
+- Functions: `registerShapePaints`
+
+---
+
+### `packages/render/src/scissor.ts` - §67 rectangular scissor clipping — a per-draw axis-aligned rectangle in
+
+**Exports:**
+
+- Interfaces: `ScissorRect`
+- Functions: `scissorsEqual`, `intersectScissor`
+
+---
+
+### `packages/render/src/sprite.ts` - `Sprite` (§55) — a textured, tinted quad in the scene graph.
+
+**Workspace Dependencies:**
+
+| Package             | Import           |
+| ------------------- | ---------------- |
+| `@fourjs/core`      | `Disposable`     |
+| `@fourjs/geometry`  | `BufferGeometry` |
+| `@fourjs/math`      | `Vector2`        |
+| `@fourjs/materials` | `SpriteMaterial` |
+
+**Internal Dependencies:**
+
+| File              | Imports                         | Type   |
+| ----------------- | ------------------------------- | ------ |
+| `./renderable.js` | `Renderable, RenderableOptions` | Import |
+
+**Exports:**
+
+- Classes: `Sprite`
+- Interfaces: `SpriteFrame`, `SpriteTextureRun`, `SpriteTextureCarrier`, `SpriteOptions`
+- Functions: `groupSpritesByTexture`
 
 ---
 
@@ -4500,126 +3905,26 @@ graph LR
 
 ---
 
-### `packages/render/src/clip.ts` - §67 clipping — a node's drawn shape masks its subtree, expressed entirely in
+### `packages/render/src/view-list.ts` - Per-view render lists (§64 stages 2–3, §66 sort key 4; R-8) — the frame's one
 
 **Workspace Dependencies:**
 
-| Package             | Import                   |
-| ------------------- | ------------------------ |
-| `@fourjs/core`      | `DEV, devWarn`           |
-| `@fourjs/materials` | `StencilFunc, StencilOp` |
-
-**Exports:**
-
-- Classes: `ClipPlaneAllocator`
-- Interfaces: `RenderItemStencil`, `RenderItemClip`, `ClipScope`
-- Constants: `MAX_CLIP_PLANES`
-
----
-
-### `packages/render/src/compute-workloads.ts` - The §81 compute-workload registry — a named map of
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
+| Package         | Import                      |
+| --------------- | --------------------------- |
+| `@fourjs/math`  | `Frustum, Matrix4, Vector3` |
+| `@fourjs/scene` | `layersMatch, Viewport`     |
 
 **Internal Dependencies:**
 
-| File           | Imports                 | Type               |
-| -------------- | ----------------------- | ------------------ |
-| `./compute.js` | `ComputePassDescriptor` | Import (type-only) |
+| File               | Imports                                         | Type   |
+| ------------------ | ----------------------------------------------- | ------ |
+| `./bounds.js`      | `computeWorldBoundingSphere, BoundingSphere`    | Import |
+| `./render-list.js` | `compareRenderItems, viewLayerMask, RenderItem` | Import |
 
 **Exports:**
 
-- Classes: `ComputeWorkloadRegistry`
-- Types: `ComputeWorkloadFactory`
-
----
-
-### `packages/render/src/compute.ts` - §82's `ComputePass`, as the backend-independent descriptor — the Q3
-
-**Exports:**
-
-- Interfaces: `ComputeBuffer`, `ComputeBinding`, `ComputePassDescriptor`, `ComputeDispatcher`
-- Types: `ComputeBindingAccess`
-- Functions: `supportsCompute`
-- Constants: `COMPUTE_ENTRY_POINT`
-
----
-
-### `packages/render/src/effect-pass.ts` - §70's post-processing at the **full-screen effect tier** (R-6, 2026-08-07):
-
-**Workspace Dependencies:**
-
-| Package             | Import                                                     |
-| ------------------- | ---------------------------------------------------------- |
-| `@fourjs/materials` | `SHADER_VALUE_COMPONENTS, analyzeShaderGraph, ShaderGraph` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                             | Type               |
-| -------------------- | ----------------------------------- | ------------------ |
-| `./render-target.js` | `RenderTarget, RenderTargetTexture` | Import (type-only) |
-| `./render-target.js` | `isRenderTargetTexture`             | Import             |
-
-**Exports:**
-
-- Interfaces: `CopyEffect`, `ColorGradeEffect`, `OutputTransformEffect`, `GraphEffect`, `EffectDestinationRect`, `EffectRenderPass`, `ScreenEffectRenderer`
-- Types: `ScreenEffect`, `ScreenEffectKind`
-- Functions: `supportsScreenEffects`, `validateEffectRenderPass`
-- Constants: `OUTPUT_TRANSFORM_EFFECT`, `COLOR_GRADE_DEFAULTS`, `COPY_EFFECT`
-
----
-
-### `packages/render/src/gpu-readback.ts` - gpu-readback module
-
-**Workspace Dependencies:**
-
-| Package        | Import                   |
-| -------------- | ------------------------ |
-| `@fourjs/core` | `FourError, Disposable`  |
-| `@fourjs/math` | `Rectangle2, ColorSpace` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                      | Type               |
-| -------------------- | -------------------------------------------- | ------------------ |
-| `./raster.js`        | `RasterSource`                               | Import (type-only) |
-| `./renderer.js`      | `Renderer`                                   | Import (type-only) |
-| `./render-target.js` | `RenderTarget, validateColorSpace`           | Import             |
-| `./read-pixels.js`   | `supportsReadPixels, validateReadbackRegion` | Import             |
-| `./raster-limits.js` | `DEFAULT_RASTER_MAXIMUM_BYTES`               | Import             |
-
-**Exports:**
-
-- Classes: `GpuReadbackSource`
-- Interfaces: `GpuReadbackSourceOptions`
-- Functions: `isGpuReadbackSource`
-
----
-
-### `packages/render/src/host-texture.ts` - Copies an ImageBitmap (or other width/height image) into restorable RGBA8 storage.
-
-**Workspace Dependencies:**
-
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/core` | `FourError`  |
-| `@fourjs/math` | `Rectangle2` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                         | Type   |
-| -------------------- | ----------------------------------------------- | ------ |
-| `./raster-limits.js` | `DEFAULT_RASTER_MAXIMUM_BYTES`                  | Import |
-| `./texture.js`       | `Texture, validateTextureSource, TextureSource` | Import |
-
-**Exports:**
-
-- Classes: `ImageBitmapTexture`, `VideoTexture`
-- Interfaces: `ImageReadSurface`, `HostTextureOptions`, `VideoTextureSource`
+- Interfaces: `ViewRenderListOptions`
+- Functions: `buildViewRenderList`, `sortRenderListByDepth`
 
 ---
 
@@ -4704,99 +4009,144 @@ graph LR
 
 ---
 
-### `packages/render/src/lights.ts` - Light collection (§68, §64) — scene graph in, one flat light state out.
+### `packages/render/src/compute-workloads.ts` - The §81 compute-workload registry — a named map of
 
 **Workspace Dependencies:**
 
-| Package         | Import                                 |
-| --------------- | -------------------------------------- |
-| `@fourjs/core`  | `DEV, DEV_WARNING_PREFIX, devWarnOnce` |
-| `@fourjs/math`  | `Matrix4, Vector3`                     |
-| `@fourjs/scene` | `Node`                                 |
-
-**Exports:**
-
-- Interfaces: `DirectionalLightSource`, `DirectionalShadowSource`, `PunctualLightSourceBase`, `PointLightSource`, `SpotLightSource`, `AmbientLightSource`, `HemisphereLightSource`, `SceneLights`
-- Types: `PunctualLightSource`
-- Functions: `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `createSceneLights`, `collectSceneLights`
-- Constants: `MAX_PUNCTUAL_LIGHTS`
-
----
-
-### `packages/render/src/mesh.ts` - `Mesh` (§54) — the renderable that can be skinned (RFC 0003 — gaps PH-10 +
-
-**Workspace Dependencies:**
-
-| Package             | Import                               |
-| ------------------- | ------------------------------------ |
-| `@fourjs/core`      | `FourError`                          |
-| `@fourjs/geometry`  | `CpuSkinning, BufferGeometry`        |
-| `@fourjs/materials` | `Material`                           |
-| `@fourjs/math`      | `Matrix4`                            |
-| `@fourjs/scene`     | `Bone, MorphWeights, Skeleton, Node` |
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
 
 **Internal Dependencies:**
 
-| File              | Imports                                          | Type   |
-| ----------------- | ------------------------------------------------ | ------ |
-| `./renderable.js` | `Renderable, RenderableOptions, SurfaceMaterial` | Import |
+| File           | Imports                 | Type               |
+| -------------- | ----------------------- | ------------------ |
+| `./compute.js` | `ComputePassDescriptor` | Import (type-only) |
 
 **Exports:**
 
-- Classes: `Mesh`
-- Functions: `restoreMeshSkeleton`
-- Constants: `MAX_SKINNING_JOINTS`
+- Classes: `ComputeWorkloadRegistry`
+- Types: `ComputeWorkloadFactory`
 
 ---
 
-### `packages/render/src/particles.ts` - The particle drawing contract (§36, §49, plan P9-3) — one batched render item
+### `packages/render/src/texture.ts` - `Texture` (§77, §55, §61) — CPU-side texel data with a stable identity and a
 
 **Workspace Dependencies:**
 
-| Package            | Import           |
-| ------------------ | ---------------- |
-| `@fourjs/geometry` | `BufferGeometry` |
-| `@fourjs/math`     | `Vector3`        |
-
-**Exports:**
-
-- Interfaces: `ParticleDrawable`
-- Functions: `isParticleDrawable`, `particleQuadGeometry`
-- Constants: `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `PARTICLE_POSITION_OFFSET`, `PARTICLE_SIZE_OFFSET`, `PARTICLE_COLOR_OFFSET`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `TRAIL_VERTEX_FLOATS`, `TRAIL_POSITION_OFFSET`, `TRAIL_COLOR_OFFSET`
-
----
-
-### `packages/render/src/picking.ts` - Pixel/GPU-id picking — the backend-neutral half (§71; RFC 0005, accepted
-
-**Workspace Dependencies:**
-
-| Package         | Import           |
-| --------------- | ---------------- |
-| `@fourjs/core`  | `FourError`      |
-| `@fourjs/math`  | `Matrix4`        |
-| `@fourjs/scene` | `Node, Viewport` |
+| Package             | Import                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------- |
+| `@fourjs/core`      | `FourError, Disposable`                                                               |
+| `@fourjs/materials` | `MaterialTextureFilter, MaterialTextureMinFilter, MaterialTextureWrap, SpriteTexture` |
+| `@fourjs/math`      | `ColorSpace, Rectangle2`                                                              |
 
 **Internal Dependencies:**
 
-| File              | Imports              | Type               |
-| ----------------- | -------------------- | ------------------ |
-| `./particles.js`  | `isParticleDrawable` | Import             |
-| `./renderable.js` | `Renderable`         | Import             |
-| `./renderer.js`   | `Renderer`           | Import (type-only) |
+| File                   | Imports                                                       | Type   |
+| ---------------------- | ------------------------------------------------------------- | ------ |
+| `./texture-updates.js` | `TextureUpdates`                                              | Import |
+| `./render-target.js`   | `validateColorSpace`                                          | Import |
+| `./resource-memory.js` | `noteTexture, releaseRenderDisposable, trackRenderDisposable` | Import |
 
 **Exports:**
 
-- Interfaces: `PickRequest`, `PickResult`, `PickingService`
-- Functions: `supportsPicking`, `assertEncodableCandidateCount`, `collectPickCandidates`, `encodePickId`, `decodePickId`
-- Constants: `MAX_PICK_CANDIDATES`
+- Classes: `Texture`
+- Interfaces: `TextureSource`
+- Types: `TextureFilter`, `TextureMinFilter`, `TextureWrap`, `TextureDimension`, `TextureMapRole`
+- Functions: `validateTextureSource`
 
 ---
 
-### `packages/render/src/raster-limits.ts` - raster-limits module
+### `packages/render/src/render-target-bytes.ts` - Per-texel byte accounting for {@link RenderTarget} attachments (§83, §84).
+
+**Internal Dependencies:**
+
+| File                 | Imports              | Type               |
+| -------------------- | -------------------- | ------------------ |
+| `./render-target.js` | `RenderTargetFormat` | Import (type-only) |
 
 **Exports:**
 
-- Constants: `DEFAULT_RASTER_MAXIMUM_BYTES`
+- Functions: `colorAttachmentBytesPerTexel`, `depthAttachmentBytesPerTexel`, `renderTargetByteLength`
+- Constants: `RENDER_TARGET_RGBA8_BYTES`, `RENDER_TARGET_RGBA16F_BYTES`, `RENDER_TARGET_RGBA32F_BYTES`, `RENDER_TARGET_DEPTH_RENDERBUFFER_BYTES`, `RENDER_TARGET_DEPTH_TEXTURE_BYTES`, `RENDER_TARGET_DEPTH_STENCIL_BYTES`, `RENDER_TARGET_COLOR_BYTES`
+
+---
+
+### `packages/render/src/render-list.ts` - Render-list construction (§64) — scene graph in, flat sorted draw list out.
+
+**Workspace Dependencies:**
+
+| Package             | Import                                                                                                                       |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`      | `DEV, devWarnOnce`                                                                                                           |
+| `@fourjs/geometry`  | `BufferGeometry`                                                                                                             |
+| `@fourjs/math`      | `Matrix4, Quaternion, Vector3`                                                                                               |
+| `@fourjs/materials` | `LitMaterial, Material, NodeMaterial, SpriteMaterial, StandardMaterial, UnlitMaterial`                                       |
+| `@fourjs/scene`     | `ALL_LAYERS, DEFAULT_LAYER_MASK, assertLayerMask, isLayerMask, layersMatch, LayerMask, Node, PoseBuffer, Skeleton, Viewport` |
+
+**Internal Dependencies:**
+
+| File              | Imports                                                              | Type               |
+| ----------------- | -------------------------------------------------------------------- | ------------------ |
+| `./bounds.js`     | `computeWorldBoundingSphereFromBox, BoundingSphere`                  | Import             |
+| `./clip.js`       | `ClipPlaneAllocator, RenderItemClip`                                 | Import             |
+| `./particles.js`  | `PARTICLE_INSTANCE_FLOATS, isParticleDrawable, particleQuadGeometry` | Import             |
+| `./renderable.js` | `Renderable`                                                         | Import             |
+| `./scissor.js`    | `ScissorRect`                                                        | Import (type-only) |
+| `./sprite.js`     | `SpriteFrame`                                                        | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `UnlitRenderItem`, `SkinnedUnlitRenderItem`, `SkinnedLitRenderItem`, `LitRenderItem`, `StandardRenderItem`, `NodeRenderItem`, `SpriteRenderItem`, `ParticleRenderItem`
+- Types: `RenderItemKind`, `RenderItem`
+- Functions: `isSpriteItem`, `isUnlitItem`, `isLitItem`, `isStandardItem`, `isParticlesItem`, `isNodeItem`, `isSkinnedUnlitItem`, `isSkinnedLitItem`, `viewLayerMask`, `compareRenderItems`, `groupRenderListByPipeline`, `buildRenderList`, `buildInterpolatedRenderList`
+
+---
+
+### `packages/render/src/host-texture.ts` - Copies an ImageBitmap (or other width/height image) into restorable RGBA8 storage.
+
+**Workspace Dependencies:**
+
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/core` | `FourError`  |
+| `@fourjs/math` | `Rectangle2` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                         | Type   |
+| -------------------- | ----------------------------------------------- | ------ |
+| `./raster-limits.js` | `DEFAULT_RASTER_MAXIMUM_BYTES`                  | Import |
+| `./texture.js`       | `Texture, validateTextureSource, TextureSource` | Import |
+
+**Exports:**
+
+- Classes: `ImageBitmapTexture`, `VideoTexture`
+- Interfaces: `ImageReadSurface`, `HostTextureOptions`, `VideoTextureSource`
+
+---
+
+### `packages/render/src/effect-pass.ts` - §70's post-processing at the **full-screen effect tier** (R-6, 2026-08-07):
+
+**Workspace Dependencies:**
+
+| Package             | Import                                                     |
+| ------------------- | ---------------------------------------------------------- |
+| `@fourjs/materials` | `SHADER_VALUE_COMPONENTS, analyzeShaderGraph, ShaderGraph` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                             | Type               |
+| -------------------- | ----------------------------------- | ------------------ |
+| `./render-target.js` | `RenderTarget, RenderTargetTexture` | Import (type-only) |
+| `./render-target.js` | `isRenderTargetTexture`             | Import             |
+
+**Exports:**
+
+- Interfaces: `CopyEffect`, `ColorGradeEffect`, `OutputTransformEffect`, `GraphEffect`, `EffectDestinationRect`, `EffectRenderPass`, `ScreenEffectRenderer`
+- Types: `ScreenEffect`, `ScreenEffectKind`
+- Functions: `supportsScreenEffects`, `validateEffectRenderPass`
+- Constants: `OUTPUT_TRANSFORM_EFFECT`, `COLOR_GRADE_DEFAULTS`, `COPY_EFFECT`
 
 ---
 
@@ -4832,123 +4182,82 @@ graph LR
 
 ---
 
-### `packages/render/src/read-pixels.ts` - §61's `readPixels` seam, backend-independent half (2026-08-29).
+### `packages/render/src/particles.ts` - The particle drawing contract (§36, §49, plan P9-3) — one batched render item
 
 **Workspace Dependencies:**
 
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/math` | `Rectangle2` |
-
-**Internal Dependencies:**
-
-| File                 | Imports        | Type               |
-| -------------------- | -------------- | ------------------ |
-| `./render-target.js` | `RenderTarget` | Import (type-only) |
+| Package            | Import           |
+| ------------------ | ---------------- |
+| `@fourjs/geometry` | `BufferGeometry` |
+| `@fourjs/math`     | `Vector3`        |
 
 **Exports:**
 
-- Interfaces: `PixelReader`
-- Functions: `supportsReadPixels`, `validateReadbackRegion`
+- Interfaces: `ParticleDrawable`
+- Functions: `isParticleDrawable`, `particleQuadGeometry`
+- Constants: `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `PARTICLE_POSITION_OFFSET`, `PARTICLE_SIZE_OFFSET`, `PARTICLE_COLOR_OFFSET`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `TRAIL_VERTEX_FLOATS`, `TRAIL_POSITION_OFFSET`, `TRAIL_COLOR_OFFSET`
 
 ---
 
-### `packages/render/src/render-graph.ts` - `RenderGraph` (§63) — an ordered list of passes, executed by one call, with
+### `packages/render/src/gpu-readback.ts` - gpu-readback module
 
 **Workspace Dependencies:**
 
-| Package         | Import           |
-| --------------- | ---------------- |
-| `@fourjs/core`  | `FourError`      |
-| `@fourjs/scene` | `Node, Viewport` |
+| Package        | Import                   |
+| -------------- | ------------------------ |
+| `@fourjs/core` | `FourError, Disposable`  |
+| `@fourjs/math` | `Rectangle2, ColorSpace` |
 
 **Internal Dependencies:**
 
-| File                 | Imports                                                             | Type               |
-| -------------------- | ------------------------------------------------------------------- | ------------------ |
-| `./raster.js`        | `CanvasTexture`                                                     | Import             |
-| `./effect-pass.js`   | `supportsScreenEffects, validateEffectRenderPass, EffectRenderPass` | Import             |
-| `./render-list.js`   | `buildRenderList, RenderItem`                                       | Import             |
-| `./render-target.js` | `isRenderTargetTexture, RenderTarget`                               | Import             |
-| `./renderer.js`      | `RenderInterpolation, Renderer`                                     | Import (type-only) |
+| File                 | Imports                                      | Type               |
+| -------------------- | -------------------------------------------- | ------------------ |
+| `./raster.js`        | `RasterSource`                               | Import (type-only) |
+| `./renderer.js`      | `Renderer`                                   | Import (type-only) |
+| `./render-target.js` | `RenderTarget, validateColorSpace`           | Import             |
+| `./read-pixels.js`   | `supportsReadPixels, validateReadbackRegion` | Import             |
+| `./raster-limits.js` | `DEFAULT_RASTER_MAXIMUM_BYTES`               | Import             |
 
 **Exports:**
 
-- Classes: `RenderGraph`
-- Interfaces: `RenderPassContext`, `SceneRenderPass`, `CustomRenderPass`, `AddPassOptions`, `RenderGraphPass`, `RenderGraphIssue`
-- Types: `RenderPass`, `RenderGraphIssueCode`, `RenderGraphIssueSeverity`
+- Classes: `GpuReadbackSource`
+- Interfaces: `GpuReadbackSourceOptions`
+- Functions: `isGpuReadbackSource`
 
 ---
 
-### `packages/render/src/render-list.ts` - Render-list construction (§64) — scene graph in, flat sorted draw list out.
+### `packages/render/src/statistics.ts` - Per-frame render counters (§84's `drawCalls`/`triangles`/`instances`) — the
+
+**Exports:**
+
+- Interfaces: `RenderStatistics`, `RenderStatisticsReporter`
+- Functions: `createRenderStatistics`, `resetRenderStatistics`, `supportsRenderStatistics`
+
+---
+
+### `packages/render/src/mesh.ts` - `Mesh` (§54) — the renderable that can be skinned (RFC 0003 — gaps PH-10 +
 
 **Workspace Dependencies:**
 
-| Package             | Import                                                                                                                       |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`      | `DEV, devWarnOnce`                                                                                                           |
-| `@fourjs/geometry`  | `BufferGeometry`                                                                                                             |
-| `@fourjs/math`      | `Matrix4, Quaternion, Vector3`                                                                                               |
-| `@fourjs/materials` | `LitMaterial, Material, NodeMaterial, SpriteMaterial, StandardMaterial, UnlitMaterial`                                       |
-| `@fourjs/scene`     | `ALL_LAYERS, DEFAULT_LAYER_MASK, assertLayerMask, isLayerMask, layersMatch, LayerMask, Node, PoseBuffer, Skeleton, Viewport` |
+| Package             | Import                               |
+| ------------------- | ------------------------------------ |
+| `@fourjs/core`      | `FourError`                          |
+| `@fourjs/geometry`  | `CpuSkinning, BufferGeometry`        |
+| `@fourjs/materials` | `Material`                           |
+| `@fourjs/math`      | `Matrix4`                            |
+| `@fourjs/scene`     | `Bone, MorphWeights, Skeleton, Node` |
 
 **Internal Dependencies:**
 
-| File              | Imports                                                              | Type               |
-| ----------------- | -------------------------------------------------------------------- | ------------------ |
-| `./bounds.js`     | `computeWorldBoundingSphereFromBox, BoundingSphere`                  | Import             |
-| `./clip.js`       | `ClipPlaneAllocator, RenderItemClip`                                 | Import             |
-| `./particles.js`  | `PARTICLE_INSTANCE_FLOATS, isParticleDrawable, particleQuadGeometry` | Import             |
-| `./renderable.js` | `Renderable`                                                         | Import             |
-| `./scissor.js`    | `ScissorRect`                                                        | Import (type-only) |
-| `./sprite.js`     | `SpriteFrame`                                                        | Import (type-only) |
+| File              | Imports                                          | Type   |
+| ----------------- | ------------------------------------------------ | ------ |
+| `./renderable.js` | `Renderable, RenderableOptions, SurfaceMaterial` | Import |
 
 **Exports:**
 
-- Interfaces: `UnlitRenderItem`, `SkinnedUnlitRenderItem`, `SkinnedLitRenderItem`, `LitRenderItem`, `StandardRenderItem`, `NodeRenderItem`, `SpriteRenderItem`, `ParticleRenderItem`
-- Types: `RenderItemKind`, `RenderItem`
-- Functions: `isSpriteItem`, `isUnlitItem`, `isLitItem`, `isStandardItem`, `isParticlesItem`, `isNodeItem`, `isSkinnedUnlitItem`, `isSkinnedLitItem`, `viewLayerMask`, `compareRenderItems`, `groupRenderListByPipeline`, `buildRenderList`, `buildInterpolatedRenderList`
-
----
-
-### `packages/render/src/render-target-bytes.ts` - Per-texel byte accounting for {@link RenderTarget} attachments (§83, §84).
-
-**Internal Dependencies:**
-
-| File                 | Imports              | Type               |
-| -------------------- | -------------------- | ------------------ |
-| `./render-target.js` | `RenderTargetFormat` | Import (type-only) |
-
-**Exports:**
-
-- Functions: `colorAttachmentBytesPerTexel`, `depthAttachmentBytesPerTexel`, `renderTargetByteLength`
-- Constants: `RENDER_TARGET_RGBA8_BYTES`, `RENDER_TARGET_RGBA16F_BYTES`, `RENDER_TARGET_RGBA32F_BYTES`, `RENDER_TARGET_DEPTH_RENDERBUFFER_BYTES`, `RENDER_TARGET_DEPTH_TEXTURE_BYTES`, `RENDER_TARGET_DEPTH_STENCIL_BYTES`, `RENDER_TARGET_COLOR_BYTES`
-
----
-
-### `packages/render/src/render-target.ts` - `RenderTarget` (§61, §48, §63, §77) — an off-screen surface a frame can be
-
-**Workspace Dependencies:**
-
-| Package             | Import            |
-| ------------------- | ----------------- |
-| `@fourjs/core`      | `Disposable`      |
-| `@fourjs/materials` | `MaterialTexture` |
-| `@fourjs/math`      | `ColorSpace`      |
-
-**Internal Dependencies:**
-
-| File                       | Imports                                                            | Type   |
-| -------------------------- | ------------------------------------------------------------------ | ------ |
-| `./render-target-bytes.js` | `renderTargetByteLength`                                           | Import |
-| `./resource-memory.js`     | `noteRenderTarget, releaseRenderDisposable, trackRenderDisposable` | Import |
-
-**Exports:**
-
-- Classes: `RenderTarget`
-- Interfaces: `RenderTargetOptions`, `RenderTargetTexture`
-- Types: `RenderTargetFormat`
-- Functions: `isRenderTargetTexture`, `validateColorSpace`
+- Classes: `Mesh`
+- Functions: `restoreMeshSkeleton`
+- Constants: `MAX_SKINNING_JOINTS`
 
 ---
 
@@ -4976,27 +4285,45 @@ graph LR
 
 ---
 
-### `packages/render/src/renderer-registry.ts` - The §62 backend registry — how a name becomes a renderer without this
+### `packages/render/src/texture-updates.ts` - texture-updates module
 
 **Workspace Dependencies:**
 
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File            | Imports                                                            | Type               |
-| --------------- | ------------------------------------------------------------------ | ------------------ |
-| `./renderer.js` | `Renderer, RendererBackend, RendererCapabilities, RendererOptions` | Import (type-only) |
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/math` | `Rectangle2` |
 
 **Exports:**
 
-- Classes: `RendererRegistry`
-- Interfaces: `RendererRegistration`, `RendererCapabilityDeclaration`, `RendererCapabilityShortfall`, `RendererFallbackReport`, `RendererResolveOptions`
-- Types: `RendererSelection`, `RendererCapabilityName`, `RendererFallbackReason`
-- Functions: `validateCapabilityDeclaration`, `missingCapabilities`, `registerRenderer`, `registeredRenderers`, `clearRegisteredRenderers`, `resolveRenderer`
-- Constants: `AUTO_RENDERER_ORDER`, `RENDERER_CAPABILITY_NAMES`
+- Classes: `TextureUpdates`
+
+---
+
+### `packages/render/src/batch.ts` - §65 batching — merging consecutive compatible draws into one (R-9,
+
+**Workspace Dependencies:**
+
+| Package             | Import                                           |
+| ------------------- | ------------------------------------------------ |
+| `@fourjs/geometry`  | `BufferGeometry`                                 |
+| `@fourjs/materials` | `MaterialTexture, SpriteMaterial, UnlitMaterial` |
+| `@fourjs/math`      | `ColorRGBA`                                      |
+| `@fourjs/scene`     | `ALL_LAYERS, LayerMask`                          |
+
+**Internal Dependencies:**
+
+| File               | Imports                                         | Type               |
+| ------------------ | ----------------------------------------------- | ------------------ |
+| `./clip.js`        | `RenderItemClip`                                | Import (type-only) |
+| `./scissor.js`     | `scissorsEqual, ScissorRect`                    | Import             |
+| `./render-list.js` | `RenderItem, SpriteRenderItem, UnlitRenderItem` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `RenderBatcher`
+- Interfaces: `RenderBatchOptions`, `RenderBatch`
+- Types: `BatchableMaterial`, `BatchableItem`
+- Constants: `DEFAULT_MAX_BATCH_VERTICES`
 
 ---
 
@@ -5030,6 +4357,137 @@ graph LR
 
 ---
 
+### `packages/render/src/compute.ts` - §82's `ComputePass`, as the backend-independent descriptor — the Q3
+
+**Exports:**
+
+- Interfaces: `ComputeBuffer`, `ComputeBinding`, `ComputePassDescriptor`, `ComputeDispatcher`
+- Types: `ComputeBindingAccess`
+- Functions: `supportsCompute`
+- Constants: `COMPUTE_ENTRY_POINT`
+
+---
+
+### `packages/render/src/picking.ts` - Pixel/GPU-id picking — the backend-neutral half (§71; RFC 0005, accepted
+
+**Workspace Dependencies:**
+
+| Package         | Import           |
+| --------------- | ---------------- |
+| `@fourjs/core`  | `FourError`      |
+| `@fourjs/math`  | `Matrix4`        |
+| `@fourjs/scene` | `Node, Viewport` |
+
+**Internal Dependencies:**
+
+| File              | Imports              | Type               |
+| ----------------- | -------------------- | ------------------ |
+| `./particles.js`  | `isParticleDrawable` | Import             |
+| `./renderable.js` | `Renderable`         | Import             |
+| `./renderer.js`   | `Renderer`           | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `PickRequest`, `PickResult`, `PickingService`
+- Functions: `supportsPicking`, `assertEncodableCandidateCount`, `collectPickCandidates`, `encodePickId`, `decodePickId`
+- Constants: `MAX_PICK_CANDIDATES`
+
+---
+
+### `packages/render/src/render-graph.ts` - `RenderGraph` (§63) — an ordered list of passes, executed by one call, with
+
+**Workspace Dependencies:**
+
+| Package         | Import           |
+| --------------- | ---------------- |
+| `@fourjs/core`  | `FourError`      |
+| `@fourjs/scene` | `Node, Viewport` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                             | Type               |
+| -------------------- | ------------------------------------------------------------------- | ------------------ |
+| `./raster.js`        | `CanvasTexture`                                                     | Import             |
+| `./effect-pass.js`   | `supportsScreenEffects, validateEffectRenderPass, EffectRenderPass` | Import             |
+| `./render-list.js`   | `buildRenderList, RenderItem`                                       | Import             |
+| `./render-target.js` | `isRenderTargetTexture, RenderTarget`                               | Import             |
+| `./renderer.js`      | `RenderInterpolation, Renderer`                                     | Import (type-only) |
+
+**Exports:**
+
+- Classes: `RenderGraph`
+- Interfaces: `RenderPassContext`, `SceneRenderPass`, `CustomRenderPass`, `AddPassOptions`, `RenderGraphPass`, `RenderGraphIssue`
+- Types: `RenderPass`, `RenderGraphIssueCode`, `RenderGraphIssueSeverity`
+
+---
+
+### `packages/render/src/render-target.ts` - `RenderTarget` (§61, §48, §63, §77) — an off-screen surface a frame can be
+
+**Workspace Dependencies:**
+
+| Package             | Import            |
+| ------------------- | ----------------- |
+| `@fourjs/core`      | `Disposable`      |
+| `@fourjs/materials` | `MaterialTexture` |
+| `@fourjs/math`      | `ColorSpace`      |
+
+**Internal Dependencies:**
+
+| File                       | Imports                                                            | Type   |
+| -------------------------- | ------------------------------------------------------------------ | ------ |
+| `./render-target-bytes.js` | `renderTargetByteLength`                                           | Import |
+| `./resource-memory.js`     | `noteRenderTarget, releaseRenderDisposable, trackRenderDisposable` | Import |
+
+**Exports:**
+
+- Classes: `RenderTarget`
+- Interfaces: `RenderTargetOptions`, `RenderTargetTexture`
+- Types: `RenderTargetFormat`
+- Functions: `isRenderTargetTexture`, `validateColorSpace`
+
+---
+
+### `packages/render/src/raster-limits.ts` - raster-limits module
+
+**Exports:**
+
+- Constants: `DEFAULT_RASTER_MAXIMUM_BYTES`
+
+---
+
+### `packages/render/src/bounds.ts` - World-space bounds of a drawable (§87) — the substrate a frustum test needs.
+
+**Workspace Dependencies:**
+
+| Package            | Import             |
+| ------------------ | ------------------ |
+| `@fourjs/geometry` | `BufferGeometry`   |
+| `@fourjs/math`     | `Matrix4, Vector3` |
+
+**Exports:**
+
+- Interfaces: `BoundingSphere`
+- Functions: `computeWorldBoundingSphere`, `computeWorldBoundingSphereFromBox`
+
+---
+
+### `packages/render/src/clip.ts` - §67 clipping — a node's drawn shape masks its subtree, expressed entirely in
+
+**Workspace Dependencies:**
+
+| Package             | Import                   |
+| ------------------- | ------------------------ |
+| `@fourjs/core`      | `DEV, devWarn`           |
+| `@fourjs/materials` | `StencilFunc, StencilOp` |
+
+**Exports:**
+
+- Classes: `ClipPlaneAllocator`
+- Interfaces: `RenderItemStencil`, `RenderItemClip`, `ClipScope`
+- Constants: `MAX_CLIP_PLANES`
+
+---
+
 ### `packages/render/src/resource-memory.ts` - §83 resource accounting for textures and render targets — how many are live,
 
 **Workspace Dependencies:**
@@ -5041,52 +4499,6 @@ graph LR
 **Exports:**
 
 - Functions: `noteTexture`, `noteRenderTarget`, `textureMemoryBytes`, `liveTextureCount`, `liveRenderTargetCount`, `trackRenderDisposable`, `releaseRenderDisposable`
-
----
-
-### `packages/render/src/resource-warnings.ts` - §83's "disposed resource still in use" development warning (A-4/A-5).
-
-**Workspace Dependencies:**
-
-| Package        | Import             |
-| -------------- | ------------------ |
-| `@fourjs/core` | `DEV, devWarnOnce` |
-
-**Exports:**
-
-- Types: `DisposedResourceKind`
-- Functions: `warnDisposedInUse`
-
----
-
-### `packages/render/src/scissor.ts` - §67 rectangular scissor clipping — a per-draw axis-aligned rectangle in
-
-**Exports:**
-
-- Interfaces: `ScissorRect`
-- Functions: `scissorsEqual`, `intersectScissor`
-
----
-
-### `packages/render/src/shape-paint.ts` - The §58 paint-object tier — validation and paint-to-graph lowering behind
-
-**Workspace Dependencies:**
-
-| Package             | Import                                                             |
-| ------------------- | ------------------------------------------------------------------ |
-| `@fourjs/materials` | `NodeMaterialBuilder, Material, MaterialTexture, ShaderExpression` |
-| `@fourjs/math`      | `ColorRGBA`                                                        |
-| `@fourjs/geometry`  | `Point2D`                                                          |
-
-**Internal Dependencies:**
-
-| File         | Imports                                                                                                                                                                                                                                                                                                                                               | Type   |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./shape.js` | `setShapePaintSupport, GradientStop, ConicGradientPaint, LinearGradientPaint, Paint, PatternPaint, RadialGradientPaint, ResolvedConicGradientPaint, ResolvedGradientStop, ResolvedLinearGradientPaint, ResolvedObjectPaint, ResolvedPaint, ResolvedPatternPaint, ResolvedRadialGradientPaint, ResolvedShapeFill, ResolvedStrokeStyle, ShapePaintPlan` | Import |
-
-**Exports:**
-
-- Functions: `registerShapePaints`
 
 ---
 
@@ -5116,194 +4528,271 @@ graph LR
 
 ---
 
-### `packages/render/src/sprite.ts` - `Sprite` (§55) — a textured, tinted quad in the scene graph.
+### `packages/render/src/renderer-registry.ts` - The §62 backend registry — how a name becomes a renderer without this
 
 **Workspace Dependencies:**
 
-| Package             | Import           |
-| ------------------- | ---------------- |
-| `@fourjs/core`      | `Disposable`     |
-| `@fourjs/geometry`  | `BufferGeometry` |
-| `@fourjs/math`      | `Vector2`        |
-| `@fourjs/materials` | `SpriteMaterial` |
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
 
 **Internal Dependencies:**
 
-| File              | Imports                         | Type   |
-| ----------------- | ------------------------------- | ------ |
-| `./renderable.js` | `Renderable, RenderableOptions` | Import |
+| File            | Imports                                                            | Type               |
+| --------------- | ------------------------------------------------------------------ | ------------------ |
+| `./renderer.js` | `Renderer, RendererBackend, RendererCapabilities, RendererOptions` | Import (type-only) |
 
 **Exports:**
 
-- Classes: `Sprite`
-- Interfaces: `SpriteFrame`, `SpriteTextureRun`, `SpriteTextureCarrier`, `SpriteOptions`
-- Functions: `groupSpritesByTexture`
+- Classes: `RendererRegistry`
+- Interfaces: `RendererRegistration`, `RendererCapabilityDeclaration`, `RendererCapabilityShortfall`, `RendererFallbackReport`, `RendererResolveOptions`
+- Types: `RendererSelection`, `RendererCapabilityName`, `RendererFallbackReason`
+- Functions: `validateCapabilityDeclaration`, `missingCapabilities`, `registerRenderer`, `registeredRenderers`, `clearRegisteredRenderers`, `resolveRenderer`
+- Constants: `AUTO_RENDERER_ORDER`, `RENDERER_CAPABILITY_NAMES`
 
 ---
 
-### `packages/render/src/statistics.ts` - Per-frame render counters (§84's `drawCalls`/`triangles`/`instances`) — the
-
-**Exports:**
-
-- Interfaces: `RenderStatistics`, `RenderStatisticsReporter`
-- Functions: `createRenderStatistics`, `resetRenderStatistics`, `supportsRenderStatistics`
-
----
-
-### `packages/render/src/texture-updates.ts` - texture-updates module
+### `packages/render/src/resource-warnings.ts` - §83's "disposed resource still in use" development warning (A-4/A-5).
 
 **Workspace Dependencies:**
 
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/math` | `Rectangle2` |
+| Package        | Import             |
+| -------------- | ------------------ |
+| `@fourjs/core` | `DEV, devWarnOnce` |
 
 **Exports:**
 
-- Classes: `TextureUpdates`
+- Types: `DisposedResourceKind`
+- Functions: `warnDisposedInUse`
 
 ---
 
-### `packages/render/src/texture.ts` - `Texture` (§77, §55, §61) — CPU-side texel data with a stable identity and a
+### `packages/render/src/lights.ts` - Light collection (§68, §64) — scene graph in, one flat light state out.
 
 **Workspace Dependencies:**
 
-| Package             | Import                                                                                |
-| ------------------- | ------------------------------------------------------------------------------------- |
-| `@fourjs/core`      | `FourError, Disposable`                                                               |
-| `@fourjs/materials` | `MaterialTextureFilter, MaterialTextureMinFilter, MaterialTextureWrap, SpriteTexture` |
-| `@fourjs/math`      | `ColorSpace, Rectangle2`                                                              |
+| Package         | Import                                 |
+| --------------- | -------------------------------------- |
+| `@fourjs/core`  | `DEV, DEV_WARNING_PREFIX, devWarnOnce` |
+| `@fourjs/math`  | `Matrix4, Vector3`                     |
+| `@fourjs/scene` | `Node`                                 |
+
+**Exports:**
+
+- Interfaces: `DirectionalLightSource`, `DirectionalShadowSource`, `PunctualLightSourceBase`, `PointLightSource`, `SpotLightSource`, `AmbientLightSource`, `HemisphereLightSource`, `SceneLights`
+- Types: `PunctualLightSource`
+- Functions: `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `createSceneLights`, `collectSceneLights`
+- Constants: `MAX_PUNCTUAL_LIGHTS`
+
+---
+
+<a id="packages-input-dependencies"></a>
+
+## Packages/input Dependencies
+
+### `packages/input/src/pick.ts` - Picking and hit testing (§71) — the bounds tier.
+
+**Workspace Dependencies:**
+
+| Package         | Import                                |
+| --------------- | ------------------------------------- |
+| `@fourjs/core`  | `FourError`                           |
+| `@fourjs/math`  | `Matrix4, Vector3, DepthRange`        |
+| `@fourjs/scene` | `resolveWorldTransform, Camera, Node` |
+
+**Exports:**
+
+- Interfaces: `PickProvider`, `PickableAlphaMask`, `PickableTriangles`, `Pickable`, `PickHit`
+- Functions: `createPickRay`, `pick`
+
+---
+
+### `packages/input/src/index.ts` - Polled key state -- "is W down?" -- which is what `@fourjs/input` most
 
 **Internal Dependencies:**
 
-| File                   | Imports                                                       | Type   |
-| ---------------------- | ------------------------------------------------------------- | ------ |
-| `./texture-updates.js` | `TextureUpdates`                                              | Import |
-| `./render-target.js`   | `validateColorSpace`                                          | Import |
-| `./resource-memory.js` | `noteTexture, releaseRenderDisposable, trackRenderDisposable` | Import |
-
-**Exports:**
-
-- Classes: `Texture`
-- Interfaces: `TextureSource`
-- Types: `TextureFilter`, `TextureMinFilter`, `TextureWrap`, `TextureDimension`, `TextureMapRole`
-- Functions: `validateTextureSource`
-
----
-
-### `packages/render/src/view-list.ts` - Per-view render lists (§64 stages 2–3, §66 sort key 4; R-8) — the frame's one
-
-**Workspace Dependencies:**
-
-| Package         | Import                      |
-| --------------- | --------------------------- |
-| `@fourjs/math`  | `Frustum, Matrix4, Vector3` |
-| `@fourjs/scene` | `layersMatch, Viewport`     |
-
-**Internal Dependencies:**
-
-| File               | Imports                                         | Type   |
-| ------------------ | ----------------------------------------------- | ------ |
-| `./bounds.js`      | `computeWorldBoundingSphere, BoundingSphere`    | Import |
-| `./render-list.js` | `compareRenderItems, viewLayerMask, RenderItem` | Import |
-
-**Exports:**
-
-- Interfaces: `ViewRenderListOptions`
-- Functions: `buildViewRenderList`, `sortRenderListByDepth`
-
----
-
-<a id="packages-render-canvas-dependencies"></a>
-
-## Packages/render canvas Dependencies
-
-### `packages/render-canvas/src/index.ts` - Entry point exporting 1 symbols
+| File                  | Imports                                                                                         | Type                  |
+| --------------------- | ----------------------------------------------------------------------------------------------- | --------------------- |
+| `./drag.js`           | `DragManager`                                                                                   | Re-export             |
+| `./key-events.js`     | `SceneKeyEvent, dispatchKeyEvent`                                                               | Re-export             |
+| `./keyboard-input.js` | `KeyboardInput`                                                                                 | Re-export             |
+| `./keyboard-state.js` | `KeyboardState`                                                                                 | Re-export             |
+| `./pick.js`           | `createPickRay, pick`                                                                           | Re-export             |
+| `./pointer-events.js` | `CAPTURE_KEY_PREFIX, ScenePointerEvent, dispatchPointerEvent`                                   | Re-export             |
+| `./pointer-input.js`  | `DEFAULT_CLICK_MOVE_THRESHOLD, PointerInput`                                                    | Re-export             |
+| `./propagation.js`    | `SceneInputEvent, buildPropagationPath, dispatchThreePhase`                                     | Re-export             |
+| `./drag.js`           | `DragListener, DragManagerOptions`                                                              | Re-export (type-only) |
+| `./key-events.js`     | `KeyDefaultSuppressor, KeyModifiers, SceneKeyEventInit, SceneKeyEventType`                      | Re-export (type-only) |
+| `./keyboard-input.js` | `KeySurface, KeyboardInputOptions, SurfaceKeyEvent, SurfaceKeyListener`                         | Re-export (type-only) |
+| `./pick.js`           | `PickHit, Pickable, PickableAlphaMask, PickableTriangles, PickProvider`                         | Re-export (type-only) |
+| `./pointer-events.js` | `PointerDeviceType, PropagatingPointerEventType, ScenePointerEventInit, ScenePointerEventType`  | Re-export (type-only) |
+| `./pointer-input.js`  | `PointerInputOptions, PointerSurface, SurfacePointerEvent, SurfacePointerListener, SurfaceRect` | Re-export (type-only) |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
+- Re-exports: `DragManager`, `SceneKeyEvent`, `dispatchKeyEvent`, `KeyboardInput`, `KeyboardState`, `createPickRay`, `pick`, `CAPTURE_KEY_PREFIX`, `ScenePointerEvent`, `dispatchPointerEvent`, `DEFAULT_CLICK_MOVE_THRESHOLD`, `PointerInput`, `SceneInputEvent`, `buildPropagationPath`, `dispatchThreePhase`, `DragListener`, `DragManagerOptions`, `KeyDefaultSuppressor`, `KeyModifiers`, `SceneKeyEventInit`, `SceneKeyEventType`, `KeySurface`, `KeyboardInputOptions`, `SurfaceKeyEvent`, `SurfaceKeyListener`, `PickHit`, `Pickable`, `PickableAlphaMask`, `PickableTriangles`, `PickProvider`, `PointerDeviceType`, `PropagatingPointerEventType`, `ScenePointerEventInit`, `ScenePointerEventType`, `PointerInputOptions`, `PointerSurface`, `SurfacePointerEvent`, `SurfacePointerListener`, `SurfaceRect`
 
 ---
 
-<a id="packages-render-svg-dependencies"></a>
-
-## Packages/render svg Dependencies
-
-### `packages/render-svg/src/index.ts` - Entry point exporting 1 symbols
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-
----
-
-<a id="packages-render-webgl-dependencies"></a>
-
-## Packages/render webgl Dependencies
-
-### `packages/render-webgl/src/gl-batch.ts` - §65 batching for the WebGL 2 backend — the GPU half of `@fourjs/render`'s
+### `packages/input/src/keyboard-input.ts` - The keyboard source (§72, 2026-08-07, A-10): platform key events in, scene
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                       |
-| ---------------- | ------------------------------------------------------------ |
-| `@fourjs/math`   | `Matrix4`                                                    |
-| `@fourjs/render` | `RenderBatcher, RenderBatch, RenderBatchOptions, RenderItem` |
+| Package         | Import           |
+| --------------- | ---------------- |
+| `@fourjs/scene` | `Node`           |
+| `@fourjs/core`  | `DEV, FourError` |
 
 **Internal Dependencies:**
 
-| File              | Imports                                                                                                                                 | Type   |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./gl-program.js` | `COLOR_ATTRIBUTE_LOCATION, GL, POSITION_ATTRIBUTE_LOCATION, UV_ATTRIBUTE_LOCATION, GlBuffer, GlVertexArray, UnlitProgram, WebglContext` | Import |
+| File               | Imports                                                                    | Type   |
+| ------------------ | -------------------------------------------------------------------------- | ------ |
+| `./key-events.js`  | `SceneKeyEvent, dispatchKeyEvent, KeyDefaultSuppressor, SceneKeyEventType` | Import |
+| `./propagation.js` | `buildPropagationPath`                                                     | Import |
 
 **Exports:**
 
-- Classes: `GlBatching`
-- Interfaces: `BatchGlContext`, `RenderBatching`
-- Functions: `createGlBatching`
+- Classes: `KeyboardInput`
+- Interfaces: `SurfaceKeyEvent`, `KeySurface`, `KeyboardInputOptions`
+- Types: `SurfaceKeyListener`
 
 ---
 
-### `packages/render-webgl/src/gl-effect-registry.ts` - The effect pipeline's registration slot (§70, §62; 2026-09-11) — the
-
-**Internal Dependencies:**
-
-| File              | Imports        | Type               |
-| ----------------- | -------------- | ------------------ |
-| `./gl-program.js` | `WebglContext` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `EffectPipeline`, `EffectPipelineFactory`
-- Functions: `setEffectPipelineFactory`, `resolveEffectPipelineFactory`, `clearRegisteredEffectPipeline`
-- Constants: `EFFECT_TEXTURE_UNIT`, `EFFECT_VERTEX_COUNT`
-
----
-
-### `packages/render-webgl/src/gl-effect.ts` - The full-screen effect pipeline for the WebGL 2 backend — §70's blit, colour
+### `packages/input/src/key-events.ts` - Key events and their propagation through the scene graph (§72, §6b,
 
 **Workspace Dependencies:**
 
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/core` | `Disposable` |
+| Package         | Import |
+| --------------- | ------ |
+| `@fourjs/scene` | `Node` |
 
 **Internal Dependencies:**
 
-| File                      | Imports                                                                                 | Type   |
-| ------------------------- | --------------------------------------------------------------------------------------- | ------ |
-| `./gl-program.js`         | `createLinkedProgram, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext` | Import |
-| `./gl-effect-registry.js` | `EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT, setEffectPipelineFactory`                    | Import |
+| File               | Imports                               | Type   |
+| ------------------ | ------------------------------------- | ------ |
+| `./propagation.js` | `SceneInputEvent, dispatchThreePhase` | Import |
 
 **Exports:**
 
-- Classes: `EffectProgram`
-- Functions: `registerEffectPipeline`
+- Classes: `SceneKeyEvent`
+- Interfaces: `KeyModifiers`, `KeyDefaultSuppressor`, `SceneKeyEventInit`
+- Types: `SceneKeyEventType`
+- Functions: `dispatchKeyEvent`
 
 ---
 
-### `packages/render-webgl/src/gl-geometry.ts` - GPU-side geometry for the WebGL 2 backend: one vertex array per
+### `packages/input/src/pointer-events.ts` - Pointer events and their propagation through the scene graph (§72, §6b).
+
+**Workspace Dependencies:**
+
+| Package         | Import    |
+| --------------- | --------- |
+| `@fourjs/math`  | `Vector3` |
+| `@fourjs/scene` | `Node`    |
+
+**Internal Dependencies:**
+
+| File               | Imports                               | Type      |
+| ------------------ | ------------------------------------- | --------- |
+| `./propagation.js` | `SceneInputEvent, dispatchThreePhase` | Import    |
+| `./propagation.js` | `buildPropagationPath`                | Re-export |
+
+**Exports:**
+
+- Classes: `ScenePointerEvent`
+- Interfaces: `ScenePointerEventInit`
+- Types: `PropagatingPointerEventType`, `ScenePointerEventType`, `PointerDeviceType`
+- Functions: `dispatchPointerEvent`
+- Constants: `CAPTURE_KEY_PREFIX`
+- Re-exports: `buildPropagationPath`
+
+---
+
+### `packages/input/src/pointer-input.ts` - The pointer source (§72): platform pointer events in, scene pointer events
+
+**Workspace Dependencies:**
+
+| Package         | Import                |
+| --------------- | --------------------- |
+| `@fourjs/math`  | `Vector3, DepthRange` |
+| `@fourjs/scene` | `Camera, Node`        |
+
+**Internal Dependencies:**
+
+| File                  | Imports                                                                                                                                | Type   |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./pick.js`           | `pick, PickHit, Pickable, PickProvider`                                                                                                | Import |
+| `./pointer-events.js` | `ScenePointerEvent, buildPropagationPath, dispatchPointerEvent, PointerDeviceType, PropagatingPointerEventType, ScenePointerEventType` | Import |
+
+**Exports:**
+
+- Classes: `PointerInput`
+- Interfaces: `SurfacePointerEvent`, `SurfaceRect`, `PointerSurface`, `PointerInputOptions`
+- Types: `SurfacePointerListener`
+- Constants: `DEFAULT_CLICK_MOVE_THRESHOLD`
+
+---
+
+### `packages/input/src/drag.ts` - Dragging (§72, §120): press a node, move the pointer, get world-space deltas.
+
+**Workspace Dependencies:**
+
+| Package         | Import                                |
+| --------------- | ------------------------------------- |
+| `@fourjs/core`  | `Unsubscribe`                         |
+| `@fourjs/math`  | `Vector3, DepthRange`                 |
+| `@fourjs/scene` | `resolveWorldTransform, Camera, Node` |
+
+**Internal Dependencies:**
+
+| File                  | Imports             | Type               |
+| --------------------- | ------------------- | ------------------ |
+| `./pick.js`           | `createPickRay`     | Import             |
+| `./pointer-events.js` | `ScenePointerEvent` | Import (type-only) |
+| `./pointer-input.js`  | `PointerInput`      | Import (type-only) |
+
+**Exports:**
+
+- Classes: `DragManager`
+- Interfaces: `DragManagerOptions`
+- Types: `DragListener`
+
+---
+
+### `packages/input/src/keyboard-state.ts` - §72 — polled keyboard state: "is this key held right now?"
+
+**Internal Dependencies:**
+
+| File                  | Imports                          | Type               |
+| --------------------- | -------------------------------- | ------------------ |
+| `./keyboard-input.js` | `KeySurface, SurfaceKeyListener` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `KeyboardState`
+
+---
+
+### `packages/input/src/propagation.ts` - The propagation machinery every scene input event shares (§72, §6b) — the
+
+**Workspace Dependencies:**
+
+| Package         | Import               |
+| --------------- | -------------------- |
+| `@fourjs/scene` | `Node, NodeEventMap` |
+
+**Exports:**
+
+- Functions: `buildPropagationPath`, `dispatchThreePhase`
+
+---
+
+<a id="packages-render-webgpu-dependencies"></a>
+
+## Packages/render webgpu Dependencies
+
+### `packages/render-webgpu/src/wgpu-geometry.ts` - Per-device store of uploaded geometry (§61, §64 stage 7) — the WebGPU twin of
 
 **Workspace Dependencies:**
 
@@ -5314,537 +4803,45 @@ graph LR
 
 **Internal Dependencies:**
 
-| File              | Imports                                                                                                                                                                                                                                      | Type               |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./gl-program.js` | `COLOR_ATTRIBUTE_LOCATION, GL, JOINTS_ATTRIBUTE_LOCATION, NORMAL_ATTRIBUTE_LOCATION, NORMAL1_ATTRIBUTE_LOCATION, POSITION_ATTRIBUTE_LOCATION, POSITION1_ATTRIBUTE_LOCATION, UV_ATTRIBUTE_LOCATION, WEIGHTS_ATTRIBUTE_LOCATION, WebglContext` | Import             |
-| `./gl-program.js` | `GlBuffer, GlVertexArray`                                                                                                                                                                                                                    | Import (type-only) |
+| File                 | Imports                                  | Type   |
+| -------------------- | ---------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GpuBuffer, GpuDevice` | Import |
 
 **Exports:**
 
-- Classes: `GeometryCache`
-- Interfaces: `GeometryRecord`
+- Classes: `WgpuGeometryCache`
+- Interfaces: `WgpuGeometryRecord`
 - Types: `CacheableGeometry`
 
 ---
 
-### `packages/render-webgl/src/gl-gpu-timer.ts` - WebGL 2 GPU-frame timer — `EXT_disjoint_timer_query_webgl2` (A-1, §62, §84).
+### `packages/render-webgpu/src/webgpu-device.ts` - The WebGPU surface this backend touches, described structurally (§61, §62).
+
+**Exports:**
+
+- Interfaces: `GpuDeviceLostInfo`, `GpuQuerySet`, `GpuBuffer`, `GpuTextureViewDescriptor`, `GpuTexture`, `GpuComputePipelineDescriptor`, `GpuComputePassEncoder`, `GpuVertexBufferLayout`, `GpuBlendState`, `GpuBlendComponent`, `GpuRenderPipelineDescriptor`, `GpuStencilFaceState`, `GpuRenderPassDescriptor`, `GpuRenderPassEncoder`, `GpuCommandEncoder`, `GpuQueue`, `GpuSamplerDescriptor`, `GpuBufferDescriptor`, `GpuTextureDescriptor`, `GpuBindGroupLayoutEntry`, `GpuBufferBinding`, `GpuBindGroupEntry`, `GpuDevice`, `GpuAdapter`, `Gpu`, `GpuCanvasContext`, `WebgpuCanvas`
+- Types: `GpuTextureView`, `GpuSampler`, `GpuShaderModule`, `GpuBindGroupLayout`, `GpuPipelineLayout`, `GpuBindGroup`, `GpuRenderPipeline`, `GpuComputePipeline`, `GpuCommandBuffer`
+- Constants: `GPU_BUFFER_USAGE`, `GPU_MAP_MODE`, `GPU_TEXTURE_USAGE`, `GPU_SHADER_STAGE`, `UNIFORM_STRIDE_BYTES`
+
+---
+
+### `packages/render-webgpu/src/wgpu-effect.ts` - §70's full-screen effects in hand-written WGSL — the blit, the colour grade,
 
 **Internal Dependencies:**
 
-| File              | Imports       | Type   |
-| ----------------- | ------------- | ------ |
-| `./gl-program.js` | `GL, GlQuery` | Import |
+| File                 | Imports                                           | Type   |
+| -------------------- | ------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice` | Import |
+| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING`        | Import |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, VERTEX_ENTRY_POINT`        | Import |
 
 **Exports:**
 
-- Classes: `GlGpuTimer`
-- Functions: `hasDisjointTimerQuery`
+- Types: `WgpuEffectKind`
+- Functions: `createEffectBindGroupLayout`, `effectShaderSource`
+- Constants: `EFFECT_PASS_VERTEX_COUNT`, `EFFECT_GRADE_OFFSET`, `EFFECT_UNIFORM_BYTES`, `EFFECT_BIND_GROUP_INDEX`, `EFFECT_UNIFORM_WGSL`
 
 ---
-
-### `packages/render-webgl/src/gl-node-program.ts` - The node-material pipeline (§60, §62; RFC 0001 — gap R-14): a GLSL ES 3.00
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                                                                                                                                  |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEV, FourError, devWarnOnce, Disposable`                                                                                                                                               |
-| `@fourjs/math`   | `Matrix4`                                                                                                                                                                               |
-| `@fourjs/render` | `analyzeShaderGraph, createShaderSourceMap, ShaderSourceMap, ShaderAttributeName, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderUniformReflection, ShaderValueType` |
-
-**Internal Dependencies:**
-
-| File                          | Imports                                                                                                                       | Type   |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./gl-program.js`             | `createLinkedProgram, matrixScratch, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext`                        | Import |
-| `./node-pipeline-registry.js` | `NODE_SURFACE_TEXTURE_UNIT_BASE, setNodeMaterialPipelineFactory, NodeItemMaterial, NodeMaterialProgram, NodeMaterialPrograms` | Import |
-| `./gl-node-uniform-block.js`  | `GlNodeUniformBlock`                                                                                                          | Import |
-
-**Exports:**
-
-- Classes: `GlNodeProgram`, `GlNodeProgramCache`
-- Interfaces: `EmittedNodeShader`
-- Functions: `emitShaderGraphGlsl`, `registerNodeMaterialPipeline`
-
----
-
-### `packages/render-webgl/src/gl-node-uniform-block.ts` - Opt-in std140 transport. Scalars and vectors occupy one vec4 lane; matrices
-
-**Workspace Dependencies:**
-
-| Package          | Import                    |
-| ---------------- | ------------------------- |
-| `@fourjs/core`   | `FourError`               |
-| `@fourjs/render` | `ShaderUniformReflection` |
-
-**Internal Dependencies:**
-
-| File              | Imports                                   | Type               |
-| ----------------- | ----------------------------------------- | ------------------ |
-| `./gl-program.js` | `GlBuffer, GlProgramHandle, WebglContext` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `GlNodeUniformBlock`
-
----
-
-### `packages/render-webgl/src/gl-particles-registry.ts` - The particle pipeline's registration slot (§36, §62; 2026-09-11) — the
-
-**Workspace Dependencies:**
-
-| Package          | Import                                         |
-| ---------------- | ---------------------------------------------- |
-| `@fourjs/render` | `PARTICLE_INSTANCE_FLOATS, ParticleRenderItem` |
-| `@fourjs/math`   | `Matrix4`                                      |
-
-**Internal Dependencies:**
-
-| File                | Imports                                                          | Type               |
-| ------------------- | ---------------------------------------------------------------- | ------------------ |
-| `./gl-particles.js` | `ParticleBatchCache, ParticleGlContext, ParticleTrailBatchCache` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `ParticleBillboardPipeline`, `ParticleAppearancePipeline`, `ParticlePrograms`, `ParticlePipelineFactory`
-- Functions: `particleItemFloats`, `setParticlePipelineFactory`, `resolveParticlePipelineFactory`, `clearRegisteredParticlePipeline`
-
----
-
-### `packages/render-webgl/src/gl-particles.ts` - The batched particle pipeline for the WebGL 2 backend (§36, §64 stage 6,
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                                                                                                                                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `Disposable`                                                                                                                                                                                                                                   |
-| `@fourjs/math`   | `Matrix4`                                                                                                                                                                                                                                      |
-| `@fourjs/render` | `PARTICLE_COLOR_OFFSET, PARTICLE_POSITION_OFFSET, PARTICLE_ROTATION_OFFSET, PARTICLE_SIZE_OFFSET, PARTICLE_SOFTNESS_OFFSET, PARTICLE_WIDE_INSTANCE_FLOATS, TRAIL_COLOR_OFFSET, TRAIL_POSITION_OFFSET, TRAIL_VERTEX_FLOATS, ParticleRenderItem` |
-
-**Internal Dependencies:**
-
-| File                         | Imports                                                                                                                                                                            | Type   |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./gl-program.js`            | `GL, POSITION_ATTRIBUTE_LOCATION, MAP_TEXTURE_UNIT, createLinkedProgram, matrixScratch, requireUniform, GlBuffer, GlProgramHandle, GlUniformLocation, GlVertexArray, WebglContext` | Import |
-| `./gl-particles-registry.js` | `particleItemFloats, setParticlePipelineFactory, ParticlePrograms`                                                                                                                 | Import |
-
-**Exports:**
-
-- Classes: `ParticleProgram`, `ParticleAppearanceProgram`, `ParticleBatchCache`, `ParticleTrailProgram`, `ParticleTrailBatchCache`
-- Interfaces: `ParticleGlContext`, `ParticleBatchRecord`, `ParticleTrailBatchRecord`
-- Functions: `registerParticlePipeline`
-- Constants: `PARTICLE_GL`, `PARTICLE_ATTRIBUTE_LOCATIONS`, `PARTICLE_VERTEX_SHADER_SOURCE`, `PARTICLE_DEPTH_TEXTURE_UNIT`
-
----
-
-### `packages/render-webgl/src/gl-picking-registry.ts` - The picking pipeline's registration slot (§71, §62; RFC 0005, 2026-08-28) —
-
-**Workspace Dependencies:**
-
-| Package          | Import           |
-| ---------------- | ---------------- |
-| `@fourjs/render` | `PickingService` |
-
-**Internal Dependencies:**
-
-| File                    | Imports              | Type               |
-| ----------------------- | -------------------- | ------------------ |
-| `./gl-geometry.js`      | `GeometryCache`      | Import (type-only) |
-| `./gl-particles.js`     | `ParticleBatchCache` | Import (type-only) |
-| `./gl-program.js`       | `WebglContext`       | Import (type-only) |
-| `./gl-render-target.js` | `RenderTargetCache`  | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `PickingRendererHost`, `PickingServiceFactory`
-- Functions: `setPickingServiceFactory`, `resolvePickingServiceFactory`, `clearRegisteredPickingPipeline`
-
----
-
-### `packages/render-webgl/src/gl-picking.ts` - The WebGL 2 picking service (§71, §62; RFC 0005, 2026-08-28) — the id-buffer
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                                                                                                                                                                         |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@fourjs/core`   | `DEV, FourError, devWarnOnce`                                                                                                                                                                                                  |
-| `@fourjs/math`   | `Frustum, Matrix4`                                                                                                                                                                                                             |
-| `@fourjs/render` | `RenderTarget, assertEncodableCandidateCount, buildRenderList, buildViewRenderList, collectPickCandidates, decodePickId, encodePickId, PickRequest, PickResult, PickingService, RenderItem, RenderItemClip, RenderItemStencil` |
-
-**Internal Dependencies:**
-
-| File                       | Imports                                                                                                    | Type               |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./gl-geometry.js`         | `GeometryCache`                                                                                            | Import (type-only) |
-| `./gl-particles.js`        | `PARTICLE_VERTEX_SHADER_SOURCE, ParticleBatchCache, ParticleGlContext`                                     | Import             |
-| `./gl-picking-registry.js` | `setPickingServiceFactory, PickingRendererHost`                                                            | Import             |
-| `./gl-program.js`          | `GL, createLinkedProgram, matrixScratch, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext` | Import             |
-| `./gl-render-target.js`    | `RenderTargetRecord`                                                                                       | Import (type-only) |
-| `./gl-skinning-glsl.js`    | `SKINNING_GLSL`                                                                                            | Import             |
-
-**Exports:**
-
-- Classes: `IdPassProgram`, `ParticleIdProgram`, `SkinnedIdProgram`, `WebglPickingService`
-- Functions: `registerPickingPipeline`
-- Constants: `PICKING_GL`
-
----
-
-### `packages/render-webgl/src/gl-program.ts` - The WebGL 2 surface this backend uses, and the pipelines it draws with
-
-**Workspace Dependencies:**
-
-| Package          | Import                             |
-| ---------------- | ---------------------------------- |
-| `@fourjs/core`   | `FourError, Disposable`            |
-| `@fourjs/math`   | `Matrix3, Matrix4, Vector3`        |
-| `@fourjs/render` | `MAX_PUNCTUAL_LIGHTS, SceneLights` |
-
-**Exports:**
-
-- Classes: `HemisphereLightUniforms`, `PunctualLightUniforms`, `ShadowUniforms`, `UnlitProgram`, `SpriteProgram`, `LitProgram`
-- Interfaces: `WebglContext`
-- Types: `GlShader`, `GlProgramHandle`, `GlBuffer`, `GlVertexArray`, `GlUniformLocation`, `GlTexture`, `GlFramebuffer`, `GlRenderbuffer`, `GlSync`, `GlQuery`
-- Functions: `uploadNormalMatrix`, `createLinkedProgram`, `requireUniform`
-- Constants: `GL`, `POSITION_ATTRIBUTE_LOCATION`, `NORMAL_ATTRIBUTE_LOCATION`, `UV_ATTRIBUTE_LOCATION`, `COLOR_ATTRIBUTE_LOCATION`, `JOINTS_ATTRIBUTE_LOCATION`, `WEIGHTS_ATTRIBUTE_LOCATION`, `POSITION1_ATTRIBUTE_LOCATION`, `NORMAL1_ATTRIBUTE_LOCATION`, `JOINTS1_ATTRIBUTE_LOCATION`, `WEIGHTS1_ATTRIBUTE_LOCATION`, `MAP_TEXTURE_UNIT`, `SHADOW_TEXTURE_UNIT`, `METAL_ROUGHNESS_TEXTURE_UNIT`, `EMISSIVE_TEXTURE_UNIT`, `FRAGMENT_SHADER_SOURCE`, `PUNCTUAL_LIGHT_GLSL`, `HEMISPHERE_LIGHT_GLSL`, `SHADOW_GLSL`, `LIT_FRAGMENT_SHADER_SOURCE`, `matrixScratch`
-
----
-
-### `packages/render-webgl/src/gl-render-target.ts` - GPU-side render targets for the WebGL 2 backend: one framebuffer object per
-
-**Workspace Dependencies:**
-
-| Package          | Import              |
-| ---------------- | ------------------- |
-| `@fourjs/render` | `RenderTarget`      |
-| `@fourjs/render` | `warnDisposedInUse` |
-
-**Internal Dependencies:**
-
-| File              | Imports                                                      | Type   |
-| ----------------- | ------------------------------------------------------------ | ------ |
-| `./gl-program.js` | `GL, GlFramebuffer, GlRenderbuffer, GlTexture, WebglContext` | Import |
-
-**Exports:**
-
-- Classes: `RenderTargetCache`
-- Interfaces: `RenderTargetRecord`
-- Types: `CacheableRenderTarget`
-
----
-
-### `packages/render-webgl/src/gl-shadow-registry.ts` - The shadow pipeline's registration slot (§69, §62; 2026-09-11) — the
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Matrix4` |
-
-**Internal Dependencies:**
-
-| File              | Imports        | Type               |
-| ----------------- | -------------- | ------------------ |
-| `./gl-program.js` | `WebglContext` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `ShadowCasterPipeline`, `ShadowPipelineFactory`
-- Functions: `setShadowPipelineFactory`, `resolveShadowPipelineFactory`, `clearRegisteredShadowPipeline`
-
----
-
-### `packages/render-webgl/src/gl-shadow.ts` - The depth-only caster pipeline (§69) — this backend's seventh program (R-18,
-
-**Workspace Dependencies:**
-
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/core` | `Disposable` |
-| `@fourjs/math` | `Matrix4`    |
-
-**Internal Dependencies:**
-
-| File                      | Imports                                                                                                | Type   |
-| ------------------------- | ------------------------------------------------------------------------------------------------------ | ------ |
-| `./gl-program.js`         | `createLinkedProgram, matrixScratch, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext` | Import |
-| `./gl-shadow-registry.js` | `setShadowPipelineFactory`                                                                             | Import |
-
-**Exports:**
-
-- Classes: `ShadowProgram`
-- Functions: `registerShadowPipeline`
-
----
-
-### `packages/render-webgl/src/gl-skinning-glsl.ts` - The vertex-stage skinning chunk both the colour/caster programs
-
-**Workspace Dependencies:**
-
-| Package          | Import                |
-| ---------------- | --------------------- |
-| `@fourjs/render` | `MAX_SKINNING_JOINTS` |
-
-**Exports:**
-
-- Constants: `SKINNING_GLSL`
-
----
-
-### `packages/render-webgl/src/gl-skinning-registry.ts` - The skinning pipeline's registration slot (§54, §62; RFC 0003, 2026-08-28)
-
-**Workspace Dependencies:**
-
-| Package          | Import        |
-| ---------------- | ------------- |
-| `@fourjs/math`   | `Matrix4`     |
-| `@fourjs/render` | `SceneLights` |
-
-**Internal Dependencies:**
-
-| File              | Imports        | Type               |
-| ----------------- | -------------- | ------------------ |
-| `./gl-program.js` | `WebglContext` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `SkinnedUnlitPipeline`, `SkinnedLitPipeline`, `SkinnedShadowPipeline`, `SkinnedPrograms`, `SkinningPipelineFactory`
-- Functions: `setSkinningPipelineFactory`, `resolveSkinningPipelineFactory`, `clearRegisteredSkinningPipeline`
-
----
-
-### `packages/render-webgl/src/gl-skinning.ts` - The skinned pipelines (§54, §62; RFC 0003 — gaps PH-10 + R-22, 2026-08-28):
-
-**Workspace Dependencies:**
-
-| Package          | Import        |
-| ---------------- | ------------- |
-| `@fourjs/core`   | `Disposable`  |
-| `@fourjs/math`   | `Matrix4`     |
-| `@fourjs/render` | `SceneLights` |
-
-**Internal Dependencies:**
-
-| File                        | Imports                                                                                                                                                                                                                                      | Type   |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./gl-skinning-glsl.js`     | `SKINNING_GLSL`                                                                                                                                                                                                                              | Import |
-| `./gl-program.js`           | `FRAGMENT_SHADER_SOURCE, LIT_FRAGMENT_SHADER_SOURCE, MAP_TEXTURE_UNIT, HemisphereLightUniforms, PunctualLightUniforms, ShadowUniforms, createLinkedProgram, matrixScratch, requireUniform, GlProgramHandle, GlUniformLocation, WebglContext` | Import |
-| `./gl-skinning-registry.js` | `setSkinningPipelineFactory, SkinnedLitPipeline, SkinnedPrograms, SkinnedShadowPipeline, SkinnedUnlitPipeline`                                                                                                                               | Import |
-
-**Exports:**
-
-- Classes: `SkinnedUnlitProgram`, `SkinnedLitProgram`, `SkinnedShadowProgram`
-- Functions: `registerSkinningPipeline`
-
----
-
-### `packages/render-webgl/src/gl-standard-registry.ts` - The standard pipeline's registration slot (§59, §62; 2026-09-11) — the
-
-**Workspace Dependencies:**
-
-| Package          | Import        |
-| ---------------- | ------------- |
-| `@fourjs/math`   | `Matrix4`     |
-| `@fourjs/render` | `SceneLights` |
-
-**Internal Dependencies:**
-
-| File              | Imports        | Type               |
-| ----------------- | -------------- | ------------------ |
-| `./gl-program.js` | `WebglContext` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `StandardPipeline`, `StandardPipelineFactory`
-- Functions: `setStandardPipelineFactory`, `resolveStandardPipelineFactory`, `clearRegisteredStandardPipeline`
-
----
-
-### `packages/render-webgl/src/gl-standard.ts` - The metallic-roughness pipeline (§59, §68) — this backend's sixth program,
-
-**Workspace Dependencies:**
-
-| Package          | Import             |
-| ---------------- | ------------------ |
-| `@fourjs/core`   | `Disposable`       |
-| `@fourjs/math`   | `Matrix4, Vector3` |
-| `@fourjs/render` | `SceneLights`      |
-
-**Internal Dependencies:**
-
-| File                        | Imports                                                                                                                                                                                                                                                                                                                    | Type   |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./gl-program.js`           | `EMISSIVE_TEXTURE_UNIT, MAP_TEXTURE_UNIT, METAL_ROUGHNESS_TEXTURE_UNIT, HEMISPHERE_LIGHT_GLSL, HemisphereLightUniforms, PUNCTUAL_LIGHT_GLSL, PunctualLightUniforms, SHADOW_GLSL, ShadowUniforms, createLinkedProgram, matrixScratch, requireUniform, uploadNormalMatrix, GlProgramHandle, GlUniformLocation, WebglContext` | Import |
-| `./gl-standard-registry.js` | `setStandardPipelineFactory`                                                                                                                                                                                                                                                                                               | Import |
-
-**Exports:**
-
-- Classes: `StandardProgram`
-- Functions: `registerStandardPipeline`
-- Constants: `NORMAL_TEXTURE_UNIT`, `OCCLUSION_TEXTURE_UNIT`
-
----
-
-### `packages/render-webgl/src/gl-texture.ts` - GPU-side textures for the WebGL 2 backend: one `WebGLTexture` per
-
-**Workspace Dependencies:**
-
-| Package          | Import              |
-| ---------------- | ------------------- |
-| `@fourjs/core`   | `FourError`         |
-| `@fourjs/render` | `SpriteRenderItem`  |
-| `@fourjs/render` | `warnDisposedInUse` |
-
-**Internal Dependencies:**
-
-| File              | Imports                       | Type   |
-| ----------------- | ----------------------------- | ------ |
-| `./gl-program.js` | `GL, GlTexture, WebglContext` | Import |
-
-**Exports:**
-
-- Classes: `TextureCache`
-- Interfaces: `TextureRecord`
-- Types: `CacheableTexture`
-
----
-
-### `packages/render-webgl/src/index.ts` - `@fourjs/render-webgl` — the WebGL 2 backend (§62 backend 2, §120's MVP tier).
-
-**Internal Dependencies:**
-
-| File                          | Imports                                                                                                                                                                                                                                                                                                                                                                                                                               | Type                  |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./gl-batch.js`               | `GlBatching, createGlBatching`                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
-| `./gl-effect-registry.js`     | `EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT, clearRegisteredEffectPipeline, resolveEffectPipelineFactory`                                                                                                                                                                                                                                                                                                                               | Re-export             |
-| `./gl-effect.js`              | `EffectProgram, registerEffectPipeline`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
-| `./gl-geometry.js`            | `GeometryCache`                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
-| `./gl-particles-registry.js`  | `clearRegisteredParticlePipeline, particleItemFloats, resolveParticlePipelineFactory`                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
-| `./gl-particles.js`           | `PARTICLE_ATTRIBUTE_LOCATIONS, PARTICLE_DEPTH_TEXTURE_UNIT, PARTICLE_GL, PARTICLE_VERTEX_SHADER_SOURCE, ParticleAppearanceProgram, ParticleBatchCache, ParticleProgram, ParticleTrailBatchCache, ParticleTrailProgram, registerParticlePipeline`                                                                                                                                                                                      | Re-export             |
-| `./gl-program.js`             | `COLOR_ATTRIBUTE_LOCATION, GL, LitProgram, MAP_TEXTURE_UNIT, METAL_ROUGHNESS_TEXTURE_UNIT, EMISSIVE_TEXTURE_UNIT, NORMAL_ATTRIBUTE_LOCATION, POSITION_ATTRIBUTE_LOCATION, POSITION1_ATTRIBUTE_LOCATION, NORMAL1_ATTRIBUTE_LOCATION, HEMISPHERE_LIGHT_GLSL, HemisphereLightUniforms, PUNCTUAL_LIGHT_GLSL, PunctualLightUniforms, SHADOW_GLSL, SHADOW_TEXTURE_UNIT, ShadowUniforms, SpriteProgram, UV_ATTRIBUTE_LOCATION, UnlitProgram` | Re-export             |
-| `./gl-picking-registry.js`    | `clearRegisteredPickingPipeline, resolvePickingServiceFactory`                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
-| `./gl-picking.js`             | `IdPassProgram, PICKING_GL, ParticleIdProgram, SkinnedIdProgram, WebglPickingService, registerPickingPipeline`                                                                                                                                                                                                                                                                                                                        | Re-export             |
-| `./gl-render-target.js`       | `RenderTargetCache`                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
-| `./gl-program.js`             | `JOINTS_ATTRIBUTE_LOCATION, WEIGHTS_ATTRIBUTE_LOCATION`                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
-| `./gl-skinning-registry.js`   | `clearRegisteredSkinningPipeline, resolveSkinningPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
-| `./gl-skinning.js`            | `SKINNING_GLSL, SkinnedLitProgram, SkinnedShadowProgram, SkinnedUnlitProgram, registerSkinningPipeline`                                                                                                                                                                                                                                                                                                                               | Re-export             |
-| `./node-pipeline-registry.js` | `NODE_SURFACE_TEXTURE_UNIT_BASE, clearRegisteredNodeMaterialPipeline, resolveNodeMaterialPipelineFactory`                                                                                                                                                                                                                                                                                                                             | Re-export             |
-| `./gl-node-program.js`        | `GlNodeProgram, GlNodeProgramCache, emitShaderGraphGlsl, registerNodeMaterialPipeline`                                                                                                                                                                                                                                                                                                                                                | Re-export             |
-| `./gl-shadow-registry.js`     | `clearRegisteredShadowPipeline, resolveShadowPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
-| `./gl-shadow.js`              | `ShadowProgram, registerShadowPipeline`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
-| `./gl-standard-registry.js`   | `clearRegisteredStandardPipeline, resolveStandardPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
-| `./gl-standard.js`            | `StandardProgram, registerStandardPipeline`                                                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
-| `./gl-texture.js`             | `TextureCache`                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
-| `./register.js`               | `isWebgl2Supported, registerWebglRenderer`                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
-| `./webgl-renderer.js`         | `WebglRenderer`                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
-| `./gl-batch.js`               | `BatchGlContext, RenderBatching`                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
-| `./gl-effect-registry.js`     | `EffectPipeline, EffectPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
-| `./gl-geometry.js`            | `CacheableGeometry, GeometryRecord`                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
-| `./gl-particles-registry.js`  | `ParticleAppearancePipeline, ParticleBillboardPipeline, ParticlePipelineFactory, ParticlePrograms`                                                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
-| `./gl-particles.js`           | `ParticleBatchRecord, ParticleGlContext, ParticleTrailBatchRecord`                                                                                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
-| `./gl-program.js`             | `GlBuffer, GlProgramHandle, GlShader, GlQuery, GlSync, GlTexture, GlUniformLocation, GlVertexArray, WebglContext`                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
-| `./gl-program.js`             | `GlFramebuffer, GlRenderbuffer`                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./gl-picking-registry.js`    | `PickingRendererHost, PickingServiceFactory`                                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
-| `./gl-render-target.js`       | `CacheableRenderTarget, RenderTargetRecord`                                                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
-| `./gl-skinning-registry.js`   | `SkinnedLitPipeline, SkinnedPrograms, SkinnedShadowPipeline, SkinnedUnlitPipeline, SkinningPipelineFactory`                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
-| `./node-pipeline-registry.js` | `NodeItemMaterial, NodeMaterialPipelineFactory, NodeMaterialProgram, NodeMaterialPrograms`                                                                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
-| `./gl-node-program.js`        | `EmittedNodeShader`                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
-| `./gl-shadow-registry.js`     | `ShadowCasterPipeline, ShadowPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                         | Re-export (type-only) |
-| `./gl-standard-registry.js`   | `StandardPipeline, StandardPipelineFactory`                                                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
-| `./gl-texture.js`             | `CacheableTexture, TextureRecord`                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
-| `./webgl-renderer.js`         | `WebglCanvas, WebglContextAttributes, WebglContextEventLike`                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `GlBatching`, `createGlBatching`, `EFFECT_TEXTURE_UNIT`, `EFFECT_VERTEX_COUNT`, `clearRegisteredEffectPipeline`, `resolveEffectPipelineFactory`, `EffectProgram`, `registerEffectPipeline`, `GeometryCache`, `clearRegisteredParticlePipeline`, `particleItemFloats`, `resolveParticlePipelineFactory`, `PARTICLE_ATTRIBUTE_LOCATIONS`, `PARTICLE_DEPTH_TEXTURE_UNIT`, `PARTICLE_GL`, `PARTICLE_VERTEX_SHADER_SOURCE`, `ParticleAppearanceProgram`, `ParticleBatchCache`, `ParticleProgram`, `ParticleTrailBatchCache`, `ParticleTrailProgram`, `registerParticlePipeline`, `COLOR_ATTRIBUTE_LOCATION`, `GL`, `LitProgram`, `MAP_TEXTURE_UNIT`, `METAL_ROUGHNESS_TEXTURE_UNIT`, `EMISSIVE_TEXTURE_UNIT`, `NORMAL_ATTRIBUTE_LOCATION`, `POSITION_ATTRIBUTE_LOCATION`, `POSITION1_ATTRIBUTE_LOCATION`, `NORMAL1_ATTRIBUTE_LOCATION`, `HEMISPHERE_LIGHT_GLSL`, `HemisphereLightUniforms`, `PUNCTUAL_LIGHT_GLSL`, `PunctualLightUniforms`, `SHADOW_GLSL`, `SHADOW_TEXTURE_UNIT`, `ShadowUniforms`, `SpriteProgram`, `UV_ATTRIBUTE_LOCATION`, `UnlitProgram`, `clearRegisteredPickingPipeline`, `resolvePickingServiceFactory`, `IdPassProgram`, `PICKING_GL`, `ParticleIdProgram`, `SkinnedIdProgram`, `WebglPickingService`, `registerPickingPipeline`, `RenderTargetCache`, `JOINTS_ATTRIBUTE_LOCATION`, `WEIGHTS_ATTRIBUTE_LOCATION`, `clearRegisteredSkinningPipeline`, `resolveSkinningPipelineFactory`, `SKINNING_GLSL`, `SkinnedLitProgram`, `SkinnedShadowProgram`, `SkinnedUnlitProgram`, `registerSkinningPipeline`, `NODE_SURFACE_TEXTURE_UNIT_BASE`, `clearRegisteredNodeMaterialPipeline`, `resolveNodeMaterialPipelineFactory`, `GlNodeProgram`, `GlNodeProgramCache`, `emitShaderGraphGlsl`, `registerNodeMaterialPipeline`, `clearRegisteredShadowPipeline`, `resolveShadowPipelineFactory`, `ShadowProgram`, `registerShadowPipeline`, `clearRegisteredStandardPipeline`, `resolveStandardPipelineFactory`, `StandardProgram`, `registerStandardPipeline`, `TextureCache`, `isWebgl2Supported`, `registerWebglRenderer`, `WebglRenderer`, `BatchGlContext`, `RenderBatching`, `EffectPipeline`, `EffectPipelineFactory`, `CacheableGeometry`, `GeometryRecord`, `ParticleAppearancePipeline`, `ParticleBillboardPipeline`, `ParticlePipelineFactory`, `ParticlePrograms`, `ParticleBatchRecord`, `ParticleGlContext`, `ParticleTrailBatchRecord`, `GlBuffer`, `GlProgramHandle`, `GlShader`, `GlQuery`, `GlSync`, `GlTexture`, `GlUniformLocation`, `GlVertexArray`, `WebglContext`, `GlFramebuffer`, `GlRenderbuffer`, `PickingRendererHost`, `PickingServiceFactory`, `CacheableRenderTarget`, `RenderTargetRecord`, `SkinnedLitPipeline`, `SkinnedPrograms`, `SkinnedShadowPipeline`, `SkinnedUnlitPipeline`, `SkinningPipelineFactory`, `NodeItemMaterial`, `NodeMaterialPipelineFactory`, `NodeMaterialProgram`, `NodeMaterialPrograms`, `EmittedNodeShader`, `ShadowCasterPipeline`, `ShadowPipelineFactory`, `StandardPipeline`, `StandardPipelineFactory`, `CacheableTexture`, `TextureRecord`, `WebglCanvas`, `WebglContextAttributes`, `WebglContextEventLike`
-
----
-
-### `packages/render-webgl/src/node-pipeline-registry.ts` - The node-material pipeline's registration slot (§60, §62; RFC 0001, gap
-
-**Workspace Dependencies:**
-
-| Package          | Import                        |
-| ---------------- | ----------------------------- |
-| `@fourjs/math`   | `Matrix4`                     |
-| `@fourjs/render` | `NodeRenderItem, ShaderGraph` |
-
-**Internal Dependencies:**
-
-| File              | Imports        | Type               |
-| ----------------- | -------------- | ------------------ |
-| `./gl-program.js` | `WebglContext` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `NodeMaterialProgram`, `NodeMaterialPrograms`, `NodeMaterialPipelineFactory`
-- Types: `NodeItemMaterial`
-- Functions: `setNodeMaterialPipelineFactory`, `resolveNodeMaterialPipelineFactory`, `clearRegisteredNodeMaterialPipeline`
-- Constants: `NODE_SURFACE_TEXTURE_UNIT_BASE`
-
----
-
-### `packages/render-webgl/src/register.ts` - This backend's opt-in to §62's renderer registry (R-2, A-8).
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                |
-| ---------------- | ----------------------------------------------------- |
-| `@fourjs/render` | `registerRenderer, RendererOptions, RendererRegistry` |
-
-**Internal Dependencies:**
-
-| File                  | Imports         | Type   |
-| --------------------- | --------------- | ------ |
-| `./webgl-renderer.js` | `WebglRenderer` | Import |
-
-**Exports:**
-
-- Functions: `isWebgl2Supported`, `registerWebglRenderer`
-
----
-
-### `packages/render-webgl/src/webgl-renderer.ts` - The WebGL 2 backend (§61, §62, §120) — the MVP's only renderer.
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEV, devWarnOnce, EventEmitter, FourError`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `@fourjs/math`   | `Frustum, Matrix4, Rectangle2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `@fourjs/render` | `MAX_SKINNING_JOINTS, RenderTarget, buildInterpolatedRenderList, buildRenderList, buildViewRenderList, collectSceneLights, createSceneLights, isLitItem, isNodeItem, isParticlesItem, isRenderTargetTexture, isSkinnedLitItem, isSkinnedUnlitItem, isSpriteItem, isStandardItem, intersectScissor, validateReadbackRegion, COLOR_GRADE_DEFAULTS, EffectRenderPass, GraphEffect, PickingService, RenderItem, RenderItemKind, RenderStatistics, Renderer, RendererCapabilities, ScissorRect, RendererEventMap, RendererOptions, ScreenEffectRenderer` |
-
-**Internal Dependencies:**
-
-| File                          | Imports                                                                                                                                              | Type               |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./gl-batch.js`               | `RenderBatching`                                                                                                                                     | Import (type-only) |
-| `./gl-effect-registry.js`     | `EFFECT_TEXTURE_UNIT, EFFECT_VERTEX_COUNT, resolveEffectPipelineFactory, EffectPipeline`                                                             | Import             |
-| `./gl-geometry.js`            | `GeometryCache`                                                                                                                                      | Import             |
-| `./gl-gpu-timer.js`           | `GlGpuTimer, hasDisjointTimerQuery`                                                                                                                  | Import             |
-| `./gl-particles-registry.js`  | `particleItemFloats, resolveParticlePipelineFactory, ParticleAppearancePipeline, ParticleBillboardPipeline, ParticlePrograms`                        | Import             |
-| `./gl-particles.js`           | `ParticleGlContext`                                                                                                                                  | Import (type-only) |
-| `./gl-program.js`             | `GL, LitProgram, EMISSIVE_TEXTURE_UNIT, MAP_TEXTURE_UNIT, METAL_ROUGHNESS_TEXTURE_UNIT, SHADOW_TEXTURE_UNIT, SpriteProgram, UnlitProgram, GlTexture` | Import             |
-| `./gl-picking-registry.js`    | `resolvePickingServiceFactory, PickingRendererHost`                                                                                                  | Import             |
-| `./gl-render-target.js`       | `RenderTargetCache, RenderTargetRecord`                                                                                                              | Import             |
-| `./gl-skinning-registry.js`   | `resolveSkinningPipelineFactory, SkinnedPrograms, SkinnedShadowPipeline`                                                                             | Import             |
-| `./node-pipeline-registry.js` | `NODE_SURFACE_TEXTURE_UNIT_BASE, resolveNodeMaterialPipelineFactory, NodeMaterialProgram, NodeMaterialPrograms`                                      | Import             |
-| `./gl-standard.js`            | `NORMAL_TEXTURE_UNIT, OCCLUSION_TEXTURE_UNIT`                                                                                                        | Import             |
-| `./gl-shadow-registry.js`     | `resolveShadowPipelineFactory, ShadowCasterPipeline`                                                                                                 | Import             |
-| `./gl-standard-registry.js`   | `resolveStandardPipelineFactory, StandardPipeline`                                                                                                   | Import             |
-| `./gl-texture.js`             | `TextureCache, CacheableTexture`                                                                                                                     | Import             |
-
-**Exports:**
-
-- Classes: `WebglRenderer`
-- Interfaces: `WebglContextEventLike`, `WebglCanvas`, `WebglContextAttributes`
-
----
-
-<a id="packages-render-webgpu-dependencies"></a>
-
-## Packages/render webgpu Dependencies
 
 ### `packages/render-webgpu/src/index.ts` - `@fourjs/render-webgpu` — the WebGPU backend (§62 backend 1).
 
@@ -5903,6 +4900,396 @@ graph LR
 
 ---
 
+### `packages/render-webgpu/src/wgpu-bindings.ts` - This backend's binding layout, **declared as data** (§7 of the R-1 plan).
+
+**Internal Dependencies:**
+
+| File                 | Imports                                           | Type   |
+| -------------------- | ------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice` | Import |
+
+**Exports:**
+
+- Functions: `createDrawBindGroupLayout`, `createTextureBindGroupLayout`
+- Constants: `DRAW_VIEW_PROJECTION_OFFSET`, `DRAW_MODEL_OFFSET`, `DRAW_COLOR_OFFSET`, `DRAW_NORMAL_OFFSET`, `DRAW_UNIFORM_BYTES`, `DRAW_UNIFORM_FLOATS`, `DRAW_UNIFORM_WGSL`, `MAP_BIND_GROUP_INDEX`, `MAP_TEXTURE_BINDING`, `MAP_SAMPLER_BINDING`, `MAP_BINDING_WGSL`
+
+---
+
+### `packages/render-webgpu/src/wgpu-skinning.ts` - The skinned colour pipelines (§54, §62; RFC 0003) — a skinned variant of
+
+**Workspace Dependencies:**
+
+| Package          | Import                |
+| ---------------- | --------------------- |
+| `@fourjs/render` | `MAX_SKINNING_JOINTS` |
+
+**Internal Dependencies:**
+
+| File                          | Imports                                                                                                                                                                    | Type   |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js`          | `GPU_BUFFER_USAGE, GPU_SHADER_STAGE, GpuBindGroup, GpuBindGroupLayout, GpuBuffer, GpuDevice, GpuPipelineLayout, GpuRenderPipeline, GpuShaderModule, GpuVertexBufferLayout` | Import |
+| `./wgpu-bindings.js`          | `DRAW_UNIFORM_WGSL, MAP_BINDING_WGSL`                                                                                                                                      | Import |
+| `./wgpu-lights.js`            | `HEMISPHERE_IRRADIANCE_WGSL, LIGHT_UNIFORM_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BINDING_WGSL`                                                                             | Import |
+| `./wgpu-lit.js`               | `NORMAL_MATRIX_WGSL, litFragmentStageWgsl, shadedVertexBufferLayouts`                                                                                                      | Import |
+| `./wgpu-pipeline-cache.js`    | `blendStateFor, stencilStateFor`                                                                                                                                           | Import |
+| `./wgpu-shadow.js`            | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_WGSL`                                                                                                                            | Import |
+| `./wgpu-skinning-registry.js` | `setSkinningPipelineFactory, SkinnedLitPipeline, SkinnedPrograms, SkinnedUnlitPipeline, SkinningPipelineHost, WgpuSkinnedDrawDescriptor, WgpuSkinnedShadowDescriptor`      | Import |
+| `./wgpu-unlit.js`             | `FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, POSITION_SHADER_LOCATION, VERTEX_ENTRY_POINT, unlitFragmentStageWgsl, unlitVertexBufferLayouts`                             | Import |
+
+**Exports:**
+
+- Functions: `skinnedPaletteBindGroupIndex`, `createJointPaletteBindGroupLayout`, `skinningWgsl`, `skinnedUnlitVertexBufferLayouts`, `skinnedLitVertexBufferLayouts`, `skinnedShadowShaderSource`, `skinnedUnlitShaderSource`, `skinnedLitShaderSource`, `registerSkinningPipeline`
+- Constants: `JOINTS_SHADER_LOCATION`, `WEIGHTS_SHADER_LOCATION`, `JOINTS_BUFFER_LAYOUT`, `WEIGHTS_BUFFER_LAYOUT`, `JOINT_PALETTE_BYTES`, `JOINT_PALETTE_FLOATS`, `JOINT_PALETTE_BINDING`, `SKINNED_SHADOW_VERTEX_BUFFER_LAYOUTS`, `SKINNED_SHADOW_SHADER_SOURCE`
+
+---
+
+### `packages/render-webgpu/src/wgpu-node-program.ts` - The node-material pipeline for WebGPU (§60, §62; RFC 0001 — WP-R1.9): a
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                                                                                                                                                                                             |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEV, FourError, devWarnOnce, Disposable`                                                                                                                                                                                                                                                          |
+| `@fourjs/render` | `SHADER_VALUE_COMPONENTS, analyzeShaderGraph, createShaderSourceMap, ShaderSourceMap, isRenderTargetTexture, GraphEffect, NodeRenderItem, RenderItem, RenderStatistics, ShaderAttributeName, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderUniformReflection, ShaderValueType` |
+
+**Internal Dependencies:**
+
+| File                       | Imports                                                                                                                                                                                                                  | Type               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `./webgpu-device.js`       | `GPU_BUFFER_USAGE, GPU_SHADER_STAGE, GpuBindGroup, GpuBindGroupEntry, GpuBindGroupLayout, GpuBuffer, GpuPipelineLayout, GpuRenderPassEncoder, GpuRenderPipeline, GpuShaderModule, GpuTextureView, GpuVertexBufferLayout` | Import             |
+| `./wgpu-effect.js`         | `EFFECT_PASS_VERTEX_COUNT`                                                                                                                                                                                               | Import             |
+| `./wgpu-lit.js`            | `NORMAL_BUFFER_LAYOUT`                                                                                                                                                                                                   | Import             |
+| `./wgpu-pipeline-cache.js` | `blendStateFor, stencilStateFor, WgpuStencilDescriptor`                                                                                                                                                                  | Import             |
+| `./wgpu-node-registry.js`  | `setWebgpuNodeMaterialPipelineFactory, WgpuNodeFrameState, WgpuNodeItemMaterial, WgpuNodeMaterialPipelines, WgpuNodePipelineHost`                                                                                        | Import             |
+| `./wgpu-render-target.js`  | `WgpuCacheableRenderTarget, WgpuRenderTargetCache`                                                                                                                                                                       | Import (type-only) |
+| `./wgpu-stencil.js`        | `applyStencilReference, stencilDescriptor`                                                                                                                                                                               | Import             |
+| `./wgpu-unlit.js`          | `COLOR_BUFFER_LAYOUT, FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, UV_BUFFER_LAYOUT, VERTEX_ENTRY_POINT`                                                                                                                | Import             |
+
+**Exports:**
+
+- Classes: `WgpuNodePipelineStore`
+- Interfaces: `EmittedWgslNodeShader`
+- Functions: `emitShaderGraphWgsl`, `registerWebgpuNodeMaterialPipeline`
+- Constants: `NODE_SURFACE_BLOCK_BASE_BYTES`, `NODE_SCREEN_BLOCK_BASE_BYTES`, `NODE_SURFACE_BLOCK_GROUP`, `NODE_SURFACE_TEXTURE_GROUP`, `NODE_SCREEN_TEXTURE_GROUP`
+
+---
+
+### `packages/render-webgpu/src/wgpu-shadow.ts` - §69's shadow tier on WebGPU (WP-R1.7): the depth-only caster module, the
+
+**Workspace Dependencies:**
+
+| Package          | Import        |
+| ---------------- | ------------- |
+| `@fourjs/render` | `SceneLights` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                                                 | Type   |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice, GpuSampler`                                                                           | Import |
+| `./wgpu-bindings.js` | `DRAW_UNIFORM_WGSL`                                                                                                                     | Import |
+| `./wgpu-lights.js`   | `LIGHTS_BIND_GROUP_INDEX, HEMISPHERE_UNIFORM_MEMBERS_WGSL, LIGHT_UNIFORM_BYTES, LIGHT_UNIFORM_MEMBERS_WGSL, LIGHT_UNIFORM_STRIDE_BYTES` | Import |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, POSITION_SHADER_LOCATION, VERTEX_ENTRY_POINT`                                                                    | Import |
+
+**Exports:**
+
+- Functions: `createShadowLightsBindGroupLayout`, `createShadowSampler`, `writeShadowUniforms`
+- Constants: `SHADOW_MATRIX_OFFSET`, `SHADOW_PARAMS_OFFSET`, `SHADOW_LIGHT_UNIFORM_BYTES`, `SHADOW_MAP_BINDING`, `SHADOW_SAMPLER_BINDING`, `SHADOW_LIGHT_UNIFORM_WGSL`, `SHADOW_FACTOR_WGSL`, `SHADOW_SHADER_SOURCE`, `SHADOW_UNIFORM_SPARE_BYTES`
+
+---
+
+### `packages/render-webgpu/src/wgpu-gpu-timer.ts` - WebGPU GPU-frame timer — `timestamp-query` ping-pong (A-1, §62, §84).
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                | Type   |
+| -------------------- | -------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GPU_MAP_MODE, GpuBuffer, GpuCommandEncoder, GpuDevice, GpuQuerySet` | Import |
+
+**Exports:**
+
+- Classes: `WgpuGpuTimer`
+
+---
+
+### `packages/render-webgpu/src/wgpu-readback.ts` - `readPixels`' mechanism: `copyTextureToBuffer` + `mapAsync` (WP-R1.6; §61,
+
+**Workspace Dependencies:**
+
+| Package        | Import       |
+| -------------- | ------------ |
+| `@fourjs/core` | `FourError`  |
+| `@fourjs/math` | `Rectangle2` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                 | Type   |
+| -------------------- | ------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GPU_MAP_MODE, GpuDevice, GpuTexture` | Import |
+
+**Exports:**
+
+- Functions: `readbackBytesPerRow`, `readTexturePixels`
+- Constants: `READBACK_ROW_ALIGNMENT`
+
+---
+
+### `packages/render-webgpu/src/wgpu-picking.ts` - The WebGPU picking service (§71, §62; RFC 0005) — the id-buffer pass and
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                                                                                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEV, FourError, devWarnOnce`                                                                                                                                                                                                                                  |
+| `@fourjs/math`   | `Frustum, Matrix4, Rectangle2`                                                                                                                                                                                                                                 |
+| `@fourjs/render` | `MAX_SKINNING_JOINTS, PARTICLE_INSTANCE_FLOATS, RenderTarget, assertEncodableCandidateCount, buildRenderList, buildViewRenderList, collectPickCandidates, decodePickId, encodePickId, ParticleRenderItem, PickRequest, PickResult, PickingService, RenderItem` |
+
+**Internal Dependencies:**
+
+| File                         | Imports                                                                                                                                                                      | Type               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./webgpu-device.js`         | `GPU_BUFFER_USAGE, GPU_SHADER_STAGE, UNIFORM_STRIDE_BYTES, GpuBindGroup, GpuBindGroupLayout, GpuBuffer, GpuDevice, GpuRenderPipeline, GpuTextureView, GpuVertexBufferLayout` | Import             |
+| `./wgpu-geometry.js`         | `WgpuGeometryCache, WgpuGeometryRecord`                                                                                                                                      | Import (type-only) |
+| `./wgpu-particles.js`        | `PARTICLE_VERTEX_BUFFER_LAYOUTS, WgpuParticleCache, WgpuParticleRecord`                                                                                                      | Import             |
+| `./wgpu-picking-registry.js` | `setPickingServiceFactory, PickingRendererHost`                                                                                                                              | Import             |
+| `./wgpu-readback.js`         | `readTexturePixels`                                                                                                                                                          | Import             |
+| `./wgpu-render-target.js`    | `RENDER_TARGET_COLOR_FORMAT, RENDER_TARGET_DEPTH_FORMAT, WgpuRenderTargetRecord`                                                                                             | Import             |
+| `./wgpu-unlit.js`            | `FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, VERTEX_ENTRY_POINT`                                                                                                           | Import             |
+
+**Exports:**
+
+- Classes: `WebgpuPickingService`
+- Functions: `registerPickingPipeline`
+- Constants: `ID_VIEW_PROJECTION_OFFSET`, `ID_MODEL_OFFSET`, `ID_PICK_OFFSET`, `ID_UNIFORM_BYTES`, `PARTICLE_ID_PROJECTION_OFFSET`, `PARTICLE_ID_VIEW_OFFSET`, `PARTICLE_ID_MODEL_OFFSET`, `PARTICLE_ID_PICK_OFFSET`, `PARTICLE_ID_UNIFORM_BYTES`, `SKINNED_ID_PALETTE_BYTES`, `ID_SHADER_SOURCE`, `PARTICLE_ID_SHADER_SOURCE`, `SKINNED_ID_SHADER_SOURCE`
+
+---
+
+### `packages/render-webgpu/src/wgpu-texture.ts` - GPU-side textures and samplers for the WebGPU backend: one `GPUTexture` per
+
+**Workspace Dependencies:**
+
+| Package          | Import              |
+| ---------------- | ------------------- |
+| `@fourjs/core`   | `FourError`         |
+| `@fourjs/render` | `RenderItem`        |
+| `@fourjs/render` | `warnDisposedInUse` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                                                                         | Type   |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_TEXTURE_USAGE, GpuBindGroup, GpuBindGroupLayout, GpuDevice, GpuPipelineLayout, GpuRenderPipeline, GpuSampler, GpuShaderModule, GpuTexture, GpuTextureView` | Import |
+| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING, createTextureBindGroupLayout`                                                                                        | Import |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, VERTEX_ENTRY_POINT`                                                                                                                      | Import |
+
+**Exports:**
+
+- Classes: `WgpuTextureCache`
+- Interfaces: `ResolvedSamplerState`, `WgpuTextureRecord`
+- Types: `WgpuCacheableTexture`
+- Functions: `mipLevelCount`, `textureByteLength`, `samplerKey`
+- Constants: `MIPMAP_SHADER_SOURCE`
+
+---
+
+### `packages/render-webgpu/src/wgpu-unlit.ts` - The unlit pipeline in hand-written WGSL (§64, §120's MVP tier), plus the
+
+**Internal Dependencies:**
+
+| File                 | Imports                               | Type               |
+| -------------------- | ------------------------------------- | ------------------ |
+| `./wgpu-bindings.js` | `DRAW_UNIFORM_WGSL, MAP_BINDING_WGSL` | Import             |
+| `./webgpu-device.js` | `GpuVertexBufferLayout`               | Import (type-only) |
+
+**Exports:**
+
+- Functions: `unlitVertexBufferLayouts`, `unlitShaderSource`, `unlitFragmentStageWgsl`
+- Constants: `POSITION_SHADER_LOCATION`, `COLOR_SHADER_LOCATION`, `POSITION_BUFFER_LAYOUT`, `COLOR_BUFFER_LAYOUT`, `UV_SHADER_LOCATION`, `UV_BUFFER_LAYOUT`, `VERTEX_ENTRY_POINT`, `FRAGMENT_ENTRY_POINT`, `CLEAR_VERTEX_COUNT`, `CLEAR_SHADER_SOURCE`
+
+---
+
+### `packages/render-webgpu/src/wgpu-skinning-registry.ts` - The skinning pipeline's registration slot (§54, §62; RFC 0003) — the
+
+**Internal Dependencies:**
+
+| File                       | Imports                                                          | Type               |
+| -------------------------- | ---------------------------------------------------------------- | ------------------ |
+| `./webgpu-device.js`       | `GpuBindGroup, GpuBindGroupLayout, GpuDevice, GpuRenderPipeline` | Import (type-only) |
+| `./wgpu-pipeline-cache.js` | `WgpuStencilDescriptor`                                          | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `SkinningPipelineHost`, `WgpuSkinnedDrawDescriptor`, `WgpuSkinnedShadowDescriptor`, `SkinnedUnlitPipeline`, `SkinnedLitPipeline`, `SkinnedPrograms`, `SkinningPipelineFactory`
+- Functions: `setSkinningPipelineFactory`, `resolveSkinningPipelineFactory`, `clearRegisteredSkinningPipeline`
+
+---
+
+### `packages/render-webgpu/src/wgpu-stencil.ts` - §57/§67 stencil parity for the WebGPU backend (WP-R1.7) — the per-frame
+
+**Workspace Dependencies:**
+
+| Package          | Import                          |
+| ---------------- | ------------------------------- |
+| `@fourjs/render` | `RenderItem, RenderItemStencil` |
+
+**Internal Dependencies:**
+
+| File                       | Imports                 | Type               |
+| -------------------------- | ----------------------- | ------------------ |
+| `./webgpu-device.js`       | `GpuRenderPassEncoder`  | Import (type-only) |
+| `./wgpu-pipeline-cache.js` | `WgpuStencilDescriptor` | Import (type-only) |
+
+**Exports:**
+
+- Types: `WgpuStencilSource`
+- Functions: `stencilDescriptor`, `applyStencilReference`, `frameWantsStencil`
+- Constants: `STENCIL_ALL_BITS`, `CLEAR_STENCIL`
+
+---
+
+### `packages/render-webgpu/src/wgpu-render-target.ts` - GPU-side render targets for the WebGPU backend: one colour (and optional
+
+**Workspace Dependencies:**
+
+| Package          | Import              |
+| ---------------- | ------------------- |
+| `@fourjs/render` | `RenderTarget`      |
+| `@fourjs/render` | `warnDisposedInUse` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                  | Type   |
+| -------------------- | -------------------------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_TEXTURE_USAGE, GpuBindGroup, GpuBindGroupLayout, GpuDevice, GpuSampler, GpuTexture, GpuTextureView` | Import |
+| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING`                                                               | Import |
+
+**Exports:**
+
+- Classes: `WgpuRenderTargetCache`
+- Interfaces: `WgpuRenderTargetRecord`
+- Types: `WgpuCacheableRenderTarget`
+- Functions: `renderTargetDepthFormat`
+- Constants: `RENDER_TARGET_COLOR_FORMAT`, `RENDER_TARGET_DEPTH_FORMAT`, `RENDER_TARGET_DEPTH_TEXTURE_FORMAT`, `RENDER_TARGET_DEPTH_STENCIL_FORMAT`
+
+---
+
+### `packages/render-webgpu/src/wgpu-lights.ts` - The frame's lighting as **one uniform buffer** (§68, WP-R1.5), plus the
+
+**Workspace Dependencies:**
+
+| Package          | Import                             |
+| ---------------- | ---------------------------------- |
+| `@fourjs/render` | `MAX_PUNCTUAL_LIGHTS, SceneLights` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                           | Type   |
+| -------------------- | ------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice` | Import |
+| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING`        | Import |
+
+**Exports:**
+
+- Functions: `createLightsBindGroupLayout`, `shadedMrBindingWgsl`, `writeLightUniforms`
+- Constants: `LIGHTS_BIND_GROUP_INDEX`, `SHADED_MAP_BIND_GROUP_INDEX`, `SHADED_MR_BIND_GROUP_INDEX`, `LIGHT_AMBIENT_OFFSET`, `LIGHT_DIRECTION_OFFSET`, `LIGHT_COLOR_OFFSET`, `LIGHT_CAMERA_OFFSET`, `LIGHT_COUNTS_OFFSET`, `LIGHT_PUNCTUAL_POSITION_OFFSET`, `LIGHT_PUNCTUAL_COLOR_OFFSET`, `LIGHT_PUNCTUAL_DIRECTION_OFFSET`, `LIGHT_PUNCTUAL_PARAMS_OFFSET`, `LIGHT_UNIFORM_BYTES`, `LIGHT_UNIFORM_FLOATS`, `HEMISPHERE_SKY_OFFSET`, `HEMISPHERE_GROUND_OFFSET`, `HEMISPHERE_UP_OFFSET`, `LIGHT_BINDING_BYTES`, `LIGHT_UNIFORM_STRIDE_BYTES`, `LIGHT_UNIFORM_STRIDE_FLOATS`, `LIGHT_UNIFORM_MEMBERS_WGSL`, `HEMISPHERE_UNIFORM_MEMBERS_WGSL`, `LIGHT_UNIFORM_WGSL`, `HEMISPHERE_IRRADIANCE_WGSL`, `PUNCTUAL_LIGHT_WGSL`, `SHADED_MAP_BINDING_WGSL`, `SHADED_MR_BINDING_WGSL`
+
+---
+
+### `packages/render-webgpu/src/wgpu-pipeline-memo.ts` - A "same as the previous draw" fast path in front of {@link WgpuPipelineCache}
+
+**Internal Dependencies:**
+
+| File                       | Imports                                                       | Type               |
+| -------------------------- | ------------------------------------------------------------- | ------------------ |
+| `./webgpu-device.js`       | `GpuRenderPipeline`                                           | Import (type-only) |
+| `./wgpu-pipeline-cache.js` | `WgpuPipelineCache, WgpuPipelineDescriptor, WgpuPipelineKind` | Import (type-only) |
+| `./wgpu-stencil.js`        | `STENCIL_ALL_BITS, stencilDescriptor, WgpuStencilSource`      | Import             |
+
+**Exports:**
+
+- Classes: `WgpuPipelineMemo`
+- Interfaces: `WgpuPipelineRequest`, `MutableWgpuPipelineRequest`
+- Functions: `createPipelineRequest`
+
+---
+
+### `packages/render-webgpu/src/wgpu-particles.ts` - The batched particle pipeline for the WebGPU backend (§36, §64 stage 6,
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/render` | `PARTICLE_COLOR_OFFSET, PARTICLE_INSTANCE_FLOATS, PARTICLE_POSITION_OFFSET, PARTICLE_ROTATION_OFFSET, PARTICLE_SIZE_OFFSET, PARTICLE_SOFTNESS_OFFSET, PARTICLE_WIDE_INSTANCE_FLOATS, ParticleRenderItem` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                               | Type   |
+| -------------------- | ----------------------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GPU_SHADER_STAGE, GpuBindGroupLayout, GpuBuffer, GpuDevice, GpuVertexBufferLayout` | Import |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, VERTEX_ENTRY_POINT`                                    | Import |
+
+**Exports:**
+
+- Classes: `WgpuParticleCache`
+- Interfaces: `WgpuParticleRecord`
+- Functions: `createParticleBindGroupLayout`
+- Constants: `PARTICLE_PROJECTION_OFFSET`, `PARTICLE_VIEW_OFFSET`, `PARTICLE_MODEL_OFFSET`, `PARTICLE_UNIFORM_BYTES`, `PARTICLE_INSTANCE_STRIDE_BYTES`, `PARTICLE_UNIFORM_WGSL`, `PARTICLE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_GPU_POSITION_BUFFER_LAYOUT`, `PARTICLE_GPU_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_GPU_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_WIDE_INSTANCE_STRIDE_BYTES`, `PARTICLE_WIDE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_APPEARANCE_SHADER_SOURCE`, `PARTICLE_SHADER_SOURCE`
+
+---
+
+### `packages/render-webgpu/src/wgpu-particle-simulation.ts` - `WgpuParticleSimulation` — the device side of §36's `simulation: "gpu"`
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                                                                                                                                                          | Type   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GpuBuffer, GpuDevice`                                                                                                                                                                                                         | Import |
+| `./wgpu-compute.js`  | `PARTICLE_INTEGRATOR_SHADER_SOURCE, PARTICLE_SIMULATION_PARAMS_FLOATS, WgpuComputeBuffer, WgpuComputeCache, createComputeBuffer, particleIntegratorWorkgroups, writeComputeBuffer, writeParticleSimulationParams, ParticleSimulationFieldParams` | Import |
+
+**Exports:**
+
+- Classes: `WgpuParticleSimulation`
+- Interfaces: `WgpuParticleSimulationOptions`
+- Constants: `PARTICLE_SIMULATION_VECTOR_BYTES`, `PARTICLE_SIMULATION_SCRATCH_BYTES`
+
+---
+
+### `packages/render-webgpu/src/wgpu-compute.ts` - §82's GPU compute on the WebGPU backend (WP-R1.8) — compute pipelines, bind
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `FourError`                                                                                       |
+| `@fourjs/render` | `COMPUTE_ENTRY_POINT, ComputeBinding, ComputeBindingAccess, ComputeBuffer, ComputePassDescriptor` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                                                              | Type   |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GPU_MAP_MODE, GPU_SHADER_STAGE, GpuBindGroupLayout, GpuComputePipeline, GpuDevice, GpuPipelineLayout, GpuShaderModule, GpuBuffer` | Import |
+
+**Exports:**
+
+- Classes: `WgpuComputeBuffer`, `WgpuComputeCache`
+- Interfaces: `ComputeBufferOptions`, `ParticleSimulationFieldParams`
+- Functions: `createComputeBuffer`, `writeComputeBuffer`, `readComputeBufferBytes`, `writeParticleSimulationParams`, `particleIntegratorWorkgroups`
+- Constants: `PARTICLE_INTEGRATOR_WORKGROUP_SIZE`, `PARTICLE_SIMULATION_PARAMS_FLOATS`, `PARTICLE_INTEGRATOR_SHADER_SOURCE`
+
+---
+
 ### `packages/render-webgpu/src/register.ts` - This backend's opt-in to §62's renderer registry (R-2, A-8, WP-R1.1).
 
 **Workspace Dependencies:**
@@ -5924,13 +5311,163 @@ graph LR
 
 ---
 
-### `packages/render-webgpu/src/webgpu-device.ts` - The WebGPU surface this backend touches, described structurally (§61, §62).
+### `packages/render-webgpu/src/wgpu-node-registry.ts` - The WebGPU node-material pipeline's registration slot (§60, §62; RFC 0001;
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                      |
+| ---------------- | ----------------------------------------------------------- |
+| `@fourjs/math`   | `Matrix4`                                                   |
+| `@fourjs/render` | `GraphEffect, NodeRenderItem, RenderItem, RenderStatistics` |
+
+**Internal Dependencies:**
+
+| File                      | Imports                                            | Type               |
+| ------------------------- | -------------------------------------------------- | ------------------ |
+| `./webgpu-device.js`      | `GpuDevice, GpuRenderPassEncoder, GpuTextureView`  | Import (type-only) |
+| `./wgpu-geometry.js`      | `WgpuGeometryCache`                                | Import (type-only) |
+| `./wgpu-render-target.js` | `WgpuCacheableRenderTarget, WgpuRenderTargetCache` | Import (type-only) |
+| `./wgpu-texture.js`       | `WgpuTextureCache`                                 | Import (type-only) |
 
 **Exports:**
 
-- Interfaces: `GpuDeviceLostInfo`, `GpuQuerySet`, `GpuBuffer`, `GpuTextureViewDescriptor`, `GpuTexture`, `GpuComputePipelineDescriptor`, `GpuComputePassEncoder`, `GpuVertexBufferLayout`, `GpuBlendState`, `GpuBlendComponent`, `GpuRenderPipelineDescriptor`, `GpuStencilFaceState`, `GpuRenderPassDescriptor`, `GpuRenderPassEncoder`, `GpuCommandEncoder`, `GpuQueue`, `GpuSamplerDescriptor`, `GpuBufferDescriptor`, `GpuTextureDescriptor`, `GpuBindGroupLayoutEntry`, `GpuBufferBinding`, `GpuBindGroupEntry`, `GpuDevice`, `GpuAdapter`, `Gpu`, `GpuCanvasContext`, `WebgpuCanvas`
-- Types: `GpuTextureView`, `GpuSampler`, `GpuShaderModule`, `GpuBindGroupLayout`, `GpuPipelineLayout`, `GpuBindGroup`, `GpuRenderPipeline`, `GpuComputePipeline`, `GpuCommandBuffer`
-- Constants: `GPU_BUFFER_USAGE`, `GPU_MAP_MODE`, `GPU_TEXTURE_USAGE`, `GPU_SHADER_STAGE`, `UNIFORM_STRIDE_BYTES`
+- Interfaces: `WgpuNodePipelineHost`, `WgpuNodeFrameState`, `WgpuNodeMaterialPipelines`, `WgpuNodeMaterialPipelineFactory`
+- Types: `WgpuNodeItemMaterial`
+- Functions: `setWebgpuNodeMaterialPipelineFactory`, `resolveWebgpuNodeMaterialPipelineFactory`, `clearRegisteredWebgpuNodeMaterialPipeline`
+
+---
+
+### `packages/render-webgpu/src/wgpu-batch.ts` - §65 batching for the WebGPU backend — the GPU half of `@fourjs/render`'s
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                       |
+| ---------------- | ------------------------------------------------------------ |
+| `@fourjs/core`   | `FourError`                                                  |
+| `@fourjs/render` | `RenderBatcher, RenderBatch, RenderBatchOptions, RenderItem` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                               | Type   |
+| -------------------- | ------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GpuBuffer, GpuDevice, GpuRenderPassEncoder, GpuVertexBufferLayout` | Import |
+| `./wgpu-unlit.js`    | `COLOR_SHADER_LOCATION, POSITION_SHADER_LOCATION, UV_SHADER_LOCATION`                 | Import |
+
+**Exports:**
+
+- Classes: `WgpuBatching`
+- Interfaces: `WgpuRenderBatching`
+- Functions: `batchVertexBufferLayout`, `createWgpuBatching`
+
+---
+
+### `packages/render-webgpu/src/wgpu-standard.ts` - The metallic-roughness pipeline in hand-written WGSL (§57
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                                                                                      | Type   |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice`                                                                                                                            | Import |
+| `./wgpu-lights.js`   | `LIGHT_UNIFORM_WGSL, HEMISPHERE_IRRADIANCE_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BIND_GROUP_INDEX, SHADED_MAP_BINDING_WGSL, SHADED_MR_BIND_GROUP_INDEX, shadedMrBindingWgsl` | Import |
+| `./wgpu-lit.js`      | `shadedVertexStageWgsl`                                                                                                                                                      | Import |
+| `./wgpu-shadow.js`   | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_WGSL`                                                                                                                              | Import |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT`                                                                                                                                                       | Import |
+
+**Exports:**
+
+- Functions: `createStandardBindGroupLayout`, `standardShaderSource`
+- Constants: `STANDARD_VIEW_PROJECTION_OFFSET`, `STANDARD_MODEL_OFFSET`, `STANDARD_BASE_COLOR_OFFSET`, `STANDARD_NORMAL_OFFSET`, `STANDARD_EMISSIVE_OFFSET`, `STANDARD_SURFACE_OFFSET`, `STANDARD_UNIFORM_BYTES`, `STANDARD_UNIFORM_WGSL`
+
+---
+
+### `packages/render-webgpu/src/wgpu-sprite.ts` - The sprite pipeline in hand-written WGSL (§55, WP-R1.3), plus the uniform
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                        | Type   |
+| -------------------- | -------------------------------------------------------------- | ------ |
+| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice`              | Import |
+| `./wgpu-bindings.js` | `MAP_BINDING_WGSL`                                             | Import |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, UV_SHADER_LOCATION, VERTEX_ENTRY_POINT` | Import |
+
+**Exports:**
+
+- Functions: `createSpriteBindGroupLayout`
+- Constants: `SPRITE_VIEW_PROJECTION_OFFSET`, `SPRITE_MODEL_OFFSET`, `SPRITE_TINT_OFFSET`, `SPRITE_UNIFORM_BYTES`, `SPRITE_UNIFORM_WGSL`, `SPRITE_SHADER_SOURCE`
+
+---
+
+### `packages/render-webgpu/src/wgpu-picking-registry.ts` - The picking pipeline's registration slot (§71, §62; RFC 0005) — the
+
+**Workspace Dependencies:**
+
+| Package          | Import           |
+| ---------------- | ---------------- |
+| `@fourjs/render` | `PickingService` |
+
+**Internal Dependencies:**
+
+| File                      | Imports                 | Type               |
+| ------------------------- | ----------------------- | ------------------ |
+| `./webgpu-device.js`      | `GpuDevice`             | Import (type-only) |
+| `./wgpu-geometry.js`      | `WgpuGeometryCache`     | Import (type-only) |
+| `./wgpu-particles.js`     | `WgpuParticleCache`     | Import (type-only) |
+| `./wgpu-render-target.js` | `WgpuRenderTargetCache` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `PickingRendererHost`, `PickingServiceFactory`
+- Functions: `setPickingServiceFactory`, `resolvePickingServiceFactory`, `clearRegisteredPickingPipeline`
+
+---
+
+### `packages/render-webgpu/src/wgpu-pipeline-cache.ts` - The lazy, descriptor-keyed render-pipeline cache (§4.2 of the R-1 plan).
+
+**Workspace Dependencies:**
+
+| Package          | Import              |
+| ---------------- | ------------------- |
+| `@fourjs/render` | `RenderItemStencil` |
+
+**Internal Dependencies:**
+
+| File                  | Imports                                                                                                                                                | Type   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| `./webgpu-device.js`  | `GpuBindGroupLayout, GpuBlendState, GpuDevice, GpuPipelineLayout, GpuRenderPipeline, GpuShaderModule, GpuStencilFaceState, GpuVertexBufferLayout`      | Import |
+| `./wgpu-batch.js`     | `batchVertexBufferLayout`                                                                                                                              | Import |
+| `./wgpu-effect.js`    | `effectShaderSource, WgpuEffectKind`                                                                                                                   | Import |
+| `./wgpu-lit.js`       | `litShaderSource, shadedVertexBufferLayouts`                                                                                                           | Import |
+| `./wgpu-particles.js` | `PARTICLE_GPU_VERTEX_BUFFER_LAYOUTS, PARTICLE_SHADER_SOURCE, PARTICLE_VERTEX_BUFFER_LAYOUTS`                                                           | Import |
+| `./wgpu-shadow.js`    | `SHADOW_SHADER_SOURCE`                                                                                                                                 | Import |
+| `./wgpu-sprite.js`    | `SPRITE_SHADER_SOURCE`                                                                                                                                 | Import |
+| `./wgpu-standard.js`  | `standardShaderSource`                                                                                                                                 | Import |
+| `./wgpu-unlit.js`     | `CLEAR_SHADER_SOURCE, FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, UV_BUFFER_LAYOUT, VERTEX_ENTRY_POINT, unlitShaderSource, unlitVertexBufferLayouts` | Import |
+
+**Exports:**
+
+- Classes: `WgpuPipelineCache`
+- Interfaces: `WgpuStencilDescriptor`, `WgpuBatchStream`, `WgpuPipelineDescriptor`
+- Types: `WgpuPipelineKind`
+- Functions: `blendStateFor`, `pipelineKey`, `stencilStateFor`
+
+---
+
+### `packages/render-webgpu/src/wgpu-lit.ts` - The Lambert-lit pipeline in hand-written WGSL (§57 `LitMaterial`, §68,
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                                            | Type               |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./wgpu-bindings.js` | `DRAW_UNIFORM_WGSL`                                                                                                                | Import             |
+| `./webgpu-device.js` | `GpuVertexBufferLayout`                                                                                                            | Import (type-only) |
+| `./wgpu-lights.js`   | `HEMISPHERE_IRRADIANCE_WGSL, LIGHT_UNIFORM_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BINDING_WGSL`                                     | Import             |
+| `./wgpu-shadow.js`   | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_WGSL`                                                                                    | Import             |
+| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, POSITION_SHADER_LOCATION, UV_BUFFER_LAYOUT, UV_SHADER_LOCATION, VERTEX_ENTRY_POINT` | Import             |
+
+**Exports:**
+
+- Functions: `shadedVertexBufferLayouts`, `shadedVertexStageWgsl`, `litShaderSource`, `litFragmentStageWgsl`
+- Constants: `NORMAL_SHADER_LOCATION`, `NORMAL_BUFFER_LAYOUT`, `NORMAL_MATRIX_WGSL`
 
 ---
 
@@ -5980,974 +5517,1889 @@ graph LR
 
 ---
 
-### `packages/render-webgpu/src/wgpu-batch.ts` - §65 batching for the WebGPU backend — the GPU half of `@fourjs/render`'s
+<a id="packages-render-canvas-dependencies"></a>
 
-**Workspace Dependencies:**
+## Packages/render canvas Dependencies
 
-| Package          | Import                                                       |
-| ---------------- | ------------------------------------------------------------ |
-| `@fourjs/core`   | `FourError`                                                  |
-| `@fourjs/render` | `RenderBatcher, RenderBatch, RenderBatchOptions, RenderItem` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                               | Type   |
-| -------------------- | ------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GpuBuffer, GpuDevice, GpuRenderPassEncoder, GpuVertexBufferLayout` | Import |
-| `./wgpu-unlit.js`    | `COLOR_SHADER_LOCATION, POSITION_SHADER_LOCATION, UV_SHADER_LOCATION`                 | Import |
-
-**Exports:**
-
-- Classes: `WgpuBatching`
-- Interfaces: `WgpuRenderBatching`
-- Functions: `batchVertexBufferLayout`, `createWgpuBatching`
-
----
-
-### `packages/render-webgpu/src/wgpu-bindings.ts` - This backend's binding layout, **declared as data** (§7 of the R-1 plan).
-
-**Internal Dependencies:**
-
-| File                 | Imports                                           | Type   |
-| -------------------- | ------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice` | Import |
-
-**Exports:**
-
-- Functions: `createDrawBindGroupLayout`, `createTextureBindGroupLayout`
-- Constants: `DRAW_VIEW_PROJECTION_OFFSET`, `DRAW_MODEL_OFFSET`, `DRAW_COLOR_OFFSET`, `DRAW_NORMAL_OFFSET`, `DRAW_UNIFORM_BYTES`, `DRAW_UNIFORM_FLOATS`, `DRAW_UNIFORM_WGSL`, `MAP_BIND_GROUP_INDEX`, `MAP_TEXTURE_BINDING`, `MAP_SAMPLER_BINDING`, `MAP_BINDING_WGSL`
-
----
-
-### `packages/render-webgpu/src/wgpu-compute.ts` - §82's GPU compute on the WebGPU backend (WP-R1.8) — compute pipelines, bind
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                                            |
-| ---------------- | ------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `FourError`                                                                                       |
-| `@fourjs/render` | `COMPUTE_ENTRY_POINT, ComputeBinding, ComputeBindingAccess, ComputeBuffer, ComputePassDescriptor` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                                                              | Type   |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GPU_MAP_MODE, GPU_SHADER_STAGE, GpuBindGroupLayout, GpuComputePipeline, GpuDevice, GpuPipelineLayout, GpuShaderModule, GpuBuffer` | Import |
-
-**Exports:**
-
-- Classes: `WgpuComputeBuffer`, `WgpuComputeCache`
-- Interfaces: `ComputeBufferOptions`, `ParticleSimulationFieldParams`
-- Functions: `createComputeBuffer`, `writeComputeBuffer`, `readComputeBufferBytes`, `writeParticleSimulationParams`, `particleIntegratorWorkgroups`
-- Constants: `PARTICLE_INTEGRATOR_WORKGROUP_SIZE`, `PARTICLE_SIMULATION_PARAMS_FLOATS`, `PARTICLE_INTEGRATOR_SHADER_SOURCE`
-
----
-
-### `packages/render-webgpu/src/wgpu-effect.ts` - §70's full-screen effects in hand-written WGSL — the blit, the colour grade,
-
-**Internal Dependencies:**
-
-| File                 | Imports                                           | Type   |
-| -------------------- | ------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice` | Import |
-| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING`        | Import |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, VERTEX_ENTRY_POINT`        | Import |
-
-**Exports:**
-
-- Types: `WgpuEffectKind`
-- Functions: `createEffectBindGroupLayout`, `effectShaderSource`
-- Constants: `EFFECT_PASS_VERTEX_COUNT`, `EFFECT_GRADE_OFFSET`, `EFFECT_UNIFORM_BYTES`, `EFFECT_BIND_GROUP_INDEX`, `EFFECT_UNIFORM_WGSL`
-
----
-
-### `packages/render-webgpu/src/wgpu-geometry.ts` - Per-device store of uploaded geometry (§61, §64 stage 7) — the WebGPU twin of
-
-**Workspace Dependencies:**
-
-| Package          | Import              |
-| ---------------- | ------------------- |
-| `@fourjs/render` | `RenderItem`        |
-| `@fourjs/render` | `warnDisposedInUse` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                  | Type   |
-| -------------------- | ---------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GpuBuffer, GpuDevice` | Import |
-
-**Exports:**
-
-- Classes: `WgpuGeometryCache`
-- Interfaces: `WgpuGeometryRecord`
-- Types: `CacheableGeometry`
-
----
-
-### `packages/render-webgpu/src/wgpu-gpu-timer.ts` - WebGPU GPU-frame timer — `timestamp-query` ping-pong (A-1, §62, §84).
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                | Type   |
-| -------------------- | -------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GPU_MAP_MODE, GpuBuffer, GpuCommandEncoder, GpuDevice, GpuQuerySet` | Import |
-
-**Exports:**
-
-- Classes: `WgpuGpuTimer`
-
----
-
-### `packages/render-webgpu/src/wgpu-lights.ts` - The frame's lighting as **one uniform buffer** (§68, WP-R1.5), plus the
-
-**Workspace Dependencies:**
-
-| Package          | Import                             |
-| ---------------- | ---------------------------------- |
-| `@fourjs/render` | `MAX_PUNCTUAL_LIGHTS, SceneLights` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                           | Type   |
-| -------------------- | ------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice` | Import |
-| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING`        | Import |
-
-**Exports:**
-
-- Functions: `createLightsBindGroupLayout`, `shadedMrBindingWgsl`, `writeLightUniforms`
-- Constants: `LIGHTS_BIND_GROUP_INDEX`, `SHADED_MAP_BIND_GROUP_INDEX`, `SHADED_MR_BIND_GROUP_INDEX`, `LIGHT_AMBIENT_OFFSET`, `LIGHT_DIRECTION_OFFSET`, `LIGHT_COLOR_OFFSET`, `LIGHT_CAMERA_OFFSET`, `LIGHT_COUNTS_OFFSET`, `LIGHT_PUNCTUAL_POSITION_OFFSET`, `LIGHT_PUNCTUAL_COLOR_OFFSET`, `LIGHT_PUNCTUAL_DIRECTION_OFFSET`, `LIGHT_PUNCTUAL_PARAMS_OFFSET`, `LIGHT_UNIFORM_BYTES`, `LIGHT_UNIFORM_FLOATS`, `HEMISPHERE_SKY_OFFSET`, `HEMISPHERE_GROUND_OFFSET`, `HEMISPHERE_UP_OFFSET`, `LIGHT_BINDING_BYTES`, `LIGHT_UNIFORM_STRIDE_BYTES`, `LIGHT_UNIFORM_STRIDE_FLOATS`, `LIGHT_UNIFORM_MEMBERS_WGSL`, `HEMISPHERE_UNIFORM_MEMBERS_WGSL`, `LIGHT_UNIFORM_WGSL`, `HEMISPHERE_IRRADIANCE_WGSL`, `PUNCTUAL_LIGHT_WGSL`, `SHADED_MAP_BINDING_WGSL`, `SHADED_MR_BINDING_WGSL`
-
----
-
-### `packages/render-webgpu/src/wgpu-lit.ts` - The Lambert-lit pipeline in hand-written WGSL (§57 `LitMaterial`, §68,
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                                            | Type               |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./wgpu-bindings.js` | `DRAW_UNIFORM_WGSL`                                                                                                                | Import             |
-| `./webgpu-device.js` | `GpuVertexBufferLayout`                                                                                                            | Import (type-only) |
-| `./wgpu-lights.js`   | `HEMISPHERE_IRRADIANCE_WGSL, LIGHT_UNIFORM_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BINDING_WGSL`                                     | Import             |
-| `./wgpu-shadow.js`   | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_WGSL`                                                                                    | Import             |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, POSITION_SHADER_LOCATION, UV_BUFFER_LAYOUT, UV_SHADER_LOCATION, VERTEX_ENTRY_POINT` | Import             |
-
-**Exports:**
-
-- Functions: `shadedVertexBufferLayouts`, `shadedVertexStageWgsl`, `litShaderSource`, `litFragmentStageWgsl`
-- Constants: `NORMAL_SHADER_LOCATION`, `NORMAL_BUFFER_LAYOUT`, `NORMAL_MATRIX_WGSL`
-
----
-
-### `packages/render-webgpu/src/wgpu-node-program.ts` - The node-material pipeline for WebGPU (§60, §62; RFC 0001 — WP-R1.9): a
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                                                                                                                                                                                                                                             |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEV, FourError, devWarnOnce, Disposable`                                                                                                                                                                                                                                                          |
-| `@fourjs/render` | `SHADER_VALUE_COMPONENTS, analyzeShaderGraph, createShaderSourceMap, ShaderSourceMap, isRenderTargetTexture, GraphEffect, NodeRenderItem, RenderItem, RenderStatistics, ShaderAttributeName, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderUniformReflection, ShaderValueType` |
-
-**Internal Dependencies:**
-
-| File                       | Imports                                                                                                                                                                                                                  | Type               |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
-| `./webgpu-device.js`       | `GPU_BUFFER_USAGE, GPU_SHADER_STAGE, GpuBindGroup, GpuBindGroupEntry, GpuBindGroupLayout, GpuBuffer, GpuPipelineLayout, GpuRenderPassEncoder, GpuRenderPipeline, GpuShaderModule, GpuTextureView, GpuVertexBufferLayout` | Import             |
-| `./wgpu-effect.js`         | `EFFECT_PASS_VERTEX_COUNT`                                                                                                                                                                                               | Import             |
-| `./wgpu-lit.js`            | `NORMAL_BUFFER_LAYOUT`                                                                                                                                                                                                   | Import             |
-| `./wgpu-pipeline-cache.js` | `blendStateFor, stencilStateFor, WgpuStencilDescriptor`                                                                                                                                                                  | Import             |
-| `./wgpu-node-registry.js`  | `setWebgpuNodeMaterialPipelineFactory, WgpuNodeFrameState, WgpuNodeItemMaterial, WgpuNodeMaterialPipelines, WgpuNodePipelineHost`                                                                                        | Import             |
-| `./wgpu-render-target.js`  | `WgpuCacheableRenderTarget, WgpuRenderTargetCache`                                                                                                                                                                       | Import (type-only) |
-| `./wgpu-stencil.js`        | `applyStencilReference, stencilDescriptor`                                                                                                                                                                               | Import             |
-| `./wgpu-unlit.js`          | `COLOR_BUFFER_LAYOUT, FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, UV_BUFFER_LAYOUT, VERTEX_ENTRY_POINT`                                                                                                                | Import             |
-
-**Exports:**
-
-- Classes: `WgpuNodePipelineStore`
-- Interfaces: `EmittedWgslNodeShader`
-- Functions: `emitShaderGraphWgsl`, `registerWebgpuNodeMaterialPipeline`
-- Constants: `NODE_SURFACE_BLOCK_BASE_BYTES`, `NODE_SCREEN_BLOCK_BASE_BYTES`, `NODE_SURFACE_BLOCK_GROUP`, `NODE_SURFACE_TEXTURE_GROUP`, `NODE_SCREEN_TEXTURE_GROUP`
-
----
-
-### `packages/render-webgpu/src/wgpu-node-registry.ts` - The WebGPU node-material pipeline's registration slot (§60, §62; RFC 0001;
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                      |
-| ---------------- | ----------------------------------------------------------- |
-| `@fourjs/math`   | `Matrix4`                                                   |
-| `@fourjs/render` | `GraphEffect, NodeRenderItem, RenderItem, RenderStatistics` |
-
-**Internal Dependencies:**
-
-| File                      | Imports                                            | Type               |
-| ------------------------- | -------------------------------------------------- | ------------------ |
-| `./webgpu-device.js`      | `GpuDevice, GpuRenderPassEncoder, GpuTextureView`  | Import (type-only) |
-| `./wgpu-geometry.js`      | `WgpuGeometryCache`                                | Import (type-only) |
-| `./wgpu-render-target.js` | `WgpuCacheableRenderTarget, WgpuRenderTargetCache` | Import (type-only) |
-| `./wgpu-texture.js`       | `WgpuTextureCache`                                 | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `WgpuNodePipelineHost`, `WgpuNodeFrameState`, `WgpuNodeMaterialPipelines`, `WgpuNodeMaterialPipelineFactory`
-- Types: `WgpuNodeItemMaterial`
-- Functions: `setWebgpuNodeMaterialPipelineFactory`, `resolveWebgpuNodeMaterialPipelineFactory`, `clearRegisteredWebgpuNodeMaterialPipeline`
-
----
-
-### `packages/render-webgpu/src/wgpu-particle-simulation.ts` - `WgpuParticleSimulation` — the device side of §36's `simulation: "gpu"`
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                                                                                                                                                          | Type   |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GpuBuffer, GpuDevice`                                                                                                                                                                                                         | Import |
-| `./wgpu-compute.js`  | `PARTICLE_INTEGRATOR_SHADER_SOURCE, PARTICLE_SIMULATION_PARAMS_FLOATS, WgpuComputeBuffer, WgpuComputeCache, createComputeBuffer, particleIntegratorWorkgroups, writeComputeBuffer, writeParticleSimulationParams, ParticleSimulationFieldParams` | Import |
-
-**Exports:**
-
-- Classes: `WgpuParticleSimulation`
-- Interfaces: `WgpuParticleSimulationOptions`
-- Constants: `PARTICLE_SIMULATION_VECTOR_BYTES`, `PARTICLE_SIMULATION_SCRATCH_BYTES`
-
----
-
-### `packages/render-webgpu/src/wgpu-particles.ts` - The batched particle pipeline for the WebGPU backend (§36, §64 stage 6,
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                                                                                                                                                   |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/render` | `PARTICLE_COLOR_OFFSET, PARTICLE_INSTANCE_FLOATS, PARTICLE_POSITION_OFFSET, PARTICLE_ROTATION_OFFSET, PARTICLE_SIZE_OFFSET, PARTICLE_SOFTNESS_OFFSET, PARTICLE_WIDE_INSTANCE_FLOATS, ParticleRenderItem` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                               | Type   |
-| -------------------- | ----------------------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GPU_SHADER_STAGE, GpuBindGroupLayout, GpuBuffer, GpuDevice, GpuVertexBufferLayout` | Import |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, VERTEX_ENTRY_POINT`                                    | Import |
-
-**Exports:**
-
-- Classes: `WgpuParticleCache`
-- Interfaces: `WgpuParticleRecord`
-- Functions: `createParticleBindGroupLayout`
-- Constants: `PARTICLE_PROJECTION_OFFSET`, `PARTICLE_VIEW_OFFSET`, `PARTICLE_MODEL_OFFSET`, `PARTICLE_UNIFORM_BYTES`, `PARTICLE_INSTANCE_STRIDE_BYTES`, `PARTICLE_UNIFORM_WGSL`, `PARTICLE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_GPU_POSITION_BUFFER_LAYOUT`, `PARTICLE_GPU_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_GPU_VERTEX_BUFFER_LAYOUTS`, `PARTICLE_WIDE_INSTANCE_STRIDE_BYTES`, `PARTICLE_WIDE_INSTANCE_BUFFER_LAYOUT`, `PARTICLE_APPEARANCE_SHADER_SOURCE`, `PARTICLE_SHADER_SOURCE`
-
----
-
-### `packages/render-webgpu/src/wgpu-picking-registry.ts` - The picking pipeline's registration slot (§71, §62; RFC 0005) — the
-
-**Workspace Dependencies:**
-
-| Package          | Import           |
-| ---------------- | ---------------- |
-| `@fourjs/render` | `PickingService` |
-
-**Internal Dependencies:**
-
-| File                      | Imports                 | Type               |
-| ------------------------- | ----------------------- | ------------------ |
-| `./webgpu-device.js`      | `GpuDevice`             | Import (type-only) |
-| `./wgpu-geometry.js`      | `WgpuGeometryCache`     | Import (type-only) |
-| `./wgpu-particles.js`     | `WgpuParticleCache`     | Import (type-only) |
-| `./wgpu-render-target.js` | `WgpuRenderTargetCache` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `PickingRendererHost`, `PickingServiceFactory`
-- Functions: `setPickingServiceFactory`, `resolvePickingServiceFactory`, `clearRegisteredPickingPipeline`
-
----
-
-### `packages/render-webgpu/src/wgpu-picking.ts` - The WebGPU picking service (§71, §62; RFC 0005) — the id-buffer pass and
-
-**Workspace Dependencies:**
-
-| Package          | Import                                                                                                                                                                                                                                                         |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEV, FourError, devWarnOnce`                                                                                                                                                                                                                                  |
-| `@fourjs/math`   | `Frustum, Matrix4, Rectangle2`                                                                                                                                                                                                                                 |
-| `@fourjs/render` | `MAX_SKINNING_JOINTS, PARTICLE_INSTANCE_FLOATS, RenderTarget, assertEncodableCandidateCount, buildRenderList, buildViewRenderList, collectPickCandidates, decodePickId, encodePickId, ParticleRenderItem, PickRequest, PickResult, PickingService, RenderItem` |
-
-**Internal Dependencies:**
-
-| File                         | Imports                                                                                                                                                                      | Type               |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./webgpu-device.js`         | `GPU_BUFFER_USAGE, GPU_SHADER_STAGE, UNIFORM_STRIDE_BYTES, GpuBindGroup, GpuBindGroupLayout, GpuBuffer, GpuDevice, GpuRenderPipeline, GpuTextureView, GpuVertexBufferLayout` | Import             |
-| `./wgpu-geometry.js`         | `WgpuGeometryCache, WgpuGeometryRecord`                                                                                                                                      | Import (type-only) |
-| `./wgpu-particles.js`        | `PARTICLE_VERTEX_BUFFER_LAYOUTS, WgpuParticleCache, WgpuParticleRecord`                                                                                                      | Import             |
-| `./wgpu-picking-registry.js` | `setPickingServiceFactory, PickingRendererHost`                                                                                                                              | Import             |
-| `./wgpu-readback.js`         | `readTexturePixels`                                                                                                                                                          | Import             |
-| `./wgpu-render-target.js`    | `RENDER_TARGET_COLOR_FORMAT, RENDER_TARGET_DEPTH_FORMAT, WgpuRenderTargetRecord`                                                                                             | Import             |
-| `./wgpu-unlit.js`            | `FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, VERTEX_ENTRY_POINT`                                                                                                           | Import             |
-
-**Exports:**
-
-- Classes: `WebgpuPickingService`
-- Functions: `registerPickingPipeline`
-- Constants: `ID_VIEW_PROJECTION_OFFSET`, `ID_MODEL_OFFSET`, `ID_PICK_OFFSET`, `ID_UNIFORM_BYTES`, `PARTICLE_ID_PROJECTION_OFFSET`, `PARTICLE_ID_VIEW_OFFSET`, `PARTICLE_ID_MODEL_OFFSET`, `PARTICLE_ID_PICK_OFFSET`, `PARTICLE_ID_UNIFORM_BYTES`, `SKINNED_ID_PALETTE_BYTES`, `ID_SHADER_SOURCE`, `PARTICLE_ID_SHADER_SOURCE`, `SKINNED_ID_SHADER_SOURCE`
-
----
-
-### `packages/render-webgpu/src/wgpu-pipeline-cache.ts` - The lazy, descriptor-keyed render-pipeline cache (§4.2 of the R-1 plan).
-
-**Workspace Dependencies:**
-
-| Package          | Import              |
-| ---------------- | ------------------- |
-| `@fourjs/render` | `RenderItemStencil` |
-
-**Internal Dependencies:**
-
-| File                  | Imports                                                                                                                                                | Type   |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| `./webgpu-device.js`  | `GpuBindGroupLayout, GpuBlendState, GpuDevice, GpuPipelineLayout, GpuRenderPipeline, GpuShaderModule, GpuStencilFaceState, GpuVertexBufferLayout`      | Import |
-| `./wgpu-batch.js`     | `batchVertexBufferLayout`                                                                                                                              | Import |
-| `./wgpu-effect.js`    | `effectShaderSource, WgpuEffectKind`                                                                                                                   | Import |
-| `./wgpu-lit.js`       | `litShaderSource, shadedVertexBufferLayouts`                                                                                                           | Import |
-| `./wgpu-particles.js` | `PARTICLE_GPU_VERTEX_BUFFER_LAYOUTS, PARTICLE_SHADER_SOURCE, PARTICLE_VERTEX_BUFFER_LAYOUTS`                                                           | Import |
-| `./wgpu-shadow.js`    | `SHADOW_SHADER_SOURCE`                                                                                                                                 | Import |
-| `./wgpu-sprite.js`    | `SPRITE_SHADER_SOURCE`                                                                                                                                 | Import |
-| `./wgpu-standard.js`  | `standardShaderSource`                                                                                                                                 | Import |
-| `./wgpu-unlit.js`     | `CLEAR_SHADER_SOURCE, FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, UV_BUFFER_LAYOUT, VERTEX_ENTRY_POINT, unlitShaderSource, unlitVertexBufferLayouts` | Import |
-
-**Exports:**
-
-- Classes: `WgpuPipelineCache`
-- Interfaces: `WgpuStencilDescriptor`, `WgpuBatchStream`, `WgpuPipelineDescriptor`
-- Types: `WgpuPipelineKind`
-- Functions: `blendStateFor`, `pipelineKey`, `stencilStateFor`
-
----
-
-### `packages/render-webgpu/src/wgpu-pipeline-memo.ts` - A "same as the previous draw" fast path in front of {@link WgpuPipelineCache}
-
-**Internal Dependencies:**
-
-| File                       | Imports                                                       | Type               |
-| -------------------------- | ------------------------------------------------------------- | ------------------ |
-| `./webgpu-device.js`       | `GpuRenderPipeline`                                           | Import (type-only) |
-| `./wgpu-pipeline-cache.js` | `WgpuPipelineCache, WgpuPipelineDescriptor, WgpuPipelineKind` | Import (type-only) |
-| `./wgpu-stencil.js`        | `STENCIL_ALL_BITS, stencilDescriptor, WgpuStencilSource`      | Import             |
-
-**Exports:**
-
-- Classes: `WgpuPipelineMemo`
-- Interfaces: `WgpuPipelineRequest`, `MutableWgpuPipelineRequest`
-- Functions: `createPipelineRequest`
-
----
-
-### `packages/render-webgpu/src/wgpu-readback.ts` - `readPixels`' mechanism: `copyTextureToBuffer` + `mapAsync` (WP-R1.6; §61,
-
-**Workspace Dependencies:**
-
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/core` | `FourError`  |
-| `@fourjs/math` | `Rectangle2` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                 | Type   |
-| -------------------- | ------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_BUFFER_USAGE, GPU_MAP_MODE, GpuDevice, GpuTexture` | Import |
-
-**Exports:**
-
-- Functions: `readbackBytesPerRow`, `readTexturePixels`
-- Constants: `READBACK_ROW_ALIGNMENT`
-
----
-
-### `packages/render-webgpu/src/wgpu-render-target.ts` - GPU-side render targets for the WebGPU backend: one colour (and optional
-
-**Workspace Dependencies:**
-
-| Package          | Import              |
-| ---------------- | ------------------- |
-| `@fourjs/render` | `RenderTarget`      |
-| `@fourjs/render` | `warnDisposedInUse` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                  | Type   |
-| -------------------- | -------------------------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_TEXTURE_USAGE, GpuBindGroup, GpuBindGroupLayout, GpuDevice, GpuSampler, GpuTexture, GpuTextureView` | Import |
-| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING`                                                               | Import |
-
-**Exports:**
-
-- Classes: `WgpuRenderTargetCache`
-- Interfaces: `WgpuRenderTargetRecord`
-- Types: `WgpuCacheableRenderTarget`
-- Functions: `renderTargetDepthFormat`
-- Constants: `RENDER_TARGET_COLOR_FORMAT`, `RENDER_TARGET_DEPTH_FORMAT`, `RENDER_TARGET_DEPTH_TEXTURE_FORMAT`, `RENDER_TARGET_DEPTH_STENCIL_FORMAT`
-
----
-
-### `packages/render-webgpu/src/wgpu-shadow.ts` - §69's shadow tier on WebGPU (WP-R1.7): the depth-only caster module, the
-
-**Workspace Dependencies:**
-
-| Package          | Import        |
-| ---------------- | ------------- |
-| `@fourjs/render` | `SceneLights` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                                                 | Type   |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice, GpuSampler`                                                                           | Import |
-| `./wgpu-bindings.js` | `DRAW_UNIFORM_WGSL`                                                                                                                     | Import |
-| `./wgpu-lights.js`   | `LIGHTS_BIND_GROUP_INDEX, HEMISPHERE_UNIFORM_MEMBERS_WGSL, LIGHT_UNIFORM_BYTES, LIGHT_UNIFORM_MEMBERS_WGSL, LIGHT_UNIFORM_STRIDE_BYTES` | Import |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, POSITION_SHADER_LOCATION, VERTEX_ENTRY_POINT`                                                                    | Import |
-
-**Exports:**
-
-- Functions: `createShadowLightsBindGroupLayout`, `createShadowSampler`, `writeShadowUniforms`
-- Constants: `SHADOW_MATRIX_OFFSET`, `SHADOW_PARAMS_OFFSET`, `SHADOW_LIGHT_UNIFORM_BYTES`, `SHADOW_MAP_BINDING`, `SHADOW_SAMPLER_BINDING`, `SHADOW_LIGHT_UNIFORM_WGSL`, `SHADOW_FACTOR_WGSL`, `SHADOW_SHADER_SOURCE`, `SHADOW_UNIFORM_SPARE_BYTES`
-
----
-
-### `packages/render-webgpu/src/wgpu-skinning-registry.ts` - The skinning pipeline's registration slot (§54, §62; RFC 0003) — the
-
-**Internal Dependencies:**
-
-| File                       | Imports                                                          | Type               |
-| -------------------------- | ---------------------------------------------------------------- | ------------------ |
-| `./webgpu-device.js`       | `GpuBindGroup, GpuBindGroupLayout, GpuDevice, GpuRenderPipeline` | Import (type-only) |
-| `./wgpu-pipeline-cache.js` | `WgpuStencilDescriptor`                                          | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `SkinningPipelineHost`, `WgpuSkinnedDrawDescriptor`, `WgpuSkinnedShadowDescriptor`, `SkinnedUnlitPipeline`, `SkinnedLitPipeline`, `SkinnedPrograms`, `SkinningPipelineFactory`
-- Functions: `setSkinningPipelineFactory`, `resolveSkinningPipelineFactory`, `clearRegisteredSkinningPipeline`
-
----
-
-### `packages/render-webgpu/src/wgpu-skinning.ts` - The skinned colour pipelines (§54, §62; RFC 0003) — a skinned variant of
-
-**Workspace Dependencies:**
-
-| Package          | Import                |
-| ---------------- | --------------------- |
-| `@fourjs/render` | `MAX_SKINNING_JOINTS` |
-
-**Internal Dependencies:**
-
-| File                          | Imports                                                                                                                                                                    | Type   |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js`          | `GPU_BUFFER_USAGE, GPU_SHADER_STAGE, GpuBindGroup, GpuBindGroupLayout, GpuBuffer, GpuDevice, GpuPipelineLayout, GpuRenderPipeline, GpuShaderModule, GpuVertexBufferLayout` | Import |
-| `./wgpu-bindings.js`          | `DRAW_UNIFORM_WGSL, MAP_BINDING_WGSL`                                                                                                                                      | Import |
-| `./wgpu-lights.js`            | `HEMISPHERE_IRRADIANCE_WGSL, LIGHT_UNIFORM_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BINDING_WGSL`                                                                             | Import |
-| `./wgpu-lit.js`               | `NORMAL_MATRIX_WGSL, litFragmentStageWgsl, shadedVertexBufferLayouts`                                                                                                      | Import |
-| `./wgpu-pipeline-cache.js`    | `blendStateFor, stencilStateFor`                                                                                                                                           | Import |
-| `./wgpu-shadow.js`            | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_WGSL`                                                                                                                            | Import |
-| `./wgpu-skinning-registry.js` | `setSkinningPipelineFactory, SkinnedLitPipeline, SkinnedPrograms, SkinnedUnlitPipeline, SkinningPipelineHost, WgpuSkinnedDrawDescriptor, WgpuSkinnedShadowDescriptor`      | Import |
-| `./wgpu-unlit.js`             | `FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, POSITION_SHADER_LOCATION, VERTEX_ENTRY_POINT, unlitFragmentStageWgsl, unlitVertexBufferLayouts`                             | Import |
-
-**Exports:**
-
-- Functions: `skinnedPaletteBindGroupIndex`, `createJointPaletteBindGroupLayout`, `skinningWgsl`, `skinnedUnlitVertexBufferLayouts`, `skinnedLitVertexBufferLayouts`, `skinnedShadowShaderSource`, `skinnedUnlitShaderSource`, `skinnedLitShaderSource`, `registerSkinningPipeline`
-- Constants: `JOINTS_SHADER_LOCATION`, `WEIGHTS_SHADER_LOCATION`, `JOINTS_BUFFER_LAYOUT`, `WEIGHTS_BUFFER_LAYOUT`, `JOINT_PALETTE_BYTES`, `JOINT_PALETTE_FLOATS`, `JOINT_PALETTE_BINDING`, `SKINNED_SHADOW_VERTEX_BUFFER_LAYOUTS`, `SKINNED_SHADOW_SHADER_SOURCE`
-
----
-
-### `packages/render-webgpu/src/wgpu-sprite.ts` - The sprite pipeline in hand-written WGSL (§55, WP-R1.3), plus the uniform
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                        | Type   |
-| -------------------- | -------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice`              | Import |
-| `./wgpu-bindings.js` | `MAP_BINDING_WGSL`                                             | Import |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, UV_SHADER_LOCATION, VERTEX_ENTRY_POINT` | Import |
-
-**Exports:**
-
-- Functions: `createSpriteBindGroupLayout`
-- Constants: `SPRITE_VIEW_PROJECTION_OFFSET`, `SPRITE_MODEL_OFFSET`, `SPRITE_TINT_OFFSET`, `SPRITE_UNIFORM_BYTES`, `SPRITE_UNIFORM_WGSL`, `SPRITE_SHADER_SOURCE`
-
----
-
-### `packages/render-webgpu/src/wgpu-standard.ts` - The metallic-roughness pipeline in hand-written WGSL (§57
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                                                                                      | Type   |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_SHADER_STAGE, GpuBindGroupLayout, GpuDevice`                                                                                                                            | Import |
-| `./wgpu-lights.js`   | `LIGHT_UNIFORM_WGSL, HEMISPHERE_IRRADIANCE_WGSL, PUNCTUAL_LIGHT_WGSL, SHADED_MAP_BIND_GROUP_INDEX, SHADED_MAP_BINDING_WGSL, SHADED_MR_BIND_GROUP_INDEX, shadedMrBindingWgsl` | Import |
-| `./wgpu-lit.js`      | `shadedVertexStageWgsl`                                                                                                                                                      | Import |
-| `./wgpu-shadow.js`   | `SHADOW_FACTOR_WGSL, SHADOW_LIGHT_UNIFORM_WGSL`                                                                                                                              | Import |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT`                                                                                                                                                       | Import |
-
-**Exports:**
-
-- Functions: `createStandardBindGroupLayout`, `standardShaderSource`
-- Constants: `STANDARD_VIEW_PROJECTION_OFFSET`, `STANDARD_MODEL_OFFSET`, `STANDARD_BASE_COLOR_OFFSET`, `STANDARD_NORMAL_OFFSET`, `STANDARD_EMISSIVE_OFFSET`, `STANDARD_SURFACE_OFFSET`, `STANDARD_UNIFORM_BYTES`, `STANDARD_UNIFORM_WGSL`
-
----
-
-### `packages/render-webgpu/src/wgpu-stencil.ts` - §57/§67 stencil parity for the WebGPU backend (WP-R1.7) — the per-frame
-
-**Workspace Dependencies:**
-
-| Package          | Import                          |
-| ---------------- | ------------------------------- |
-| `@fourjs/render` | `RenderItem, RenderItemStencil` |
-
-**Internal Dependencies:**
-
-| File                       | Imports                 | Type               |
-| -------------------------- | ----------------------- | ------------------ |
-| `./webgpu-device.js`       | `GpuRenderPassEncoder`  | Import (type-only) |
-| `./wgpu-pipeline-cache.js` | `WgpuStencilDescriptor` | Import (type-only) |
-
-**Exports:**
-
-- Types: `WgpuStencilSource`
-- Functions: `stencilDescriptor`, `applyStencilReference`, `frameWantsStencil`
-- Constants: `STENCIL_ALL_BITS`, `CLEAR_STENCIL`
-
----
-
-### `packages/render-webgpu/src/wgpu-texture.ts` - GPU-side textures and samplers for the WebGPU backend: one `GPUTexture` per
-
-**Workspace Dependencies:**
-
-| Package          | Import              |
-| ---------------- | ------------------- |
-| `@fourjs/core`   | `FourError`         |
-| `@fourjs/render` | `RenderItem`        |
-| `@fourjs/render` | `warnDisposedInUse` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                                                                                                                                         | Type   |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `./webgpu-device.js` | `GPU_TEXTURE_USAGE, GpuBindGroup, GpuBindGroupLayout, GpuDevice, GpuPipelineLayout, GpuRenderPipeline, GpuSampler, GpuShaderModule, GpuTexture, GpuTextureView` | Import |
-| `./wgpu-bindings.js` | `MAP_SAMPLER_BINDING, MAP_TEXTURE_BINDING, createTextureBindGroupLayout`                                                                                        | Import |
-| `./wgpu-unlit.js`    | `FRAGMENT_ENTRY_POINT, VERTEX_ENTRY_POINT`                                                                                                                      | Import |
-
-**Exports:**
-
-- Classes: `WgpuTextureCache`
-- Interfaces: `ResolvedSamplerState`, `WgpuTextureRecord`
-- Types: `WgpuCacheableTexture`
-- Functions: `mipLevelCount`, `textureByteLength`, `samplerKey`
-- Constants: `MIPMAP_SHADER_SOURCE`
-
----
-
-### `packages/render-webgpu/src/wgpu-unlit.ts` - The unlit pipeline in hand-written WGSL (§64, §120's MVP tier), plus the
-
-**Internal Dependencies:**
-
-| File                 | Imports                               | Type               |
-| -------------------- | ------------------------------------- | ------------------ |
-| `./wgpu-bindings.js` | `DRAW_UNIFORM_WGSL, MAP_BINDING_WGSL` | Import             |
-| `./webgpu-device.js` | `GpuVertexBufferLayout`               | Import (type-only) |
-
-**Exports:**
-
-- Functions: `unlitVertexBufferLayouts`, `unlitShaderSource`, `unlitFragmentStageWgsl`
-- Constants: `POSITION_SHADER_LOCATION`, `COLOR_SHADER_LOCATION`, `POSITION_BUFFER_LAYOUT`, `COLOR_BUFFER_LAYOUT`, `UV_SHADER_LOCATION`, `UV_BUFFER_LAYOUT`, `VERTEX_ENTRY_POINT`, `FRAGMENT_ENTRY_POINT`, `CLEAR_VERTEX_COUNT`, `CLEAR_SHADER_SOURCE`
-
----
-
-<a id="packages-scene-dependencies"></a>
-
-## Packages/scene Dependencies
-
-### `packages/scene/src/authority.ts` - Transform authority (§42).
-
-**Workspace Dependencies:**
-
-| Package        | Import               |
-| -------------- | -------------------- |
-| `@fourjs/core` | `DEV_WARNING_PREFIX` |
-
-**Exports:**
-
-- Interfaces: `AuthorityNode`
-- Types: `TransformAuthority`
-- Functions: `isOwnedTransformWrite`, `runOwnedTransformWrite`, `warnApplicationTransformWrite`, `warnAuthorityConflict`
-- Constants: `TRANSFORM_AUTHORITIES`, `DEFAULT_TRANSFORM_AUTHORITY`
-
----
-
-### `packages/scene/src/camera.ts` - Cameras (§47).
-
-**Workspace Dependencies:**
-
-| Package        | Import                |
-| -------------- | --------------------- |
-| `@fourjs/math` | `Matrix4, DepthRange` |
-
-**Internal Dependencies:**
-
-| File                    | Imports                 | Type   |
-| ----------------------- | ----------------------- | ------ |
-| `./layers.js`           | `ALL_LAYERS, LayerMask` | Import |
-| `./node.js`             | `Node`                  | Import |
-| `./world-transforms.js` | `resolveWorldTransform` | Import |
-
-**Exports:**
-
-- Classes: `PerspectiveCamera`, `OrthographicCamera`
-- Interfaces: `PerspectiveCameraOptions`, `OrthographicCameraOptions`
-
----
-
-### `packages/scene/src/group.ts` - `Group` (§6, §104) — a concrete {@link Node} with no behavior of its own.
-
-**Internal Dependencies:**
-
-| File        | Imports | Type   |
-| ----------- | ------- | ------ |
-| `./node.js` | `Node`  | Import |
-
-**Exports:**
-
-- Classes: `Group`
-
----
-
-### `packages/scene/src/index.ts` - Package entry point for @fourjs/scene (re-exports 89 symbols)
-
-**Internal Dependencies:**
-
-| File                    | Imports                                                                                                                                                                                                                                     | Type                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./authority.js`        | `DEFAULT_TRANSFORM_AUTHORITY, TRANSFORM_AUTHORITIES, isOwnedTransformWrite, runOwnedTransformWrite, warnApplicationTransformWrite, warnAuthorityConflict`                                                                                   | Re-export             |
-| `./camera.js`           | `Camera, OrthographicCamera, PerspectiveCamera`                                                                                                                                                                                             | Re-export             |
-| `./screen-camera.js`    | `DEFAULT_SCREEN_FAR, DEFAULT_SCREEN_NEAR, DEFAULT_SCREEN_ORIGIN, DEFAULT_SCREEN_UNITS, SCREEN_ORIGINS, SCREEN_UNITS, ScreenCamera`                                                                                                          | Re-export             |
-| `./trackball.js`        | `DEFAULT_TRACKBALL_RADIUS, TrackballRig`                                                                                                                                                                                                    | Re-export             |
-| `./group.js`            | `Group`                                                                                                                                                                                                                                     | Re-export             |
-| `./node-space.js`       | `NODE_SPACE_SERIALIZER, NodeSpace`                                                                                                                                                                                                          | Re-export             |
-| `./layers.js`           | `ALL_LAYERS, DEFAULT_LAYER, DEFAULT_LAYER_MASK, DEFAULT_LAYER_NAME, LAYER_COUNT, NO_LAYERS, applyLayers, assertLayerMask, defineLayer, isLayerMask, layerIndex, layerMask, layerMaskNames, layerName, layerNames, layersMatch, resetLayers` | Re-export             |
-| `./light.js`            | `DirectionalLight, DirectionalLightShadow, HemisphereLight, PointLight, PunctualLight, SpotLight`                                                                                                                                           | Re-export             |
-| `./interpolation.js`    | `POSE_SNAPSHOT_PRIORITY, PoseBuffer, createSnapshotSystem`                                                                                                                                                                                  | Re-export             |
-| `./node.js`             | `Node, restoreNodeId`                                                                                                                                                                                                                       | Re-export             |
-| `./pose-target.js`      | `PoseTarget`                                                                                                                                                                                                                                | Re-export             |
-| `./skeleton.js`         | `Bone, MORPH_WEIGHTS_SERIALIZER, MorphWeights, Skeleton`                                                                                                                                                                                    | Re-export             |
-| `./scene.js`            | `Scene`                                                                                                                                                                                                                                     | Re-export             |
-| `./transform.js`        | `Transform`                                                                                                                                                                                                                                 | Re-export             |
-| `./viewport.js`         | `createFullscreenViewport`                                                                                                                                                                                                                  | Re-export             |
-| `./world-transforms.js` | `resolveWorldTransform, resolveWorldTransforms`                                                                                                                                                                                             | Re-export             |
-| `./authority.js`        | `AuthorityNode, TransformAuthority`                                                                                                                                                                                                         | Re-export (type-only) |
-| `./camera.js`           | `OrthographicCameraOptions, PerspectiveCameraOptions`                                                                                                                                                                                       | Re-export (type-only) |
-| `./screen-camera.js`    | `ScreenCameraOptions, ScreenOrigin, ScreenUnits, SurfaceSizedCamera`                                                                                                                                                                        | Re-export (type-only) |
-| `./trackball.js`        | `TrackballRigOptions`                                                                                                                                                                                                                       | Re-export (type-only) |
-| `./node-space.js`       | `NodeSpaceOptions, NodeSpaceSerializerShape`                                                                                                                                                                                                | Re-export (type-only) |
-| `./layers.js`           | `LayerMask, LayeredNode`                                                                                                                                                                                                                    | Re-export (type-only) |
-| `./light.js`            | `ColorRGB, DirectionalLightOptions, HemisphereLightOptions, LightColorInput, DirectionalLightShadowOptions, PunctualLightOptions, SpotLightOptions`                                                                                         | Re-export (type-only) |
-| `./interpolation.js`    | `PoseSnapshotSystem, SnapshotSystemOptions`                                                                                                                                                                                                 | Re-export (type-only) |
-| `./node.js`             | `HitTestMode, NodeEventMap, NodeHierarchyEvent, NodeOptions, NodeType`                                                                                                                                                                      | Re-export (type-only) |
-| `./skeleton.js`         | `MorphWeightsSerializerShape`                                                                                                                                                                                                               | Re-export (type-only) |
-| `./viewport.js`         | `Viewport`                                                                                                                                                                                                                                  | Re-export (type-only) |
-| `./world-transforms.js` | `WorldTransformStats`                                                                                                                                                                                                                       | Re-export (type-only) |
+### `packages/render-canvas/src/index.ts` - Entry point exporting 1 symbols
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `DEFAULT_TRANSFORM_AUTHORITY`, `TRANSFORM_AUTHORITIES`, `isOwnedTransformWrite`, `runOwnedTransformWrite`, `warnApplicationTransformWrite`, `warnAuthorityConflict`, `Camera`, `OrthographicCamera`, `PerspectiveCamera`, `DEFAULT_SCREEN_FAR`, `DEFAULT_SCREEN_NEAR`, `DEFAULT_SCREEN_ORIGIN`, `DEFAULT_SCREEN_UNITS`, `SCREEN_ORIGINS`, `SCREEN_UNITS`, `ScreenCamera`, `DEFAULT_TRACKBALL_RADIUS`, `TrackballRig`, `Group`, `NODE_SPACE_SERIALIZER`, `NodeSpace`, `ALL_LAYERS`, `DEFAULT_LAYER`, `DEFAULT_LAYER_MASK`, `DEFAULT_LAYER_NAME`, `LAYER_COUNT`, `NO_LAYERS`, `applyLayers`, `assertLayerMask`, `defineLayer`, `isLayerMask`, `layerIndex`, `layerMask`, `layerMaskNames`, `layerName`, `layerNames`, `layersMatch`, `resetLayers`, `DirectionalLight`, `DirectionalLightShadow`, `HemisphereLight`, `PointLight`, `PunctualLight`, `SpotLight`, `POSE_SNAPSHOT_PRIORITY`, `PoseBuffer`, `createSnapshotSystem`, `Node`, `restoreNodeId`, `PoseTarget`, `Bone`, `MORPH_WEIGHTS_SERIALIZER`, `MorphWeights`, `Skeleton`, `Scene`, `Transform`, `createFullscreenViewport`, `resolveWorldTransform`, `resolveWorldTransforms`, `AuthorityNode`, `TransformAuthority`, `OrthographicCameraOptions`, `PerspectiveCameraOptions`, `ScreenCameraOptions`, `ScreenOrigin`, `ScreenUnits`, `SurfaceSizedCamera`, `TrackballRigOptions`, `NodeSpaceOptions`, `NodeSpaceSerializerShape`, `LayerMask`, `LayeredNode`, `ColorRGB`, `DirectionalLightOptions`, `HemisphereLightOptions`, `LightColorInput`, `DirectionalLightShadowOptions`, `PunctualLightOptions`, `SpotLightOptions`, `PoseSnapshotSystem`, `SnapshotSystemOptions`, `HitTestMode`, `NodeEventMap`, `NodeHierarchyEvent`, `NodeOptions`, `NodeType`, `MorphWeightsSerializerShape`, `Viewport`, `WorldTransformStats`
 
 ---
 
-### `packages/scene/src/interpolation.ts` - Previous/current pose storage and render interpolation (§43).
+<a id="packages-motion-dependencies"></a>
 
-**Workspace Dependencies:**
+## Packages/motion Dependencies
 
-| Package        | Import                |
-| -------------- | --------------------- |
-| `@fourjs/math` | `Quaternion, Vector3` |
+### `packages/motion/src/systems.ts` - Simulation systems and the priority registry (§39).
 
 **Internal Dependencies:**
 
-| File        | Imports | Type               |
-| ----------- | ------- | ------------------ |
-| `./node.js` | `Node`  | Import (type-only) |
+| File             | Imports                        | Type               |
+| ---------------- | ------------------------------ | ------------------ |
+| `./clock.js`     | `ReadonlyTimeState`            | Import (type-only) |
+| `./scheduler.js` | `Scheduler, SchedulerCallback` | Import (type-only) |
 
 **Exports:**
 
-- Classes: `PoseBuffer`
-- Interfaces: `SnapshotSystemOptions`, `PoseSnapshotSystem`
-- Functions: `createSnapshotSystem`
-- Constants: `POSE_SNAPSHOT_PRIORITY`
+- Classes: `SystemRegistry`
+- Interfaces: `SimulationContext`, `FixedUpdateContext`, `SimulationSystem`
+- Types: `Unregister`, `Detach`
+- Constants: `PRIORITY_INPUT`, `PRIORITY_COMMANDS`, `PRIORITY_ANIMATION_TARGETS`, `PRIORITY_KINEMATICS`, `PRIORITY_FORCES`, `PRIORITY_PHYSICS_SOLVE`, `PRIORITY_CONSTRAINTS`, `PRIORITY_SENSOR_UPDATE`, `PRIORITY_EVENT_DISPATCH`, `PRIORITY_SNAPSHOT`, `PRIORITY_RENDER_INTERPOLATION`
 
 ---
 
-### `packages/scene/src/layers.ts` - Symbolic layers and their compiled masks (§46).
+### `packages/motion/src/ik.ts` - Analytic two-bone inverse kinematics (§111 "inverse kinematics"; plan P8-1).
+
+**Workspace Dependencies:**
+
+| Package         | Import                        |
+| --------------- | ----------------------------- |
+| `@fourjs/math`  | `Vector3`                     |
+| `@fourjs/scene` | `resolveWorldTransform, Node` |
+
+**Exports:**
+
+- Interfaces: `TwoBoneIKSolution`, `JointLimit`, `IKSolveOptions`, `IKSolveResult`
+- Types: `IKChain`
+- Functions: `createTwoBoneIKSolution`, `solveTwoBoneIK`, `solveCCD`, `solveFABRIK`
+- Constants: `DEFAULT_IK_TOLERANCE`, `DEFAULT_IK_MAX_ITERATIONS`
+
+---
+
+### `packages/motion/src/capabilities.ts` - This package's §81 capability token (RFC 0002; declared here since
+
+**Workspace Dependencies:**
+
+| Package        | Import             |
+| -------------- | ------------------ |
+| `@fourjs/core` | `defineCapability` |
+
+**Internal Dependencies:**
+
+| File                 | Imports               | Type               |
+| -------------------- | --------------------- | ------------------ |
+| `./systems.js`       | `SystemRegistry`      | Import (type-only) |
+| `./path-planning.js` | `PathPlannerRegistry` | Import (type-only) |
+
+**Exports:**
+
+- Constants: `SIMULATION_SYSTEMS`, `PATH_PLANNERS`
+
+---
+
+### `packages/motion/src/character-controller.ts` - §12's **character controllers** — {@link CharacterController}, the one yaw
+
+**Workspace Dependencies:**
+
+| Package         | Import                     |
+| --------------- | -------------------------- |
+| `@fourjs/core`  | `Component, ComponentHost` |
+| `@fourjs/scene` | `Transform`                |
+
+**Exports:**
+
+- Classes: `CharacterController`, `FirstPersonLook`
+- Interfaces: `CharacterControllerOptions`, `FirstPersonLookOptions`
+- Constants: `DEFAULT_CHARACTER_GRAVITY`, `DEFAULT_FIRST_PERSON_PITCH_LIMIT`
+
+---
+
+### `packages/motion/src/clock.ts` - Clock and time domains (§9).
+
+**Exports:**
+
+- Interfaces: `TimeState`, `TimeStateOptions`
+- Types: `ReadonlyTimeState`, `Clock`, `ReadonlyClock`
+- Functions: `createTimeState`, `copyTimeState`, `assertFixedDeltaTime`, `assertTimeScale`
+- Constants: `DEFAULT_FIXED_DELTA_TIME`, `DEFAULT_MAXIMUM_SUB_STEPS`
+
+---
+
+### `packages/motion/src/index.ts` - §81's motion-side capability token (RFC 0002), declared by the package that
+
+**Internal Dependencies:**
+
+| File                          | Imports                                                                                                                                                                                                                                                                      | Type                  |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./capabilities.js`           | `SIMULATION_SYSTEMS`                                                                                                                                                                                                                                                         | Re-export             |
+| `./camera-rigs.js`            | `DEFAULT_ORBIT_PITCH_LIMIT, FollowRig, OrbitRig`                                                                                                                                                                                                                             | Re-export             |
+| `./camera-shake.js`           | `CameraShake`                                                                                                                                                                                                                                                                | Re-export             |
+| `./character-controller.js`   | `CharacterController, DEFAULT_CHARACTER_GRAVITY, DEFAULT_FIRST_PERSON_PITCH_LIMIT, FirstPersonLook`                                                                                                                                                                          | Re-export             |
+| `./clock.js`                  | `DEFAULT_FIXED_DELTA_TIME, DEFAULT_MAXIMUM_SUB_STEPS, assertFixedDeltaTime, assertTimeScale, copyTimeState, createTimeState`                                                                                                                                                 | Re-export             |
+| `./constraints.js`            | `ConstraintSystem, LookAtConstraint`                                                                                                                                                                                                                                         | Re-export             |
+| `./ik.js`                     | `DEFAULT_IK_MAX_ITERATIONS, DEFAULT_IK_TOLERANCE, createTwoBoneIKSolution, solveCCD, solveFABRIK, solveTwoBoneIK`                                                                                                                                                            | Re-export             |
+| `./integrators.js`            | `DEFAULT_INTEGRATOR, INTEGRATORS, explicitEuler, rk2, rk4, semiImplicitEuler, velocityVerlet`                                                                                                                                                                                | Re-export             |
+| `./kinematic-controller.js`   | `KINEMATIC_COMPLETION_TOLERANCE, KinematicController, KinematicSystem`                                                                                                                                                                                                       | Re-export             |
+| `./motion-component.js`       | `MotionComponent, MotionSystem`                                                                                                                                                                                                                                              | Re-export             |
+| `./serializers.js`            | `CHARACTER_CONTROLLER_SERIALIZER, FIRST_PERSON_LOOK_SERIALIZER, CAMERA_SHAKE_SERIALIZER, FOLLOW_RIG_SERIALIZER, KINEMATIC_CONTROLLER_SERIALIZER, LOOK_AT_CONSTRAINT_SERIALIZER, MOTION_COMPONENT_SERIALIZER, ORBIT_RIG_SERIALIZER`                                           | Re-export             |
+| `./pid.js`                    | `DEFAULT_PID_OUTPUT_LIMITS, PIDController`                                                                                                                                                                                                                                   | Re-export             |
+| `./prediction.js`             | `ballisticApexHeight, ballisticTimeOfFlightToPlane, ballisticTimeToApex, interceptPoint, interceptTime, predictBallistic, predictLinear`                                                                                                                                     | Re-export             |
+| `./random.js`                 | `SeededRandom`                                                                                                                                                                                                                                                               | Re-export             |
+| `./scheduler.js`              | `Scheduler`                                                                                                                                                                                                                                                                  | Re-export             |
+| `./spring-damper.js`          | `SpringDamper`                                                                                                                                                                                                                                                               | Re-export             |
+| `./spatial-hash.js`           | `SpatialHash`                                                                                                                                                                                                                                                                | Re-export             |
+| `./steering.js`               | `SteeringAgent, WanderState, alignment, arrive, cohesion, evade, flee, pursue, seek, separation, truncate, wander, wanderSpherical`                                                                                                                                          | Re-export             |
+| `./systems.js`                | `PRIORITY_ANIMATION_TARGETS, PRIORITY_COMMANDS, PRIORITY_CONSTRAINTS, PRIORITY_EVENT_DISPATCH, PRIORITY_FORCES, PRIORITY_INPUT, PRIORITY_KINEMATICS, PRIORITY_PHYSICS_SOLVE, PRIORITY_RENDER_INTERPOLATION, PRIORITY_SENSOR_UPDATE, PRIORITY_SNAPSHOT, SystemRegistry`       | Re-export             |
+| `./trajectories.js`           | `BallisticTrajectory, CENTRAL_DIFFERENCE_STEP, CatmullRomTrajectory, CircularTrajectory, CubicBezierTrajectory, DEFAULT_BALLISTIC_ACCELERATION_Y, DampedSpringTrajectory, EllipticalTrajectory, LinearTrajectory, ParabolicTrajectory, ParametricTrajectory`                 | Re-export             |
+| `./path-planning.js`          | `freezePlannedPath, validatePathQuery, plannedPathToTrajectory, PathPlannerRegistry`                                                                                                                                                                                         | Re-export             |
+| `./waypoint-graph-planner.js` | `WaypointGraphPlanner`                                                                                                                                                                                                                                                       | Re-export             |
+| `./steering.js`               | `followWaypoints`                                                                                                                                                                                                                                                            | Re-export             |
+| `./capabilities.js`           | `PATH_PLANNERS`                                                                                                                                                                                                                                                              | Re-export             |
+| `./camera-rigs.js`            | `FollowFrame, FollowRigOptions, OrbitRigOptions`                                                                                                                                                                                                                             | Re-export (type-only) |
+| `./camera-shake.js`           | `CameraShakeOptions`                                                                                                                                                                                                                                                         | Re-export (type-only) |
+| `./character-controller.js`   | `CharacterControllerOptions, FirstPersonLookOptions`                                                                                                                                                                                                                         | Re-export (type-only) |
+| `./clock.js`                  | `Clock, ReadonlyClock, ReadonlyTimeState, TimeState, TimeStateOptions`                                                                                                                                                                                                       | Re-export (type-only) |
+| `./constraints.js`            | `ConstraintSystemOptions, LookAtConstraintOptions`                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./ik.js`                     | `IKChain, IKSolveOptions, IKSolveResult, JointLimit, TwoBoneIKSolution`                                                                                                                                                                                                      | Re-export (type-only) |
+| `./integrators.js`            | `AccelerationFn, Integrator, IntegratorFn, IntegratorState`                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./kinematic-controller.js`   | `KinematicSystemOptions, MoveOptions, PathFollowOptions, RotateOptions`                                                                                                                                                                                                      | Re-export (type-only) |
+| `./motion-component.js`       | `MotionComponentOptions, MotionSystemOptions`                                                                                                                                                                                                                                | Re-export (type-only) |
+| `./rig-target.js`             | `RigTarget`                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./serializers.js`            | `ComponentSerializerShape`                                                                                                                                                                                                                                                   | Re-export (type-only) |
+| `./pid.js`                    | `PIDControllerOptions, PIDDerivativeSource`                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./prediction.js`             | `InterceptTimeOptions`                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./scheduler.js`              | `SchedulerCallback, SchedulerOptions`                                                                                                                                                                                                                                        | Re-export (type-only) |
+| `./spring-damper.js`          | `SpringDamperCoefficientOptions, SpringDamperFrequencyOptions, SpringDamperOptions, SpringDamperResult, SpringDamperVector3Result`                                                                                                                                           | Re-export (type-only) |
+| `./spatial-hash.js`           | `SpatialHashEntry, SpatialHashOptions`                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./steering.js`               | `SteeringAgentOptions, SteeringContext, SteeringNeighbor, WanderStateOptions`                                                                                                                                                                                                | Re-export (type-only) |
+| `./systems.js`                | `Detach, FixedUpdateContext, SimulationContext, SimulationSystem, Unregister`                                                                                                                                                                                                | Re-export (type-only) |
+| `./trajectories.js`           | `BallisticTrajectoryOptions, CatmullRomTrajectoryOptions, CircularTrajectoryOptions, CubicBezierTrajectoryOptions, DampedSpringTrajectoryOptions, EllipticalTrajectoryOptions, LinearTrajectoryOptions, ParabolicTrajectoryOptions, ParametricTrajectoryOptions, Trajectory` | Re-export (type-only) |
+| `./path-planning.js`          | `PlannedPath, PathQuery, PathPlannerDeterminism, PathPlannerCapabilities, PathPlannerAdapter, PlannedPathToTrajectoryOptions`                                                                                                                                                | Re-export (type-only) |
+| `./waypoint-graph-planner.js` | `WaypointGraphOptions`                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./steering.js`               | `WaypointCursor, FollowWaypointsOptions`                                                                                                                                                                                                                                     | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `SIMULATION_SYSTEMS`, `DEFAULT_ORBIT_PITCH_LIMIT`, `FollowRig`, `OrbitRig`, `CameraShake`, `CharacterController`, `DEFAULT_CHARACTER_GRAVITY`, `DEFAULT_FIRST_PERSON_PITCH_LIMIT`, `FirstPersonLook`, `DEFAULT_FIXED_DELTA_TIME`, `DEFAULT_MAXIMUM_SUB_STEPS`, `assertFixedDeltaTime`, `assertTimeScale`, `copyTimeState`, `createTimeState`, `ConstraintSystem`, `LookAtConstraint`, `DEFAULT_IK_MAX_ITERATIONS`, `DEFAULT_IK_TOLERANCE`, `createTwoBoneIKSolution`, `solveCCD`, `solveFABRIK`, `solveTwoBoneIK`, `DEFAULT_INTEGRATOR`, `INTEGRATORS`, `explicitEuler`, `rk2`, `rk4`, `semiImplicitEuler`, `velocityVerlet`, `KINEMATIC_COMPLETION_TOLERANCE`, `KinematicController`, `KinematicSystem`, `MotionComponent`, `MotionSystem`, `CHARACTER_CONTROLLER_SERIALIZER`, `FIRST_PERSON_LOOK_SERIALIZER`, `CAMERA_SHAKE_SERIALIZER`, `FOLLOW_RIG_SERIALIZER`, `KINEMATIC_CONTROLLER_SERIALIZER`, `LOOK_AT_CONSTRAINT_SERIALIZER`, `MOTION_COMPONENT_SERIALIZER`, `ORBIT_RIG_SERIALIZER`, `DEFAULT_PID_OUTPUT_LIMITS`, `PIDController`, `ballisticApexHeight`, `ballisticTimeOfFlightToPlane`, `ballisticTimeToApex`, `interceptPoint`, `interceptTime`, `predictBallistic`, `predictLinear`, `SeededRandom`, `Scheduler`, `SpringDamper`, `SpatialHash`, `SteeringAgent`, `WanderState`, `alignment`, `arrive`, `cohesion`, `evade`, `flee`, `pursue`, `seek`, `separation`, `truncate`, `wander`, `wanderSpherical`, `PRIORITY_ANIMATION_TARGETS`, `PRIORITY_COMMANDS`, `PRIORITY_CONSTRAINTS`, `PRIORITY_EVENT_DISPATCH`, `PRIORITY_FORCES`, `PRIORITY_INPUT`, `PRIORITY_KINEMATICS`, `PRIORITY_PHYSICS_SOLVE`, `PRIORITY_RENDER_INTERPOLATION`, `PRIORITY_SENSOR_UPDATE`, `PRIORITY_SNAPSHOT`, `SystemRegistry`, `BallisticTrajectory`, `CENTRAL_DIFFERENCE_STEP`, `CatmullRomTrajectory`, `CircularTrajectory`, `CubicBezierTrajectory`, `DEFAULT_BALLISTIC_ACCELERATION_Y`, `DampedSpringTrajectory`, `EllipticalTrajectory`, `LinearTrajectory`, `ParabolicTrajectory`, `ParametricTrajectory`, `freezePlannedPath`, `validatePathQuery`, `plannedPathToTrajectory`, `PathPlannerRegistry`, `WaypointGraphPlanner`, `followWaypoints`, `PATH_PLANNERS`, `FollowFrame`, `FollowRigOptions`, `OrbitRigOptions`, `CameraShakeOptions`, `CharacterControllerOptions`, `FirstPersonLookOptions`, `Clock`, `ReadonlyClock`, `ReadonlyTimeState`, `TimeState`, `TimeStateOptions`, `ConstraintSystemOptions`, `LookAtConstraintOptions`, `IKChain`, `IKSolveOptions`, `IKSolveResult`, `JointLimit`, `TwoBoneIKSolution`, `AccelerationFn`, `Integrator`, `IntegratorFn`, `IntegratorState`, `KinematicSystemOptions`, `MoveOptions`, `PathFollowOptions`, `RotateOptions`, `MotionComponentOptions`, `MotionSystemOptions`, `RigTarget`, `ComponentSerializerShape`, `PIDControllerOptions`, `PIDDerivativeSource`, `InterceptTimeOptions`, `SchedulerCallback`, `SchedulerOptions`, `SpringDamperCoefficientOptions`, `SpringDamperFrequencyOptions`, `SpringDamperOptions`, `SpringDamperResult`, `SpringDamperVector3Result`, `SpatialHashEntry`, `SpatialHashOptions`, `SteeringAgentOptions`, `SteeringContext`, `SteeringNeighbor`, `WanderStateOptions`, `Detach`, `FixedUpdateContext`, `SimulationContext`, `SimulationSystem`, `Unregister`, `BallisticTrajectoryOptions`, `CatmullRomTrajectoryOptions`, `CircularTrajectoryOptions`, `CubicBezierTrajectoryOptions`, `DampedSpringTrajectoryOptions`, `EllipticalTrajectoryOptions`, `LinearTrajectoryOptions`, `ParabolicTrajectoryOptions`, `ParametricTrajectoryOptions`, `Trajectory`, `PlannedPath`, `PathQuery`, `PathPlannerDeterminism`, `PathPlannerCapabilities`, `PathPlannerAdapter`, `PlannedPathToTrajectoryOptions`, `WaypointGraphOptions`, `WaypointCursor`, `FollowWaypointsOptions`
+
+---
+
+### `packages/motion/src/waypoint-graph-planner.ts` - waypoint-graph-planner module
 
 **Workspace Dependencies:**
 
 | Package        | Import      |
 | -------------- | ----------- |
 | `@fourjs/core` | `FourError` |
-
-**Exports:**
-
-- Interfaces: `LayeredNode`
-- Types: `LayerMask`
-- Functions: `defineLayer`, `layerIndex`, `layerName`, `layerNames`, `layerMask`, `layerMaskNames`, `layersMatch`, `isLayerMask`, `assertLayerMask`, `applyLayers`, `resetLayers`
-- Constants: `LAYER_COUNT`, `DEFAULT_LAYER_NAME`, `DEFAULT_LAYER`, `DEFAULT_LAYER_MASK`, `ALL_LAYERS`, `NO_LAYERS`
-
----
-
-### `packages/scene/src/light.ts` - Lights (§68) — the multi-light tier: directional, point, and spot nodes.
-
-**Workspace Dependencies:**
-
-| Package        | Import                                                       |
-| -------------- | ------------------------------------------------------------ |
-| `@fourjs/math` | `Matrix4, parseColorRGB, srgbToLinearRGB, ColorRGB, Vector3` |
-| `@fourjs/math` | `ColorRGB`                                                   |
+| `@fourjs/math` | `Vector3`   |
 
 **Internal Dependencies:**
 
-| File                    | Imports                 | Type   |
-| ----------------------- | ----------------------- | ------ |
-| `./node.js`             | `Node`                  | Import |
-| `./world-transforms.js` | `resolveWorldTransform` | Import |
+| File                 | Imports                                                                                                     | Type   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- | ------ |
+| `./path-planning.js` | `freezePlannedPath, validatePathQuery, PathPlannerAdapter, PathPlannerCapabilities, PathQuery, PlannedPath` | Import |
 
 **Exports:**
 
-- Classes: `DirectionalLightShadow`, `DirectionalLight`, `HemisphereLight`, `PointLight`, `SpotLight`
-- Interfaces: `DirectionalLightShadowOptions`, `DirectionalLightOptions`, `HemisphereLightOptions`, `PunctualLightOptions`, `SpotLightOptions`
-- Types: `LightColorInput`
-- Re-exports: `ColorRGB`
+- Classes: `WaypointGraphPlanner`
+- Interfaces: `WaypointGraphOptions`
 
 ---
 
-### `packages/scene/src/node-space.ts` - §8's node-level space declaration — {@link NodeSpace} (PH-12 remainder).
+### `packages/motion/src/kinematic-controller.ts` - Kinematic motion (§12) — the {@link KinematicController} component and the
 
 **Workspace Dependencies:**
 
-| Package        | Import                                                                            |
-| -------------- | --------------------------------------------------------------------------------- |
-| `@fourjs/core` | `DEFAULT_SPACE_MODE, SPACE_MODES, Component, ComponentHost, JsonValue, SpaceMode` |
-| `@fourjs/math` | `Vector3`                                                                         |
-
-**Exports:**
-
-- Classes: `NodeSpace`
-- Interfaces: `NodeSpaceSerializerShape`, `NodeSpaceOptions`
-- Constants: `NODE_SPACE_SERIALIZER`
-
----
-
-### `packages/scene/src/node.ts` - The unified node model (§6), its component delegation (§6a), and its event
-
-**Workspace Dependencies:**
-
-| Package        | Import                                                                                                    |
-| -------------- | --------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core` | `ComponentRegistry, DEV_WARNING_PREFIX, EventEmitter, FourError, Component, ComponentHost, ComponentType` |
-| `@fourjs/math` | `Quaternion, Vector3`                                                                                     |
+| Package         | Import                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------ |
+| `@fourjs/core`  | `FourError, Component, ComponentHost`                                                      |
+| `@fourjs/math`  | `Quaternion, Vector3`                                                                      |
+| `@fourjs/scene` | `beginOwnedTransformWrite, endOwnedTransformWrite, warnAuthorityConflict, Node, Transform` |
 
 **Internal Dependencies:**
 
-| File                    | Imports                                           | Type   |
-| ----------------------- | ------------------------------------------------- | ------ |
-| `./authority.js`        | `DEFAULT_TRANSFORM_AUTHORITY, TransformAuthority` | Import |
-| `./layers.js`           | `DEFAULT_LAYER_MASK, LayerMask`                   | Import |
-| `./transform.js`        | `Transform`                                       | Import |
-| `./world-transforms.js` | `resolveWorldTransform`                           | Import |
+| File                        | Imports                                                     | Type               |
+| --------------------------- | ----------------------------------------------------------- | ------------------ |
+| `./character-controller.js` | `CharacterController, FirstPersonLook`                      | Import             |
+| `./systems.js`              | `PRIORITY_KINEMATICS, FixedUpdateContext, SimulationSystem` | Import             |
+| `./trajectories.js`         | `Trajectory`                                                | Import (type-only) |
 
 **Exports:**
 
-- Interfaces: `NodeHierarchyEvent`, `NodeEventMap`, `NodeOptions`
-- Types: `NodeType`, `HitTestMode`
-- Functions: `restoreNodeId`
+- Classes: `KinematicController`, `KinematicSystem`
+- Interfaces: `MoveOptions`, `RotateOptions`, `PathFollowOptions`, `KinematicSystemOptions`
+- Constants: `KINEMATIC_COMPLETION_TOLERANCE`
 
 ---
 
-### `packages/scene/src/pose-target.ts` - The `PoseTarget` component (§6a, §19, §42) — the pose animation _asks_ for,
-
-**Workspace Dependencies:**
-
-| Package        | Import                     |
-| -------------- | -------------------------- |
-| `@fourjs/core` | `Component, ComponentHost` |
-| `@fourjs/math` | `Quaternion, Vector3`      |
+### `packages/motion/src/scheduler.ts` - Fixed-step scheduler (§10).
 
 **Internal Dependencies:**
 
-| File             | Imports     | Type               |
-| ---------------- | ----------- | ------------------ |
-| `./transform.js` | `Transform` | Import (type-only) |
+| File         | Imports                                                                                                                                     | Type   |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./clock.js` | `DEFAULT_FIXED_DELTA_TIME, DEFAULT_MAXIMUM_SUB_STEPS, assertFixedDeltaTime, assertTimeScale, createTimeState, ReadonlyTimeState, TimeState` | Import |
 
 **Exports:**
 
-- Classes: `PoseTarget`
+- Classes: `Scheduler`
+- Interfaces: `SchedulerOptions`
+- Types: `SchedulerCallback`
 
 ---
 
-### `packages/scene/src/scene.ts` - `Scene` (§6, §46, §104) — the root node, plus the indexed lookups of §46.
-
-**Workspace Dependencies:**
-
-| Package        | Import                     |
-| -------------- | -------------------------- |
-| `@fourjs/core` | `Component, ComponentType` |
-
-**Internal Dependencies:**
-
-| File         | Imports          | Type               |
-| ------------ | ---------------- | ------------------ |
-| `./light.js` | `ColorRGB`       | Import (type-only) |
-| `./node.js`  | `Node, NodeType` | Import             |
-
-**Exports:**
-
-- Classes: `Scene`
-
----
-
-### `packages/scene/src/screen-camera.ts` - §47's `ScreenCamera` — the pixel-rectangle camera (R-37, 2026-08-21).
-
-**Workspace Dependencies:**
-
-| Package        | Import       |
-| -------------- | ------------ |
-| `@fourjs/core` | `FourError`  |
-| `@fourjs/math` | `DepthRange` |
-
-**Internal Dependencies:**
-
-| File          | Imports  | Type   |
-| ------------- | -------- | ------ |
-| `./camera.js` | `Camera` | Import |
-
-**Exports:**
-
-- Classes: `ScreenCamera`
-- Interfaces: `SurfaceSizedCamera`, `ScreenCameraOptions`
-- Types: `ScreenOrigin`, `ScreenUnits`
-- Constants: `SCREEN_ORIGINS`, `SCREEN_UNITS`, `DEFAULT_SCREEN_ORIGIN`, `DEFAULT_SCREEN_UNITS`, `DEFAULT_SCREEN_NEAR`, `DEFAULT_SCREEN_FAR`
-
----
-
-### `packages/scene/src/skeleton.ts` - Bones, skeletons, and morph weights (§54, §14, §17; RFC 0003 — gaps PH-10 +
-
-**Workspace Dependencies:**
-
-| Package        | Import                                           |
-| -------------- | ------------------------------------------------ |
-| `@fourjs/core` | `FourError, Component, ComponentHost, JsonValue` |
-| `@fourjs/math` | `Matrix4`                                        |
-
-**Internal Dependencies:**
-
-| File                    | Imports                 | Type   |
-| ----------------------- | ----------------------- | ------ |
-| `./node.js`             | `Node`                  | Import |
-| `./world-transforms.js` | `resolveWorldTransform` | Import |
-
-**Exports:**
-
-- Classes: `Bone`, `Skeleton`, `MorphWeights`
-- Interfaces: `MorphWeightsSerializerShape`
-- Constants: `MORPH_WEIGHTS_SERIALIZER`
-
----
-
-### `packages/scene/src/trackball.ts` - §44/§47's **trackball** rig (R-37, 2026-08-21) — the last of the seven camera
-
-**Workspace Dependencies:**
-
-| Package        | Import                |
-| -------------- | --------------------- |
-| `@fourjs/math` | `Quaternion, Vector3` |
-
-**Internal Dependencies:**
-
-| File                 | Imports                                         | Type               |
-| -------------------- | ----------------------------------------------- | ------------------ |
-| `./authority.js`     | `runOwnedTransformWrite, warnAuthorityConflict` | Import             |
-| `./node.js`          | `Node`                                          | Import (type-only) |
-| `./screen-camera.js` | `DEFAULT_SCREEN_ORIGIN, ScreenOrigin`           | Import             |
-
-**Exports:**
-
-- Classes: `TrackballRig`
-- Interfaces: `TrackballRigOptions`
-- Constants: `DEFAULT_TRACKBALL_RADIUS`
-
----
-
-### `packages/scene/src/transform.ts` - Local/world transform of a scene node (§7).
-
-**Workspace Dependencies:**
-
-| Package        | Import                         |
-| -------------- | ------------------------------ |
-| `@fourjs/math` | `Matrix4, Quaternion, Vector3` |
-
-**Internal Dependencies:**
-
-| File             | Imports                                        | Type   |
-| ---------------- | ---------------------------------------------- | ------ |
-| `./authority.js` | `warnApplicationTransformWrite, AuthorityNode` | Import |
-
-**Exports:**
-
-- Classes: `Transform`
-
----
-
-### `packages/scene/src/viewport.ts` - Viewports (§48).
-
-**Internal Dependencies:**
-
-| File          | Imports     | Type               |
-| ------------- | ----------- | ------------------ |
-| `./camera.js` | `Camera`    | Import (type-only) |
-| `./layers.js` | `LayerMask` | Import (type-only) |
-
-**Exports:**
-
-- Interfaces: `Viewport`
-- Functions: `createFullscreenViewport`
-
----
-
-### `packages/scene/src/world-transforms.ts` - World-transform resolution (§7) — the single writer of every
+### `packages/motion/src/steering.ts` - Steering behaviours and flocking (§12 "steering behaviours", §111), plan
 
 **Workspace Dependencies:**
 
 | Package        | Import    |
 | -------------- | --------- |
-| `@fourjs/math` | `Matrix4` |
+| `@fourjs/math` | `Vector3` |
 
 **Internal Dependencies:**
 
-| File             | Imports     | Type               |
-| ---------------- | ----------- | ------------------ |
-| `./node.js`      | `Node`      | Import (type-only) |
-| `./transform.js` | `Transform` | Import (type-only) |
+| File                 | Imports         | Type               |
+| -------------------- | --------------- | ------------------ |
+| `./path-planning.js` | `PlannedPath`   | Import (type-only) |
+| `./prediction.js`    | `interceptTime` | Import             |
+| `./random.js`        | `SeededRandom`  | Import (type-only) |
 
 **Exports:**
 
-- Interfaces: `WorldTransformStats`
-- Functions: `resolveWorldTransforms`, `resolveWorldTransform`
+- Classes: `WanderState`, `SteeringAgent`
+- Interfaces: `SteeringNeighbor`, `SteeringContext`, `WanderStateOptions`, `SteeringAgentOptions`, `WaypointCursor`, `FollowWaypointsOptions`
+- Functions: `truncate`, `seek`, `flee`, `arrive`, `pursue`, `evade`, `wander`, `wanderSpherical`, `separation`, `cohesion`, `alignment`, `followWaypoints`
+
+---
+
+### `packages/motion/src/serializers.ts` - The §79 serializers for this package's components (PH-17, 2026-08-06;
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `JsonValue` |
+| `@fourjs/math` | `Vector3`   |
+
+**Internal Dependencies:**
+
+| File                        | Imports                                                                                             | Type               |
+| --------------------------- | --------------------------------------------------------------------------------------------------- | ------------------ |
+| `./camera-rigs.js`          | `DEFAULT_ORBIT_MIN_DISTANCE, DEFAULT_ORBIT_PITCH_LIMIT, FollowRig, OrbitRig`                        | Import             |
+| `./camera-shake.js`         | `CameraShake`                                                                                       | Import             |
+| `./character-controller.js` | `CharacterController, DEFAULT_CHARACTER_GRAVITY, DEFAULT_FIRST_PERSON_PITCH_LIMIT, FirstPersonLook` | Import             |
+| `./constraints.js`          | `LookAtConstraint`                                                                                  | Import             |
+| `./kinematic-controller.js` | `KinematicController`                                                                               | Import             |
+| `./motion-component.js`     | `MotionComponent`                                                                                   | Import             |
+| `./rig-target.js`           | `RigTarget`                                                                                         | Import (type-only) |
+| `./spring-damper.js`        | `SpringDamper`                                                                                      | Import             |
+
+**Exports:**
+
+- Interfaces: `ComponentSerializerShape`
+- Constants: `MOTION_COMPONENT_SERIALIZER`, `KINEMATIC_CONTROLLER_SERIALIZER`, `ORBIT_RIG_SERIALIZER`, `FOLLOW_RIG_SERIALIZER`, `LOOK_AT_CONSTRAINT_SERIALIZER`, `CHARACTER_CONTROLLER_SERIALIZER`, `FIRST_PERSON_LOOK_SERIALIZER`, `CAMERA_SHAKE_SERIALIZER`
+
+---
+
+### `packages/motion/src/spatial-hash.ts` - Uniform-grid spatial hash for radius neighbour queries (§12 flocking, §36
+
+**Exports:**
+
+- Classes: `SpatialHash`
+- Interfaces: `SpatialHashOptions`, `SpatialHashEntry`
+
+---
+
+### `packages/motion/src/rig-target.ts` - What a rig aims at, and how a rig writes a world-space placement back onto a
+
+**Workspace Dependencies:**
+
+| Package         | Import                        |
+| --------------- | ----------------------------- |
+| `@fourjs/math`  | `Matrix4, Vector3`            |
+| `@fourjs/scene` | `resolveWorldTransform, Node` |
+
+**Exports:**
+
+- Types: `RigTarget`
+- Functions: `resolveTargetPosition`, `worldPositionOf`, `placeAtWorldPosition`
+
+---
+
+### `packages/motion/src/camera-rigs.ts` - §44 camera rigs: {@link OrbitRig} (orbit) and {@link FollowRig} (follow target
+
+**Workspace Dependencies:**
+
+| Package         | Import                        |
+| --------------- | ----------------------------- |
+| `@fourjs/core`  | `Component, ComponentHost`    |
+| `@fourjs/math`  | `Vector3`                     |
+| `@fourjs/scene` | `resolveWorldTransform, Node` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                   | Type               |
+| -------------------- | ------------------------------------------------------------------------- | ------------------ |
+| `./rig-target.js`    | `placeAtWorldPosition, resolveTargetPosition, worldPositionOf, RigTarget` | Import             |
+| `./spring-damper.js` | `SpringDamper, SpringDamperVector3Result`                                 | Import (type-only) |
+
+**Exports:**
+
+- Classes: `OrbitRig`, `FollowRig`
+- Interfaces: `OrbitRigOptions`, `FollowRigOptions`
+- Types: `FollowFrame`
+- Constants: `DEFAULT_ORBIT_PITCH_LIMIT`, `DEFAULT_ORBIT_MIN_DISTANCE`
+
+---
+
+### `packages/motion/src/integrators.ts` - Numerical integrators (§38).
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Vector3` |
+
+**Exports:**
+
+- Types: `Integrator`, `IntegratorState`, `AccelerationFn`, `IntegratorFn`
+- Constants: `explicitEuler`, `semiImplicitEuler`, `velocityVerlet`, `rk2`, `rk4`, `INTEGRATORS`, `DEFAULT_INTEGRATOR`
+
+---
+
+### `packages/motion/src/spring-damper.ts` - Spring-damper controller (§111), the game-smoothing primitive.
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Vector3` |
+
+**Exports:**
+
+- Classes: `SpringDamper`
+- Interfaces: `SpringDamperCoefficientOptions`, `SpringDamperFrequencyOptions`, `SpringDamperResult`, `SpringDamperVector3Result`
+- Types: `SpringDamperOptions`
+
+---
+
+### `packages/motion/src/random.ts` - `SeededRandom`'s original home (WP-8.2), now a re-export of `@fourjs/core`.
+
+**Workspace Dependencies:**
+
+| Package        | Import         |
+| -------------- | -------------- |
+| `@fourjs/core` | `SeededRandom` |
+
+**Exports:**
+
+- Re-exports: `SeededRandom`
+
+---
+
+### `packages/motion/src/constraints.ts` - §12's look-at constraint and the §39 step-7 system that runs it, together
+
+**Workspace Dependencies:**
+
+| Package         | Import                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| `@fourjs/core`  | `FourError, Component, ComponentHost`                                                                  |
+| `@fourjs/math`  | `Quaternion, Vector3`                                                                                  |
+| `@fourjs/scene` | `resolveWorldTransform, beginOwnedTransformWrite, endOwnedTransformWrite, warnAuthorityConflict, Node` |
+
+**Internal Dependencies:**
+
+| File                | Imports                                                      | Type   |
+| ------------------- | ------------------------------------------------------------ | ------ |
+| `./camera-rigs.js`  | `FollowRig, OrbitRig`                                        | Import |
+| `./camera-shake.js` | `CameraShake`                                                | Import |
+| `./rig-target.js`   | `resolveTargetPosition, RigTarget`                           | Import |
+| `./systems.js`      | `PRIORITY_CONSTRAINTS, FixedUpdateContext, SimulationSystem` | Import |
+
+**Exports:**
+
+- Classes: `LookAtConstraint`, `ConstraintSystem`
+- Interfaces: `LookAtConstraintOptions`, `ConstraintSystemOptions`
+
+---
+
+### `packages/motion/src/path-planning.ts` - path-planning module
+
+**Workspace Dependencies:**
+
+| Package        | Import                  |
+| -------------- | ----------------------- |
+| `@fourjs/core` | `FourError, Disposable` |
+| `@fourjs/math` | `Vector3`               |
+
+**Internal Dependencies:**
+
+| File                | Imports                                                  | Type   |
+| ------------------- | -------------------------------------------------------- | ------ |
+| `./trajectories.js` | `CatmullRomTrajectory, ParametricTrajectory, Trajectory` | Import |
+
+**Exports:**
+
+- Classes: `PathPlannerRegistry`
+- Interfaces: `PlannedPath`, `PathQuery`, `PathPlannerCapabilities`, `PathPlannerAdapter`, `PlannedPathToTrajectoryOptions`
+- Types: `PathPlannerDeterminism`
+- Functions: `validatePathQuery`, `freezePlannedPath`, `plannedPathToTrajectory`
+
+---
+
+### `packages/motion/src/camera-shake.ts` - §44 camera shake: an additive pose offset driven by interpolated value
+
+**Workspace Dependencies:**
+
+| Package         | Import                     |
+| --------------- | -------------------------- |
+| `@fourjs/core`  | `Component, ComponentHost` |
+| `@fourjs/math`  | `Quaternion, Vector3`      |
+| `@fourjs/scene` | `Node`                     |
+
+**Internal Dependencies:**
+
+| File              | Imports                                 | Type   |
+| ----------------- | --------------------------------------- | ------ |
+| `./random.js`     | `SeededRandom`                          | Import |
+| `./rig-target.js` | `placeAtWorldPosition, worldPositionOf` | Import |
+
+**Exports:**
+
+- Classes: `CameraShake`
+- Interfaces: `CameraShakeOptions`
+
+---
+
+### `packages/motion/src/motion-component.ts` - `MotionComponent` (§11) and the system that advances it (§39 step 4).
+
+**Workspace Dependencies:**
+
+| Package         | Import                                                                          |
+| --------------- | ------------------------------------------------------------------------------- |
+| `@fourjs/core`  | `FourError, Component, ComponentHost`                                           |
+| `@fourjs/math`  | `Quaternion, Vector3`                                                           |
+| `@fourjs/scene` | `beginOwnedTransformWrite, endOwnedTransformWrite, warnAuthorityConflict, Node` |
+
+**Internal Dependencies:**
+
+| File           | Imports                                                     | Type   |
+| -------------- | ----------------------------------------------------------- | ------ |
+| `./systems.js` | `PRIORITY_KINEMATICS, FixedUpdateContext, SimulationSystem` | Import |
+
+**Exports:**
+
+- Classes: `MotionComponent`, `MotionSystem`
+- Interfaces: `MotionComponentOptions`, `MotionSystemOptions`
+
+---
+
+### `packages/motion/src/prediction.ts` - Trajectory prediction (§111 "trajectory prediction"; plan P8-1).
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Vector3` |
+
+**Exports:**
+
+- Interfaces: `InterceptTimeOptions`
+- Functions: `predictBallistic`, `predictLinear`, `ballisticTimeToApex`, `ballisticApexHeight`, `ballisticTimeOfFlightToPlane`, `interceptTime`, `interceptPoint`
+
+---
+
+### `packages/motion/src/trajectories.ts` - Trajectory system (§13).
+
+**Workspace Dependencies:**
+
+| Package        | Import    |
+| -------------- | --------- |
+| `@fourjs/math` | `Vector3` |
+
+**Exports:**
+
+- Classes: `LinearTrajectory`, `ParabolicTrajectory`, `BallisticTrajectory`, `CircularTrajectory`, `EllipticalTrajectory`, `CubicBezierTrajectory`, `CatmullRomTrajectory`, `DampedSpringTrajectory`, `ParametricTrajectory`
+- Interfaces: `Trajectory`, `LinearTrajectoryOptions`, `ParabolicTrajectoryOptions`, `BallisticTrajectoryOptions`, `CircularTrajectoryOptions`, `EllipticalTrajectoryOptions`, `CubicBezierTrajectoryOptions`, `CatmullRomTrajectoryOptions`, `DampedSpringTrajectoryOptions`, `ParametricTrajectoryOptions`
+- Constants: `CENTRAL_DIFFERENCE_STEP`, `DEFAULT_BALLISTIC_ACCELERATION_Y`
+
+---
+
+### `packages/motion/src/pid.ts` - PID controller utility (§111).
+
+**Exports:**
+
+- Classes: `PIDController`
+- Interfaces: `PIDControllerOptions`
+- Types: `PIDDerivativeSource`
+- Constants: `DEFAULT_PID_OUTPUT_LIMITS`
+
+---
+
+<a id="packages-animation-dependencies"></a>
+
+## Packages/animation Dependencies
+
+### `packages/animation/src/tween.ts` - Tweens (§15).
+
+**Workspace Dependencies:**
+
+| Package         | Import                                                |
+| --------------- | ----------------------------------------------------- |
+| `@fourjs/core`  | `DEV_WARNING_PREFIX, FourError`                       |
+| `@fourjs/math`  | `Quaternion, Vector2, Vector3, Vector4`               |
+| `@fourjs/scene` | `Node, runOwnedTransformWrite, warnAuthorityConflict` |
+| `@fourjs/scene` | `TransformAuthority`                                  |
+
+**Internal Dependencies:**
+
+| File           | Imports                                     | Type   |
+| -------------- | ------------------------------------------- | ------ |
+| `./binding.js` | `createBinding, PropertyBinding`            | Import |
+| `./easing.js`  | `resolveEasing, EasingFunction, EasingName` | Import |
+| `./values.js`  | `detectAdapter, ColorRGBA, ValueAdapter`    | Import |
+
+**Exports:**
+
+- Classes: `Tween`
+- Interfaces: `TweenProperties`, `PropertyClaim`
+- Types: `TweenValue`, `TweenState`
+- Functions: `claimProperty`, `releaseProperty`, `requireNonNegativeSeconds`, `isTransformOwner`, `animate`, `tween`
+
+---
+
+### `packages/animation/src/timeline.ts` - Timelines (§16).
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File         | Imports                     | Type   |
+| ------------ | --------------------------- | ------ |
+| `./tween.js` | `requireNonNegativeSeconds` | Import |
+
+**Exports:**
+
+- Classes: `Timeline`
+- Interfaces: `TimelineMarkerOptions`, `TimelineChild`
+- Types: `TimelineState`, `TimelineMarkerCallback`, `TimelineEntry`
+
+---
+
+### `packages/animation/src/animation-system.ts` - The fixed-step animation system (§39 step 3, plan decision P4-1).
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                             |
+| ---------------- | ------------------------------------------------------------------ |
+| `@fourjs/core`   | `FourError`                                                        |
+| `@fourjs/motion` | `PRIORITY_ANIMATION_TARGETS, FixedUpdateContext, SimulationSystem` |
+
+**Exports:**
+
+- Classes: `AnimationSystem`
+- Interfaces: `Advanceable`, `AnimationSystemOptions`
+- Types: `AnimationPlaybackState`
+
+---
+
+### `packages/animation/src/index.ts` - `@fourjs/animation` — the public surface of the animation pillar (Part III).
+
+**Internal Dependencies:**
+
+| File                    | Imports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Type                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./animation-system.js` | `AnimationSystem`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export             |
+| `./binding.js`          | `createArrayElementBinding, createBinding`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./clip.js`             | `AnimationClip`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
+| `./blend-tree.js`       | `isBlendTree`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
+| `./controller.js`       | `ANY_STATE, AnimationController`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
+| `./layer-stack.js`      | `AnimationLayerStack`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Re-export             |
+| `./easing.js`           | `BACK_OVERSHOOT, BACK_OVERSHOOT_IN_OUT, BOUNCE_AMPLITUDE, BOUNCE_SEGMENT_DIVISOR, EASINGS, EASING_NAMES, ELASTIC_AMPLITUDE, ELASTIC_PERIOD, ELASTIC_PERIOD_IN_OUT, SPRING_DAMPING_RATIO, SPRING_OSCILLATIONS, backIn, backInOut, backOut, bounceIn, bounceInOut, bounceOut, circularIn, circularInOut, circularOut, cubicIn, cubicInOut, cubicOut, elasticIn, elasticInOut, elasticOut, exponentialIn, exponentialInOut, exponentialOut, linear, quadraticIn, quadraticInOut, quadraticOut, quarticIn, quarticInOut, quarticOut, quinticIn, quinticInOut, quinticOut, resolveEasing, sineIn, sineInOut, sineOut, springIn, springInOut, springOut` | Re-export             |
+| `./mixer.js`            | `AnimationMixer`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
+| `./timeline.js`         | `Timeline`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./track.js`            | `AnimationTrack`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
+| `./tween.js`            | `Tween, animate, tween`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./when.js`             | `compileWhenExpression`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./values.js`           | `booleanAdapter, colorAdapter, detectAdapter, discreteAdapter, discreteAdapterFor, numberAdapter, quaternionAdapter, vector2Adapter, vector3Adapter, vector4Adapter`                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./animation-system.js` | `Advanceable, AnimationPlaybackState, AnimationSystemOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
+| `./binding.js`          | `PropertyBinding`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./clip.js`             | `AnimationClipOptions, AnimationEvent, AnimationEventVisitor, TrackSampleSink`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./blend-tree.js`       | `BlendTree, BlendTree1D, BlendTree1DPoint, BlendTree2D, BlendTree2DPoint`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
+| `./controller.js`       | `AnimationControllerOptions, AnimationControllerParameters, AnimationStateInput, AnimationStateOptions, AnimationTransition, BooleanCondition, ControllerAdvanceOptions, ControllerPlaybackState, NumericComparison, NumericCondition, StateChangeListener, TransitionCondition, TransitionWhen, TriggerCondition`                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
+| `./layer-stack.js`      | `AnimationLayer, AnimationLayerStackOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./easing.js`           | `EasingFunction, EasingName`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./mixer.js`            | `AnimationEventListener, MixerPlayOptions, MixerRootMotionOptions, MixerState`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./timeline.js`         | `TimelineChild, TimelineEntry, TimelineMarkerCallback, TimelineMarkerOptions, TimelineState`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./track.js`            | `AnimationTrackLike, AnimationTrackOptions, InterpolationMode`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./tween.js`            | `TweenProperties, TweenState, TweenValue`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
+| `./when.js`             | `WhenParameterLookup`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
+| `./values.js`           | `ColorRGBA, ValueAdapter, ValueKind`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `AnimationSystem`, `createArrayElementBinding`, `createBinding`, `AnimationClip`, `isBlendTree`, `ANY_STATE`, `AnimationController`, `AnimationLayerStack`, `BACK_OVERSHOOT`, `BACK_OVERSHOOT_IN_OUT`, `BOUNCE_AMPLITUDE`, `BOUNCE_SEGMENT_DIVISOR`, `EASINGS`, `EASING_NAMES`, `ELASTIC_AMPLITUDE`, `ELASTIC_PERIOD`, `ELASTIC_PERIOD_IN_OUT`, `SPRING_DAMPING_RATIO`, `SPRING_OSCILLATIONS`, `backIn`, `backInOut`, `backOut`, `bounceIn`, `bounceInOut`, `bounceOut`, `circularIn`, `circularInOut`, `circularOut`, `cubicIn`, `cubicInOut`, `cubicOut`, `elasticIn`, `elasticInOut`, `elasticOut`, `exponentialIn`, `exponentialInOut`, `exponentialOut`, `linear`, `quadraticIn`, `quadraticInOut`, `quadraticOut`, `quarticIn`, `quarticInOut`, `quarticOut`, `quinticIn`, `quinticInOut`, `quinticOut`, `resolveEasing`, `sineIn`, `sineInOut`, `sineOut`, `springIn`, `springInOut`, `springOut`, `AnimationMixer`, `Timeline`, `AnimationTrack`, `Tween`, `animate`, `tween`, `compileWhenExpression`, `booleanAdapter`, `colorAdapter`, `detectAdapter`, `discreteAdapter`, `discreteAdapterFor`, `numberAdapter`, `quaternionAdapter`, `vector2Adapter`, `vector3Adapter`, `vector4Adapter`, `Advanceable`, `AnimationPlaybackState`, `AnimationSystemOptions`, `PropertyBinding`, `AnimationClipOptions`, `AnimationEvent`, `AnimationEventVisitor`, `TrackSampleSink`, `BlendTree`, `BlendTree1D`, `BlendTree1DPoint`, `BlendTree2D`, `BlendTree2DPoint`, `AnimationControllerOptions`, `AnimationControllerParameters`, `AnimationStateInput`, `AnimationStateOptions`, `AnimationTransition`, `BooleanCondition`, `ControllerAdvanceOptions`, `ControllerPlaybackState`, `NumericComparison`, `NumericCondition`, `StateChangeListener`, `TransitionCondition`, `TransitionWhen`, `TriggerCondition`, `AnimationLayer`, `AnimationLayerStackOptions`, `EasingFunction`, `EasingName`, `AnimationEventListener`, `MixerPlayOptions`, `MixerRootMotionOptions`, `MixerState`, `TimelineChild`, `TimelineEntry`, `TimelineMarkerCallback`, `TimelineMarkerOptions`, `TimelineState`, `AnimationTrackLike`, `AnimationTrackOptions`, `InterpolationMode`, `TweenProperties`, `TweenState`, `TweenValue`, `WhenParameterLookup`, `ColorRGBA`, `ValueAdapter`, `ValueKind`
+
+---
+
+### `packages/animation/src/when.ts` - Optional `when` string sugar for {@link ./controller.js#AnimationTransition}
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File              | Imports                                  | Type               |
+| ----------------- | ---------------------------------------- | ------------------ |
+| `./controller.js` | `NumericComparison, TransitionCondition` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `WhenParameterLookup`
+- Functions: `compileWhenExpression`
+
+---
+
+### `packages/animation/src/track.ts` - Animation tracks (§17).
+
+**Workspace Dependencies:**
+
+| Package        | Import                      |
+| -------------- | --------------------------- |
+| `@fourjs/core` | `FourError`                 |
+| `@fourjs/math` | `Vector2, Vector3, Vector4` |
+
+**Internal Dependencies:**
+
+| File          | Imports                              | Type               |
+| ------------- | ------------------------------------ | ------------------ |
+| `./values.js` | `ColorRGBA, ValueAdapter, ValueKind` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `AnimationTrack`
+- Interfaces: `AnimationTrackOptions`, `AnimationTrackLike`
+- Types: `InterpolationMode`
+
+---
+
+### `packages/animation/src/binding.ts` - Property bindings (§16).
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File          | Imports                                      | Type   |
+| ------------- | -------------------------------------------- | ------ |
+| `./values.js` | `detectAdapter, numberAdapter, ValueAdapter` | Import |
+
+**Exports:**
+
+- Interfaces: `PropertyBinding`
+- Functions: `createBinding`, `createArrayElementBinding`
+
+---
+
+### `packages/animation/src/mixer.ts` - The clip player (§17 clips, §16 playback semantics, §107 "playback controls").
+
+**Workspace Dependencies:**
+
+| Package         | Import                                                                          |
+| --------------- | ------------------------------------------------------------------------------- |
+| `@fourjs/core`  | `FourError`                                                                     |
+| `@fourjs/math`  | `Quaternion, Vector3`                                                           |
+| `@fourjs/scene` | `Node, beginOwnedTransformWrite, endOwnedTransformWrite, warnAuthorityConflict` |
+| `@fourjs/scene` | `TransformAuthority`                                                            |
+
+**Internal Dependencies:**
+
+| File           | Imports                                                                                      | Type               |
+| -------------- | -------------------------------------------------------------------------------------------- | ------------------ |
+| `./binding.js` | `createBinding, PropertyBinding`                                                             | Import             |
+| `./clip.js`    | `AnimationClip, AnimationEvent, TrackSampleSink`                                             | Import (type-only) |
+| `./track.js`   | `AnimationTrackLike`                                                                         | Import (type-only) |
+| `./tween.js`   | `claimProperty, isTransformOwner, releaseProperty, requireNonNegativeSeconds, PropertyClaim` | Import             |
+| `./values.js`  | `detectAdapter, ValueAdapter`                                                                | Import             |
+
+**Exports:**
+
+- Classes: `AnimationMixer`
+- Interfaces: `MixerRootMotionOptions`, `MixerPlayOptions`
+- Types: `MixerState`, `AnimationEventListener`
+
+---
+
+### `packages/animation/src/blend-tree.ts` - Blend trees for {@link ./controller.js#AnimationController} (PH-9, §18).
+
+**Internal Dependencies:**
+
+| File        | Imports         | Type               |
+| ----------- | --------------- | ------------------ |
+| `./clip.js` | `AnimationClip` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `BlendTree1DPoint`, `BlendTree2DPoint`, `BlendTree1D`, `BlendTree2D`, `Blend2DRank`
+- Types: `BlendTree`
+- Functions: `isBlendTree`, `locateBlend1D`, `locateBlend2D`
+
+---
+
+### `packages/animation/src/values.ts` - Value adapters (§16 property bindings, §17 track value types).
+
+**Workspace Dependencies:**
+
+| Package        | Import                                             |
+| -------------- | -------------------------------------------------- |
+| `@fourjs/math` | `Quaternion, Vector2, Vector3, Vector4, ColorRGBA` |
+| `@fourjs/math` | `ColorRGBA`                                        |
+
+**Exports:**
+
+- Interfaces: `ValueAdapter`
+- Types: `ValueKind`
+- Functions: `discreteAdapterFor`, `detectAdapter`
+- Constants: `numberAdapter`, `vector2Adapter`, `vector3Adapter`, `vector4Adapter`, `quaternionAdapter`, `colorAdapter`, `booleanAdapter`, `discreteAdapter`
+- Re-exports: `ColorRGBA`
+
+---
+
+### `packages/animation/src/controller.ts` - §18 animation state machines — {@link AnimationController}.
+
+**Workspace Dependencies:**
+
+| Package         | Import                                                |
+| --------------- | ----------------------------------------------------- |
+| `@fourjs/core`  | `FourError`                                           |
+| `@fourjs/scene` | `Node, runOwnedTransformWrite, warnAuthorityConflict` |
+| `@fourjs/scene` | `TransformAuthority`                                  |
+
+**Internal Dependencies:**
+
+| File                    | Imports                                                                                      | Type                  |
+| ----------------------- | -------------------------------------------------------------------------------------------- | --------------------- |
+| `./animation-system.js` | `Advanceable`                                                                                | Import (type-only)    |
+| `./blend-tree.js`       | `isBlendTree, locateBlend1D, locateBlend2D, Blend2DRank, BlendTree`                          | Import                |
+| `./binding.js`          | `createBinding, PropertyBinding`                                                             | Import                |
+| `./clip.js`             | `AnimationClip`                                                                              | Import                |
+| `./mixer.js`            | `AnimationEventListener`                                                                     | Import (type-only)    |
+| `./track.js`            | `AnimationTrackLike`                                                                         | Import (type-only)    |
+| `./tween.js`            | `claimProperty, isTransformOwner, releaseProperty, requireNonNegativeSeconds, PropertyClaim` | Import                |
+| `./values.js`           | `detectAdapter, ValueAdapter`                                                                | Import                |
+| `./when.js`             | `compileWhenExpression`                                                                      | Import                |
+| `./blend-tree.js`       | `BlendTree, BlendTree1D, BlendTree2D, BlendTree1DPoint, BlendTree2DPoint`                    | Re-export (type-only) |
+
+**Exports:**
+
+- Classes: `AnimationController`
+- Interfaces: `AnimationStateOptions`, `NumericCondition`, `BooleanCondition`, `TriggerCondition`, `AnimationTransition`, `AnimationControllerParameters`, `AnimationControllerOptions`, `ControllerAdvanceOptions`
+- Types: `ControllerPlaybackState`, `AnimationStateInput`, `NumericComparison`, `TransitionCondition`, `TransitionWhen`, `StateChangeListener`
+- Constants: `ANY_STATE`
+- Re-exports: `BlendTree`, `BlendTree1D`, `BlendTree2D`, `BlendTree1DPoint`, `BlendTree2DPoint`
+
+---
+
+### `packages/animation/src/clip.ts` - Animation clips (§17).
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File         | Imports              | Type               |
+| ------------ | -------------------- | ------------------ |
+| `./track.js` | `AnimationTrackLike` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `AnimationClip`
+- Interfaces: `AnimationEvent`, `TrackSampleSink`, `AnimationClipOptions`
+- Types: `AnimationEventVisitor`
+
+---
+
+### `packages/animation/src/layer-stack.ts` - Layered / additive animation (PH-9, §18, §100).
+
+**Workspace Dependencies:**
+
+| Package         | Import                                                |
+| --------------- | ----------------------------------------------------- |
+| `@fourjs/core`  | `FourError`                                           |
+| `@fourjs/scene` | `Node, runOwnedTransformWrite, warnAuthorityConflict` |
+| `@fourjs/scene` | `TransformAuthority`                                  |
+
+**Internal Dependencies:**
+
+| File                    | Imports                                                                                      | Type               |
+| ----------------------- | -------------------------------------------------------------------------------------------- | ------------------ |
+| `./animation-system.js` | `Advanceable`                                                                                | Import (type-only) |
+| `./binding.js`          | `createBinding, PropertyBinding`                                                             | Import             |
+| `./controller.js`       | `AnimationController, ControllerPlaybackState`                                               | Import (type-only) |
+| `./tween.js`            | `claimProperty, isTransformOwner, releaseProperty, requireNonNegativeSeconds, PropertyClaim` | Import             |
+| `./values.js`           | `detectAdapter, ValueAdapter`                                                                | Import             |
+
+**Exports:**
+
+- Classes: `AnimationLayerStack`
+- Interfaces: `AnimationLayer`, `AnimationLayerStackOptions`
+
+---
+
+### `packages/animation/src/easing.ts` - Easing functions (§15).
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Exports:**
+
+- Types: `EasingFunction`, `EasingName`
+- Functions: `resolveEasing`
+- Constants: `BACK_OVERSHOOT`, `BACK_OVERSHOOT_IN_OUT`, `BOUNCE_AMPLITUDE`, `BOUNCE_SEGMENT_DIVISOR`, `ELASTIC_AMPLITUDE`, `ELASTIC_PERIOD`, `ELASTIC_PERIOD_IN_OUT`, `SPRING_DAMPING_RATIO`, `SPRING_OSCILLATIONS`, `linear`, `quadraticIn`, `quadraticOut`, `quadraticInOut`, `cubicIn`, `cubicOut`, `cubicInOut`, `quarticIn`, `quarticOut`, `quarticInOut`, `quinticIn`, `quinticOut`, `quinticInOut`, `sineIn`, `sineOut`, `sineInOut`, `exponentialIn`, `exponentialOut`, `exponentialInOut`, `circularIn`, `circularOut`, `circularInOut`, `backIn`, `backOut`, `backInOut`, `bounceOut`, `bounceIn`, `bounceInOut`, `elasticIn`, `elasticOut`, `elasticInOut`, `springOut`, `springIn`, `springInOut`, `EASINGS`, `EASING_NAMES`
+
+---
+
+<a id="packages-diagnostics-dependencies"></a>
+
+## Packages/diagnostics Dependencies
+
+### `packages/diagnostics/src/checksum.ts` - Deterministic checksums over float sequences (§33, plan D6).
+
+**Exports:**
+
+- Interfaces: `Checksum`
+- Functions: `createChecksum`, `hashFloats`
+
+---
+
+### `packages/diagnostics/src/leak-registry.ts` - Re-export of `@fourjs/core`'s §83 FinalizationRegistry leak bookkeeping.
+
+**Workspace Dependencies:**
+
+| Package        | Import                                                                                                          |
+| -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core` | `auditFinalizedLeaks, disposeTracked, reportFinalized, resetLeakRegistry, trackDisposable, trackedDisposableId` |
+
+**Exports:**
+
+- Re-exports: `auditFinalizedLeaks`, `disposeTracked`, `reportFinalized`, `resetLeakRegistry`, `trackDisposable`, `trackedDisposableId`
+
+---
+
+### `packages/diagnostics/src/index.ts` - --- PH-20 (§33 rollback) ---------------------------------------------------
+
+**Internal Dependencies:**
+
+| File                    | Imports                                                                                                                                                                                                                                                                                                                                                                                                                               | Type                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./checksum.js`         | `createChecksum, hashFloats`                                                                                                                                                                                                                                                                                                                                                                                                          | Re-export             |
+| `./recorder.js`         | `ReplayRecorder`                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
+| `./rollback.js`         | `RollbackBuffer`                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
+| `./replay-format.js`    | `LATEST_REPLAY_FORMAT_VERSION, MINIMUM_REPLAY_FORMAT_VERSION, REPLAY_FORMAT_VERSION, SUPPORTED_REPLAY_FORMAT_VERSIONS, assertReplayCompatible, cloneJsonValue, decodeBase64, decodeReplayRecording, encodeBase64, encodeReplayRecording, isReplayCompatible, validateReplayRecording`                                                                                                                                                 | Re-export             |
+| `./replay-player.js`    | `DEFAULT_REPLAY_MAXIMUM_SUB_STEPS, ReplayPlayer`                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
+| `./debug-draw.js`       | `DEBUG_COLOR_FLOATS_PER_SEGMENT, DEBUG_DRAW_DEFAULT_COLORS, DEBUG_DRAW_STAGED, DEBUG_POSITION_FLOATS_PER_SEGMENT, DEBUG_SEGMENT_FLOATS, DEBUG_VERTEX_FLOATS, DEFAULT_DEBUG_BUFFER_CAPACITY, DebugDrawBuffer, applyDebugDrawStreams, collectBodyOrigins, collectBodyVelocities, collectCentersOfMass, collectContactImpulses, collectContactPoints, debugDrawStreams, solverJointStatistics`                                           | Re-export             |
+| `./resource-audit.js`   | `NO_RESOURCE_LEAKS, auditResourceLeaks`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./leak-registry.js`    | `auditFinalizedLeaks, disposeTracked, reportFinalized, resetLeakRegistry, trackDisposable, trackedDisposableId`                                                                                                                                                                                                                                                                                                                       | Re-export             |
+| `./validation.js`       | `COORDINATE_ENVELOPE, NEAR_ZERO_SCALE, UNSTABLE_SCALE_RATIO, assertFinite, assertFiniteVec3, assertNoSceneGraphCycle, validateSceneNode, validateSceneSubtree, warnCoordinateEnvelope, warnImpossibleInertia, warnImpossibleMass, warnSingularScale, warnUnstableScale, warnVersionMismatch`                                                                                                                                          | Re-export             |
+| `./allocation-audit.js` | `NO_FRAME_ALLOCATIONS, auditFrameAllocations`                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./stats.js`            | `copyFrameStats, createFrameStats, createMonotonicClock, monotonicNowSeconds, recordRenderStatistics, recordResourceMemory, recordSolverStatistics, resetFrameStats, solverStatistics`                                                                                                                                                                                                                                                | Re-export             |
+| `./checksum.js`         | `Checksum`                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
+| `./recorder.js`         | `ReplayRecorderOptions, ReplaySnapshot, ReplayTarget`                                                                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
+| `./rollback.js`         | `RollbackBufferOptions, RollbackTarget`                                                                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
+| `./replay-format.js`    | `JsonValue, ReplayAdapterIdentity, ReplayFrameRecord, ReplayInputRecord, ReplayRecording, ReplaySnapshotRecord, UntrustedJsonLimits`                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./replay-player.js`    | `ReplayPlayerOptions, ReplayStepEvent, ReplayStepListener`                                                                                                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
+| `./debug-draw.js`       | `CollectBodyOriginsOptions, CollectBodyVelocitiesOptions, CollectCentersOfMassOptions, CollectContactImpulsesOptions, CollectContactPointsOptions, DebugBodyAccess, DebugCenterOfMassAccess, DebugCollisionEventLike, DebugColor, DebugContactPoint, DebugDrawBufferOptions, DebugDrawStreams, DebugGeometrySink, DebugJointAccess, DebugPhysicsEventLike, SolverJointStatistics, SolverStatistics, StagedVisualization, Vector3Like` | Re-export (type-only) |
+| `./resource-audit.js`   | `AuditResourceLeaksOptions, LiveResourceCounts, ResourceLeakReport`                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
+| `./validation.js`       | `ValidationCatalogueOptions, ValidationCheckOptions, ValidationNodeLike, ValidationTransformLike`                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./allocation-audit.js` | `AuditFrameAllocationsOptions, FrameAllocationReport`                                                                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
+| `./stats.js`            | `ClockSource, FrameStats, RenderStatisticsLike`                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `createChecksum`, `hashFloats`, `ReplayRecorder`, `RollbackBuffer`, `LATEST_REPLAY_FORMAT_VERSION`, `MINIMUM_REPLAY_FORMAT_VERSION`, `REPLAY_FORMAT_VERSION`, `SUPPORTED_REPLAY_FORMAT_VERSIONS`, `assertReplayCompatible`, `cloneJsonValue`, `decodeBase64`, `decodeReplayRecording`, `encodeBase64`, `encodeReplayRecording`, `isReplayCompatible`, `validateReplayRecording`, `DEFAULT_REPLAY_MAXIMUM_SUB_STEPS`, `ReplayPlayer`, `DEBUG_COLOR_FLOATS_PER_SEGMENT`, `DEBUG_DRAW_DEFAULT_COLORS`, `DEBUG_DRAW_STAGED`, `DEBUG_POSITION_FLOATS_PER_SEGMENT`, `DEBUG_SEGMENT_FLOATS`, `DEBUG_VERTEX_FLOATS`, `DEFAULT_DEBUG_BUFFER_CAPACITY`, `DebugDrawBuffer`, `applyDebugDrawStreams`, `collectBodyOrigins`, `collectBodyVelocities`, `collectCentersOfMass`, `collectContactImpulses`, `collectContactPoints`, `debugDrawStreams`, `solverJointStatistics`, `NO_RESOURCE_LEAKS`, `auditResourceLeaks`, `auditFinalizedLeaks`, `disposeTracked`, `reportFinalized`, `resetLeakRegistry`, `trackDisposable`, `trackedDisposableId`, `COORDINATE_ENVELOPE`, `NEAR_ZERO_SCALE`, `UNSTABLE_SCALE_RATIO`, `assertFinite`, `assertFiniteVec3`, `assertNoSceneGraphCycle`, `validateSceneNode`, `validateSceneSubtree`, `warnCoordinateEnvelope`, `warnImpossibleInertia`, `warnImpossibleMass`, `warnSingularScale`, `warnUnstableScale`, `warnVersionMismatch`, `NO_FRAME_ALLOCATIONS`, `auditFrameAllocations`, `copyFrameStats`, `createFrameStats`, `createMonotonicClock`, `monotonicNowSeconds`, `recordRenderStatistics`, `recordResourceMemory`, `recordSolverStatistics`, `resetFrameStats`, `solverStatistics`, `Checksum`, `ReplayRecorderOptions`, `ReplaySnapshot`, `ReplayTarget`, `RollbackBufferOptions`, `RollbackTarget`, `JsonValue`, `ReplayAdapterIdentity`, `ReplayFrameRecord`, `ReplayInputRecord`, `ReplayRecording`, `ReplaySnapshotRecord`, `UntrustedJsonLimits`, `ReplayPlayerOptions`, `ReplayStepEvent`, `ReplayStepListener`, `CollectBodyOriginsOptions`, `CollectBodyVelocitiesOptions`, `CollectCentersOfMassOptions`, `CollectContactImpulsesOptions`, `CollectContactPointsOptions`, `DebugBodyAccess`, `DebugCenterOfMassAccess`, `DebugCollisionEventLike`, `DebugColor`, `DebugContactPoint`, `DebugDrawBufferOptions`, `DebugDrawStreams`, `DebugGeometrySink`, `DebugJointAccess`, `DebugPhysicsEventLike`, `SolverJointStatistics`, `SolverStatistics`, `StagedVisualization`, `Vector3Like`, `AuditResourceLeaksOptions`, `LiveResourceCounts`, `ResourceLeakReport`, `ValidationCatalogueOptions`, `ValidationCheckOptions`, `ValidationNodeLike`, `ValidationTransformLike`, `AuditFrameAllocationsOptions`, `FrameAllocationReport`, `ClockSource`, `FrameStats`, `RenderStatisticsLike`
+
+---
+
+### `packages/diagnostics/src/validation.ts` - §85's validation catalogue (A-4 remainder step 2, 2026-09-06).
+
+**Workspace Dependencies:**
+
+| Package        | Import                        |
+| -------------- | ----------------------------- |
+| `@fourjs/core` | `DEV, devAssert, devWarnOnce` |
+
+**Exports:**
+
+- Interfaces: `ValidationCheckOptions`, `ValidationCatalogueOptions`, `ValidationNodeLike`, `ValidationTransformLike`
+- Functions: `warnCoordinateEnvelope`, `warnSingularScale`, `warnUnstableScale`, `assertFinite`, `assertFiniteVec3`, `warnImpossibleMass`, `warnImpossibleInertia`, `warnVersionMismatch`, `assertNoSceneGraphCycle`, `validateSceneNode`, `validateSceneSubtree`
+- Constants: `COORDINATE_ENVELOPE`, `UNSTABLE_SCALE_RATIO`, `NEAR_ZERO_SCALE`
+
+---
+
+### `packages/diagnostics/src/replay-format.ts` - The §34 replay document — its types, its JSON encoding, and its validation
+
+**Workspace Dependencies:**
+
+| Package        | Import                                                                          |
+| -------------- | ------------------------------------------------------------------------------- |
+| `@fourjs/core` | `FourError, cloneJsonValue, parseUntrustedJson, JsonValue, UntrustedJsonLimits` |
+| `@fourjs/core` | `cloneJsonValue`                                                                |
+| `@fourjs/core` | `JsonValue`                                                                     |
+| `@fourjs/core` | `UntrustedJsonLimits`                                                           |
+
+**Exports:**
+
+- Interfaces: `ReplayInputRecord`, `ReplayFrameRecord`, `ReplaySnapshotRecord`, `ReplayAdapterIdentity`, `ReplayRecording`
+- Functions: `encodeBase64`, `decodeBase64`, `validateReplayRecording`, `encodeReplayRecording`, `decodeReplayRecording`, `assertReplayCompatible`, `isReplayCompatible`
+- Constants: `LATEST_REPLAY_FORMAT_VERSION`, `MINIMUM_REPLAY_FORMAT_VERSION`, `REPLAY_FORMAT_VERSION`, `SUPPORTED_REPLAY_FORMAT_VERSIONS`
+- Re-exports: `cloneJsonValue`, `JsonValue`, `UntrustedJsonLimits`
+
+---
+
+### `packages/diagnostics/src/recorder.ts` - Session recording (§33–34, plan P10-1) — the producing half of the replay
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                                                                                       | Type   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `./replay-format.js` | `LATEST_REPLAY_FORMAT_VERSION, JsonValue, ReplayFrameRecord, ReplayInputRecord, ReplayRecording, ReplaySnapshotRecord, cloneJsonValue, encodeBase64, validateReplayRecording` | Import |
+
+**Exports:**
+
+- Classes: `ReplayRecorder`
+- Interfaces: `ReplaySnapshot`, `ReplayTarget`, `ReplayRecorderOptions`
+
+---
+
+### `packages/diagnostics/src/stats.ts` - §84 runtime statistics — the record behind `app.stats` (A-1, 2026-08-07).
+
+**Internal Dependencies:**
+
+| File              | Imports                             | Type               |
+| ----------------- | ----------------------------------- | ------------------ |
+| `./debug-draw.js` | `DebugBodyAccess, SolverStatistics` | Import (type-only) |
+
+**Exports:**
+
+- Interfaces: `FrameStats`, `RenderStatisticsLike`, `ClockSource`
+- Functions: `createFrameStats`, `resetFrameStats`, `copyFrameStats`, `recordRenderStatistics`, `recordResourceMemory`, `solverStatistics`, `recordSolverStatistics`, `createMonotonicClock`
+- Constants: `monotonicNowSeconds`
+
+---
+
+### `packages/diagnostics/src/rollback.ts` - `RollbackBuffer` (§33 _"rollback"_, §34; PH-20, 2026-08-21) — a bounded ring
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File            | Imports          | Type               |
+| --------------- | ---------------- | ------------------ |
+| `./recorder.js` | `ReplaySnapshot` | Import (type-only) |
+
+**Exports:**
+
+- Classes: `RollbackBuffer`
+- Interfaces: `RollbackTarget`, `RollbackBufferOptions`
+
+---
+
+### `packages/diagnostics/src/replay-player.ts` - Replay playback and inspection (§33–34, §113; plan P10-3) — the consuming
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                          | Type               |
+| -------------------- | -------------------------------------------------------------------------------- | ------------------ |
+| `./recorder.js`      | `ReplaySnapshot, ReplayTarget`                                                   | Import (type-only) |
+| `./replay-format.js` | `ReplayRecording, assertReplayCompatible, decodeBase64, validateReplayRecording` | Import             |
+
+**Exports:**
+
+- Classes: `ReplayPlayer`
+- Interfaces: `ReplayStepEvent`, `ReplayPlayerOptions`
+- Types: `ReplayStepListener`
+- Constants: `DEFAULT_REPLAY_MAXIMUM_SUB_STEPS`
+
+---
+
+### `packages/diagnostics/src/debug-draw.ts` - Debug-draw data providers (§113, plan P10-3) — the diagnostic visualization
+
+**Workspace Dependencies:**
+
+| Package        | Import                |
+| -------------- | --------------------- |
+| `@fourjs/math` | `Quaternion, Vector3` |
+
+**Exports:**
+
+- Classes: `DebugDrawBuffer`
+- Interfaces: `Vector3Like`, `DebugDrawBufferOptions`, `DebugDrawStreams`, `DebugGeometrySink`, `DebugBodyAccess`, `DebugJointAccess`, `DebugContactPoint`, `DebugCollisionEventLike`, `DebugPhysicsEventLike`, `CollectBodyVelocitiesOptions`, `CollectBodyOriginsOptions`, `DebugCenterOfMassAccess`, `CollectCentersOfMassOptions`, `CollectContactPointsOptions`, `CollectContactImpulsesOptions`, `SolverStatistics`, `SolverJointStatistics`, `StagedVisualization`
+- Types: `DebugColor`
+- Functions: `debugDrawStreams`, `applyDebugDrawStreams`, `collectBodyVelocities`, `collectBodyOrigins`, `collectCentersOfMass`, `collectContactPoints`, `collectContactImpulses`, `solverJointStatistics`
+- Constants: `DEBUG_VERTEX_FLOATS`, `DEBUG_SEGMENT_FLOATS`, `DEBUG_POSITION_FLOATS_PER_SEGMENT`, `DEBUG_COLOR_FLOATS_PER_SEGMENT`, `DEFAULT_DEBUG_BUFFER_CAPACITY`, `DEBUG_DRAW_DEFAULT_COLORS`, `DEBUG_DRAW_STAGED`
+
+---
+
+### `packages/diagnostics/src/allocation-audit.ts` - §83's "excessive per-frame allocations" development warning (A-4/A-5,
+
+**Workspace Dependencies:**
+
+| Package        | Import             |
+| -------------- | ------------------ |
+| `@fourjs/core` | `DEV, devWarnOnce` |
+
+**Exports:**
+
+- Interfaces: `FrameAllocationReport`, `AuditFrameAllocationsOptions`
+- Functions: `auditFrameAllocations`
+- Constants: `NO_FRAME_ALLOCATIONS`
+
+---
+
+### `packages/diagnostics/src/resource-audit.ts` - §83's first development warning — **leaked textures and buffers** (A-4/A-5,
+
+**Workspace Dependencies:**
+
+| Package        | Import             |
+| -------------- | ------------------ |
+| `@fourjs/core` | `DEV, devWarnOnce` |
+
+**Exports:**
+
+- Interfaces: `LiveResourceCounts`, `ResourceLeakReport`, `AuditResourceLeaksOptions`
+- Functions: `auditResourceLeaks`
+- Constants: `NO_RESOURCE_LEAKS`
+
+---
+
+<a id="packages-core-dependencies"></a>
+
+## Packages/core Dependencies
+
+### `packages/core/src/units.ts` - The §40 unit system — **display and authoring conversion only** (§40, §98).
+
+**Internal Dependencies:**
+
+| File          | Imports     | Type   |
+| ------------- | ----------- | ------ |
+| `./errors.js` | `FourError` | Import |
+
+**Exports:**
+
+- Interfaces: `UnitScale`, `UnitSystem`, `UnitSystemInit`
+- Types: `LengthUnit`, `MassUnit`, `TimeUnit`, `AngleUnit`, `UnitQuantity`
+- Functions: `resolveUnitSystem`, `angleToDisplay`, `angleFromDisplay`, `timeToDisplay`, `timeFromDisplay`, `lengthToDisplay`, `lengthFromDisplay`, `massToDisplay`, `massFromDisplay`, `worldLengthToMeters`, `metersToWorldLength`, `worldMassToKilograms`, `kilogramsToWorldMass`, `unitSymbol`, `formatLength`, `formatMass`, `formatTime`, `formatAngle`
+- Constants: `SI_UNITS`
+
+---
+
+### `packages/core/src/leak-registry.ts` - §83's **leaked-resource** development warning via `FinalizationRegistry`
+
+**Internal Dependencies:**
+
+| File       | Imports            | Type   |
+| ---------- | ------------------ | ------ |
+| `./dev.js` | `DEV, devWarnOnce` | Import |
+
+**Exports:**
+
+- Functions: `trackDisposable`, `disposeTracked`, `trackedDisposableId`, `reportFinalized`, `auditFinalizedLeaks`, `resetLeakRegistry`
+
+---
+
+### `packages/core/src/index.ts` - §83 FinalizationRegistry leak bookkeeping (A-4 remainder, 2026-09-06).
+
+**Internal Dependencies:**
+
+| File                 | Imports                                                                                                                                                                                                                                                                                                                  | Type                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| `./conventions.js`   | `DEFAULT_GRAVITY_Y`                                                                                                                                                                                                                                                                                                      | Re-export             |
+| `./json.js`          | `cloneJsonValue`                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./random.js`        | `SeededRandom`                                                                                                                                                                                                                                                                                                           | Re-export             |
+| `./component.js`     | `ComponentRegistry`                                                                                                                                                                                                                                                                                                      | Re-export             |
+| `./disposable.js`    | `disposeAll`                                                                                                                                                                                                                                                                                                             | Re-export             |
+| `./leak-registry.js` | `auditFinalizedLeaks, disposeTracked, reportFinalized, resetLeakRegistry, trackDisposable, trackedDisposableId`                                                                                                                                                                                                          | Re-export             |
+| `./dev.js`           | `DEV, DEV_WARNING_PREFIX, devAssert, devWarn, devWarnOnce, resetDevWarnings`                                                                                                                                                                                                                                             | Re-export             |
+| `./errors.js`        | `FourError, isFourError`                                                                                                                                                                                                                                                                                                 | Re-export             |
+| `./events.js`        | `EventEmitter`                                                                                                                                                                                                                                                                                                           | Re-export             |
+| `./plugin.js`        | `PLUGIN_API_VERSION, PluginHost, bindCapability, defineCapability, installPlugins, satisfiesPluginRange`                                                                                                                                                                                                                 | Re-export             |
+| `./space.js`         | `DEFAULT_SPACE_MODE, SPACE_MODES, isSimulationSpaceMode`                                                                                                                                                                                                                                                                 | Re-export             |
+| `./units.js`         | `SI_UNITS, angleFromDisplay, angleToDisplay, formatAngle, formatLength, formatMass, formatTime, kilogramsToWorldMass, lengthFromDisplay, lengthToDisplay, massFromDisplay, massToDisplay, metersToWorldLength, resolveUnitSystem, timeFromDisplay, timeToDisplay, unitSymbol, worldLengthToMeters, worldMassToKilograms` | Re-export             |
+| `./untrusted.js`     | `DEFAULT_MAXIMUM_DEPTH, DEFAULT_MAXIMUM_TEXT_LENGTH, parseUntrustedJson`                                                                                                                                                                                                                                                 | Re-export             |
+| `./json.js`          | `JsonValue`                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
+| `./component.js`     | `Component, ComponentHost, ComponentHostBinding, ComponentType`                                                                                                                                                                                                                                                          | Re-export (type-only) |
+| `./disposable.js`    | `Disposable`                                                                                                                                                                                                                                                                                                             | Re-export (type-only) |
+| `./errors.js`        | `FourErrorCode, FourErrorOptions`                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
+| `./events.js`        | `EventListener, Unsubscribe`                                                                                                                                                                                                                                                                                             | Re-export (type-only) |
+| `./plugin.js`        | `DefineCapabilityOptions, FourPlugin, PluginCapability, PluginCapabilityBinding, PluginContext, PluginDependency`                                                                                                                                                                                                        | Re-export (type-only) |
+| `./space.js`         | `SpaceMode`                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
+| `./units.js`         | `AngleUnit, LengthUnit, MassUnit, TimeUnit, UnitQuantity, UnitScale, UnitSystem, UnitSystemInit`                                                                                                                                                                                                                         | Re-export (type-only) |
+| `./untrusted.js`     | `UntrustedJsonLimits`                                                                                                                                                                                                                                                                                                    | Re-export (type-only) |
+
+**Exports:**
+
+- Constants: `PACKAGE_NAME`
+- Re-exports: `DEFAULT_GRAVITY_Y`, `cloneJsonValue`, `SeededRandom`, `ComponentRegistry`, `disposeAll`, `auditFinalizedLeaks`, `disposeTracked`, `reportFinalized`, `resetLeakRegistry`, `trackDisposable`, `trackedDisposableId`, `DEV`, `DEV_WARNING_PREFIX`, `devAssert`, `devWarn`, `devWarnOnce`, `resetDevWarnings`, `FourError`, `isFourError`, `EventEmitter`, `PLUGIN_API_VERSION`, `PluginHost`, `bindCapability`, `defineCapability`, `installPlugins`, `satisfiesPluginRange`, `DEFAULT_SPACE_MODE`, `SPACE_MODES`, `isSimulationSpaceMode`, `SI_UNITS`, `angleFromDisplay`, `angleToDisplay`, `formatAngle`, `formatLength`, `formatMass`, `formatTime`, `kilogramsToWorldMass`, `lengthFromDisplay`, `lengthToDisplay`, `massFromDisplay`, `massToDisplay`, `metersToWorldLength`, `resolveUnitSystem`, `timeFromDisplay`, `timeToDisplay`, `unitSymbol`, `worldLengthToMeters`, `worldMassToKilograms`, `DEFAULT_MAXIMUM_DEPTH`, `DEFAULT_MAXIMUM_TEXT_LENGTH`, `parseUntrustedJson`, `JsonValue`, `Component`, `ComponentHost`, `ComponentHostBinding`, `ComponentType`, `Disposable`, `FourErrorCode`, `FourErrorOptions`, `EventListener`, `Unsubscribe`, `DefineCapabilityOptions`, `FourPlugin`, `PluginCapability`, `PluginCapabilityBinding`, `PluginContext`, `PluginDependency`, `SpaceMode`, `AngleUnit`, `LengthUnit`, `MassUnit`, `TimeUnit`, `UnitQuantity`, `UnitScale`, `UnitSystem`, `UnitSystemInit`, `UntrustedJsonLimits`
+
+---
+
+### `packages/core/src/disposable.ts` - Explicit disposal (§83).
+
+**Exports:**
+
+- Interfaces: `Disposable`
+- Functions: `disposeAll`
+
+---
+
+### `packages/core/src/conventions.ts` - Normative default constants shared across pillars (Appendix A, §7a).
+
+**Exports:**
+
+- Constants: `DEFAULT_GRAVITY_Y`
+
+---
+
+### `packages/core/src/dev.ts` - The build-mode flag (§85, A-4, 2026-08-07) — one place that answers "is this
+
+**Internal Dependencies:**
+
+| File          | Imports         | Type               |
+| ------------- | --------------- | ------------------ |
+| `./errors.js` | `FourError`     | Import             |
+| `./errors.js` | `FourErrorCode` | Import (type-only) |
+
+**Exports:**
+
+- Functions: `devWarn`, `devWarnOnce`, `resetDevWarnings`, `devAssert`
+- Constants: `DEV`, `DEV_WARNING_PREFIX`
+
+---
+
+### `packages/core/src/plugin.ts` - The §81 plugin system (RFC 0002, accepted 2026-08-21; gap `A-3`).
+
+**Internal Dependencies:**
+
+| File          | Imports     | Type   |
+| ------------- | ----------- | ------ |
+| `./errors.js` | `FourError` | Import |
+
+**Exports:**
+
+- Classes: `PluginHost`
+- Interfaces: `PluginDependency`, `FourPlugin`, `PluginCapability`, `DefineCapabilityOptions`, `PluginCapabilityBinding`, `PluginContext`
+- Functions: `defineCapability`, `bindCapability`, `satisfiesPluginRange`, `installPlugins`
+- Constants: `PLUGIN_API_VERSION`
+
+---
+
+### `packages/core/src/events.ts` - Typed event emitter (§6b).
+
+**Exports:**
+
+- Classes: `EventEmitter`
+- Types: `EventListener`, `Unsubscribe`
+
+---
+
+### `packages/core/src/space.ts` - §8 _Space Modes_ — the vocabulary, and the one rule §8 states (PH-12,
+
+**Exports:**
+
+- Types: `SpaceMode`
+- Functions: `isSimulationSpaceMode`
+- Constants: `DEFAULT_SPACE_MODE`, `SPACE_MODES`
+
+---
+
+### `packages/core/src/random.ts` - Seeded pseudo-random numbers for deterministic engine code (§33, plan P8-3).
+
+**Exports:**
+
+- Classes: `SeededRandom`
+
+---
+
+### `packages/core/src/untrusted.ts` - Untrusted-input guards for the document formats (§96).
+
+**Internal Dependencies:**
+
+| File          | Imports     | Type   |
+| ------------- | ----------- | ------ |
+| `./errors.js` | `FourError` | Import |
+
+**Exports:**
+
+- Interfaces: `UntrustedJsonLimits`
+- Functions: `parseUntrustedJson`
+- Constants: `DEFAULT_MAXIMUM_TEXT_LENGTH`, `DEFAULT_MAXIMUM_DEPTH`
+
+---
+
+### `packages/core/src/json.ts` - JSON value typing and validation shared by every document format (§34, §79).
+
+**Internal Dependencies:**
+
+| File          | Imports     | Type   |
+| ------------- | ----------- | ------ |
+| `./errors.js` | `FourError` | Import |
+
+**Exports:**
+
+- Types: `JsonValue`
+- Functions: `cloneJsonValue`
+
+---
+
+### `packages/core/src/errors.ts` - Error model (§89).
+
+**Exports:**
+
+- Classes: `FourError`
+- Interfaces: `FourErrorOptions`
+- Types: `FourErrorCode`
+- Functions: `isFourError`
+
+---
+
+### `packages/core/src/component.ts` - Component model (§6a, plan D2).
+
+**Internal Dependencies:**
+
+| File          | Imports        | Type   |
+| ------------- | -------------- | ------ |
+| `./dev.js`    | `DEV, devWarn` | Import |
+| `./errors.js` | `FourError`    | Import |
+
+**Exports:**
+
+- Classes: `ComponentRegistry`
+- Interfaces: `ComponentHost`, `Component`, `ComponentHostBinding`
+- Types: `ComponentType`
+
+---
+
+<a id="packages-fourjs-dependencies"></a>
+
+## Packages/fourjs Dependencies
+
+### `packages/fourjs/src/physics-box2d.ts` - physics-box2d module
+
+**Workspace Dependencies:**
+
+| Package                 | Import |
+| ----------------------- | ------ |
+| `@fourjs/physics-box2d` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/physics-box2d`
+
+---
+
+### `packages/fourjs/src/gltf.ts` - §78 glTF assembly — `instantiateGltf` (A-19's closing packet, 2026-08-29).
+
+**Workspace Dependencies:**
+
+| Package             | Import                                                                                 |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `@fourjs/assets`    | `GltfAsset`                                                                            |
+| `@fourjs/animation` | `AnimationClip, AnimationTrack, quaternionAdapter, vector3Adapter, AnimationTrackLike` |
+| `@fourjs/core`      | `FourError`                                                                            |
+| `@fourjs/geometry`  | `BufferGeometry`                                                                       |
+| `@fourjs/materials` | `StandardMaterial`                                                                     |
+| `@fourjs/math`      | `Matrix4, Quaternion, Vector3`                                                         |
+| `@fourjs/render`    | `Mesh, Texture`                                                                        |
+| `@fourjs/scene`     | `Bone, Group, MorphWeights, Skeleton, Node`                                            |
+
+**Exports:**
+
+- Interfaces: `GltfInstance`
+- Functions: `instantiateGltf`
+
+---
+
+### `packages/fourjs/src/application.ts` - The `Application` composition root (§45, plan D4).
+
+**Workspace Dependencies:**
+
+| Package               | Import                                                                                                                                                                                                |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`        | `DEV, EventEmitter, FourError, bindCapability, devWarnOnce, installPlugins, FourPlugin, PluginCapabilityBinding, PluginContext`                                                                       |
+| `@fourjs/diagnostics` | `auditFrameAllocations, createFrameStats, monotonicNowSeconds, recordRenderStatistics, recordResourceMemory, recordSolverStatistics, resetFrameStats, solverStatistics, FrameStats, SolverStatistics` |
+| `@fourjs/geometry`    | `geometryMemoryBytes`                                                                                                                                                                                 |
+| `@fourjs/motion`      | `DEFAULT_FIXED_DELTA_TIME, DEFAULT_MAXIMUM_SUB_STEPS, PRIORITY_PHYSICS_SOLVE, Scheduler, SystemRegistry, Detach, ReadonlyTimeState, SimulationSystem`                                                 |
+| `@fourjs/math`        | `constructionCount, DepthRange`                                                                                                                                                                       |
+| `@fourjs/assets`      | `AssetManager`                                                                                                                                                                                        |
+| `@fourjs/physics`     | `PhysicsWorld`                                                                                                                                                                                        |
+| `@fourjs/scene`       | `PerspectiveCamera, PoseBuffer, Scene, createSnapshotSystem, resolveWorldTransforms, Camera, SurfaceSizedCamera, Viewport, WorldTransformStats`                                                       |
+| `@fourjs/render`      | `RenderStatistics, Renderer, RendererCapabilityDeclaration, RendererCapabilityShortfall, RendererFallbackReport, RendererRegistry, RendererSelection`                                                 |
+| `@fourjs/render`      | `resolveRenderer, textureMemoryBytes`                                                                                                                                                                 |
+
+**Internal Dependencies:**
+
+| File           | Imports                                 | Type   |
+| -------------- | --------------------------------------- | ------ |
+| `./plugins.js` | `RENDERER_REGISTRY, SIMULATION_SYSTEMS` | Import |
+
+**Exports:**
+
+- Classes: `Application`
+- Interfaces: `ApplicationEventMap`, `PhysicsWorldContext`, `ApplicationOptions`
+- Types: `PhysicsWorldFactory`, `SurfaceResize`, `SurfaceObserver`
+
+---
+
+### `packages/fourjs/src/capabilities.ts` - The umbrella's own §81 capability token (RFC 0002).
+
+**Workspace Dependencies:**
+
+| Package        | Import             |
+| -------------- | ------------------ |
+| `@fourjs/core` | `defineCapability` |
+
+**Internal Dependencies:**
+
+| File                | Imports              | Type               |
+| ------------------- | -------------------- | ------------------ |
+| `./editor-tools.js` | `EditorToolRegistry` | Import (type-only) |
+
+**Exports:**
+
+- Constants: `EDITOR_TOOLS`
+
+---
+
+### `packages/fourjs/src/plugins.ts` - The §81 capability tokens (RFC 0002, accepted 2026-08-21; gap `A-3`) —
+
+**Workspace Dependencies:**
+
+| Package                 | Import                                               |
+| ----------------------- | ---------------------------------------------------- |
+| `@fourjs/assets`        | `ASSET_LOADERS`                                      |
+| `@fourjs/materials`     | `SHADER_OPERATORS`                                   |
+| `@fourjs/motion`        | `PATH_PLANNERS, SIMULATION_SYSTEMS`                  |
+| `@fourjs/physics`       | `SOLVER_REGISTRY`                                    |
+| `@fourjs/render`        | `COMPUTE_WORKLOADS, RENDERER_REGISTRY, RENDER_GRAPH` |
+| `@fourjs/serialization` | `COMPONENT_SERIALIZERS, SCENE_MIGRATIONS`            |
+| `@fourjs/ui`            | `UI_CONTROLS`                                        |
+
+**Internal Dependencies:**
+
+| File                | Imports              | Type                  |
+| ------------------- | -------------------- | --------------------- |
+| `./capabilities.js` | `EDITOR_TOOLS`       | Re-export             |
+| `./editor-tools.js` | `EditorToolRegistry` | Re-export             |
+| `./editor-tools.js` | `EditorToolFactory`  | Re-export (type-only) |
+
+**Exports:**
+
+- Re-exports: `ASSET_LOADERS`, `SHADER_OPERATORS`, `PATH_PLANNERS`, `SIMULATION_SYSTEMS`, `SOLVER_REGISTRY`, `COMPUTE_WORKLOADS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `COMPONENT_SERIALIZERS`, `SCENE_MIGRATIONS`, `UI_CONTROLS`, `EDITOR_TOOLS`, `EditorToolRegistry`, `EditorToolFactory`
+
+---
+
+### `packages/fourjs/src/physics.ts` - physics module
+
+**Workspace Dependencies:**
+
+| Package           | Import |
+| ----------------- | ------ |
+| `@fourjs/physics` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/physics`
+
+---
+
+### `packages/fourjs/src/compute-pass.ts` - §82's `Four.ComputePass` — the named-map sugar over `@fourjs/render`'s
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                 |
+| ---------------- | ------------------------------------------------------ |
+| `@fourjs/render` | `ComputeBinding, ComputeBuffer, ComputePassDescriptor` |
+
+**Exports:**
+
+- Classes: `ComputePass`
+- Interfaces: `ComputePassOptions`
+- Types: `ComputePassBindingEntry`, `ComputePassBindings`
+
+---
+
+### `packages/fourjs/src/index.ts` - The umbrella package (§98): one namespace per workspace package, plus the
+
+**Internal Dependencies:**
+
+| File                        | Imports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Type                  |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./application.js`          | `Application`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./live-resource-counts.js` | `readLiveResourceCounts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Re-export             |
+| `./plugins.js`              | `ASSET_LOADERS, COMPONENT_SERIALIZERS, COMPUTE_WORKLOADS, EDITOR_TOOLS, RENDERER_REGISTRY, RENDER_GRAPH, SCENE_MIGRATIONS, SHADER_OPERATORS, SIMULATION_SYSTEMS, PATH_PLANNERS, SOLVER_REGISTRY, UI_CONTROLS`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./plugins.js`              | `EditorToolRegistry`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
+| `./scene-serializers.js`    | `BUTTON_NODE_TYPE, CHECKBOX_NODE_TYPE, CIRCLE_NODE_TYPE, DIRECTIONAL_LIGHT_NODE_TYPE, HEMISPHERE_LIGHT_NODE_TYPE, ELLIPSE_NODE_TYPE, IMAGE_NODE_TYPE, LABEL_NODE_TYPE, ORTHOGRAPHIC_CAMERA_NODE_TYPE, PANEL_NODE_TYPE, PATH_SHAPE_NODE_TYPE, PERSPECTIVE_CAMERA_NODE_TYPE, POINT_LIGHT_NODE_TYPE, POLYGON_NODE_TYPE, PROGRESS_NODE_TYPE, RADIO_BUTTON_NODE_TYPE, RECTANGLE_NODE_TYPE, REGULAR_POLYGON_NODE_TYPE, RENDERABLE_NODE_TYPE, RING_NODE_TYPE, SECTOR_NODE_TYPE, SLIDER_NODE_TYPE, SPOT_LIGHT_NODE_TYPE, SPRITE_NODE_TYPE, STAR_NODE_TYPE, TEXT_NODE_TYPE, TOGGLE_NODE_TYPE, composeSceneNodeTypes, registerPhysicsSerializers, registerRenderSerializers, registerSceneNodeTypes, registerShapeSerializers, registerTextSerializers, registerUISerializers, resourceCatalog, restoreNodeId` | Re-export             |
+| `./text-node.js`            | `Text`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./compute-pass.js`         | `ComputePass`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export             |
+| `./gltf.js`                 | `instantiateGltf`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
+| `./pick-provider.js`        | `createPickProvider`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
+| `./manifest-catalog.js`     | `preloadManifestIntoCatalog`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./application.js`          | `ApplicationEventMap, ApplicationOptions, PhysicsWorldContext, PhysicsWorldFactory, SurfaceObserver, SurfaceResize`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./plugins.js`              | `EditorToolFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./scene-serializers.js`    | `SceneNodeTypeOptions, SceneNodeTypeSupport, SceneResourceCatalog, SceneSerializationSupport, UnknownResourcePolicy`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
+| `./text-node.js`            | `TextOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
+| `./compute-pass.js`         | `ComputePassBindingEntry, ComputePassBindings, ComputePassOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export (type-only) |
+| `./gltf.js`                 | `GltfInstance`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./manifest-catalog.js`     | `PreloadManifestIntoCatalogOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+
+**Exports:**
+
+- Re-exports: `Application`, `readLiveResourceCounts`, `ASSET_LOADERS`, `COMPONENT_SERIALIZERS`, `COMPUTE_WORKLOADS`, `EDITOR_TOOLS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `SCENE_MIGRATIONS`, `SHADER_OPERATORS`, `SIMULATION_SYSTEMS`, `PATH_PLANNERS`, `SOLVER_REGISTRY`, `UI_CONTROLS`, `EditorToolRegistry`, `BUTTON_NODE_TYPE`, `CHECKBOX_NODE_TYPE`, `CIRCLE_NODE_TYPE`, `DIRECTIONAL_LIGHT_NODE_TYPE`, `HEMISPHERE_LIGHT_NODE_TYPE`, `ELLIPSE_NODE_TYPE`, `IMAGE_NODE_TYPE`, `LABEL_NODE_TYPE`, `ORTHOGRAPHIC_CAMERA_NODE_TYPE`, `PANEL_NODE_TYPE`, `PATH_SHAPE_NODE_TYPE`, `PERSPECTIVE_CAMERA_NODE_TYPE`, `POINT_LIGHT_NODE_TYPE`, `POLYGON_NODE_TYPE`, `PROGRESS_NODE_TYPE`, `RADIO_BUTTON_NODE_TYPE`, `RECTANGLE_NODE_TYPE`, `REGULAR_POLYGON_NODE_TYPE`, `RENDERABLE_NODE_TYPE`, `RING_NODE_TYPE`, `SECTOR_NODE_TYPE`, `SLIDER_NODE_TYPE`, `SPOT_LIGHT_NODE_TYPE`, `SPRITE_NODE_TYPE`, `STAR_NODE_TYPE`, `TEXT_NODE_TYPE`, `TOGGLE_NODE_TYPE`, `composeSceneNodeTypes`, `registerPhysicsSerializers`, `registerRenderSerializers`, `registerSceneNodeTypes`, `registerShapeSerializers`, `registerTextSerializers`, `registerUISerializers`, `resourceCatalog`, `restoreNodeId`, `Text`, `ComputePass`, `instantiateGltf`, `createPickProvider`, `preloadManifestIntoCatalog`, `ApplicationEventMap`, `ApplicationOptions`, `PhysicsWorldContext`, `PhysicsWorldFactory`, `SurfaceObserver`, `SurfaceResize`, `EditorToolFactory`, `SceneNodeTypeOptions`, `SceneNodeTypeSupport`, `SceneResourceCatalog`, `SceneSerializationSupport`, `UnknownResourcePolicy`, `TextOptions`, `ComputePassBindingEntry`, `ComputePassBindings`, `ComputePassOptions`, `GltfInstance`, `PreloadManifestIntoCatalogOptions`
+
+---
+
+### `packages/fourjs/src/core.ts` - core module
+
+**Workspace Dependencies:**
+
+| Package        | Import |
+| -------------- | ------ |
+| `@fourjs/core` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/core`
+
+---
+
+### `packages/fourjs/src/render-webgpu.ts` - render-webgpu module
+
+**Workspace Dependencies:**
+
+| Package                 | Import |
+| ----------------------- | ------ |
+| `@fourjs/render-webgpu` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/render-webgpu`
+
+---
+
+### `packages/fourjs/src/render-svg.ts` - render-svg module
+
+**Workspace Dependencies:**
+
+| Package              | Import |
+| -------------------- | ------ |
+| `@fourjs/render-svg` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/render-svg`
+
+---
+
+### `packages/fourjs/src/input.ts` - input module
+
+**Workspace Dependencies:**
+
+| Package         | Import |
+| --------------- | ------ |
+| `@fourjs/input` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/input`
+
+---
+
+### `packages/fourjs/src/motion.ts` - motion module
+
+**Workspace Dependencies:**
+
+| Package          | Import |
+| ---------------- | ------ |
+| `@fourjs/motion` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/motion`
+
+---
+
+### `packages/fourjs/src/manifest-catalog.ts` - Preload a §79 manifest into a synchronous {@link SceneResourceCatalog}
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                            |
+| ---------------- | --------------------------------------------------------------------------------- |
+| `@fourjs/assets` | `loadFromManifest, AssetLoader, AssetManager, AssetManifest, ManifestLoadOptions` |
+
+**Internal Dependencies:**
+
+| File                     | Imports                                 | Type   |
+| ------------------------ | --------------------------------------- | ------ |
+| `./scene-serializers.js` | `resourceCatalog, SceneResourceCatalog` | Import |
+
+**Exports:**
+
+- Interfaces: `PreloadManifestIntoCatalogOptions`
+- Functions: `preloadManifestIntoCatalog`, `preloadManifestIntoCatalog`, `preloadManifestIntoCatalog`
+
+---
+
+### `packages/fourjs/src/text.ts` - text module
+
+**Workspace Dependencies:**
+
+| Package        | Import |
+| -------------- | ------ |
+| `@fourjs/text` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/text`
+
+---
+
+### `packages/fourjs/src/assets.ts` - assets module
+
+**Workspace Dependencies:**
+
+| Package          | Import |
+| ---------------- | ------ |
+| `@fourjs/assets` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/assets`
+
+---
+
+### `packages/fourjs/src/ui.ts` - ui module
+
+**Workspace Dependencies:**
+
+| Package      | Import |
+| ------------ | ------ |
+| `@fourjs/ui` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/ui`
+
+---
+
+### `packages/fourjs/src/particles.ts` - particles module
+
+**Workspace Dependencies:**
+
+| Package             | Import |
+| ------------------- | ------ |
+| `@fourjs/particles` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/particles`
+
+---
+
+### `packages/fourjs/src/physics-soft.ts` - physics-soft module
+
+**Workspace Dependencies:**
+
+| Package                | Import |
+| ---------------------- | ------ |
+| `@fourjs/physics-soft` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/physics-soft`
+
+---
+
+### `packages/fourjs/src/serialization.ts` - serialization module
+
+**Workspace Dependencies:**
+
+| Package                 | Import |
+| ----------------------- | ------ |
+| `@fourjs/serialization` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/serialization`
+
+---
+
+### `packages/fourjs/src/render-canvas.ts` - render-canvas module
+
+**Workspace Dependencies:**
+
+| Package                 | Import |
+| ----------------------- | ------ |
+| `@fourjs/render-canvas` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/render-canvas`
+
+---
+
+### `packages/fourjs/src/scene.ts` - scene module
+
+**Workspace Dependencies:**
+
+| Package         | Import |
+| --------------- | ------ |
+| `@fourjs/scene` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/scene`
+
+---
+
+### `packages/fourjs/src/geometry.ts` - geometry module
+
+**Workspace Dependencies:**
+
+| Package            | Import |
+| ------------------ | ------ |
+| `@fourjs/geometry` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/geometry`
+
+---
+
+### `packages/fourjs/src/render.ts` - render module
+
+**Workspace Dependencies:**
+
+| Package          | Import |
+| ---------------- | ------ |
+| `@fourjs/render` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/render`
+
+---
+
+### `packages/fourjs/src/render-webgl.ts` - render-webgl module
+
+**Workspace Dependencies:**
+
+| Package                | Import |
+| ---------------------- | ------ |
+| `@fourjs/render-webgl` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/render-webgl`
+
+---
+
+### `packages/fourjs/src/pick-provider.ts` - The four-line adapter RFC 0005 §2 promised (§71, §45; 2026-08-28): a
+
+**Workspace Dependencies:**
+
+| Package          | Import           |
+| ---------------- | ---------------- |
+| `@fourjs/input`  | `PickProvider`   |
+| `@fourjs/render` | `PickingService` |
+| `@fourjs/scene`  | `Viewport`       |
+
+**Exports:**
+
+- Functions: `createPickProvider`
+
+---
+
+### `packages/fourjs/src/math.ts` - math module
+
+**Workspace Dependencies:**
+
+| Package        | Import |
+| -------------- | ------ |
+| `@fourjs/math` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/math`
+
+---
+
+### `packages/fourjs/src/diagnostics.ts` - diagnostics module
+
+**Workspace Dependencies:**
+
+| Package               | Import |
+| --------------------- | ------ |
+| `@fourjs/diagnostics` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/diagnostics`
+
+---
+
+### `packages/fourjs/src/text-node.ts` - `Text` (§49, §56) — a string, a font atlas and a material become **one** draw
+
+**Workspace Dependencies:**
+
+| Package             | Import                                          |
+| ------------------- | ----------------------------------------------- |
+| `@fourjs/text`      | `TextLayoutOptions`                             |
+| `@fourjs/geometry`  | `BufferGeometry`                                |
+| `@fourjs/materials` | `UnlitMaterial`                                 |
+| `@fourjs/render`    | `Renderable, RenderableOptions`                 |
+| `@fourjs/text`      | `layoutText, GlyphAtlas, TextAlign, TextLayout` |
+| `@fourjs/core`      | `Disposable`                                    |
+
+**Exports:**
+
+- Classes: `Text`
+- Interfaces: `TextOptions`
+
+---
+
+### `packages/fourjs/src/live-resource-counts.ts` - Aggregates §83 live-resource counts for `auditResourceLeaks`.
+
+**Workspace Dependencies:**
+
+| Package               | Import                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `@fourjs/diagnostics` | `LiveResourceCounts`                                                                        |
+| `@fourjs/geometry`    | `geometryMemoryBytes, liveGeometryCount`                                                    |
+| `@fourjs/materials`   | `liveMaterialCount`                                                                         |
+| `@fourjs/physics`     | `liveSolverBodyCount, liveSolverColliderCount, liveSolverHandleCount, liveSolverJointCount` |
+| `@fourjs/render`      | `liveRenderTargetCount, liveTextureCount, textureMemoryBytes`                               |
+
+**Exports:**
+
+- Functions: `readLiveResourceCounts`
+
+---
+
+### `packages/fourjs/src/materials.ts` - materials module
+
+**Workspace Dependencies:**
+
+| Package             | Import |
+| ------------------- | ------ |
+| `@fourjs/materials` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/materials`
+
+---
+
+### `packages/fourjs/src/editor-tools.ts` - The §81 editor-tool registry — a named map of tool factories the **host**
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Exports:**
+
+- Classes: `EditorToolRegistry`
+- Types: `EditorToolFactory`
+
+---
+
+### `packages/fourjs/src/scene-serializers.ts` - §79 node types and component serializers for the classes the engine itself
+
+**Workspace Dependencies:**
+
+| Package                 | Import                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@fourjs/core`          | `FourError, JsonValue`                                                                                                                                                                                                                                                                                                                                             |
+| `@fourjs/geometry`      | `Path, BufferGeometry, Point2D`                                                                                                                                                                                                                                                                                                                                    |
+| `@fourjs/materials`     | `Material, MaterialTexture, SpriteMaterial, UnlitMaterial`                                                                                                                                                                                                                                                                                                         |
+| `@fourjs/motion`        | `CAMERA_SHAKE_SERIALIZER, CHARACTER_CONTROLLER_SERIALIZER, CameraShake, CharacterController, FIRST_PERSON_LOOK_SERIALIZER, FOLLOW_RIG_SERIALIZER, FirstPersonLook, FollowRig, KINEMATIC_CONTROLLER_SERIALIZER, KinematicController, LOOK_AT_CONSTRAINT_SERIALIZER, LookAtConstraint, MOTION_COMPONENT_SERIALIZER, MotionComponent, ORBIT_RIG_SERIALIZER, OrbitRig` |
+| `@fourjs/physics`       | `COLLIDER_SERIALIZER, Collider, RIGID_BODY_SERIALIZER, RigidBody, SWEPT_CHARACTER_CONTROLLER_SERIALIZER, SweptCharacterController`                                                                                                                                                                                                                                 |
+| `@fourjs/render`        | `Arc, Circle, Ellipse, Line, Mesh, PathShape, Polygon, Polyline, Rectangle, RegularPolygon, Renderable, Ring, Sector, Shape2D, Sprite, Star, resolveShapePaintSupport, restoreMeshSkeleton`                                                                                                                                                                        |
+| `@fourjs/render`        | `GradientStop, Paint, ResolvedPaint, ResolvedShapeFill, ResolvedStrokeStyle, ScissorRect`                                                                                                                                                                                                                                                                          |
+| `@fourjs/scene`         | `Bone, DirectionalLight, HemisphereLight, MORPH_WEIGHTS_SERIALIZER, MorphWeights, NODE_SPACE_SERIALIZER, NodeSpace, OrthographicCamera, PerspectiveCamera, PointLight, SCREEN_ORIGINS, SCREEN_UNITS, ScreenCamera, SpotLight, restoreNodeId, HitTestMode, Node`                                                                                                    |
+| `@fourjs/serialization` | `ComponentSerializerRegistry, createDefaultComponentSerializers, InstantiateSceneOptions, SceneNodeDocument, SerializeSceneOptions`                                                                                                                                                                                                                                |
+| `@fourjs/text`          | `GlyphAtlas, TextAlign`                                                                                                                                                                                                                                                                                                                                            |
+| `@fourjs/ui`            | `Button, CanvasViewWidget, Checkbox, ImageWidget, Label, Panel, ProgressIndicator, RadioButton, Slider, Toggle, UIWidget, CheckableWidget, UIWidgetOptions, WidgetAccessibility`                                                                                                                                                                                   |
+
+**Internal Dependencies:**
+
+| File             | Imports | Type   |
+| ---------------- | ------- | ------ |
+| `./text-node.js` | `Text`  | Import |
+
+**Exports:**
+
+- Interfaces: `SceneResourceCatalog`, `SceneNodeTypeOptions`, `SceneNodeTypeSupport`, `SceneSerializationSupport`
+- Types: `UnknownResourcePolicy`
+- Functions: `resourceCatalog`, `registerUISerializers`, `registerRenderSerializers`, `registerShapeSerializers`, `registerTextSerializers`, `composeSceneNodeTypes`, `registerPhysicsSerializers`, `registerSceneNodeTypes`
+- Constants: `PANEL_NODE_TYPE`, `LABEL_NODE_TYPE`, `BUTTON_NODE_TYPE`, `TOGGLE_NODE_TYPE`, `CHECKBOX_NODE_TYPE`, `RADIO_BUTTON_NODE_TYPE`, `SLIDER_NODE_TYPE`, `PROGRESS_NODE_TYPE`, `IMAGE_NODE_TYPE`, `CANVAS_VIEW_NODE_TYPE`, `RENDERABLE_NODE_TYPE`, `SPRITE_NODE_TYPE`, `MESH_NODE_TYPE`, `BONE_NODE_TYPE`, `TEXT_NODE_TYPE`, `PERSPECTIVE_CAMERA_NODE_TYPE`, `ORTHOGRAPHIC_CAMERA_NODE_TYPE`, `SCREEN_CAMERA_NODE_TYPE`, `DIRECTIONAL_LIGHT_NODE_TYPE`, `POINT_LIGHT_NODE_TYPE`, `SPOT_LIGHT_NODE_TYPE`, `HEMISPHERE_LIGHT_NODE_TYPE`, `CIRCLE_NODE_TYPE`, `ELLIPSE_NODE_TYPE`, `RECTANGLE_NODE_TYPE`, `REGULAR_POLYGON_NODE_TYPE`, `POLYGON_NODE_TYPE`, `STAR_NODE_TYPE`, `SECTOR_NODE_TYPE`, `RING_NODE_TYPE`, `PATH_SHAPE_NODE_TYPE`, `LINE_NODE_TYPE`, `POLYLINE_NODE_TYPE`, `ARC_NODE_TYPE`
+
+---
+
+### `packages/fourjs/src/animation.ts` - animation module
+
+**Workspace Dependencies:**
+
+| Package             | Import |
+| ------------------- | ------ |
+| `@fourjs/animation` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/animation`
+
+---
+
+### `packages/fourjs/src/physics-rapier.ts` - physics-rapier module
+
+**Workspace Dependencies:**
+
+| Package                  | Import |
+| ------------------------ | ------ |
+| `@fourjs/physics-rapier` | `*`    |
+
+**Exports:**
+
+- Re-exports: `* from @fourjs/physics-rapier`
 
 ---
 
@@ -6976,25 +7428,26 @@ graph LR
 
 ---
 
-### `packages/serialization/src/format.ts` - The §79 scene document — its types, its JSON encoding, and its canonical
+### `packages/serialization/src/migration.ts` - Scene migration (§80) — the registry of upgrade steps and the chain runner
 
 **Workspace Dependencies:**
 
-| Package         | Import                                                                          |
-| --------------- | ------------------------------------------------------------------------------- |
-| `@fourjs/core`  | `FourError, cloneJsonValue, parseUntrustedJson, JsonValue, UntrustedJsonLimits` |
-| `@fourjs/scene` | `DEFAULT_TRANSFORM_AUTHORITY, TRANSFORM_AUTHORITIES, TransformAuthority`        |
-| `@fourjs/core`  | `cloneJsonValue`                                                                |
-| `@fourjs/core`  | `JsonValue`                                                                     |
-| `@fourjs/core`  | `UntrustedJsonLimits`                                                           |
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File          | Imports                                                                                | Type   |
+| ------------- | -------------------------------------------------------------------------------------- | ------ |
+| `./format.js` | `SCENE_FORMAT_VERSION, asJsonObject, validateSceneDocument, JsonObject, SceneDocument` | Import |
 
 **Exports:**
 
-- Interfaces: `Vector3Document`, `QuaternionDocument`, `TransformDocument`, `ComponentDocument`, `SceneNodeDocument`, `SceneDocument`
-- Types: `JsonObject`
-- Functions: `validateVector3Document`, `validateQuaternionDocument`, `isJsonArray`, `isJsonObject`, `asJsonObject`, `validateSceneDocument`, `encodeSceneDocument`, `decodeSceneDocument`
-- Constants: `SCENE_FORMAT_VERSION`
-- Re-exports: `cloneJsonValue`, `JsonValue`, `UntrustedJsonLimits`
+- Classes: `SceneMigrationRegistry`
+- Interfaces: `SceneMigrationContext`, `SceneMigrationWarning`, `MigrateSceneDocumentOptions`
+- Types: `SceneMigration`
+- Functions: `runSceneMigrations`, `migrateSceneDocument`
 
 ---
 
@@ -7019,26 +7472,25 @@ graph LR
 
 ---
 
-### `packages/serialization/src/migration.ts` - Scene migration (§80) — the registry of upgrade steps and the chain runner
+### `packages/serialization/src/format.ts` - The §79 scene document — its types, its JSON encoding, and its canonical
 
 **Workspace Dependencies:**
 
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File          | Imports                                                                                | Type   |
-| ------------- | -------------------------------------------------------------------------------------- | ------ |
-| `./format.js` | `SCENE_FORMAT_VERSION, asJsonObject, validateSceneDocument, JsonObject, SceneDocument` | Import |
+| Package         | Import                                                                          |
+| --------------- | ------------------------------------------------------------------------------- |
+| `@fourjs/core`  | `FourError, cloneJsonValue, parseUntrustedJson, JsonValue, UntrustedJsonLimits` |
+| `@fourjs/scene` | `DEFAULT_TRANSFORM_AUTHORITY, TRANSFORM_AUTHORITIES, TransformAuthority`        |
+| `@fourjs/core`  | `cloneJsonValue`                                                                |
+| `@fourjs/core`  | `JsonValue`                                                                     |
+| `@fourjs/core`  | `UntrustedJsonLimits`                                                           |
 
 **Exports:**
 
-- Classes: `SceneMigrationRegistry`
-- Interfaces: `SceneMigrationContext`, `SceneMigrationWarning`, `MigrateSceneDocumentOptions`
-- Types: `SceneMigration`
-- Functions: `runSceneMigrations`, `migrateSceneDocument`
+- Interfaces: `Vector3Document`, `QuaternionDocument`, `TransformDocument`, `ComponentDocument`, `SceneNodeDocument`, `SceneDocument`
+- Types: `JsonObject`
+- Functions: `validateVector3Document`, `validateQuaternionDocument`, `isJsonArray`, `isJsonObject`, `asJsonObject`, `validateSceneDocument`, `encodeSceneDocument`, `decodeSceneDocument`
+- Constants: `SCENE_FORMAT_VERSION`
+- Re-exports: `cloneJsonValue`, `JsonValue`, `UntrustedJsonLimits`
 
 ---
 
@@ -7068,457 +7520,6 @@ graph LR
 
 ---
 
-<a id="packages-text-dependencies"></a>
-
-## Packages/text Dependencies
-
-### `packages/text/src/bitmap-font.ts` - A built-in, dependency-free monospace bitmap font (§56 MVP tier).
-
-**Exports:**
-
-- Interfaces: `BitmapGlyph`, `BitmapFont`, `BitmapFontOptions`
-- Functions: `createBitmapFont`, `glyphFor`, `glyphPixel`, `glyphToAscii`
-- Constants: `BUILTIN_FONT`
-
----
-
-### `packages/text/src/glyph-atlas.ts` - `buildGlyphAtlas` (§56 MVP tier) — every glyph of a {@link BitmapFont} packed
-
-**Internal Dependencies:**
-
-| File               | Imports                    | Type               |
-| ------------------ | -------------------------- | ------------------ |
-| `./bitmap-font.js` | `BitmapFont, BitmapGlyph`  | Import (type-only) |
-| `./bitmap-font.js` | `BUILTIN_FONT, glyphPixel` | Import             |
-
-**Exports:**
-
-- Interfaces: `GlyphAtlasEntry`, `GlyphAtlas`, `GlyphAtlasOptions`
-- Functions: `buildGlyphAtlas`
-
----
-
-### `packages/text/src/index.ts` - `@fourjs/text` — bitmap text at §56's MVP tier.
-
-**Internal Dependencies:**
-
-| File               | Imports                                                                | Type                  |
-| ------------------ | ---------------------------------------------------------------------- | --------------------- |
-| `./bitmap-font.js` | `BUILTIN_FONT, createBitmapFont, glyphFor, glyphPixel, glyphToAscii`   | Re-export             |
-| `./glyph-atlas.js` | `buildGlyphAtlas`                                                      | Re-export             |
-| `./text-layout.js` | `layoutText`                                                           | Re-export             |
-| `./line-break.js`  | `canBreakAfter, canBreakBefore, lineBreakOpportunity, wrapToWidth`     | Re-export             |
-| `./shaping.js`     | `IdentityShapingEngine, DEFAULT_MAXIMUM_FONT_BYTES, validateFontBytes` | Re-export             |
-| `./bitmap-font.js` | `BitmapFont, BitmapFontOptions, BitmapGlyph`                           | Re-export (type-only) |
-| `./glyph-atlas.js` | `GlyphAtlas, GlyphAtlasEntry, GlyphAtlasOptions`                       | Re-export (type-only) |
-| `./text-layout.js` | `TextAlign, TextLayout, TextLayoutOptions, TextQuad`                   | Re-export (type-only) |
-| `./line-break.js`  | `LineBreakOpportunity, Wrappable`                                      | Re-export (type-only) |
-| `./shaping.js`     | `ShapingDirection, ShapedGlyph, ShapedRun, ShapeQuery, ShapingEngine`  | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `BUILTIN_FONT`, `createBitmapFont`, `glyphFor`, `glyphPixel`, `glyphToAscii`, `buildGlyphAtlas`, `layoutText`, `canBreakAfter`, `canBreakBefore`, `lineBreakOpportunity`, `wrapToWidth`, `IdentityShapingEngine`, `DEFAULT_MAXIMUM_FONT_BYTES`, `validateFontBytes`, `BitmapFont`, `BitmapFontOptions`, `BitmapGlyph`, `GlyphAtlas`, `GlyphAtlasEntry`, `GlyphAtlasOptions`, `TextAlign`, `TextLayout`, `TextLayoutOptions`, `TextQuad`, `LineBreakOpportunity`, `Wrappable`, `ShapingDirection`, `ShapedGlyph`, `ShapedRun`, `ShapeQuery`, `ShapingEngine`
-
----
-
-### `packages/text/src/line-break.ts` - UAX #14-lite line breaking for {@link layoutText}'s `wrapWidth` packet
-
-**Exports:**
-
-- Interfaces: `Wrappable`
-- Types: `LineBreakOpportunity`
-- Functions: `lineBreakOpportunity`, `canBreakAfter`, `canBreakBefore`, `wrapToWidth`
-
----
-
-### `packages/text/src/shaping.ts` - shaping module
-
-**Workspace Dependencies:**
-
-| Package        | Import                  |
-| -------------- | ----------------------- |
-| `@fourjs/core` | `FourError, Disposable` |
-
-**Exports:**
-
-- Classes: `IdentityShapingEngine`
-- Interfaces: `ShapedGlyph`, `ShapedRun`, `ShapeQuery`, `ShapingEngine`
-- Types: `ShapingDirection`
-- Functions: `validateFontBytes`, `validateShapingDirection`
-- Constants: `DEFAULT_MAXIMUM_FONT_BYTES`
-
----
-
-### `packages/text/src/text-layout.ts` - `layoutText` (§56 MVP tier) — a string plus a {@link GlyphAtlas} becomes a
-
-**Internal Dependencies:**
-
-| File               | Imports                                                  | Type               |
-| ------------------ | -------------------------------------------------------- | ------------------ |
-| `./shaping.js`     | `IdentityShapingEngine, ShapingEngine, ShapingDirection` | Import             |
-| `./glyph-atlas.js` | `GlyphAtlas, GlyphAtlasEntry`                            | Import (type-only) |
-| `./line-break.js`  | `canBreakAfter, canBreakBefore, wrapToWidth, Wrappable`  | Import             |
-
-**Exports:**
-
-- Interfaces: `TextQuad`, `TextLayoutOptions`, `TextLayout`
-- Types: `TextAlign`
-- Functions: `layoutText`
-
----
-
-<a id="packages-ui-dependencies"></a>
-
-## Packages/ui Dependencies
-
-### `packages/ui/src/accessibility.ts` - §75's hidden DOM accessibility mirror (2026-09-06, A-13 remainder).
-
-**Workspace Dependencies:**
-
-| Package         | Import                    |
-| --------------- | ------------------------- |
-| `@fourjs/core`  | `Disposable, Unsubscribe` |
-| `@fourjs/scene` | `Node`                    |
-
-**Internal Dependencies:**
-
-| File             | Imports                                                    | Type   |
-| ---------------- | ---------------------------------------------------------- | ------ |
-| `./button.js`    | `Button`                                                   | Import |
-| `./checkable.js` | `Checkbox, Toggle`                                         | Import |
-| `./progress.js`  | `ProgressIndicator`                                        | Import |
-| `./radio.js`     | `RadioButton`                                              | Import |
-| `./slider.js`    | `Slider`                                                   | Import |
-| `./widget.js`    | `registerAccessibilitySync, UIWidget, WidgetAccessibility` | Import |
-
-**Exports:**
-
-- Interfaces: `DocumentLike`, `ElementStyleLike`, `ElementLike`, `AccessibilityMirrorOptions`, `AccessibilityMirror`
-- Types: `AccessibilityMirrorRoot`
-- Functions: `prefersReducedMotion`, `installAccessibilityMirror`, `accessibilityElementId`
-
----
-
-### `packages/ui/src/button.ts` - `Button` (§73) — the one control in this MVP that _does_ something: a §72
-
-**Workspace Dependencies:**
-
-| Package         | Import                             |
-| --------------- | ---------------------------------- |
-| `@fourjs/input` | `ScenePointerEvent, SceneKeyEvent` |
-
-**Internal Dependencies:**
-
-| File          | Imports                  | Type               |
-| ------------- | ------------------------ | ------------------ |
-| `./panel.js`  | `Panel, PanelOptions`    | Import             |
-| `./widget.js` | `WidgetActivationSource` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `Button`
-- Types: `ButtonOptions`
-
----
-
-### `packages/ui/src/canvas-view.ts` - `CanvasViewWidget` (§73's "canvas view"; RFC 0004, accepted 2026-08-21) — a
-
-**Internal Dependencies:**
-
-| File           | Imports                     | Type   |
-| -------------- | --------------------------- | ------ |
-| `./numbers.js` | `requireFinite`             | Import |
-| `./widget.js`  | `UIWidget, UIWidgetOptions` | Import |
-
-**Exports:**
-
-- Classes: `CanvasViewWidget`
-- Interfaces: `CanvasViewWidgetOptions`
-
----
-
-### `packages/ui/src/capabilities.ts` - This package's §81 capability token (RFC 0002).
-
-**Workspace Dependencies:**
-
-| Package        | Import             |
-| -------------- | ------------------ |
-| `@fourjs/core` | `defineCapability` |
-
-**Internal Dependencies:**
-
-| File                    | Imports             | Type               |
-| ----------------------- | ------------------- | ------------------ |
-| `./control-registry.js` | `UIControlRegistry` | Import (type-only) |
-
-**Exports:**
-
-- Constants: `UI_CONTROLS`
-
----
-
-### `packages/ui/src/checkable.ts` - `Toggle` and `Checkbox` (§73), over the checkable base they share
-
-**Internal Dependencies:**
-
-| File          | Imports                 | Type   |
-| ------------- | ----------------------- | ------ |
-| `./button.js` | `Button, ButtonOptions` | Import |
-
-**Exports:**
-
-- Classes: `Toggle`, `Checkbox`
-- Interfaces: `CheckableWidgetOptions`
-- Types: `ToggleOptions`, `CheckboxOptions`
-
----
-
-### `packages/ui/src/control-registry.ts` - The §81 UI-control registry — a named map of widget constructors a host
-
-**Workspace Dependencies:**
-
-| Package        | Import      |
-| -------------- | ----------- |
-| `@fourjs/core` | `FourError` |
-
-**Internal Dependencies:**
-
-| File          | Imports    | Type               |
-| ------------- | ---------- | ------------------ |
-| `./widget.js` | `UIWidget` | Import (type-only) |
-
-**Exports:**
-
-- Classes: `UIControlRegistry`
-- Types: `UIControlConstructor`
-
----
-
-### `packages/ui/src/image.ts` - `ImageWidget` (§73's "image") — a box, a source key, and an intrinsic size
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector2` |
-
-**Internal Dependencies:**
-
-| File           | Imports                     | Type   |
-| -------------- | --------------------------- | ------ |
-| `./numbers.js` | `requireNonNegative`        | Import |
-| `./widget.js`  | `UIWidget, UIWidgetOptions` | Import |
-
-**Exports:**
-
-- Classes: `ImageWidget`
-- Interfaces: `ImageWidgetOptions`
-
----
-
-### `packages/ui/src/index.ts` - `@fourjs/ui` — retained-mode UI at §113a's MVP tier (§73–§75).
-
-**Internal Dependencies:**
-
-| File                    | Imports                                                                                                                                                                                                           | Type                  |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./capabilities.js`     | `UI_CONTROLS`                                                                                                                                                                                                     | Re-export             |
-| `./control-registry.js` | `UIControlRegistry`                                                                                                                                                                                               | Re-export             |
-| `./accessibility.js`    | `accessibilityElementId, installAccessibilityMirror, prefersReducedMotion`                                                                                                                                        | Re-export             |
-| `./button.js`           | `Button`                                                                                                                                                                                                          | Re-export             |
-| `./canvas-view.js`      | `CanvasViewWidget`                                                                                                                                                                                                | Re-export             |
-| `./checkable.js`        | `CheckableWidget, Checkbox, Toggle`                                                                                                                                                                               | Re-export             |
-| `./image.js`            | `ImageWidget`                                                                                                                                                                                                     | Re-export             |
-| `./keyboard.js`         | `collectFocusOrder, installKeyboardTraversal, keyboardFocusTarget`                                                                                                                                                | Re-export             |
-| `./label.js`            | `Label`                                                                                                                                                                                                           | Re-export             |
-| `./panel.js`            | `Panel`                                                                                                                                                                                                           | Re-export             |
-| `./progress.js`         | `ProgressIndicator`                                                                                                                                                                                               | Re-export             |
-| `./radio.js`            | `RadioButton, checkedRadio, collectRadioGroup`                                                                                                                                                                    | Re-export             |
-| `./slider.js`           | `Slider`                                                                                                                                                                                                          | Re-export             |
-| `./widget.js`           | `Insets, UIWidget, UI_LAYOUT_AUTHORITY, UI_STAGED, applyInsets, collectPickables, focusedWidget, isUIWidget, registerAccessibilitySync`                                                                           | Re-export             |
-| `./control-registry.js` | `UIControlConstructor`                                                                                                                                                                                            | Re-export (type-only) |
-| `./accessibility.js`    | `AccessibilityMirror, AccessibilityMirrorOptions, AccessibilityMirrorRoot, DocumentLike, ElementLike, ElementStyleLike`                                                                                           | Re-export (type-only) |
-| `./button.js`           | `ButtonOptions`                                                                                                                                                                                                   | Re-export (type-only) |
-| `./canvas-view.js`      | `CanvasViewWidgetOptions`                                                                                                                                                                                         | Re-export (type-only) |
-| `./checkable.js`        | `CheckableWidgetOptions, CheckboxOptions, ToggleOptions`                                                                                                                                                          | Re-export (type-only) |
-| `./image.js`            | `ImageWidgetOptions`                                                                                                                                                                                              | Re-export (type-only) |
-| `./keyboard.js`         | `KeyboardTraversalOptions`                                                                                                                                                                                        | Re-export (type-only) |
-| `./label.js`            | `LabelOptions`                                                                                                                                                                                                    | Re-export (type-only) |
-| `./panel.js`            | `LayoutAlign, LayoutDirection, LayoutJustify, LayoutType, PanelLayout, PanelOptions`                                                                                                                              | Re-export (type-only) |
-| `./progress.js`         | `ProgressIndicatorOptions`                                                                                                                                                                                        | Re-export (type-only) |
-| `./radio.js`            | `RadioButtonOptions`                                                                                                                                                                                              | Re-export (type-only) |
-| `./slider.js`           | `SliderOptions, SliderOrientation`                                                                                                                                                                                | Re-export (type-only) |
-| `./widget.js`           | `AccessibilitySync, InsetsInit, UIFocusEvent, UIWidgetOptions, WidgetAccessibility, WidgetActivateEvent, WidgetActivationSource, WidgetSkin, WidgetStateChangeEvent, WidgetStateSnapshot, WidgetValueChangeEvent` | Re-export (type-only) |
-
-**Exports:**
-
-- Constants: `PACKAGE_NAME`
-- Re-exports: `UI_CONTROLS`, `UIControlRegistry`, `accessibilityElementId`, `installAccessibilityMirror`, `prefersReducedMotion`, `Button`, `CanvasViewWidget`, `CheckableWidget`, `Checkbox`, `Toggle`, `ImageWidget`, `collectFocusOrder`, `installKeyboardTraversal`, `keyboardFocusTarget`, `Label`, `Panel`, `ProgressIndicator`, `RadioButton`, `checkedRadio`, `collectRadioGroup`, `Slider`, `Insets`, `UIWidget`, `UI_LAYOUT_AUTHORITY`, `UI_STAGED`, `applyInsets`, `collectPickables`, `focusedWidget`, `isUIWidget`, `registerAccessibilitySync`, `UIControlConstructor`, `AccessibilityMirror`, `AccessibilityMirrorOptions`, `AccessibilityMirrorRoot`, `DocumentLike`, `ElementLike`, `ElementStyleLike`, `ButtonOptions`, `CanvasViewWidgetOptions`, `CheckableWidgetOptions`, `CheckboxOptions`, `ToggleOptions`, `ImageWidgetOptions`, `KeyboardTraversalOptions`, `LabelOptions`, `LayoutAlign`, `LayoutDirection`, `LayoutJustify`, `LayoutType`, `PanelLayout`, `PanelOptions`, `ProgressIndicatorOptions`, `RadioButtonOptions`, `SliderOptions`, `SliderOrientation`, `AccessibilitySync`, `InsetsInit`, `UIFocusEvent`, `UIWidgetOptions`, `WidgetAccessibility`, `WidgetActivateEvent`, `WidgetActivationSource`, `WidgetSkin`, `WidgetStateChangeEvent`, `WidgetStateSnapshot`, `WidgetValueChangeEvent`
-
----
-
-### `packages/ui/src/keyboard.ts` - §75's keyboard navigation: Tab traversal over a widget tree (2026-08-07,
-
-**Workspace Dependencies:**
-
-| Package         | Import          |
-| --------------- | --------------- |
-| `@fourjs/core`  | `Unsubscribe`   |
-| `@fourjs/input` | `SceneKeyEvent` |
-| `@fourjs/scene` | `Node`          |
-
-**Internal Dependencies:**
-
-| File          | Imports                   | Type   |
-| ------------- | ------------------------- | ------ |
-| `./widget.js` | `UIWidget, focusedWidget` | Import |
-
-**Exports:**
-
-- Interfaces: `KeyboardTraversalOptions`
-- Functions: `collectFocusOrder`, `keyboardFocusTarget`, `installKeyboardTraversal`
-
----
-
-### `packages/ui/src/label.ts` - `Label` (§73) — a widget whose intrinsic size is its text (§74, §56).
-
-**Workspace Dependencies:**
-
-| Package        | Import                               |
-| -------------- | ------------------------------------ |
-| `@fourjs/text` | `TextLayoutOptions`                  |
-| `@fourjs/math` | `Vector2`                            |
-| `@fourjs/text` | `layoutText, GlyphAtlas, TextLayout` |
-
-**Internal Dependencies:**
-
-| File          | Imports                     | Type   |
-| ------------- | --------------------------- | ------ |
-| `./widget.js` | `UIWidget, UIWidgetOptions` | Import |
-
-**Exports:**
-
-- Classes: `Label`
-- Interfaces: `LabelOptions`
-
----
-
-### `packages/ui/src/numbers.ts` - Numeric guards and range arithmetic shared by the §73 controls that carry a
-
-**Exports:**
-
-- Functions: `requireFinite`, `requireNonNegative`, `resolveValue`, `fractionOf`
-
----
-
-### `packages/ui/src/panel.ts` - `Panel` (§73) and the layout engine (§74) — the container widget, and the
-
-**Workspace Dependencies:**
-
-| Package        | Import    |
-| -------------- | --------- |
-| `@fourjs/math` | `Vector2` |
-
-**Internal Dependencies:**
-
-| File          | Imports                                              | Type   |
-| ------------- | ---------------------------------------------------- | ------ |
-| `./widget.js` | `UIWidget, applyInsets, InsetsInit, UIWidgetOptions` | Import |
-
-**Exports:**
-
-- Classes: `Panel`
-- Interfaces: `PanelLayout`, `PanelOptions`
-- Types: `LayoutType`, `LayoutDirection`, `LayoutJustify`, `LayoutAlign`
-
----
-
-### `packages/ui/src/progress.ts` - `ProgressIndicator` (§73) — a value shown, never edited (2026-08-07, A-12).
-
-**Internal Dependencies:**
-
-| File           | Imports                     | Type   |
-| -------------- | --------------------------- | ------ |
-| `./numbers.js` | `fractionOf, requireFinite` | Import |
-| `./panel.js`   | `Panel, PanelOptions`       | Import |
-
-**Exports:**
-
-- Classes: `ProgressIndicator`
-- Interfaces: `ProgressIndicatorOptions`
-
----
-
-### `packages/ui/src/radio.ts` - `RadioButton` (§73's "radio control") and its group mechanism (2026-08-07,
-
-**Workspace Dependencies:**
-
-| Package         | Import          |
-| --------------- | --------------- |
-| `@fourjs/input` | `SceneKeyEvent` |
-| `@fourjs/scene` | `Node`          |
-
-**Internal Dependencies:**
-
-| File             | Imports                                   | Type   |
-| ---------------- | ----------------------------------------- | ------ |
-| `./checkable.js` | `CheckableWidget, CheckableWidgetOptions` | Import |
-
-**Exports:**
-
-- Classes: `RadioButton`
-- Interfaces: `RadioButtonOptions`
-- Functions: `collectRadioGroup`, `checkedRadio`
-
----
-
-### `packages/ui/src/slider.ts` - `Slider` (§73) — a value dragged along a track (§72) or stepped with the
-
-**Workspace Dependencies:**
-
-| Package         | Import                             |
-| --------------- | ---------------------------------- |
-| `@fourjs/input` | `ScenePointerEvent, SceneKeyEvent` |
-| `@fourjs/math`  | `Matrix4, Vector3`                 |
-| `@fourjs/scene` | `resolveWorldTransform`            |
-
-**Internal Dependencies:**
-
-| File           | Imports                                   | Type   |
-| -------------- | ----------------------------------------- | ------ |
-| `./numbers.js` | `fractionOf, requireFinite, resolveValue` | Import |
-| `./panel.js`   | `Panel, PanelOptions`                     | Import |
-
-**Exports:**
-
-- Classes: `Slider`
-- Interfaces: `SliderOptions`
-- Types: `SliderOrientation`
-
----
-
-### `packages/ui/src/widget.ts` - `UIWidget` (§73–§75) — the retained-mode UI layer's base class: a scene node
-
-**Workspace Dependencies:**
-
-| Package         | Import                                                             |
-| --------------- | ------------------------------------------------------------------ |
-| `@fourjs/core`  | `Disposable, Unsubscribe`                                          |
-| `@fourjs/input` | `Pickable, ScenePointerEvent`                                      |
-| `@fourjs/math`  | `Vector2, Vector3`                                                 |
-| `@fourjs/scene` | `Node, runOwnedTransformWrite, warnAuthorityConflict, NodeOptions` |
-
-**Exports:**
-
-- Classes: `Insets`
-- Interfaces: `WidgetStateSnapshot`, `WidgetStateChangeEvent`, `WidgetActivateEvent`, `WidgetValueChangeEvent`, `UIFocusEvent`, `WidgetAccessibility`, `WidgetSkin`, `UIWidgetOptions`
-- Types: `InsetsInit`, `WidgetActivationSource`, `AccessibilitySync`
-- Functions: `applyInsets`, `registerAccessibilitySync`, `focusedWidget`, `isUIWidget`, `collectPickables`
-- Constants: `UI_LAYOUT_AUTHORITY`, `UI_STAGED`
-
----
-
 <a id="dependency-matrix"></a>
 
 ## Dependency Matrix
@@ -7533,39 +7534,39 @@ graph LR
 | `packages/render-webgpu/src/webgpu-renderer`     | 23 files     | 2 files    |
 | `packages/physics/src/index`                     | 24 files     | 0 files    |
 | `packages/motion/src/index`                      | 23 files     | 0 files    |
-| `packages/physics/src/world`                     | 15 files     | 6 files    |
-| `packages/render-webgl/src/gl-program`           | 0 files      | 21 files   |
 | `packages/render-webgl/src/index`                | 21 files     | 0 files    |
+| `packages/render-webgl/src/gl-program`           | 0 files      | 21 files   |
+| `packages/physics/src/world`                     | 15 files     | 6 files    |
 | `packages/render-webgl/src/webgl-renderer`       | 15 files     | 2 files    |
 | `packages/materials/src/index`                   | 16 files     | 0 files    |
-| `packages/physics/src/types`                     | 0 files      | 16 files   |
-| `packages/render-webgpu/src/wgpu-pipeline-cache` | 9 files      | 7 files    |
-| `packages/render-webgpu/src/wgpu-unlit`          | 2 files      | 14 files   |
 | `packages/scene/src/index`                       | 16 files     | 0 files    |
-| `packages/physics/src/descriptors`               | 4 files      | 10 files   |
+| `packages/physics/src/types`                     | 0 files      | 16 files   |
+| `packages/render-webgpu/src/wgpu-unlit`          | 2 files      | 14 files   |
+| `packages/render-webgpu/src/wgpu-pipeline-cache` | 9 files      | 7 files    |
 | `packages/ui/src/index`                          | 14 files     | 0 files    |
+| `packages/physics/src/descriptors`               | 4 files      | 10 files   |
+| `packages/scene/src/node`                        | 4 files      | 9 files    |
 | `packages/animation/src/index`                   | 13 files     | 0 files    |
 | `packages/core/src/index`                        | 13 files     | 0 files    |
-| `packages/scene/src/node`                        | 4 files      | 9 files    |
-| `packages/animation/src/controller`              | 9 files      | 3 files    |
 | `packages/assets/src/index`                      | 12 files     | 0 files    |
 | `packages/render-webgpu/src/wgpu-bindings`       | 1 file       | 11 files   |
-| `packages/diagnostics/src/index`                 | 11 files     | 0 files    |
-| `packages/physics/src/collider`                  | 8 files      | 3 files    |
+| `packages/animation/src/controller`              | 9 files      | 3 files    |
 | `packages/physics/src/rigid-body`                | 4 files      | 7 files    |
+| `packages/physics/src/collider`                  | 8 files      | 3 files    |
 | `packages/render/src/render-target`              | 2 files      | 9 files    |
-| `packages/geometry/src/index`                    | 10 files     | 0 files    |
+| `packages/diagnostics/src/index`                 | 11 files     | 0 files    |
 | `packages/math/src/index`                        | 10 files     | 0 files    |
+| `packages/geometry/src/index`                    | 10 files     | 0 files    |
 | `packages/render/src/render-list`                | 6 files      | 4 files    |
 | `packages/render/src/renderer`                   | 5 files      | 5 files    |
-| `packages/render-webgpu/src/wgpu-lit`            | 5 files      | 5 files    |
 | `packages/render-webgpu/src/wgpu-shadow`         | 4 files      | 6 files    |
-| `packages/fourjs/src/index`                      | 9 files      | 0 files    |
+| `packages/render-webgpu/src/wgpu-lit`            | 5 files      | 5 files    |
+| `packages/ui/src/widget`                         | 0 files      | 9 files    |
 | `packages/math/src/alloc-counter`                | 0 files      | 9 files    |
-| `packages/motion/src/serializers`                | 8 files      | 1 file     |
 | `packages/physics/src/serializers`               | 8 files      | 1 file     |
 | `packages/physics/src/shapes`                    | 1 file       | 8 files    |
 | `packages/render/src/raster`                     | 6 files      | 3 files    |
+| `packages/render-webgpu/src/wgpu-skinning`       | 8 files      | 1 file     |
 | `packages/render-webgpu/src/wgpu-node-program`   | 8 files      | 1 file     |
 
 ---
@@ -7574,23 +7575,25 @@ graph LR
 
 ## Circular Dependency Analysis
 
-**8 circular dependencies detected:**
+**10 circular dependencies detected:**
 
 - **Runtime cycles**: 0 (require attention)
-- **Type-only cycles**: 8 (safe, no runtime impact)
+- **Type-only cycles**: 10 (safe, no runtime impact)
 
 ### Type-Only Circular Dependencies
 
 These cycles only involve type imports and are safe (erased at runtime):
 
-- packages/animation/src/controller.ts -> packages/animation/src/when.ts -> packages/animation/src/controller.ts
-- packages/geometry/src/path.ts -> packages/geometry/src/path-boolean.ts -> packages/geometry/src/path.ts
-- packages/physics/src/solver-registry.ts -> packages/physics/src/world.ts -> packages/physics/src/solver-registry.ts
-- packages/render/src/raster.ts -> packages/render/src/gpu-readback.ts -> packages/render/src/raster.ts
-- packages/render/src/render-target.ts -> packages/render/src/render-target-bytes.ts -> packages/render/src/render-target.ts
-- packages/render/src/renderer.ts -> packages/render/src/picking.ts -> packages/render/src/renderer.ts
-- packages/render-webgl/src/gl-particles-registry.ts -> packages/render-webgl/src/gl-particles.ts -> packages/render-webgl/src/gl-particles-registry.ts
+- packages/math/src/quaternion.ts -> packages/math/src/vector3.ts -> packages/math/src/matrix4.ts -> packages/math/src/quaternion.ts
+- packages/math/src/vector3.ts -> packages/math/src/matrix4.ts -> packages/math/src/vector3.ts
 - packages/scene/src/node.ts -> packages/scene/src/world-transforms.ts -> packages/scene/src/node.ts
+- packages/render-webgl/src/gl-particles.ts -> packages/render-webgl/src/gl-particles-registry.ts -> packages/render-webgl/src/gl-particles.ts
+- packages/physics/src/solver-registry.ts -> packages/physics/src/world.ts -> packages/physics/src/solver-registry.ts
+- packages/geometry/src/path.ts -> packages/geometry/src/path-boolean.ts -> packages/geometry/src/path.ts
+- packages/render/src/render-target.ts -> packages/render/src/render-target-bytes.ts -> packages/render/src/render-target.ts
+- packages/render/src/raster.ts -> packages/render/src/gpu-readback.ts -> packages/render/src/raster.ts
+- packages/render/src/renderer.ts -> packages/render/src/picking.ts -> packages/render/src/renderer.ts
+- packages/animation/src/controller.ts -> packages/animation/src/when.ts -> packages/animation/src/controller.ts
 
 ---
 
@@ -7600,359 +7603,359 @@ These cycles only involve type imports and are safe (erased at runtime):
 
 ```mermaid
 graph TD
-    subgraph Packages/animation
-        N0[animation-system]
-        N1[binding]
-        N2[blend-tree]
-        N3[clip]
-        N4[controller]
-        N5[easing]
-        N6[index]
-        N7[layer-stack]
-        N8[mixer]
-        N9[timeline]
-        N10[...4 more]
-    end
-
-    subgraph Packages/assets
-        N11[asset-manager]
-        N12[bounded-jpeg]
-        N13[bounded-png]
-        N14[capabilities]
-        N15[content-hash]
-        N16[gltf]
-        N17[gzip]
-        N18[image-memory]
-        N19[image-probe]
-        N20[index]
-        N21[...5 more]
-    end
-
-    subgraph Packages/core
-        N22[component]
-        N23[conventions]
-        N24[dev]
-        N25[disposable]
-        N26[errors]
-        N27[events]
-        N28[index]
-        N29[json]
-        N30[leak-registry]
-        N31[plugin]
-        N32[...4 more]
-    end
-
-    subgraph Packages/diagnostics
-        N33[allocation-audit]
-        N34[checksum]
-        N35[debug-draw]
-        N36[index]
-        N37[leak-registry]
-        N38[recorder]
-        N39[replay-format]
-        N40[replay-player]
-        N41[resource-audit]
-        N42[rollback]
-        N43[...2 more]
-    end
-
-    subgraph Packages/fourjs
-        N44[animation]
-        N45[application]
-        N46[assets]
-        N47[capabilities]
-        N48[compute-pass]
-        N49[core]
-        N50[diagnostics]
-        N51[editor-tools]
-        N52[geometry]
-        N53[gltf]
-        N54[...25 more]
-    end
-
-    subgraph Packages/geometry
-        N55[buffer-geometry]
-        N56[cpu-skinning]
-        N57[geometry]
-        N58[index]
-        N59[path-boolean]
-        N60[path]
-        N61[primitive-support]
-        N62[primitives-3d]
-        N63[primitives]
-        N64[resource-memory]
-        N65[...3 more]
-    end
-
-    subgraph Packages/input
-        N66[drag]
-        N67[index]
-        N68[key-events]
-        N69[keyboard-input]
-        N70[keyboard-state]
-        N71[pick]
-        N72[pointer-events]
-        N73[pointer-input]
-        N74[propagation]
+    subgraph Packages/particles
+        N0[particle-renderable]
+        N1[emitter]
+        N2[index]
+        N3[trail]
+        N4[particle-system]
+        N5[fields]
+        N6[random]
+        N7[pool]
+        N8[types]
     end
 
     subgraph Packages/materials
-        N75[capabilities]
-        N76[index]
-        N77[lit-material]
-        N78[material]
-        N79[node-material-builder]
-        N80[node-material]
-        N81[resource-memory]
-        N82[shader-function]
-        N83[shader-graph]
-        N84[shader-operators]
-        N85[...7 more]
-    end
-
-    subgraph Packages/math
-        N86[alloc-counter]
-        N87[color]
-        N88[frustum]
-        N89[index]
-        N90[matrix3]
-        N91[matrix4]
-        N92[quaternion]
-        N93[rectangle2]
-        N94[vector2]
-        N95[vector3]
-        N96[...1 more]
-    end
-
-    subgraph Packages/motion
-        N97[camera-rigs]
-        N98[camera-shake]
-        N99[capabilities]
-        N100[character-controller]
-        N101[clock]
-        N102[constraints]
-        N103[ik]
-        N104[index]
-        N105[integrators]
-        N106[kinematic-controller]
-        N107[...14 more]
-    end
-
-    subgraph Packages/particles
-        N108[emitter]
-        N109[fields]
-        N110[index]
-        N111[particle-renderable]
-        N112[particle-system]
-        N113[pool]
-        N114[random]
-        N115[trail]
-        N116[types]
-    end
-
-    subgraph Packages/physics
-        N117[adapter]
-        N118[body-access]
-        N119[capabilities]
-        N120[collider]
-        N121[descriptors]
-        N122[events]
-        N123[force-field]
-        N124[index]
-        N125[joints]
-        N126[local-plane]
-        N127[...15 more]
-    end
-
-    subgraph Packages/physics-box2d
-        N128[index]
-    end
-
-    subgraph Packages/physics-rapier
-        N129[ccd]
-        N130[conversions2d]
-        N131[conversions3d]
-        N132[index]
-        N133[init]
-        N134[rapier2d-adapter]
-        N135[rapier3d-adapter]
-        N136[register]
-    end
-
-    subgraph Packages/physics-soft
-        N137[index]
-    end
-
-    subgraph Packages/render
-        N138[batch]
-        N139[bounds]
-        N140[capabilities]
-        N141[clip]
-        N142[compute-workloads]
-        N143[compute]
-        N144[effect-pass]
-        N145[gpu-readback]
-        N146[host-texture]
-        N147[index]
-        N148[...24 more]
-    end
-
-    subgraph Packages/render-canvas
-        N149[index]
-    end
-
-    subgraph Packages/render-svg
-        N150[index]
-    end
-
-    subgraph Packages/render-webgl
-        N151[gl-batch]
-        N152[gl-effect-registry]
-        N153[gl-effect]
-        N154[gl-geometry]
-        N155[gl-gpu-timer]
-        N156[gl-node-program]
-        N157[gl-node-uniform-block]
-        N158[gl-particles-registry]
-        N159[gl-particles]
-        N160[gl-picking-registry]
-        N161[...15 more]
-    end
-
-    subgraph Packages/render-webgpu
-        N162[index]
-        N163[register]
-        N164[webgpu-device]
-        N165[webgpu-renderer]
-        N166[wgpu-batch]
-        N167[wgpu-bindings]
-        N168[wgpu-compute]
-        N169[wgpu-effect]
-        N170[wgpu-geometry]
-        N171[wgpu-gpu-timer]
-        N172[...20 more]
-    end
-
-    subgraph Packages/scene
-        N173[authority]
-        N174[camera]
-        N175[group]
-        N176[index]
-        N177[interpolation]
-        N178[layers]
-        N179[light]
-        N180[node-space]
-        N181[node]
-        N182[pose-target]
-        N183[...7 more]
-    end
-
-    subgraph Packages/serialization
-        N184[capabilities]
-        N185[format]
-        N186[index]
-        N187[migration]
-        N188[serializer]
-    end
-
-    subgraph Packages/text
-        N189[bitmap-font]
-        N190[glyph-atlas]
-        N191[index]
-        N192[line-break]
-        N193[shaping]
-        N194[text-layout]
+        N9[capabilities]
+        N10[index]
+        N11[shader-variants]
+        N12[texture]
+        N13[stencil-state]
+        N14[sprite-material]
+        N15[shader-source-map]
+        N16[standard-material]
+        N17[shader-operators]
+        N18[unlit-material]
+        N19[...7 more]
     end
 
     subgraph Packages/ui
-        N195[accessibility]
-        N196[button]
-        N197[canvas-view]
-        N198[capabilities]
-        N199[checkable]
-        N200[control-registry]
-        N201[image]
-        N202[index]
-        N203[keyboard]
-        N204[label]
-        N205[...6 more]
+        N20[label]
+        N21[canvas-view]
+        N22[slider]
+        N23[capabilities]
+        N24[radio]
+        N25[index]
+        N26[accessibility]
+        N27[widget]
+        N28[image]
+        N29[control-registry]
+        N30[...6 more]
     end
 
+    subgraph Packages/text
+        N31[index]
+        N32[line-break]
+        N33[glyph-atlas]
+        N34[text-layout]
+        N35[shaping]
+        N36[bitmap-font]
+    end
+
+    subgraph Packages/math
+        N37[quaternion]
+        N38[index]
+        N39[matrix3]
+        N40[rectangle2]
+        N41[color]
+        N42[alloc-counter]
+        N43[vector2]
+        N44[vector3]
+        N45[matrix4]
+        N46[frustum]
+        N47[...1 more]
+    end
+
+    subgraph Packages/render-svg
+        N48[index]
+    end
+
+    subgraph Packages/physics-box2d
+        N49[index]
+    end
+
+    subgraph Packages/scene
+        N50[transform]
+        N51[layers]
+        N52[node-space]
+        N53[index]
+        N54[skeleton]
+        N55[group]
+        N56[screen-camera]
+        N57[light]
+        N58[trackball]
+        N59[world-transforms]
+        N60[...7 more]
+    end
+
+    subgraph Packages/assets
+        N61[image-probe]
+        N62[gltf]
+        N63[image-memory]
+        N64[capabilities]
+        N65[index]
+        N66[texture]
+        N67[asset-manager]
+        N68[loader-registry]
+        N69[manifest]
+        N70[content-hash]
+        N71[...5 more]
+    end
+
+    subgraph Packages/physics-soft
+        N72[index]
+    end
+
+    subgraph Packages/physics-rapier
+        N73[ccd]
+        N74[index]
+        N75[conversions2d]
+        N76[rapier2d-adapter]
+        N77[rapier3d-adapter]
+        N78[register]
+        N79[conversions3d]
+        N80[init]
+    end
+
+    subgraph Packages/render-webgl
+        N81[gl-render-target]
+        N82[gl-picking]
+        N83[gl-effect]
+        N84[gl-shadow-registry]
+        N85[index]
+        N86[gl-standard-registry]
+        N87[gl-skinning-glsl]
+        N88[gl-particles]
+        N89[gl-picking-registry]
+        N90[gl-geometry]
+        N91[...15 more]
+    end
+
+    subgraph Packages/physics
+        N92[solver-registry]
+        N93[capabilities]
+        N94[index]
+        N95[world]
+        N96[rigid-body]
+        N97[validation]
+        N98[joints]
+        N99[descriptors]
+        N100[swept-character-controller]
+        N101[physics-event-system]
+        N102[...15 more]
+    end
+
+    subgraph Packages/geometry
+        N103[index]
+        N104[tessellation]
+        N105[path-boolean]
+        N106[path]
+        N107[svg-document]
+        N108[geometry]
+        N109[primitives-3d]
+        N110[primitive-support]
+        N111[resource-memory]
+        N112[buffer-geometry]
+        N113[...3 more]
+    end
+
+    subgraph Packages/render
+        N114[read-pixels]
+        N115[shape-paint]
+        N116[scissor]
+        N117[sprite]
+        N118[capabilities]
+        N119[view-list]
+        N120[index]
+        N121[compute-workloads]
+        N122[texture]
+        N123[render-target-bytes]
+        N124[...24 more]
+    end
+
+    subgraph Packages/input
+        N125[pick]
+        N126[index]
+        N127[keyboard-input]
+        N128[key-events]
+        N129[pointer-events]
+        N130[pointer-input]
+        N131[drag]
+        N132[keyboard-state]
+        N133[propagation]
+    end
+
+    subgraph Packages/render-webgpu
+        N134[wgpu-geometry]
+        N135[webgpu-device]
+        N136[wgpu-effect]
+        N137[index]
+        N138[wgpu-bindings]
+        N139[wgpu-skinning]
+        N140[wgpu-node-program]
+        N141[wgpu-shadow]
+        N142[wgpu-gpu-timer]
+        N143[wgpu-readback]
+        N144[...20 more]
+    end
+
+    subgraph Packages/render-canvas
+        N145[index]
+    end
+
+    subgraph Packages/motion
+        N146[systems]
+        N147[ik]
+        N148[capabilities]
+        N149[character-controller]
+        N150[clock]
+        N151[index]
+        N152[waypoint-graph-planner]
+        N153[kinematic-controller]
+        N154[scheduler]
+        N155[steering]
+        N156[...14 more]
+    end
+
+    subgraph Packages/animation
+        N157[tween]
+        N158[timeline]
+        N159[animation-system]
+        N160[index]
+        N161[when]
+        N162[track]
+        N163[binding]
+        N164[mixer]
+        N165[blend-tree]
+        N166[values]
+        N167[...4 more]
+    end
+
+    subgraph Packages/diagnostics
+        N168[checksum]
+        N169[leak-registry]
+        N170[index]
+        N171[validation]
+        N172[replay-format]
+        N173[recorder]
+        N174[stats]
+        N175[rollback]
+        N176[replay-player]
+        N177[debug-draw]
+        N178[...2 more]
+    end
+
+    subgraph Packages/core
+        N179[units]
+        N180[leak-registry]
+        N181[index]
+        N182[disposable]
+        N183[conventions]
+        N184[dev]
+        N185[plugin]
+        N186[events]
+        N187[space]
+        N188[random]
+        N189[...4 more]
+    end
+
+    subgraph Packages/fourjs
+        N190[physics-box2d]
+        N191[gltf]
+        N192[application]
+        N193[capabilities]
+        N194[plugins]
+        N195[physics]
+        N196[compute-pass]
+        N197[index]
+        N198[core]
+        N199[render-webgpu]
+        N200[...25 more]
+    end
+
+    subgraph Packages/serialization
+        N201[capabilities]
+        N202[migration]
+        N203[index]
+        N204[format]
+        N205[serializer]
+    end
+
+    N0 --> N1
+    N0 --> N8
+    N0 --> N3
+    N1 --> N7
+    N1 --> N6
+    N1 --> N3
+    N1 --> N8
+    N2 --> N1
+    N2 --> N7
+    N2 --> N5
+    N2 --> N0
+    N2 --> N4
+    N2 --> N6
     N2 --> N3
-    N4 --> N0
-    N4 --> N2
-    N4 --> N1
-    N4 --> N3
-    N4 --> N8
-    N6 --> N0
-    N6 --> N1
-    N6 --> N3
-    N6 --> N2
-    N6 --> N4
-    N6 --> N7
-    N6 --> N5
-    N6 --> N8
-    N6 --> N9
-    N7 --> N0
-    N7 --> N1
-    N7 --> N4
-    N8 --> N1
-    N8 --> N3
-    N11 --> N15
-    N12 --> N18
-    N12 --> N19
-    N12 --> N13
-    N13 --> N18
-    N16 --> N18
-    N16 --> N11
-    N16 --> N15
-    N17 --> N11
-    N20 --> N14
-    N20 --> N11
-    N20 --> N15
-    N20 --> N16
-    N20 --> N17
-    N20 --> N13
-    N20 --> N12
-    N20 --> N19
-    N22 --> N24
-    N22 --> N26
-    N24 --> N26
-    N28 --> N23
-    N28 --> N29
-    N28 --> N22
-    N28 --> N25
-    N28 --> N30
-    N28 --> N24
-    N28 --> N26
+    N2 --> N8
+    N5 --> N6
+    N5 --> N8
+    N9 --> N17
+    N10 --> N9
+    N10 --> N17
+    N10 --> N14
+    N10 --> N13
+    N10 --> N16
+    N10 --> N18
+    N10 --> N11
+    N10 --> N15
+    N10 --> N12
+    N14 --> N12
+    N14 --> N18
+    N16 --> N12
+    N18 --> N12
+    N20 --> N27
+    N21 --> N27
+    N23 --> N29
+    N25 --> N23
+    N25 --> N29
+    N25 --> N26
+    N25 --> N21
+    N25 --> N28
+    N25 --> N20
+    N25 --> N24
+    N25 --> N22
+    N25 --> N27
+    N26 --> N24
+    N26 --> N22
+    N26 --> N27
     N28 --> N27
-    N28 --> N31
-    N29 --> N26
-    N30 --> N24
-    N31 --> N26
-    N36 --> N34
-    N36 --> N38
-    N36 --> N42
-    N36 --> N39
-    N36 --> N40
-    N36 --> N35
-    N36 --> N41
-    N36 --> N37
-    N36 --> N33
+    N29 --> N27
+    N31 --> N36
+    N31 --> N33
+    N31 --> N34
+    N31 --> N32
+    N31 --> N35
+    N33 --> N36
+    N34 --> N35
+    N34 --> N33
+    N34 --> N32
+    N37 --> N42
+    N37 --> N44
+    N38 --> N42
+    N38 --> N41
+    N38 --> N46
     N38 --> N39
-    N40 --> N38
-    N40 --> N39
-    N42 --> N38
-    N47 --> N51
-    N55 --> N57
-    N55 --> N64
-    N56 --> N55
-    N58 --> N55
-    N58 --> N57
-    N58 --> N62
-    N58 --> N60
-    N58 --> N63
-    N58 --> N64
+    N38 --> N45
+    N38 --> N37
+    N38 --> N40
+    N38 --> N43
+    N38 --> N44
+    N39 --> N42
+    N39 --> N45
+    N40 --> N42
+    N43 --> N42
+    N44 --> N42
+    N44 --> N45
+    N45 --> N42
 ```
 
 ---
@@ -7965,19 +7968,19 @@ graph TD
 | ----------------------- | ------ |
 | Total TypeScript Files  | 343    |
 | Total Modules           | 24     |
-| Total Lines of Code     | 164674 |
-| Total Exports           | 3469   |
-| Total Re-exports        | 2190   |
+| Total Lines of Code     | 165280 |
+| Total Exports           | 3476   |
+| Total Re-exports        | 2194   |
 | Total Classes           | 213    |
-| Total Interfaces        | 642    |
-| Total Functions         | 580    |
+| Total Interfaces        | 643    |
+| Total Functions         | 583    |
 | Total Type Guards       | 29     |
 | Total Enums             | 0      |
-| Type-only Imports       | 442    |
+| Type-only Imports       | 443    |
 | Runtime Circular Deps   | 0      |
-| Type-only Circular Deps | 8      |
+| Type-only Circular Deps | 10     |
 
 ---
 
-_Last Updated_: 2026-10-16
+_Last Updated_: 2026-11-04
 _Version_: 0.0.0

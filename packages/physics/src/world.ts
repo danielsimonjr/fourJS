@@ -636,6 +636,14 @@ interface BodyRegistration {
    * velocity writes, re-typing, snapshot restore).
    */
   publishPending: boolean;
+  /**
+   * The node's `transformAuthority` at the last publish. An authority change
+   * is not routed through any world method (it is honoured from the next
+   * step), so the sleep skip compares against this instead: a body that fell
+   * asleep under `"manual"` or `"animation"` and is handed back to `"physics"`
+   * must be snapped to the solver pose once, even though nothing woke it.
+   */
+  publishedAuthority: TransformAuthority | null;
 }
 
 /** One registered joint: the object, its handle, and its monotonic id (§28). */
@@ -1325,6 +1333,7 @@ export class PhysicsWorld {
       tracked,
       localPlane: usesPlane,
       publishPending: true,
+      publishedAuthority: null,
     };
 
     for (const collider of colliders) {
@@ -3857,10 +3866,12 @@ export class PhysicsWorld {
    * already published as asleep is skipped: the solver holds exactly the pose
    * and (zero) velocities it published on the sleep-transition step, so
    * rewriting them would only churn `Transform.version`. Still run every step:
-   * the sleep flag refresh and the pose re-track. A publish is forced by a
-   * sleep or wake transition (`body.sleeping` differs from the solver), by
-   * `"blended"` authority (its animation side moves while the solver sleeps),
-   * and by `BodyRegistration.publishPending` (registration, teleport, velocity
+   * the velocity publish, the sleep flag refresh and the pose re-track. A
+   * pose publish is forced by a sleep or wake transition (`body.sleeping`
+   * differs from the solver), by `"blended"` authority (its animation side
+   * moves while the solver sleeps), by an authority change since the last
+   * publish (`BodyRegistration.publishedAuthority`), and by
+   * `BodyRegistration.publishPending` (registration, teleport, velocity
    * writes, re-typing, snapshot restore).
    *
    * Every other authority behaves exactly as it did before: a dynamic body
@@ -3870,15 +3881,18 @@ export class PhysicsWorld {
   #publishBody(registration: BodyRegistration): void {
     const { node, body, handle, type } = registration;
     const sleeping = this.#adapter.isBodySleeping(handle);
+    const authority = node.transformAuthority;
     const skip =
       type === "dynamic" &&
-      node.transformAuthority !== BLENDED_AUTHORITY &&
+      authority !== BLENDED_AUTHORITY &&
+      authority === registration.publishedAuthority &&
       sleeping &&
       body.sleeping &&
       !registration.publishPending;
     registration.publishPending = false;
+    registration.publishedAuthority = authority;
     if (!skip) {
-      if (node.transformAuthority === BLENDED_AUTHORITY) {
+      if (authority === BLENDED_AUTHORITY) {
         beginOwnedTransformWrite();
         try {
           this.#publishBlended(registration);
@@ -3886,7 +3900,7 @@ export class PhysicsWorld {
           endOwnedTransformWrite();
         }
       } else if (type === "dynamic") {
-        if (node.transformAuthority === PHYSICS_AUTHORITY) {
+        if (authority === PHYSICS_AUTHORITY) {
           beginOwnedTransformWrite();
           try {
             this.#publishSolverPose(registration);
@@ -3897,8 +3911,12 @@ export class PhysicsWorld {
           warnAuthorityConflict(node, PHYSICS_AUTHORITY);
         }
       }
-      this.#publishSolverVelocities(registration);
     }
+    // Velocities are published even when the pose is skipped: the solver
+    // reads cost two calls and touch no Transform.version, and §23 says the
+    // component mirrors the solver — a hand-edited `linearVelocity` on a
+    // sleeping body must still read back as zero.
+    this.#publishSolverVelocities(registration);
     setRigidBodySleeping(body, sleeping);
     this.#retrackPose(registration);
   }

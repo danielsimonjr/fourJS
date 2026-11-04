@@ -36,11 +36,9 @@ async function setup(authority: "physics" | "blended" = "physics"): Promise<{
   return { adapter, world, node };
 }
 
+/** Pose reads only: velocities are published every step by design (§23). */
 function reads(adapter: FakeSolverAdapter): number {
-  return (
-    adapter.callsOf("getBodyTransform").length +
-    adapter.callsOf("getBodyVelocities").length
-  );
+  return adapter.callsOf("getBodyTransform").length;
 }
 
 describe("PhysicsWorld sleeping publish skip (§32)", () => {
@@ -55,6 +53,36 @@ describe("PhysicsWorld sleeping publish skip (§32)", () => {
     expect(reads(adapter)).toBe(0);
     expect(node.transform.version).toBe(version);
     expect(node.getComponent(RigidBody)!.sleeping).toBe(true);
+  });
+
+  it("still mirrors solver velocities while the pose is skipped (§23)", async () => {
+    const { adapter, world, node } = await setup();
+    adapter.body(1).sleeping = true;
+    world.step(DT);
+    world.step(DT);
+    const body = node.getComponent(RigidBody)!;
+    body.linearVelocity.x = 5; // hand-edited, bypassing world.setLinearVelocity
+    world.step(DT);
+    expect(body.linearVelocity.x).toBe(0);
+  });
+
+  it("snaps a sleeping body to the solver pose when authority returns to physics", async () => {
+    const { adapter, world, node } = await setup();
+    adapter.body(1).sleeping = true;
+    world.step(DT);
+    world.step(DT);
+    node.transformAuthority = "manual";
+    world.step(DT); // conflict path, no solver pose write
+    node.position.set(9, 9, 0); // the application moved it meanwhile
+    node.transformAuthority = "physics";
+    const version = node.transform.version;
+    world.step(DT);
+    expect(node.transform.version).not.toBe(version);
+    expect(node.position.x).not.toBe(9);
+    // Steady state resumes: the next step skips again.
+    adapter.clearCalls();
+    world.step(DT);
+    expect(reads(adapter)).toBe(0);
   });
 
   it("publishes on the sleep transition and the wake transition", async () => {

@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-16",
-  "totalFiles": 894,
+  "generated": "2026-11-04",
+  "totalFiles": 896,
   "byDisposition": {
     "reachable": 295,
     "build-entry": 48,
     "test-only": 4,
     "orphan": 0,
-    "test": 515,
+    "test": 517,
     "tool": 1,
     "config": 17,
     "example": 14
@@ -15,7 +15,7 @@
     "examples": 14,
     "config": 17,
     "src": 347,
-    "tests": 515,
+    "tests": 517,
     "tools": 1
   },
   "byPackage": {
@@ -30,11 +30,11 @@
     "@fourjs/materials": 26,
     "@fourjs/math": 18,
     "@fourjs/motion": 44,
-    "@fourjs/particles": 20,
+    "@fourjs/particles": 21,
     "@fourjs/physics-box2d": 2,
     "@fourjs/physics-rapier": 22,
     "@fourjs/physics-soft": 2,
-    "@fourjs/physics": 58,
+    "@fourjs/physics": 59,
     "@fourjs/render-canvas": 2,
     "@fourjs/render-svg": 2,
     "@fourjs/render-webgl": 35,
@@ -303,7 +303,7 @@
       "package": "@fourjs/animation",
       "area": "src",
       "disposition": "reachable",
-      "loc": 1317
+      "loc": 1327
     },
     {
       "file": "packages/animation/src/timeline.ts",
@@ -730,7 +730,7 @@
       "package": "@fourjs/core",
       "area": "src",
       "disposition": "reachable",
-      "loc": 300
+      "loc": 330
     },
     {
       "file": "packages/core/src/index.ts",
@@ -814,7 +814,7 @@
       "package": "@fourjs/core",
       "area": "tests",
       "disposition": "test",
-      "loc": 388
+      "loc": 475
     },
     {
       "file": "packages/core/tests/json.test.ts",
@@ -1647,7 +1647,7 @@
       "package": "@fourjs/input",
       "area": "src",
       "disposition": "reachable",
-      "loc": 936
+      "loc": 884
     },
     {
       "file": "packages/input/src/pointer-events.ts",
@@ -1927,7 +1927,7 @@
       "package": "@fourjs/math",
       "area": "src",
       "disposition": "reachable",
-      "loc": 213
+      "loc": 258
     },
     {
       "file": "packages/math/src/index.ts",
@@ -1941,42 +1941,42 @@
       "package": "@fourjs/math",
       "area": "src",
       "disposition": "reachable",
-      "loc": 320
+      "loc": 338
     },
     {
       "file": "packages/math/src/matrix4.ts",
       "package": "@fourjs/math",
       "area": "src",
       "disposition": "reachable",
-      "loc": 712
+      "loc": 758
     },
     {
       "file": "packages/math/src/quaternion.ts",
       "package": "@fourjs/math",
       "area": "src",
       "disposition": "reachable",
-      "loc": 438
+      "loc": 496
     },
     {
       "file": "packages/math/src/rectangle2.ts",
       "package": "@fourjs/math",
       "area": "src",
       "disposition": "reachable",
-      "loc": 124
+      "loc": 214
     },
     {
       "file": "packages/math/src/vector2.ts",
       "package": "@fourjs/math",
       "area": "src",
       "disposition": "reachable",
-      "loc": 162
+      "loc": 219
     },
     {
       "file": "packages/math/src/vector3.ts",
       "package": "@fourjs/math",
       "area": "src",
       "disposition": "reachable",
-      "loc": 195
+      "loc": 315
     },
     {
       "file": "packages/math/src/vector4.ts",
@@ -1997,28 +1997,28 @@
       "package": "@fourjs/math",
       "area": "tests",
       "disposition": "test",
-      "loc": 271
+      "loc": 323
     },
     {
       "file": "packages/math/tests/matrices.test.ts",
       "package": "@fourjs/math",
       "area": "tests",
       "disposition": "test",
-      "loc": 1047
+      "loc": 1092
     },
     {
       "file": "packages/math/tests/quaternion.test.ts",
       "package": "@fourjs/math",
       "area": "tests",
       "disposition": "test",
-      "loc": 742
+      "loc": 791
     },
     {
       "file": "packages/math/tests/rectangle2.test.ts",
       "package": "@fourjs/math",
       "area": "tests",
       "disposition": "test",
-      "loc": 163
+      "loc": 234
     },
     {
       "file": "packages/math/tests/smoke.test.ts",
@@ -2032,7 +2032,7 @@
       "package": "@fourjs/math",
       "area": "tests",
       "disposition": "test",
-      "loc": 521
+      "loc": 668
     },
     {
       "file": "packages/motion/src/camera-rigs.ts",
@@ -2074,7 +2074,7 @@
       "package": "@fourjs/motion",
       "area": "src",
       "disposition": "reachable",
-      "loc": 439
+      "loc": 443
     },
     {
       "file": "packages/motion/src/ik.ts",
@@ -2102,14 +2102,14 @@
       "package": "@fourjs/motion",
       "area": "src",
       "disposition": "reachable",
-      "loc": 743
+      "loc": 747
     },
     {
       "file": "packages/motion/src/motion-component.ts",
       "package": "@fourjs/motion",
       "area": "src",
       "disposition": "reachable",
-      "loc": 454
+      "loc": 458
     },
     {
       "file": "packages/motion/src/path-planning.ts",
@@ -2165,7 +2165,7 @@
       "package": "@fourjs/motion",
       "area": "src",
       "disposition": "reachable",
-      "loc": 404
+      "loc": 442
     },
     {
       "file": "packages/motion/src/spring-damper.ts",
@@ -2312,7 +2312,7 @@
       "package": "@fourjs/motion",
       "area": "tests",
       "disposition": "test",
-      "loc": 290
+      "loc": 347
     },
     {
       "file": "packages/motion/tests/spring-damper.test.ts",
@@ -2347,7 +2347,7 @@
       "package": "@fourjs/particles",
       "area": "src",
       "disposition": "reachable",
-      "loc": 1535
+      "loc": 1557
     },
     {
       "file": "packages/particles/src/fields.ts",
@@ -2361,7 +2361,7 @@
       "package": "@fourjs/particles",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 88
+      "loc": 90
     },
     {
       "file": "packages/particles/src/particle-renderable.ts",
@@ -2403,7 +2403,7 @@
       "package": "@fourjs/particles",
       "area": "src",
       "disposition": "reachable",
-      "loc": 487
+      "loc": 518
     },
     {
       "file": "packages/particles/tests/appearance.test.ts",
@@ -2460,6 +2460,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 428
+    },
+    {
+      "file": "packages/particles/tests/ramp-into.test.ts",
+      "package": "@fourjs/particles",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 92
     },
     {
       "file": "packages/particles/tests/random.test.ts",
@@ -2536,14 +2543,14 @@
       "package": "@fourjs/physics-rapier",
       "area": "src",
       "disposition": "reachable",
-      "loc": 3346
+      "loc": 3351
     },
     {
       "file": "packages/physics-rapier/src/rapier3d-adapter.ts",
       "package": "@fourjs/physics-rapier",
       "area": "src",
       "disposition": "reachable",
-      "loc": 3440
+      "loc": 3445
     },
     {
       "file": "packages/physics-rapier/src/register.ts",
@@ -2809,7 +2816,7 @@
       "package": "@fourjs/physics",
       "area": "src",
       "disposition": "reachable",
-      "loc": 1443
+      "loc": 1447
     },
     {
       "file": "packages/physics/src/types.ts",
@@ -2837,7 +2844,7 @@
       "package": "@fourjs/physics",
       "area": "src",
       "disposition": "reachable",
-      "loc": 4561
+      "loc": 4607
     },
     {
       "file": "packages/physics/tests/capabilities.test.ts",
@@ -3034,6 +3041,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 637
+    },
+    {
+      "file": "packages/physics/tests/world-sleeping-publish.test.ts",
+      "package": "@fourjs/physics",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 123
     },
     {
       "file": "packages/physics/tests/world-space-mode.test.ts",
@@ -4216,7 +4230,7 @@
       "package": "@fourjs/scene",
       "area": "src",
       "disposition": "reachable",
-      "loc": 253
+      "loc": 270
     },
     {
       "file": "packages/scene/src/camera.ts",
@@ -4237,7 +4251,7 @@
       "package": "@fourjs/scene",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 111
+      "loc": 113
     },
     {
       "file": "packages/scene/src/interpolation.ts",
@@ -4307,7 +4321,7 @@
       "package": "@fourjs/scene",
       "area": "src",
       "disposition": "reachable",
-      "loc": 385
+      "loc": 392
     },
     {
       "file": "packages/scene/src/transform.ts",
@@ -4335,7 +4349,7 @@
       "package": "@fourjs/scene",
       "area": "tests",
       "disposition": "test",
-      "loc": 220
+      "loc": 259
     },
     {
       "file": "packages/scene/tests/camera.test.ts",
@@ -4727,14 +4741,14 @@
       "package": "@fourjs/ui",
       "area": "src",
       "disposition": "reachable",
-      "loc": 389
+      "loc": 378
     },
     {
       "file": "packages/ui/src/widget.ts",
       "package": "@fourjs/ui",
       "area": "src",
       "disposition": "reachable",
-      "loc": 1426
+      "loc": 1430
     },
     {
       "file": "packages/ui/tests/accessibility.test.ts",

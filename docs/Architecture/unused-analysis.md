@@ -4,7 +4,7 @@
 
 # Unused Files and Exports Analysis
 
-**Generated**: 2026-10-16
+**Generated**: 2026-11-04
 
 ## Summary
 
@@ -64,13 +64,9 @@ Not imported cross-file, but referenced within their own module — they type or
 support exports that ARE used, so they cannot be deleted in isolation. Mostly
 interfaces typing live guards and per-package API completeness, not rot.
 
-### `packages/fourjs/src/scene-serializers.ts`
+### `packages/text/src/shaping.ts`
 
-- `CANVAS_VIEW_NODE_TYPE` (constant) — 2 in-file refs
-
-### `packages/geometry/src/geometry.ts`
-
-- `nextGeometryIdentifier` (function) — 1 in-file ref
+- `validateShapingDirection` (function) — 1 in-file ref
 
 ### `packages/geometry/src/path-boolean.ts`
 
@@ -80,11 +76,15 @@ interfaces typing live guards and per-package API completeness, not rot.
 
 - `parseTransform` (function) — 1 in-file ref
 
+### `packages/geometry/src/geometry.ts`
+
+- `nextGeometryIdentifier` (function) — 1 in-file ref
+
 ### `packages/render-webgpu/src/wgpu-pipeline-memo.ts`
 
 - `WgpuPipelineRequest` (interface) — 1 in-file ref
 - `MutableWgpuPipelineRequest` (interface) — 1 in-file ref
 
-### `packages/text/src/shaping.ts`
+### `packages/fourjs/src/scene-serializers.ts`
 
-- `validateShapingDirection` (function) — 1 in-file ref
+- `CANVAS_VIEW_NODE_TYPE` (constant) — 2 in-file refs

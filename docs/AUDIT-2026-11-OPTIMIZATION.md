@@ -12,12 +12,12 @@ verification.
 
 ## Method
 
-| Role | Model | Task |
-| --- | --- | --- |
-| Helper | Haiku | Inventory: package sizes, dependency edges, code markers, stubs, console use |
-| Worker | Sonnet | Hot-path scan of every per-frame / per-step loop for allocation and redundant work |
-| Reviewer | Opus | Correctness and completion: API symmetry, leaks, determinism, event semantics, hygiene |
-| Planner / fixer | Fable | Verified every finding against the source, rejected or deferred the unsound ones, cut the rest into disjoint work packets, and fixed the core defects directly |
+| Role            | Model  | Task                                                                                                                                                           |
+| --------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Helper          | Haiku  | Inventory: package sizes, dependency edges, code markers, stubs, console use                                                                                   |
+| Worker          | Sonnet | Hot-path scan of every per-frame / per-step loop for allocation and redundant work                                                                             |
+| Reviewer        | Opus   | Correctness and completion: API symmetry, leaks, determinism, event semantics, hygiene                                                                         |
+| Planner / fixer | Fable  | Verified every finding against the source, rejected or deferred the unsound ones, cut the rest into disjoint work packets, and fixed the core defects directly |
 
 Each HIGH or CONFIRMED finding was re-read in full by the planner before it entered a
 packet. The four reserved stubs (`physics-box2d`, `physics-soft`, `render-canvas`,
@@ -36,7 +36,13 @@ every one uses `DEV_WARNING_PREFIX`.
 
 ## Verdict
 
-<!-- VERDICT -->
+| Area                                     | Result                                                                       |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| Correctness defects found                | 2 (core `EventEmitter`), both fixed with regression tests                    |
+| Hot-path allocation findings verified    | 6 HIGH + 1 MEDIUM implemented; 7 deferred with reasons                       |
+| API completion gaps verified             | 9 math gaps filled; 2 duplicated helpers removed; 1 determinism defect fixed |
+| Findings rejected after reading the code | 9 (listed below)                                                             |
+| Reserved stubs                           | unchanged by owner decision                                                  |
 
 ## Findings
 
@@ -59,7 +65,65 @@ every one uses `DEV_WARNING_PREFIX`.
 - **C-3 `@fourjs/core` — duplicate public method.** `totalListenerCount()` had the same body
   as the documented `listenerCountAll()`. It is now a `@deprecated` alias.
 
-<!-- IMPLEMENTED -->
+### Optimization (implemented in this PR)
+
+- **H1 `@fourjs/particles` — three to four objects per particle per frame.**
+  `ParticleEmitter.evaluateColor` built `start`/`end`/result literals and a ramp wrapper for
+  every live particle on every render-list build (`updateParticleInstances`), while its
+  documentation promised no allocation. `types.ts` gains
+  `evaluateLifetimeRampColorInto(ramp, t, out)` (the allocating form is now a wrapper over
+  it) and the emitter keeps persistent ramp scratches. Expression order is unchanged, so
+  results are bit-identical. Test: `packages/particles/tests/ramp-into.test.ts`.
+- **H2 `@fourjs/physics` — sleeping bodies were re-published every fixed step.**
+  `#publishBody` read the pose and velocities of every dynamic body (four Wasm reads and
+  four objects per body in Rapier) and wrote them back, which bumped `Transform.version`
+  and forced a world-matrix recompute of the node's whole subtree, defeating the
+  version-based skip in `world-transforms.ts`. A settled pile paid this on every step. The
+  world now reads the sleep flag first and skips the publish of a dynamic, non-blended body
+  that was already published asleep, unless `BodyRegistration.publishPending` is set
+  (registration, `teleport`, velocity setters, `setBodyControlMode`, `restoreSnapshot`).
+  The sleep flag refresh and `#retrackPose` still run every step. Test:
+  `packages/physics/tests/world-sleeping-publish.test.ts` (six cases on the fake adapter).
+- **H4 nine closure allocations per step/frame.** `runOwnedTransformWrite(fn)` was called
+  with a fresh closure per body per step (`world.ts`), per tracked node
+  (`motion-component.ts`, `kinematic-controller.ts`, `constraints.ts`,
+  `swept-character-controller.ts`), per mixer per frame (`mixer.ts`), per widget per
+  layout (`widget.ts`) and per trackball update. `@fourjs/scene` now exports
+  `beginOwnedTransformWrite` / `endOwnedTransformWrite`; `runOwnedTransformWrite` is built
+  on them and stays for cold paths. Every site is `begin(); try { … } finally { end(); }`.
+- **H6 `@fourjs/motion` — `SpatialHash` allocated on every query and keyed cells by
+  string.** Its header promised "query allocates nothing", but each call built a `matches`
+  array and a comparator closure, and every cell visit built a template-string key. Cells
+  are now packed into one integer key (three 17-bit fields; cells 131,072 apart share a
+  bucket, which is harmless because every candidate is re-checked by squared distance and
+  results are sorted by insertion order, so the result order is unchanged), the match
+  buffer is reused, the comparator is hoisted, and `update` early-outs when the entry stays
+  in its cell (compared by index, not by wrapped key). Tests appended to
+  `packages/motion/tests/spatial-hash.test.ts`.
+- **M1 `@fourjs/physics-rapier` — a string key per touching pair per step.** `#pairKey`
+  returns `lo * 2^32 + hi` over the ascending monotonic ids (exact below 2^53 while
+  `lo < 2^21`, about two million colliders per adapter lifetime). The per-contact `Vector3`
+  allocations in `#buildContacts` are a documented hand-over contract and were left.
+
+### Completion (implemented in this PR)
+
+- **Opus 3–11 `@fourjs/math` — API asymmetries.** `Matrix3` had `transpose` and `Matrix4`
+  did not; `Vector2/3/4` and `Rectangle2` had `equalsApprox` and the matrices and
+  `Quaternion` did not; `Vector3` had `cross` and `Vector2` had no scalar cross; distances,
+  negation, component-wise multiply, min/max and `addScaled` were missing from every
+  vector; `Rectangle2` could only test containment; `Frustum` could only test spheres. All
+  are added in the file style (in place, return `this`, one change-hook call, no
+  `noteConstruction`). `Quaternion.slerp` now uses the new `dot`.
+- **Opus 4 `@fourjs/input`, `@fourjs/ui` — duplicated matrix helpers.** `transformPoint`
+  was copied verbatim in `pick.ts` and `slider.ts`, next to `transformDirection` and
+  `unprojectPoint`. They are replaced by `Vector3.applyMatrix4` (affine),
+  `transformDirection` (upper 3×3, deliberately not renormalized) and `applyProjection`
+  (`w === 0` writes the zero vector, as the deleted helper did). The singular-matrix
+  determinant pre-check stays, because `Matrix4.invert` no-ops silently on singular input.
+- **Opus 7 `@fourjs/motion` — determinism defect.** `waypoint-graph-planner.ts` measured
+  edges with `Math.hypot` while declaring `determinism: "same-runtime"`; the package's own
+  rule (`character-controller.ts`) is that `hypot` is implementation-defined and `sqrt` is
+  exactly rounded. It now uses `Vector3.distanceTo`. No golden moved.
 
 ### Rejected after verification
 
