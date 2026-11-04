@@ -14,6 +14,8 @@ This package was a reserved stub until WP-R1.1 landed 2026-08-21. The barrel no 
 
 RFC 0003's skinned **shadow caster** compiles lazily through `acquireShadow()` on the registered colour pair. §71 picking is opt-in via `registerPickingPipeline()` (`createPickingService` throws until registered); particle systems pick as one id per emitter (CPU 8-float stream); skinned items pick through a private skinned id pipeline; trails stay skipped.
 
+Known parity gap: the standard family's surface group samples every map (metallic-roughness, normal, occlusion, emissive) through the first present map's sampler, so it differs from WebGL's per-unit §77 state only when a detail map's wrap/filter differs from the metallic-roughness map's.
+
 Unit tests are colocated in `tests/` per §92. Browser-pixel coverage lives under `tests/browser/webgpu/`.
 
 Workspace name `@fourjs/render-webgpu`; publishes as `@danielsimonjr/fourjs-render-webgpu`.

@@ -2038,7 +2038,12 @@ export class WebgpuRenderer implements Renderer {
               sources.occlusion = occlusionSource;
               sources.emissive = emissiveSource;
               surfaceBindGroup =
-                this.#surfaces?.acquire(textures, sources) ?? null;
+                this.#surfaces?.acquire(
+                  textures,
+                  sources,
+                  renderTargets,
+                  activeTarget,
+                ) ?? null;
               if (surfaceBindGroup === null) {
                 continue;
               }

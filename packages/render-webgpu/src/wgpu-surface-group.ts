@@ -13,6 +13,22 @@
  * sampler is the first present map's — itself a pure function of that
  * texture's §77 state — so it is not part of the key.
  *
+ * ## Render-target textures
+ *
+ * A slot may hold a render-target texture (`isRenderTargetTexture`): it is
+ * resolved through the render-target cache's view and shared sampler, the
+ * same render-target-aware path `resolveFrameTexture` uses for the two-binding
+ * groups, so a render-target metallic-roughness map draws with detail maps
+ * too. A target that is the frame's own active target is a feedback loop and
+ * resolves to `null` (skip the draw), exactly as there.
+ *
+ * ## Known parity gap (sampler)
+ *
+ * All four textures are sampled through the *first present map's* sampler (one
+ * sampler binding), whereas WebGL gives each unit its own §77 state. The
+ * difference is visible only when a detail map's wrap/filter state differs
+ * from that first map's (the metallic-roughness map when present).
+ *
  * Default textures are created lazily with the first group, so an application
  * that never samples a detail map records no extra device calls.
  */
@@ -34,6 +50,8 @@ import {
   SURFACE_SAMPLER_BINDING,
 } from "./wgpu-bindings.js";
 import { SURFACE_DEFAULT_TEXELS } from "./wgpu-standard.js";
+import { isRenderTargetTexture, type RenderTarget } from "@fourjs/render";
+import type { WgpuRenderTargetCache } from "./wgpu-render-target.js";
 import type {
   WgpuCacheableTexture,
   WgpuTextureCache,
@@ -75,22 +93,39 @@ export class WgpuSurfaceGroupCache {
 
   /**
    * The group for `sources`, or `null` when a named source does not resolve
-   * (disposed, or a render-target texture — those are unsupported for the
-   * detail slots) so the caller skips the draw (§83, §61: never throws).
+   * (disposed, or a render target that is the frame's own active target) so the caller skips the draw (§83, §61: never throws).
    */
   acquire(
     textures: WgpuTextureCache,
     sources: SurfaceSources,
+    renderTargets: WgpuRenderTargetCache | null = null,
+    activeTarget: RenderTarget | null = null,
   ): GpuBindGroup | null {
     if (this.#disposed) {
       return null;
     }
     const records = this.#records;
+    const views = this.#views;
+    views.length = 0;
     let sampler: GpuSampler | null = null;
     for (let i = 0; i < SLOTS.length; i += 1) {
       const source = sources[SLOTS[i]];
       if (source === null) {
         records[i] = null;
+        views.push(this.#defaultView(SLOTS[i]));
+        continue;
+      }
+      if (isRenderTargetTexture(source)) {
+        records[i] = null;
+        const view =
+          renderTargets === null || source.renderTarget === activeTarget
+            ? null
+            : renderTargets.sampleView(source.renderTarget);
+        if (view === null || renderTargets === null) {
+          return null;
+        }
+        views.push(view);
+        sampler ??= renderTargets.sampleSampler();
         continue;
       }
       const record = textures.acquire(source);
@@ -98,15 +133,11 @@ export class WgpuSurfaceGroupCache {
         return null;
       }
       records[i] = record;
+      views.push(record.view);
       sampler ??= record.sampler;
     }
     if (sampler === null) {
       return null;
-    }
-    const views = this.#views;
-    views.length = 0;
-    for (let i = 0; i < SLOTS.length; i += 1) {
-      views.push(records[i]?.view ?? this.#defaultView(SLOTS[i]));
     }
     return this.#lookup(views, sampler);
   }

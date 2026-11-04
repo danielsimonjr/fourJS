@@ -4776,6 +4776,38 @@ describe("WebgpuRenderer standard surface maps (WP-W4.2)", () => {
     ).toBe(false);
   });
 
+  it("draws a render-target metallic-roughness map together with a normal map", () => {
+    const target = new RenderTarget({ width: 8, height: 8 });
+    const material = new TestStandardMaterial();
+    material.metalRoughnessMap = target.texture as never;
+    material.normalMap = new TestTexture();
+    const drawsBefore = harness.gpu.countOf("pass.drawIndexed");
+    draw(material);
+    expect(surfaceGroups()).toHaveLength(1);
+    expect(
+      harness.gpu.countOf("pass.drawIndexed") +
+        harness.gpu.countOf("pass.draw"),
+    ).toBeGreaterThan(drawsBefore + 1);
+    const group = harness.gpu
+      .callsOf("device.createBindGroup")
+      .map(
+        (c) =>
+          c.args[0] as {
+            label?: string;
+            entries: { binding: number; resource: unknown }[];
+          },
+      )
+      .find((d) => d.label === "fourJS:surface");
+    expect(group?.entries[0]?.resource).toBeDefined();
+    expect(group?.entries[0]?.resource).not.toBe(group?.entries[2]?.resource);
+    // Drawing into that same target is a feedback loop: skipped.
+    harness.gpu.reset();
+    const root = createRoot();
+    root.add(new Renderable(uvTriangle().asGeometry, material.asMaterial));
+    harness.renderer.render(root, [createView()], undefined, target);
+    expect(surfaceGroups()).toHaveLength(0);
+  });
+
   it("shares one bind group between draws of the same maps", () => {
     const material = new TestStandardMaterial();
     material.normalMap = new TestTexture();
