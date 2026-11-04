@@ -1,25 +1,25 @@
 {
   "generated": "2026-11-04",
-  "totalFiles": 922,
+  "totalFiles": 930,
   "byDisposition": {
-    "reachable": 304,
+    "reachable": 306,
     "build-entry": 48,
     "test-only": 4,
     "orphan": 0,
-    "test": 532,
+    "test": 536,
     "tool": 1,
-    "config": 18,
-    "example": 15
+    "config": 19,
+    "example": 16
   },
   "byArea": {
-    "examples": 15,
-    "config": 18,
-    "src": 356,
-    "tests": 532,
+    "examples": 16,
+    "config": 19,
+    "src": 358,
+    "tests": 536,
     "tools": 1
   },
   "byPackage": {
-    "(root)": 245,
+    "(root)": 248,
     "@fourjs/animation": 33,
     "@fourjs/assets": 36,
     "@fourjs/core": 26,
@@ -33,7 +33,7 @@
     "@fourjs/particles": 21,
     "@fourjs/physics-box2d": 2,
     "@fourjs/physics-rapier": 23,
-    "@fourjs/physics-soft": 2,
+    "@fourjs/physics-soft": 7,
     "@fourjs/physics": 59,
     "@fourjs/render-canvas": 7,
     "@fourjs/render-svg": 5,
@@ -237,6 +237,20 @@
     },
     {
       "file": "examples/physics-playground/vite.config.ts",
+      "package": "(root)",
+      "area": "config",
+      "disposition": "config",
+      "loc": 17
+    },
+    {
+      "file": "examples/soft-body/main.ts",
+      "package": "(root)",
+      "area": "examples",
+      "disposition": "example",
+      "loc": 204
+    },
+    {
+      "file": "examples/soft-body/vite.config.ts",
       "package": "(root)",
       "area": "config",
       "disposition": "config",
@@ -2725,7 +2739,28 @@
       "package": "@fourjs/physics-soft",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 2
+      "loc": 4
+    },
+    {
+      "file": "packages/physics-soft/src/pbd.ts",
+      "package": "@fourjs/physics-soft",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 561
+    },
+    {
+      "file": "packages/physics-soft/src/soft-body.ts",
+      "package": "@fourjs/physics-soft",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 647
+    },
+    {
+      "file": "packages/physics-soft/tests/pressure-coupling.test.ts",
+      "package": "@fourjs/physics-soft",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 421
     },
     {
       "file": "packages/physics-soft/tests/smoke.test.ts",
@@ -2733,6 +2768,20 @@
       "area": "tests",
       "disposition": "test",
       "loc": 10
+    },
+    {
+      "file": "packages/physics-soft/tests/soft-body.test.ts",
+      "package": "@fourjs/physics-soft",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 90
+    },
+    {
+      "file": "packages/physics-soft/tests/soft-solver.test.ts",
+      "package": "@fourjs/physics-soft",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 345
     },
     {
       "file": "packages/physics/src/adapter.ts",
@@ -5000,7 +5049,7 @@
       "package": "(root)",
       "area": "config",
       "disposition": "config",
-      "loc": 523
+      "loc": 539
     },
     {
       "file": "tests/browser/animation.spec.ts",
@@ -5421,6 +5470,13 @@
       "area": "tests",
       "disposition": "test",
       "loc": 935
+    },
+    {
+      "file": "tests/browser/soft-body.spec.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 111
     },
     {
       "file": "tests/browser/standard-material-maps.spec.ts",

@@ -3,9 +3,9 @@
     "name": "fourjs-monorepo",
     "version": "0.0.0",
     "lastUpdated": "2026-11-04",
-    "totalFiles": 352,
+    "totalFiles": 354,
     "totalModules": 24,
-    "totalExports": 3558
+    "totalExports": 3568
   },
   "entryPoints": [
     {
@@ -4902,13 +4902,114 @@
     },
     "packages/physics-soft": {
       "packages/physics-soft/src/index.ts": {
-        "description": "Entry point exporting 1 symbols",
+        "description": "Package entry point for @fourjs/physics-soft (re-exports 1 symbols)",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./soft-body.js",
+            "imports": ["*"],
+            "reExport": true
+          }
+        ],
+        "workspaceDependencies": [],
+        "exports": ["PACKAGE_NAME"],
+        "reExported": ["* from ./soft-body.js"],
+        "constants": ["PACKAGE_NAME"]
+      },
+      "packages/physics-soft/src/soft-body.ts": {
+        "description": "Soft bodies (RFC 0011, §35/§35a): the `SoftBody` component and the",
+        "externalDependencies": [],
+        "nodeDependencies": [],
+        "internalDependencies": [
+          {
+            "file": "./pbd.js",
+            "imports": [
+              "PbdSolver",
+              "clothTopology",
+              "computeNormals",
+              "pressureTopology",
+              "ropeTopology",
+              "ParticleCollider",
+              "PbdSolver",
+              "SoftTopology"
+            ]
+          }
+        ],
+        "workspaceDependencies": [
+          {
+            "package": "@fourjs/core",
+            "directory": "packages/core",
+            "imports": ["FourError", "Component", "ComponentHost"]
+          },
+          {
+            "package": "@fourjs/geometry",
+            "directory": "packages/geometry",
+            "imports": ["BufferGeometry"]
+          },
+          {
+            "package": "@fourjs/math",
+            "directory": "packages/math",
+            "imports": ["Matrix4", "Vector3"]
+          },
+          {
+            "package": "@fourjs/scene",
+            "directory": "packages/scene",
+            "imports": ["Node", "resolveWorldTransform"]
+          },
+          {
+            "package": "@fourjs/motion",
+            "directory": "packages/motion",
+            "imports": [
+              "PRIORITY_PHYSICS_SOLVE",
+              "FixedUpdateContext",
+              "SimulationContext",
+              "SimulationSystem"
+            ]
+          }
+        ],
+        "exports": ["PRIORITY_SOFT_BODY", "SoftBody", "SoftBodySystem"],
+        "classes": ["SoftBody", "SoftBodySystem"],
+        "interfaces": [
+          "SoftBodyTuning",
+          "RopeDescriptor",
+          "ClothDescriptor",
+          "PressureDescriptor",
+          "GravitySource",
+          "SoftRaycastQuery",
+          "SoftRaycastHit",
+          "SoftCollisionWorld",
+          "SoftBodySystemOptions",
+          "SoftBodySnapshotEntry",
+          "SoftBodySnapshot"
+        ],
+        "constants": ["PRIORITY_SOFT_BODY"]
+      },
+      "packages/physics-soft/src/pbd.ts": {
+        "description": "The CPU position-based-dynamics kernel (RFC 0011 #1-#4, #8).",
         "externalDependencies": [],
         "nodeDependencies": [],
         "internalDependencies": [],
         "workspaceDependencies": [],
-        "exports": ["PACKAGE_NAME"],
-        "constants": ["PACKAGE_NAME"]
+        "exports": [
+          "signedVolume",
+          "pressureTopology",
+          "effectiveStiffness",
+          "ropeTopology",
+          "clothTopology",
+          "computeNormals",
+          "PbdSolver"
+        ],
+        "classes": ["PbdSolver"],
+        "interfaces": ["SoftTopology", "PbdTuning"],
+        "functions": [
+          "signedVolume",
+          "pressureTopology",
+          "effectiveStiffness",
+          "ropeTopology",
+          "clothTopology",
+          "computeNormals"
+        ]
       }
     },
     "packages/physics-rapier": {
@@ -23540,7 +23641,11 @@
       },
       {
         "name": "Packages/physics-soft",
-        "files": ["packages/physics-soft/src/index.ts"]
+        "files": [
+          "packages/physics-soft/src/index.ts",
+          "packages/physics-soft/src/soft-body.ts",
+          "packages/physics-soft/src/pbd.ts"
+        ]
       },
       {
         "name": "Packages/physics-rapier",
@@ -23868,21 +23973,21 @@
     ]
   },
   "statistics": {
-    "totalTypeScriptFiles": 352,
+    "totalTypeScriptFiles": 354,
     "totalModules": 24,
-    "totalLinesOfCode": 168168,
-    "totalExports": 3558,
-    "totalClasses": 216,
-    "totalInterfaces": 656,
-    "totalFunctions": 598,
+    "totalLinesOfCode": 169378,
+    "totalExports": 3568,
+    "totalClasses": 219,
+    "totalInterfaces": 669,
+    "totalFunctions": 604,
     "totalTypeGuards": 32,
     "totalEnums": 0,
-    "totalConstants": 520,
-    "totalReExports": 2242,
+    "totalConstants": 521,
+    "totalReExports": 2243,
     "totalTypeOnlyImports": 456,
     "runtimeCircularDeps": 0,
     "typeOnlyCircularDeps": 10,
     "unusedFilesCount": 0,
-    "unusedExportsCount": 10
+    "unusedExportsCount": 11
   }
 }
