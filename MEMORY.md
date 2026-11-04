@@ -4889,3 +4889,10 @@ like consecutive unlit items; lit meshes do not batch yet (R-22). Evidence:
   `tests/integration/helpers/physics-scenarios.ts`) and assert solver-invariant properties only, never
   cross-solver equality; unsupported scenarios are skipped with the reason in the test title. Rapier-specific
   numbers stay in `physics-rapier.test.ts`. No PhysJS golden/cross-process determinism is recorded.
+- **Not re-exported from the `fourjs` root entry (2026-11-04).** `@danielsimonjr/physjs` depends on
+  `mathts-functions` → `mathts-workerpool`, which instantiates a Web Worker via
+  `new URL("./worker.js", import.meta.url)`. A `export * as physicsPhysjs` namespace re-export made every
+  example that imports `"fourjs"` emit that worker chunk, and Vite 8 dropped the worker's shared chunk
+  (`tensordot-range-*.js`), so `bun run size` failed with `UNRESOLVED_IMPORT` on all eight entries. The
+  adapter is reachable only through the `fourjs/physics-physjs` subpath (and `@fourjs/physics-physjs`
+  directly); rapier/box2d/soft keep their root namespace exports because they carry no worker.

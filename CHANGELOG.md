@@ -18,6 +18,8 @@ specification; until then, entries are grouped by date under **Unreleased**.
   (`tests/integration/physics-solvers.test.ts`, `tests/determinism/solver-determinism.test.ts`),
   a `PHYSICS_SOLVER=physjs` mode in `benchmarks/physics-step.mjs`, and
   `docs/benchmarks/physjs-vs-rapier.md`.
+  Reachable from the umbrella only via the `fourjs/physics-physjs` subpath (no root namespace
+  export: PhysJS's math stack bundles a Web Worker that every `"fourjs"` importer would otherwise ship).
 - **`@fourjs/render-canvas` and `@fourjs/render-svg` are real backends (2026-11-04, wave 3)**:
   `Canvas2dRenderer` / `registerCanvasRenderer()` (flat CPU-projected polygons, sprites via
   `drawImage`, RFC 0004 feedback refusal) and `SvgRenderer` / `registerSvgRenderer()` (retained
