@@ -1,6 +1,7 @@
 import { isFourError } from "@fourjs/core";
 import { Matrix3, Quaternion, Vector2, Vector3 } from "@fourjs/math";
 import type {
+  CollisionEvent,
   CollisionShape,
   PhysicsBodyHandle,
   PhysicsEvent,
@@ -13,7 +14,9 @@ import { describe, expect, it } from "vitest";
 
 import { PhysJSAdapter2D, PhysJSAdapter3D } from "../src/index.js";
 
-type Adapter = PhysicsWorldAdapter & SolverBodyAccess & SolverBodyTuningAccess;
+type Adapter = PhysicsWorldAdapter &
+  SolverBodyAccess &
+  SolverBodyTuningAccess & { countContacts(): number };
 
 const DT = 1 / 60;
 
@@ -337,6 +340,11 @@ for (const dimension of ["2d", "3d"] as const) {
       const lin = new Vector3();
       const ang = new Vector3();
       a.getBodyVelocities(k, lin, ang);
+      // The drive velocity of the last driven step stays reported (displacement / dt).
+      expect(lin.x).toBeCloseTo(0.05 / DT, 6);
+      expect(ang.z).toBeCloseTo(0.1 / DT, 6);
+      a.step(DT);
+      a.getBodyVelocities(k, lin, ang);
       expect([lin.x, ang.z]).toEqual([0, 0]);
       const r = new Quaternion();
       a.getBodyTransform(k, new Vector3(), r);
@@ -616,7 +624,6 @@ for (const dimension of ["2d", "3d"] as const) {
                   new Vector2(1, 0),
                   new Vector2(1, 1),
                 ],
-                closed: true,
               },
               // Off-centre polygon (centroid not at the origin).
               {
@@ -722,7 +729,7 @@ for (const dimension of ["2d", "3d"] as const) {
         a.step(DT);
         for (const e of a.drainEvents()) {
           if (e.type.startsWith("collision")) {
-            const c = e as Extract<PhysicsEvent, { type: "collisionstart" }>;
+            const c = e as CollisionEvent;
             expect(c.bodyA).toBe(g);
             expect(c.bodyB).toBe(b);
             expect(c.contacts).toEqual([]);
@@ -767,7 +774,7 @@ for (const dimension of ["2d", "3d"] as const) {
       run(a, 20, events);
       const starts = events.filter(
         (e) => e.type === "collisionstart",
-      ) as Extract<PhysicsEvent, { type: "collisionstart" }>[];
+      ) as CollisionEvent[];
       expect(starts).toHaveLength(3);
       expect(starts.map((e) => e.bodyB)).toEqual(handles);
       expect(starts.every((e) => e.bodyA === g)).toBe(true);

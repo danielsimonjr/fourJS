@@ -215,6 +215,12 @@ interface BodyRecord {
   ccdMode: CCDMode;
   /** Pending kinematic-position target for the next step. */
   target: { position: Vector3; rotation: Quaternion } | undefined;
+  /**
+   * Drive velocity of the last driven step (linear xyz then angular xyz),
+   * reported by `getBodyVelocities` until the next step; `kinValid` guards it.
+   */
+  kin: [number, number, number, number, number, number];
+  kinValid: boolean;
 }
 
 interface ColliderRecord {
@@ -269,6 +275,118 @@ interface SnapshotBody {
   sleeping: boolean;
   ccd: CCDMode;
   target: number[] | null;
+}
+
+const isId = (v: unknown): v is number =>
+  typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
+const isNum = (v: unknown): v is number => typeof v === "number";
+const isNumOrNull = (v: unknown): boolean => v === null || isNum(v);
+const isTuple = (v: unknown, n: number, ok: (e: unknown) => boolean): boolean =>
+  Array.isArray(v) && v.length === n && v.every(ok);
+
+/**
+ * Shape-checks every field of the decoded metadata before the PhysJS world is
+ * touched (§34, §96): ids are safe integers, every cross reference resolves and
+ * the counters exceed the largest id. Returns the first problem, or `undefined`.
+ */
+function validateSnapshotMeta(meta: SnapshotMeta): string | undefined {
+  const raw = meta as unknown as Record<string, unknown>;
+  for (const key of ["nextBodyId", "nextColliderId", "nextJointId"]) {
+    if (!isId(raw[key])) {
+      return `${key} is not a non-negative integer`;
+    }
+  }
+  if (
+    !Array.isArray(raw["colliders"]) ||
+    !Array.isArray(raw["joints"]) ||
+    !Array.isArray(raw["pairs"])
+  ) {
+    return "colliders, joints and pairs must be arrays";
+  }
+  const bodyIds = new Set<number>();
+  let maxBody = 0;
+  for (const e of meta.bodies as unknown[]) {
+    const b = e as Record<string, unknown> | null;
+    if (
+      typeof b !== "object" ||
+      b === null ||
+      !isId(b["id"]) ||
+      !isId(b["handle"]) ||
+      typeof b["type"] !== "string" ||
+      !Object.hasOwn(BODY_TYPE_INDEX, b["type"]) ||
+      !isNumOrNull(b["mass"]) ||
+      !(b["inertia"] === null || isTuple(b["inertia"], 3, isNumOrNull)) ||
+      !isTuple(b["force"], 3, isNum) ||
+      !isTuple(b["torque"], 3, isNum) ||
+      typeof b["sleeping"] !== "boolean" ||
+      typeof b["ccd"] !== "string" ||
+      !(b["target"] === null || isTuple(b["target"], 7, isNum)) ||
+      bodyIds.has(b["id"])
+    ) {
+      return "a body entry is malformed or duplicated";
+    }
+    bodyIds.add(b["id"]);
+    maxBody = Math.max(maxBody, b["id"]);
+  }
+  const colliderIds = new Set<number>();
+  let maxCollider = 0;
+  for (const c of raw["colliders"] as unknown[]) {
+    if (
+      !Array.isArray(c) ||
+      c.length !== 5 ||
+      !isId(c[0]) ||
+      !isId(c[1]) ||
+      !isId(c[2]) ||
+      !isNum(c[3]) ||
+      !isNum(c[4]) ||
+      colliderIds.has(c[0])
+    ) {
+      return "a collider entry is malformed or duplicated";
+    }
+    if (!bodyIds.has(c[2])) {
+      return `collider ${String(c[0])} references unknown body ${String(c[2])}`;
+    }
+    colliderIds.add(c[0]);
+    maxCollider = Math.max(maxCollider, c[0]);
+  }
+  const jointIds = new Set<number>();
+  let maxJoint = 0;
+  for (const j of raw["joints"] as unknown[]) {
+    if (
+      !Array.isArray(j) ||
+      j.length !== 5 ||
+      !isId(j[0]) ||
+      !isId(j[1]) ||
+      typeof j[2] !== "string" ||
+      !isId(j[3]) ||
+      !isId(j[4]) ||
+      jointIds.has(j[0])
+    ) {
+      return "a joint entry is malformed or duplicated";
+    }
+    if (!bodyIds.has(j[3]) || !bodyIds.has(j[4])) {
+      return `joint ${String(j[0])} references an unknown body`;
+    }
+    jointIds.add(j[0]);
+    maxJoint = Math.max(maxJoint, j[0]);
+  }
+  for (const p of raw["pairs"] as unknown[]) {
+    if (
+      !isTuple(p, 2, isId) ||
+      !colliderIds.has((p as number[])[0]) ||
+      !colliderIds.has((p as number[])[1])
+    ) {
+      return "a contact pair references an unknown collider";
+    }
+  }
+  if (
+    (raw["nextBodyId"] as number) <= maxBody ||
+    (raw["nextColliderId"] as number) <= maxCollider ||
+    (raw["nextJointId"] as number) <= maxJoint
+  ) {
+    return "an id counter does not exceed the largest live id";
+  }
+  return undefined;
 }
 
 const FNV_OFFSET = 2166136261;
@@ -330,6 +448,23 @@ abstract class PhysJSAdapterBase
   #nextJointId = 1;
   #joints = new Map<number, JointEntry>();
   #pendingEvents: PhysicsEvent[] = [];
+  /** Per-step scratch (§7b): reused, never handed out. */
+  readonly #driven: BodyRecord[] = [];
+  readonly #started: ColliderRecord[] = [];
+  readonly #stopped: ColliderRecord[] = [];
+  readonly #stoppedKeys = new Set<number>();
+  readonly #outA = new Float64Array(4);
+  readonly #outB = new Float64Array(4);
+  readonly #scratchQuat = new Quaternion();
+  readonly #force3: [number, number, number] = [0, 0, 0];
+  readonly #force2: [number, number] = [0, 0];
+  readonly #torque1: [number] = [0];
+  readonly #angular3: [number, number, number] = [0, 0, 0];
+  readonly #angular1: [number] = [0];
+  /** Lazily created raycast scratch world and the live state it mirrors. */
+  #rayScratch: pj.World | undefined;
+  #rayScratchKey: string | undefined;
+  #raySnapshot: ArrayBuffer | Uint8Array | undefined;
 
   constructor(dimension: PhysicsDimension) {
     this.#dimension = dimension;
@@ -464,6 +599,8 @@ abstract class PhysJSAdapterBase
       sleeping: false,
       ccdMode,
       target: undefined,
+      kin: [0, 0, 0, 0, 0, 0],
+      kinValid: false,
     };
     this.#nextBodyId += 1;
     this.#bodies.set(record.id, record);
@@ -714,8 +851,7 @@ abstract class PhysJSAdapterBase
     if (options.maxHits === 1 && this.#passes(hit.collider, options)) {
       return [this.#rayHit(hit)];
     }
-    const scratch = pj.createWorld({ dims: this.#dims });
-    pj.restore(scratch, pj.snapshot(world));
+    const scratch = this.#rayScratchWorld(world);
     const hits: RaycastHit[] = [];
     while (hit !== undefined && hits.length < options.maxHits) {
       if (this.#passes(hit.collider, options)) {
@@ -725,6 +861,29 @@ abstract class PhysJSAdapterBase
       hit = pj.raycast(scratch, origin, direction, maxDistance);
     }
     return hits;
+  }
+
+  /**
+   * One lazily created scratch world per adapter (no per-query allocation of
+   * a world). The live world is serialised only when its PhysJS checksum
+   * changed (a step or any write); the hit walk removes colliders from the
+   * scratch, so the scratch itself is restored from the cached bytes before
+   * each multi-hit walk. Cost: one checksum per query, one snapshot per live
+   * state change, one restore per multi-hit query.
+   */
+  #rayScratchWorld(world: pj.World): pj.World {
+    const key = pj.checksum(world);
+    if (this.#rayScratch === undefined) {
+      this.#rayScratch = pj.createWorld({ dims: this.#dims });
+    }
+    let bytes = this.#raySnapshot;
+    if (this.#rayScratchKey !== key || bytes === undefined) {
+      bytes = pj.snapshot(world);
+      this.#raySnapshot = bytes;
+      this.#rayScratchKey = key;
+    }
+    pj.restore(this.#rayScratch, bytes);
+    return this.#rayScratch;
   }
 
   shapeCast(_query: ShapeCastQuery): ShapeCastHit[] {
@@ -847,7 +1006,11 @@ abstract class PhysJSAdapterBase
     } catch {
       meta = undefined;
     }
-    if (meta === undefined || !Array.isArray(meta.bodies)) {
+    if (
+      typeof meta !== "object" ||
+      meta === null ||
+      !Array.isArray(meta.bodies)
+    ) {
       return reject("Snapshot metadata does not parse");
     }
     if (meta.adapter !== this.name || meta.version !== this.version) {
@@ -855,6 +1018,10 @@ abstract class PhysJSAdapterBase
         `Snapshot was written by ${JSON.stringify(meta.adapter)} ${JSON.stringify(meta.version)} and this adapter is ${JSON.stringify(this.name)} ${JSON.stringify(this.version)}`,
         ADAPTER_ERROR_CODE,
       );
+    }
+    const problem = validateSnapshotMeta(meta);
+    if (problem !== undefined) {
+      reject(`Snapshot metadata is malformed: ${problem}`);
     }
     try {
       pj.restore(
@@ -893,8 +1060,10 @@ abstract class PhysJSAdapterBase
       );
     }
     const fields = world.bodies.fields;
-    const driven: BodyRecord[] = [];
+    const driven = this.#driven;
+    driven.length = 0;
     for (const record of this.#bodies.values()) {
+      record.kinValid = false;
       if (!this.#sleeping.enabled) {
         fields.sleepTimer[record.slot] = 0;
       }
@@ -911,10 +1080,12 @@ abstract class PhysJSAdapterBase
 
     pj.step(world, delta);
 
+    // Events first: relativeVelocity must see the pusher's drive velocity.
+    this.#collectEvents();
     for (const record of driven) {
       this.#finishKinematic(world, record);
     }
-    this.#collectEvents();
+    driven.length = 0;
   }
 
   setEventInterest(interest: PhysicsEventInterest): void {
@@ -978,9 +1149,14 @@ abstract class PhysJSAdapterBase
   ): void {
     const record = this.#requireBody(handle);
     const world = this.#requireWorld();
-    const v = pj.getLinearVelocity(world, record.handle);
+    if (record.kinValid) {
+      outLinear.set(record.kin[0], record.kin[1], record.kin[2]);
+      outAngular.set(record.kin[3], record.kin[4], record.kin[5]);
+      return;
+    }
+    const v = pj.getLinearVelocity(world, record.handle, this.#outA);
     outLinear.set(v[0], v[1], this.#dims === 3 ? v[2] : 0);
-    const w = pj.getAngularVelocity(world, record.handle);
+    const w = pj.getAngularVelocity(world, record.handle, this.#outB);
     if (this.#dims === 2) {
       outAngular.set(0, 0, w[0]);
     } else {
@@ -1485,7 +1661,10 @@ abstract class PhysJSAdapterBase
               sleeping: false,
               ccdMode: e.ccd,
               target: undefined,
+              kin: [0, 0, 0, 0, 0, 0],
+              kinValid: false,
             };
+      record.kinValid = false;
       record.type = e.type;
       record.authoredMass = e.mass ?? undefined;
       record.authoredInertia =
@@ -1754,18 +1933,27 @@ abstract class PhysJSAdapterBase
     const [fx, fy, fz] = record.force;
     const [tx, ty, tz] = record.torque;
     if (fx !== 0 || fy !== 0 || fz !== 0) {
-      pj.applyForce(
-        world,
-        record.handle,
-        this.#dims === 2 ? [fx, fy] : [fx, fy, fz],
-      );
+      if (this.#dims === 2) {
+        this.#force2[0] = fx;
+        this.#force2[1] = fy;
+        pj.applyForce(world, record.handle, this.#force2);
+      } else {
+        this.#force3[0] = fx;
+        this.#force3[1] = fy;
+        this.#force3[2] = fz;
+        pj.applyForce(world, record.handle, this.#force3);
+      }
     }
     if (tx !== 0 || ty !== 0 || tz !== 0) {
-      pj.applyTorque(
-        world,
-        record.handle,
-        this.#dims === 2 ? [tz] : [tx, ty, tz],
-      );
+      if (this.#dims === 2) {
+        this.#torque1[0] = tz;
+        pj.applyTorque(world, record.handle, this.#torque1);
+      } else {
+        this.#angular3[0] = tx;
+        this.#angular3[1] = ty;
+        this.#angular3[2] = tz;
+        pj.applyTorque(world, record.handle, this.#angular3);
+      }
     }
   }
 
@@ -1777,16 +1965,24 @@ abstract class PhysJSAdapterBase
     delta: number,
   ): void {
     world.bodies.typeIndex[record.slot] = BODY_TYPE_INDEX["kinematic-velocity"];
-    const p = pj.getPosition(world, record.handle);
+    const p = pj.getPosition(world, record.handle, this.#outA);
     const dx = (target.position.x - p[0]) / delta;
     const dy = (target.position.y - p[1]) / delta;
     const dz = this.#dims === 3 ? (target.position.z - p[2]) / delta : 0;
-    pj.setLinearVelocity(
-      world,
-      record.handle,
-      this.#dims === 2 ? [dx, dy] : [dx, dy, dz],
-    );
-    const current = new Quaternion();
+    if (this.#dims === 2) {
+      this.#force2[0] = dx;
+      this.#force2[1] = dy;
+      pj.setLinearVelocity(world, record.handle, this.#force2);
+    } else {
+      this.#force3[0] = dx;
+      this.#force3[1] = dy;
+      this.#force3[2] = dz;
+      pj.setLinearVelocity(world, record.handle, this.#force3);
+    }
+    record.kin[0] = dx;
+    record.kin[1] = dy;
+    record.kin[2] = dz;
+    const current = this.#scratchQuat;
     this.#currentRotation(world, record, current);
     const q = target.rotation;
     // delta = target * conj(current); angular velocity = axis * angle / dt.
@@ -1808,9 +2004,19 @@ abstract class PhysJSAdapterBase
     const sin = Math.hypot(rx, ry, rz);
     const angle = 2 * Math.atan2(sin, rw);
     const scale = sin > ZERO_EPSILON ? angle / sin / delta : 0;
-    const angular =
-      this.#dims === 2 ? [rz * scale] : [rx * scale, ry * scale, rz * scale];
-    pj.setAngularVelocity(world, record.handle, angular);
+    record.kin[3] = this.#dims === 2 ? 0 : rx * scale;
+    record.kin[4] = this.#dims === 2 ? 0 : ry * scale;
+    record.kin[5] = rz * scale;
+    record.kinValid = true;
+    if (this.#dims === 2) {
+      this.#angular1[0] = rz * scale;
+      pj.setAngularVelocity(world, record.handle, this.#angular1);
+    } else {
+      this.#angular3[0] = rx * scale;
+      this.#angular3[1] = ry * scale;
+      this.#angular3[2] = rz * scale;
+      pj.setAngularVelocity(world, record.handle, this.#angular3);
+    }
   }
 
   #finishKinematic(world: pj.World, record: BodyRecord): void {
@@ -1834,7 +2040,7 @@ abstract class PhysJSAdapterBase
   }
 
   #currentRotation(world: pj.World, record: BodyRecord, out: Quaternion): void {
-    const r = pj.getRotation(world, record.handle);
+    const r = pj.getRotation(world, record.handle, this.#outB);
     if (this.#dims === 2) {
       const half = r[0] / 2;
       out.set(0, 0, Math.sin(half), Math.cos(half));
@@ -2029,9 +2235,12 @@ abstract class PhysJSAdapterBase
 
   #collectEvents(): void {
     const world = this.#requireWorld();
-    const started: ColliderRecord[] = [];
-    const stopped: ColliderRecord[] = [];
-    const stoppedKeys = new Set<number>();
+    const started = this.#started;
+    const stopped = this.#stopped;
+    const stoppedKeys = this.#stoppedKeys;
+    started.length = 0;
+    stopped.length = 0;
+    stoppedKeys.clear();
     for (const event of pj.drainEvents(world)) {
       if (event.type !== "contactBegin" && event.type !== "contactEnd") {
         continue;
@@ -2095,15 +2304,15 @@ abstract class PhysJSAdapterBase
     }
     const relativeVelocity = new Vector3();
     if (phase !== "end") {
-      const va = pj.getLinearVelocity(world, bodyA.handle);
-      const vb = pj.getLinearVelocity(world, bodyB.handle);
+      const va = pj.getLinearVelocity(world, bodyA.handle, this.#outA);
+      const vb = pj.getLinearVelocity(world, bodyB.handle, this.#outB);
       relativeVelocity.set(
         va[0] - vb[0],
         va[1] - vb[1],
         this.#dims === 3 ? va[2] - vb[2] : 0,
       );
     }
-    const contacts: ContactPoint[] = [];
+    const contacts = EMPTY_CONTACTS;
     this.#pendingEvents.push({
       type:
         phase === "start"
@@ -2121,6 +2330,11 @@ abstract class PhysJSAdapterBase
     });
   }
 }
+
+/** Shared by every event: this adapter reports no contact manifold points. */
+const EMPTY_CONTACTS: ContactPoint[] = Object.freeze(
+  [],
+) as unknown as ContactPoint[];
 
 function integrates(type: BodyType): boolean {
   return type === "dynamic" || type === "kinematic-velocity";

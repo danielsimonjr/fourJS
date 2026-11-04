@@ -1,5 +1,11 @@
 import { isFourError } from "@fourjs/core";
-import { Matrix3, Quaternion, Vector2, Vector3 } from "@fourjs/math";
+import {
+  constructionCount,
+  Matrix3,
+  Quaternion,
+  Vector2,
+  Vector3,
+} from "@fourjs/math";
 import type { CollisionShape, PhysicsBodyHandle } from "@fourjs/physics";
 import { describe, expect, it } from "vitest";
 
@@ -403,6 +409,116 @@ describe("authored mass and inertia survive the envelope", () => {
       a.forEachJoint((h) => (joint = h));
       a.dispose();
       expect(code(() => a.getJointId(joint as never))).toBeDefined();
+    });
+  }
+});
+
+describe("snapshot metadata validation, kinematic velocity, allocations, raycast scratch", () => {
+  function editMeta(
+    snap: ArrayBuffer,
+    edit: (meta: Record<string, unknown>) => unknown,
+  ): ArrayBuffer {
+    const view = new DataView(snap);
+    const metaLen = view.getUint32(8, true);
+    const text = new TextDecoder().decode(new Uint8Array(snap, 16, metaLen));
+    const next = new TextEncoder().encode(
+      JSON.stringify(edit(JSON.parse(text) as Record<string, unknown>)),
+    );
+    const rest = new Uint8Array(snap, 16 + metaLen);
+    const out = new Uint8Array(16 + next.length + rest.length);
+    out.set(new Uint8Array(snap, 0, 16));
+    new DataView(out.buffer).setUint32(8, next.length, true);
+    out.set(next, 16);
+    out.set(rest, 16 + next.length);
+    return out.buffer;
+  }
+
+  for (const d of ["2d", "3d"] as const) {
+    it(`${d} refuses mis-shaped metadata before touching the world`, () => {
+      const { a } = scene(d);
+      run(a, 5);
+      const snap = a.createSnapshot();
+      run(a, 3);
+      const before = a.checksum();
+      const bad: ((m: Record<string, unknown>) => unknown)[] = [
+        (m) => {
+          (m["colliders"] as number[][])[0][2] = 999;
+          return m;
+        },
+        (m) => {
+          (m["pairs"] as number[][]).push([1, 999]);
+          return m;
+        },
+        () => null,
+        (m) => {
+          (m["bodies"] as { id: unknown }[])[0].id = 1.5;
+          return m;
+        },
+        (m) => {
+          m["nextBodyId"] = 1;
+          return m;
+        },
+        (m) => {
+          m["joints"] = [null];
+          return m;
+        },
+      ];
+      for (const edit of bad) {
+        expect(code(() => a.restoreSnapshot(editMeta(snap, edit)))).toBe(
+          "UNTRUSTED_INPUT_REJECTED",
+        );
+        expect(a.checksum()).toBe(before);
+      }
+    });
+
+    it(`${d} reports the drive velocity and includes it in contact events`, () => {
+      const a = d === "2d" ? new PhysJSAdapter2D() : new PhysJSAdapter3D();
+      a.initialize({ dimension: d, gravity: new Vector3(0, 0, 0) });
+      const k = a.createBody({ type: "kinematic-position" });
+      a.createCollider({ body: k, shape: BALL[d] });
+      const b = add(a, d, "dynamic", new Vector3(0.9, 0, 0));
+      a.setNextKinematicTransform(k, new Vector3(0.05, 0, 0));
+      a.step(DT);
+      const lin = new Vector3();
+      a.getBodyVelocities(k, lin, new Vector3());
+      expect(lin.x).toBeCloseTo(0.05 / DT, 6);
+      const start = a.drainEvents().find((e) => e.type === "collisionstart") as
+        { relativeVelocity: Vector3; bodyA: unknown } | undefined;
+      expect(start).toBeDefined();
+      expect(
+        Math.abs((start as { relativeVelocity: Vector3 }).relativeVelocity.x),
+      ).toBeGreaterThan(1);
+      expect(b).toBeDefined();
+    });
+
+    it(`${d} constructs no math types per step beyond event hand-over`, () => {
+      const { a } = scene(d);
+      run(a, 40);
+      const before = constructionCount();
+      for (let i = 0; i < 10; i += 1) {
+        a.step(DT);
+      }
+      const events = a.drainEvents().length;
+      // Two Vector3 (relativeVelocity, totalImpulse) per emitted event, as Rapier.
+      expect(constructionCount() - before).toBeLessThanOrEqual(2 * events);
+    });
+
+    it(`${d} multi-hit raycasts agree across a shared scratch world`, () => {
+      const a = make(d);
+      for (let i = 0; i < 3; i += 1) {
+        add(a, d, "static", new Vector3(i * 2, 0, 0));
+      }
+      const q = {
+        origin: new Vector3(-5, 0, 0),
+        direction: new Vector3(1, 0, 0),
+        maxHits: 5,
+      };
+      const first = a.raycast(q).map((h) => h.distance);
+      const second = a.raycast(q).map((h) => h.distance);
+      expect(first).toHaveLength(3);
+      expect(second).toEqual(first);
+      a.step(DT);
+      expect(a.raycast(q).map((h) => h.distance)).toEqual(first);
     });
   }
 });
