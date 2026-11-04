@@ -472,6 +472,11 @@ function contentVersionOf(
     hash = fnvMix(hash, transformVersion | 0);
     if (entries !== null) {
       // Atlas runs: the packed rectangle is part of the vertex stream.
+      // `pageIndex` stands in for page identity ON PURPOSE: the stream holds
+      // only normalised uvs, which are identical for the same slot on a
+      // re-created page. The page itself is not cached by `contentVersion`:
+      // `batch.texture` is rewritten on every `next()` and both backends
+      // re-resolve and re-bind it each frame, independent of the upload skip.
       const entry = entries[i];
       hash = fnvMix(hash, entry.pageIndex);
       hash = fnvMix(hash, entry.x);
@@ -571,8 +576,36 @@ function atlasJoinable(
   );
 }
 
-/** Whether every uv of `geometry` lies in `[0, 1]` (and uvs exist). */
+/** Per-geometry verdict of {@link uvsInUnitRange}, valid for one `version`. */
+interface UvRangeVerdict {
+  version: number;
+  ok: boolean;
+}
+
+const uvRangeCache = new WeakMap<BufferGeometry, UvRangeVerdict>();
+
+/**
+ * Whether every uv of `geometry` lies in `[0, 1]` (and uvs exist). The scan is
+ * cached per geometry keyed on `geometry.version`, so a frame that meets the
+ * same unchanged geometry again neither rescans nor allocates (§7b); only the
+ * first sighting of a geometry, or one edit later, pays the O(vertices) pass.
+ */
 function uvsInUnitRange(geometry: BufferGeometry): boolean {
+  const cached = uvRangeCache.get(geometry);
+  if (cached !== undefined && cached.version === geometry.version) {
+    return cached.ok;
+  }
+  const ok = scanUvsInUnitRange(geometry);
+  if (cached === undefined) {
+    uvRangeCache.set(geometry, { version: geometry.version, ok });
+  } else {
+    cached.version = geometry.version;
+    cached.ok = ok;
+  }
+  return ok;
+}
+
+function scanUvsInUnitRange(geometry: BufferGeometry): boolean {
   const uvs = geometry.uvs;
   if (uvs === undefined) return false;
   const n = geometry.vertexCount * 2;
@@ -1010,6 +1043,24 @@ export class RenderBatcher {
       reach += 1;
     }
 
+    // Acceptance check BEFORE packing (nothing here touches the atlas): cut the
+    // candidate at the first item with unusable uvs; a run that is then shorter
+    // than two items, or that never leaves `first`'s material, is not an atlas
+    // run, so packing its textures would only spend page space for nothing.
+    let usable = 0;
+    let differsEarly = false;
+    for (; usable < reach; usable += 1) {
+      const item = items[from + usable] as BatchableItem;
+      if (!uvsInUnitRange(item.geometry)) {
+        break;
+      }
+      differsEarly ||= item.material !== first.material;
+    }
+    if (usable < 2 || !differsEarly) {
+      return 0;
+    }
+    reach = usable;
+
     const textures = this.#textures;
     let distinct = 0;
     let previous: MaterialTexture | null = null;
@@ -1032,11 +1083,7 @@ export class RenderBatcher {
     for (let i = 0; i < reach; i += 1) {
       const item = items[from + i] as BatchableItem;
       const entry = atlas.entry(textureOf(item)!);
-      if (
-        entry === null ||
-        (page !== null && entry.page !== page) ||
-        !uvsInUnitRange(item.geometry)
-      ) {
+      if (entry === null || (page !== null && entry.page !== page)) {
         break;
       }
       page = entry.page;

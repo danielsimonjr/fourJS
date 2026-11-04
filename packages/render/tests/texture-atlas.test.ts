@@ -268,6 +268,32 @@ describe("TextureAtlas — packing", () => {
     expect(full.entry(y)).toBeNull();
   });
 
+  it("returns a resized texture's slot: usedTexels drops and the slot is reused at the same size", () => {
+    const atlas = new TextureAtlas({ pageSize: 16 });
+    const t = tex(3, 3);
+    const keep = tex(2, 2);
+    atlas.pack(keep);
+    const first = atlas.pack(t)!;
+    expect(atlas.statistics().usedTexels).toBe(16 + 25);
+    t.source = {
+      width: 5,
+      height: 5,
+      data: new Uint8Array(5 * 5 * 4).fill(3),
+    };
+    const moved = atlas.entry(t)!;
+    // The 3x3 slot (25 padded texels) left the count; the 5x5 one (49) joined.
+    expect(atlas.statistics()).toMatchObject({
+      textures: 2,
+      usedTexels: 16 + 49,
+    });
+    // Another 3x3 texture takes the freed slot rather than fresh shelf space.
+    const other = atlas.pack(tex(3, 3))!;
+    expect(other.x).toBe(first.x);
+    expect(other.y).toBe(first.y);
+    expect(moved.x !== first.x || moved.y !== first.y).toBe(true);
+    expect(atlas.statistics().usedTexels).toBe(16 + 49 + 25);
+  });
+
   it("reports statistics, clears and disposes", () => {
     const atlas = new TextureAtlas({ pageSize: 16 });
     atlas.pack(tex(2, 2));
@@ -326,6 +352,81 @@ function uvQuad(minU = 0, maxU = 1): BufferGeometry {
     indices: new Uint16Array([0, 1, 2, 0, 2, 3]),
   });
 }
+
+describe("RenderBatcher — atlas planning (wave 11)", () => {
+  it("packs nothing for a candidate that fails its cheap checks", () => {
+    const a = tex(4, 4, 1);
+    const b = tex(4, 4, 2);
+    const scene = new Scene();
+    scene.add(
+      new RenderableNode(uvQuad(0, 1), new UnlitMaterial({ map: a })),
+      new RenderableNode(uvQuad(-0.5, 1.5), new UnlitMaterial({ map: b })),
+    );
+    const batcher = new RenderBatcher({ atlas: { pageSize: 32 } });
+    expect(batcher.next(listOf(scene), 0)).toBeNull();
+    expect(batcher.atlas!.statistics()).toMatchObject({
+      pages: 0,
+      textures: 0,
+      usedTexels: 0,
+    });
+  });
+
+  it("scans a geometry's uvs once per version, not once per frame", () => {
+    const a = tex(4, 4, 1);
+    const b = tex(4, 4, 2);
+    const g1 = uvQuad(0, 1);
+    const g2 = uvQuad(0, 1);
+    let reads = 0;
+    for (const g of [g1, g2]) {
+      const real = Object.getOwnPropertyDescriptor(
+        Object.getPrototypeOf(g) as object,
+        "uvs",
+      )!;
+      Object.defineProperty(g, "uvs", {
+        get() {
+          reads += 1;
+          return (real.get as () => Float32Array).call(g);
+        },
+      });
+    }
+    const scene = new Scene();
+    scene.add(
+      new RenderableNode(g1, new UnlitMaterial({ map: a })),
+      new RenderableNode(g2, new UnlitMaterial({ map: b })),
+    );
+    const batcher = new RenderBatcher({ atlas: { pageSize: 32 } });
+    expect(batcher.next(listOf(scene), 0)!.items).toBe(2);
+    const afterFirst = reads;
+    expect(afterFirst).toBeGreaterThan(0);
+    batcher.next(listOf(scene), 0);
+    batcher.next(listOf(scene), 0);
+    // Frames 2 and 3 only read uvs to copy them into the stream (2 per frame
+    // per geometry at most), never to rescan them for range.
+    const perFrame = reads - afterFirst;
+    expect(perFrame).toBeLessThanOrEqual(2 * 2 * 2);
+    // An edit bumps the version and re-validates (here: now out of range).
+    g1.uvs![0] = -1;
+    g1.markDirty();
+    expect(batcher.next(listOf(scene), 0)).toBeNull();
+  });
+
+  it("re-binds a repacked page: batch.texture follows the page even when contentVersion is unchanged", () => {
+    const a = tex(4, 4, 1);
+    const b = tex(4, 4, 2);
+    const scene = new Scene();
+    scene.add(sprite(a), sprite(b, { x: 3 }));
+    const batcher = new RenderBatcher({ atlas: { pageSize: 32 } });
+    const list = listOf(scene);
+    const first = batcher.next(list, 0)!;
+    const version = first.contentVersion;
+    const oldPage = first.texture;
+    batcher.atlas!.clear();
+    const second = batcher.next(list, 0)!;
+    expect(second.contentVersion).toBe(version); // identical layout, same stamp
+    expect(second.texture).not.toBe(oldPage); // yet the page object is new
+    expect(second.texture).toBe(batcher.atlas!.entry(a)!.page);
+  });
+});
 
 describe("RenderBatcher — atlas grouping (W11.4)", () => {
   it("is off by default: distinct textures do not merge", () => {

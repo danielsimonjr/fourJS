@@ -573,3 +573,33 @@ describe("block alignment and single-level fallback", () => {
     expect(out.levels![0][1]).toBe(2);
   });
 });
+
+describe("per-call maximumDecodedBytes and KTXorientation (wave 11)", () => {
+  it("honours min(construction, call) for maximumDecodedBytes", async () => {
+    const transcode = await createBoundedBasisTranscoder({
+      wasmBinary: fakeTranscoder(compressedSpec()),
+      maximumDecodedBytes: 1000,
+    });
+    const formats = { supportedFormats: [...ALL] };
+    rejects(() =>
+      transcode(ktx2().buffer, { ...formats, maximumDecodedBytes: 70 }),
+    ); // call cap 70 < 80 needed
+    expect(
+      transcode(ktx2().buffer, { ...formats, maximumDecodedBytes: 5000 })
+        .levels,
+    ).toHaveLength(2); // a call cannot loosen below the construction cap
+    expect(() =>
+      transcode(ktx2().buffer, { ...formats, maximumDecodedBytes: 0 }),
+    ).toThrow(RangeError);
+  });
+
+  it("parseKtx2 exposes KTXorientation, undefined when absent", () => {
+    expect(
+      parseKtx2(ktx2({ kv: [["KTXorientation", "ru\0"]] }).buffer).orientation,
+    ).toBe("ru");
+    expect(
+      parseKtx2(ktx2({ kv: [["KTXorientation", "rd"]] }).buffer).orientation,
+    ).toBe("rd");
+    expect(parseKtx2(ktx2().buffer).orientation).toBeUndefined();
+  });
+});

@@ -63,7 +63,10 @@
  * target count) becomes N scalar tracks at `morphWeights.<node>.<k>` over
  * {@link GltfInstance.morphWeights} — one `Float32Array` per node, shared by
  * every `Mesh` of a multi-primitive node, so the track writes the very array
- * the render list snapshots.
+ * the render list reads. The render list keeps that array by **live
+ * reference** (it is not copied) and the weights are **not interpolated** at
+ * `interpolationAlpha`: a consumer sees whatever the array holds when the list
+ * is read.
  *
  * ## Skins and the §62 joint ceiling
  *
@@ -445,6 +448,12 @@ export function instantiateGltf(asset: GltfAsset): GltfInstance {
     }
     node.name = record.name;
     let sharedWeights: Float32Array | undefined;
+    // The loader refuses differing `targets.length` across a mesh's
+    // primitives, so one count sizes the array every Mesh of this node shares.
+    const meshTargetCount =
+      record.mesh === null
+        ? undefined
+        : asset.meshes[record.mesh].morphTargetCount;
     const authoredWeights =
       record.morphWeights ??
       (record.mesh === null
@@ -457,7 +466,10 @@ export function instantiateGltf(asset: GltfAsset): GltfInstance {
       ) {
         sharedWeights ??=
           authoredWeights?.slice() ??
-          new Float32Array(1 + (mesh.geometry.extraMorphTargets?.length ?? 0));
+          new Float32Array(
+            meshTargetCount ??
+              1 + (mesh.geometry.extraMorphTargets?.length ?? 0),
+          );
         mesh.addComponent(new MorphWeights(sharedWeights));
       }
     }

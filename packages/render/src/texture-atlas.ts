@@ -50,9 +50,11 @@
  * texture allocates (a slot record, perhaps a shelf or a page); looking up an
  * already-packed texture, the steady state, allocates nothing.
  *
- * Slots are never freed individually: an edited texture of the same size is
- * re-blitted in place, one that changed size is re-packed and its old slot is
- * leaked until {@link TextureAtlas.clear}.
+ * An edited texture of the same size is re-blitted in place. One that changed
+ * size is re-packed: its old slot leaves `usedTexels` and joins its page's
+ * free list, where a later texture of exactly that padded size reuses it. No
+ * other space is reclaimed (shelves are never compacted or merged) until
+ * {@link TextureAtlas.clear}.
  */
 
 import { Rectangle2, type ColorSpace } from "@fourjs/math";
@@ -141,6 +143,8 @@ interface Page {
   colorSpace: ColorSpace;
   shelves: Shelf[];
   nextY: number;
+  /** Abandoned padded slots, reusable by an exact-size request. */
+  free: { x: number; y: number; w: number; h: number }[];
 }
 
 interface MutableEntry {
@@ -274,6 +278,7 @@ export class TextureAtlas {
     // Resized (or no longer packable): abandon the slot, place anew.
     this.#entries.delete(texture);
     this.#textures -= 1;
+    this.#release(entry);
     return this.pack(texture);
   }
 
@@ -337,6 +342,20 @@ export class TextureAtlas {
     this.clear();
   }
 
+  /** Returns a resized texture's padded slot to its page's free list. */
+  #release(entry: MutableEntry): void {
+    const padded = 2 * ATLAS_PADDING;
+    const w = entry.width + padded;
+    const h = entry.height + padded;
+    this.#usedTexels -= w * h;
+    this.#pages[entry.pageIndex].free.push({
+      x: entry.x - ATLAS_PADDING,
+      y: entry.y - ATLAS_PADDING,
+      w,
+      h,
+    });
+  }
+
   #place(texture: MaterialTexture): MutableEntry | null {
     const padded = 2 * ATLAS_PADDING;
     const w = texture.width + padded;
@@ -385,6 +404,15 @@ export class TextureAtlas {
   /** Reserves a `w × h` padded slot on `page`; `null` when none fits. */
   #fit(page: Page, w: number, h: number): { x: number; y: number } | null {
     const size = this.pageSize;
+    const free = page.free;
+    for (let i = 0; i < free.length; i += 1) {
+      if (free[i].w === w && free[i].h === h) {
+        const slot = free[i];
+        free[i] = free[free.length - 1];
+        free.pop();
+        return { x: slot.x, y: slot.y };
+      }
+    }
     let best: Shelf | null = null;
     for (const shelf of page.shelves) {
       if (
@@ -421,6 +449,7 @@ export class TextureAtlas {
       colorSpace,
       shelves: [],
       nextY: 0,
+      free: [],
     };
     this.#pages.push(page);
     return page;

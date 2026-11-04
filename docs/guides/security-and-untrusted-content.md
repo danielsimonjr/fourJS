@@ -228,6 +228,20 @@ else the slot is dropped and listed in the material's `ignoredTextures`; a
 document that lists the extension in `extensionsRequired` is refused with a
 message naming `GltfLoaderOptions.basisTranscoder`.
 
+Two further limits apply per document. **Orientation:** the glTF loader flips
+every `TEXCOORD_0` (`v -> 1 - v`) to match the row flip of the image tier, and
+BC7/ETC2/ASTC blocks cannot be flipped in place, so a KTX2 is transcoded only
+when its `KTXorientation` key/value is `ru` (rows bottom-up; `toktx
+--lower_left_maps_to_s0t0` writes it). `rd`, or a missing key (counted as
+`rd`), would sample vertically mirrored: the loader falls back to
+`textures[i].source` when present, else drops the slot and records
+`... (KHR_texture_basisu: KTX2 orientation 'rd' would sample mirrored; ...)` in
+`ignoredTextures`. An application that has pre-flipped its KTX2 rows opts out
+with `basisOrientation: "trust"`. **Budget:** each transcode is capped by the
+loader's `maximumDecodedBytes` (passed as a per-call `maximumDecodedBytes`,
+honoured as the smaller of the transcoder's own and the call's), and the bytes
+transcoded across one document may not exceed `maximumWorkingBytes`.
+
 ## Documents: length and depth
 
 ```ts

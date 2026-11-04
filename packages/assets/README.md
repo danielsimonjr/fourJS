@@ -74,7 +74,13 @@ bounded Basis transcoder into a compressed `TextureSource` (`format` +
 `TextureAsset | GltfCompressedTexture`). Without a transcoder the plain
 `textures[i].source` fallback is used, else the slot is dropped and recorded in
 the material's `ignoredTextures`; `extensionsRequired` without a transcoder is
-refused. `weights` animation channels parse (SCALAR output, N values per key)
+refused. A KTX2 is routed only when its `KTXorientation` is `ru` (rows
+bottom-up, matching the loader's flipped UVs; toktx
+`--lower_left_maps_to_s0t0`); `rd` or a missing key falls back to `source` or
+is recorded in `ignoredTextures`, unless `basisOrientation: "trust"` is set by
+an application that pre-flipped its rows. Transcodes are capped per call by
+`maximumDecodedBytes` and per document by `maximumWorkingBytes`. `weights`
+animation channels parse (SCALAR output, N values per key)
 and bind at `morphWeights.<node>.<k>`. Still refused: `CUBICSPLINE`, `TANGENT`
 morph streams, more than four targets, sparse accessors.
 

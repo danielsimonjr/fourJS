@@ -758,6 +758,25 @@ describe("instantiateGltf: weights animation channels (RFC 0003 residue)", () =>
     expect(mesh.morphTargetWeights![0]).toBeCloseTo(0.5, 5);
   });
 
+  it("sizes the shared weights array from the mesh's uniform target count", async () => {
+    const base = await fourTargetAsset();
+    expect(base.meshes[0].morphTargetCount).toBe(4);
+    expect(instantiateGltf(base).morphWeights[0]).toHaveLength(4);
+    const shrunk = new GltfAsset({
+      url: base.url,
+      meshes: base.meshes.map((mesh) => ({ ...mesh, morphTargetCount: 3 })),
+      materials: base.materials,
+      textures: base.textures,
+      nodes: base.nodes,
+      scenes: base.scenes,
+      defaultScene: base.defaultScene,
+      skins: base.skins,
+      ignored: base.ignored,
+      animations: [],
+    });
+    expect(instantiateGltf(shrunk).morphWeights[0]).toHaveLength(3);
+  });
+
   it("steps when the sampler is STEP", async () => {
     const asset = withChannel(
       await fourTargetAsset(),
@@ -865,6 +884,7 @@ describe("instantiateGltf: KHR_texture_basisu compressed maps (R-30c)", () => {
   it("accepts a transcoded compressed TextureSource for a material map", async () => {
     const levels = [new Uint8Array(16)];
     const asset = await createGltfLoader({
+      basisOrientation: "trust",
       basisTranscoder: () => ({
         width: 4,
         height: 4,

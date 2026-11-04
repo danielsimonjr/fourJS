@@ -69,6 +69,12 @@ export interface BasisTranscodeRequest {
    * absent selects the uncompressed `"rgba8unorm"` fallback.
    */
   readonly supportedFormats?: readonly BasisTextureFormat[];
+  /**
+   * Per-call transcoded-output ceiling (all levels), honoured as
+   * `min(construction, call)` — a caller can tighten, never loosen, the
+   * budget the transcoder was built with.
+   */
+  readonly maximumDecodedBytes?: number;
 }
 
 /** Structurally a `@fourjs/render` `TextureSource`. */
@@ -208,7 +214,18 @@ export async function createBoundedBasisTranscoder(
       expected.push(bytes);
       expectedTotal += bytes;
     }
-    if (!Number.isSafeInteger(expectedTotal) || expectedTotal > decoded) {
+    const callCap = request?.maximumDecodedBytes;
+    if (
+      callCap !== undefined &&
+      (!Number.isSafeInteger(callCap) || callCap < 1)
+    ) {
+      throw new RangeError(
+        "Basis request maximumDecodedBytes must be a positive safe integer.",
+      );
+    }
+    const decodedLimit =
+      callCap === undefined ? decoded : Math.min(decoded, callCap);
+    if (!Number.isSafeInteger(expectedTotal) || expectedTotal > decodedLimit) {
       throw refuse("Basis decoded-byte budget was exceeded.");
     }
     const inputLength = ktx2.byteLength;
