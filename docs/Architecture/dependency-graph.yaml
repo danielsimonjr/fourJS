@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 348
+  totalFiles: 352
   totalModules: 24
-  totalExports: 3509
+  totalExports: 3558
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -3544,6 +3544,7 @@ modules:
         - probePng
         - probeJpeg
         - probeWebp
+        - probeAvif
         - probeImage
       interfaces:
         - ImageDimensions
@@ -3551,6 +3552,7 @@ modules:
         - probePng
         - probeJpeg
         - probeWebp
+        - probeAvif
         - probeImage
     packages/assets/src/gltf.ts:
       description: The §78 glTF 2.0 loader — the **parse tier** (A-19's last half, 2026-08-29).
@@ -3706,8 +3708,17 @@ modules:
           imports:
             - createBoundedJpegDecoder
           reExport: true
+        - file: ./bounded-webp.js
+          imports:
+            - createBoundedWebpDecoder
+          reExport: true
+        - file: ./bounded-avif.js
+          imports:
+            - createBoundedAvifDecoder
+          reExport: true
         - file: ./image-probe.js
           imports:
+            - probeAvif
             - probeImage
             - probeJpeg
             - probePng
@@ -3805,6 +3816,16 @@ modules:
             - BoundedJpegDecoderOptions
           reExport: true
           typeOnly: true
+        - file: ./bounded-webp.js
+          imports:
+            - BoundedWebpDecoderOptions
+          reExport: true
+          typeOnly: true
+        - file: ./bounded-avif.js
+          imports:
+            - BoundedAvifDecoderOptions
+          reExport: true
+          typeOnly: true
         - file: ./image-probe.js
           imports:
             - ImageDimensions
@@ -3838,6 +3859,9 @@ modules:
         - createBoundedPngDecoder
         - DEFAULT_IMAGE_WORKING_BYTES
         - createBoundedJpegDecoder
+        - createBoundedWebpDecoder
+        - createBoundedAvifDecoder
+        - probeAvif
         - probeImage
         - probeJpeg
         - probePng
@@ -3895,6 +3919,8 @@ modules:
         - GzipReader
         - BoundedPngDecoderOptions
         - BoundedJpegDecoderOptions
+        - BoundedWebpDecoderOptions
+        - BoundedAvifDecoderOptions
         - ImageDimensions
       reExported:
         - ASSET_LOADERS
@@ -3923,6 +3949,9 @@ modules:
         - createBoundedPngDecoder
         - DEFAULT_IMAGE_WORKING_BYTES
         - createBoundedJpegDecoder
+        - createBoundedWebpDecoder
+        - createBoundedAvifDecoder
+        - probeAvif
         - probeImage
         - probeJpeg
         - probePng
@@ -3979,6 +4008,8 @@ modules:
         - GzipReader
         - BoundedPngDecoderOptions
         - BoundedJpegDecoderOptions
+        - BoundedWebpDecoderOptions
+        - BoundedAvifDecoderOptions
         - ImageDimensions
       constants:
         - PACKAGE_NAME
@@ -4192,6 +4223,70 @@ modules:
         - GzipLoaderOptions
       functions:
         - createGzipLoader
+    packages/assets/src/bounded-raw-codec.ts:
+      description: "Raw C-style ABI required of the pinned binary (no JS glue, no imports):"
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./image-memory.js
+          imports:
+            - registerBoundedImageDecoder
+        - file: ./image-probe.js
+          imports:
+            - ImageDimensions
+          typeOnly: true
+        - file: ./texture.js
+          imports:
+            - DEFAULT_MAXIMUM_DECODED_BYTES
+            - DEFAULT_MAXIMUM_EXPANSION_RATIO
+            - DecodedTexels
+            - TexelDecodeLike
+        - file: ./wasm-memory.js
+          imports:
+            - limitWasmMemory
+        - file: ./bounded-png.js
+          imports:
+            - DEFAULT_IMAGE_WORKING_BYTES
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+      exports:
+        - createBoundedRawDecoder
+      interfaces:
+        - BoundedRawCodecOptions
+        - RawCodecSpec
+      functions:
+        - createBoundedRawDecoder
+    packages/assets/src/bounded-webp.ts:
+      description: "Bounded WebP → RGBA8 decoder (§96). Mirrors {@link createBoundedJpegDecoder}:"
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./bounded-raw-codec.js
+          imports:
+            - createBoundedRawDecoder
+            - BoundedRawCodecOptions
+        - file: ./image-probe.js
+          imports:
+            - probeWebp
+        - file: ./texture.js
+          imports:
+            - TexelDecodeLike
+          typeOnly: true
+        - file: ./bounded-png.js
+          imports:
+            - DEFAULT_IMAGE_WORKING_BYTES
+          reExport: true
+      workspaceDependencies: []
+      exports:
+        - DEFAULT_IMAGE_WORKING_BYTES
+        - createBoundedWebpDecoder
+      reExported:
+        - DEFAULT_IMAGE_WORKING_BYTES
+      functions:
+        - createBoundedWebpDecoder
     packages/assets/src/wasm-memory.ts:
       description: Copies a single-memory Wasm32 codec and caps its declared linear memory.
       externalDependencies: []
@@ -4241,6 +4336,34 @@ modules:
         - BoundedJpegDecoderOptions
       functions:
         - createBoundedJpegDecoder
+    packages/assets/src/bounded-avif.ts:
+      description: "Bounded AVIF → RGBA8 decoder (§96). Mirrors {@link createBoundedJpegDecoder}:"
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./bounded-raw-codec.js
+          imports:
+            - createBoundedRawDecoder
+            - BoundedRawCodecOptions
+        - file: ./image-probe.js
+          imports:
+            - probeAvif
+        - file: ./texture.js
+          imports:
+            - TexelDecodeLike
+          typeOnly: true
+        - file: ./bounded-png.js
+          imports:
+            - DEFAULT_IMAGE_WORKING_BYTES
+          reExport: true
+      workspaceDependencies: []
+      exports:
+        - DEFAULT_IMAGE_WORKING_BYTES
+        - createBoundedAvifDecoder
+      reExported:
+        - DEFAULT_IMAGE_WORKING_BYTES
+      functions:
+        - createBoundedAvifDecoder
     packages/assets/src/loaders.ts:
       description: The built-in loaders (§76) — text, JSON, binary, image.
       externalDependencies: []
@@ -12421,8 +12544,18 @@ modules:
             - MAP_BIND_GROUP_INDEX
             - MAP_SAMPLER_BINDING
             - MAP_TEXTURE_BINDING
+            - SURFACE_EMISSIVE_BINDING
+            - SURFACE_MR_BINDING
+            - SURFACE_NORMAL_BINDING
+            - SURFACE_OCCLUSION_BINDING
+            - SURFACE_SAMPLER_BINDING
             - createDrawBindGroupLayout
+            - createSurfaceBindGroupLayout
             - createTextureBindGroupLayout
+          reExport: true
+        - file: ./wgpu-surface-group.js
+          imports:
+            - WgpuSurfaceGroupCache
           reExport: true
         - file: ./wgpu-geometry.js
           imports:
@@ -12465,7 +12598,14 @@ modules:
             - CLEAR_VERTEX_COUNT
             - COLOR_BUFFER_LAYOUT
             - COLOR_SHADER_LOCATION
+            - DRAW_MORPH_WEIGHT_OFFSET
             - FRAGMENT_ENTRY_POINT
+            - MORPH_DRAW_UNIFORM_WGSL
+            - MORPH_WEIGHT_WGSL
+            - NORMAL1_BUFFER_LAYOUT
+            - NORMAL1_SHADER_LOCATION
+            - POSITION1_BUFFER_LAYOUT
+            - POSITION1_SHADER_LOCATION
             - POSITION_BUFFER_LAYOUT
             - POSITION_SHADER_LOCATION
             - UV_BUFFER_LAYOUT
@@ -12474,6 +12614,7 @@ modules:
             - unlitShaderSource
             - unlitVertexBufferLayouts
             - unlitFragmentStageWgsl
+            - WgpuMorph
           reExport: true
         - file: ./wgpu-lights.js
           imports:
@@ -12608,6 +12749,9 @@ modules:
           reExport: true
         - file: ./wgpu-standard.js
           imports:
+            - MORPH_STANDARD_UNIFORM_WGSL
+            - NO_SURFACE_MAPS
+            - SURFACE_DEFAULT_TEXELS
             - STANDARD_BASE_COLOR_OFFSET
             - STANDARD_EMISSIVE_OFFSET
             - STANDARD_MODEL_OFFSET
@@ -12725,6 +12869,11 @@ modules:
             - WebgpuCanvas
           reExport: true
           typeOnly: true
+        - file: ./wgpu-surface-group.js
+          imports:
+            - SurfaceSources
+          reExport: true
+          typeOnly: true
         - file: ./wgpu-geometry.js
           imports:
             - CacheableGeometry
@@ -12790,6 +12939,11 @@ modules:
             - WgpuStencilSource
           reExport: true
           typeOnly: true
+        - file: ./wgpu-standard.js
+          imports:
+            - SurfaceMaps
+          reExport: true
+          typeOnly: true
         - file: ./wgpu-node-registry.js
           imports:
             - WgpuNodeFrameState
@@ -12843,8 +12997,15 @@ modules:
         - MAP_BIND_GROUP_INDEX
         - MAP_SAMPLER_BINDING
         - MAP_TEXTURE_BINDING
+        - SURFACE_EMISSIVE_BINDING
+        - SURFACE_MR_BINDING
+        - SURFACE_NORMAL_BINDING
+        - SURFACE_OCCLUSION_BINDING
+        - SURFACE_SAMPLER_BINDING
         - createDrawBindGroupLayout
+        - createSurfaceBindGroupLayout
         - createTextureBindGroupLayout
+        - WgpuSurfaceGroupCache
         - WgpuGeometryCache
         - blendStateFor
         - pipelineKey
@@ -12869,7 +13030,14 @@ modules:
         - CLEAR_VERTEX_COUNT
         - COLOR_BUFFER_LAYOUT
         - COLOR_SHADER_LOCATION
+        - DRAW_MORPH_WEIGHT_OFFSET
         - FRAGMENT_ENTRY_POINT
+        - MORPH_DRAW_UNIFORM_WGSL
+        - MORPH_WEIGHT_WGSL
+        - NORMAL1_BUFFER_LAYOUT
+        - NORMAL1_SHADER_LOCATION
+        - POSITION1_BUFFER_LAYOUT
+        - POSITION1_SHADER_LOCATION
         - POSITION_BUFFER_LAYOUT
         - POSITION_SHADER_LOCATION
         - UV_BUFFER_LAYOUT
@@ -12878,6 +13046,7 @@ modules:
         - unlitShaderSource
         - unlitVertexBufferLayouts
         - unlitFragmentStageWgsl
+        - WgpuMorph
         - LIGHTS_BIND_GROUP_INDEX
         - LIGHT_AMBIENT_OFFSET
         - LIGHT_CAMERA_OFFSET
@@ -12979,6 +13148,9 @@ modules:
         - applyStencilReference
         - frameWantsStencil
         - stencilDescriptor
+        - MORPH_STANDARD_UNIFORM_WGSL
+        - NO_SURFACE_MAPS
+        - SURFACE_DEFAULT_TEXELS
         - STANDARD_BASE_COLOR_OFFSET
         - STANDARD_EMISSIVE_OFFSET
         - STANDARD_MODEL_OFFSET
@@ -13074,6 +13246,7 @@ modules:
         - GpuTextureViewDescriptor
         - GpuVertexBufferLayout
         - WebgpuCanvas
+        - SurfaceSources
         - CacheableGeometry
         - WgpuGeometryRecord
         - WgpuBatchStream
@@ -13095,6 +13268,7 @@ modules:
         - WgpuParticleRecord
         - WgpuParticleSimulationOptions
         - WgpuStencilSource
+        - SurfaceMaps
         - WgpuNodeFrameState
         - WgpuNodeItemMaterial
         - WgpuNodeMaterialPipelineFactory
@@ -13131,8 +13305,15 @@ modules:
         - MAP_BIND_GROUP_INDEX
         - MAP_SAMPLER_BINDING
         - MAP_TEXTURE_BINDING
+        - SURFACE_EMISSIVE_BINDING
+        - SURFACE_MR_BINDING
+        - SURFACE_NORMAL_BINDING
+        - SURFACE_OCCLUSION_BINDING
+        - SURFACE_SAMPLER_BINDING
         - createDrawBindGroupLayout
+        - createSurfaceBindGroupLayout
         - createTextureBindGroupLayout
+        - WgpuSurfaceGroupCache
         - WgpuGeometryCache
         - blendStateFor
         - pipelineKey
@@ -13157,7 +13338,14 @@ modules:
         - CLEAR_VERTEX_COUNT
         - COLOR_BUFFER_LAYOUT
         - COLOR_SHADER_LOCATION
+        - DRAW_MORPH_WEIGHT_OFFSET
         - FRAGMENT_ENTRY_POINT
+        - MORPH_DRAW_UNIFORM_WGSL
+        - MORPH_WEIGHT_WGSL
+        - NORMAL1_BUFFER_LAYOUT
+        - NORMAL1_SHADER_LOCATION
+        - POSITION1_BUFFER_LAYOUT
+        - POSITION1_SHADER_LOCATION
         - POSITION_BUFFER_LAYOUT
         - POSITION_SHADER_LOCATION
         - UV_BUFFER_LAYOUT
@@ -13166,6 +13354,7 @@ modules:
         - unlitShaderSource
         - unlitVertexBufferLayouts
         - unlitFragmentStageWgsl
+        - WgpuMorph
         - LIGHTS_BIND_GROUP_INDEX
         - LIGHT_AMBIENT_OFFSET
         - LIGHT_CAMERA_OFFSET
@@ -13267,6 +13456,9 @@ modules:
         - applyStencilReference
         - frameWantsStencil
         - stencilDescriptor
+        - MORPH_STANDARD_UNIFORM_WGSL
+        - NO_SURFACE_MAPS
+        - SURFACE_DEFAULT_TEXELS
         - STANDARD_BASE_COLOR_OFFSET
         - STANDARD_EMISSIVE_OFFSET
         - STANDARD_MODEL_OFFSET
@@ -13361,6 +13553,7 @@ modules:
         - GpuTextureViewDescriptor
         - GpuVertexBufferLayout
         - WebgpuCanvas
+        - SurfaceSources
         - CacheableGeometry
         - WgpuGeometryRecord
         - WgpuBatchStream
@@ -13382,6 +13575,7 @@ modules:
         - WgpuParticleRecord
         - WgpuParticleSimulationOptions
         - WgpuStencilSource
+        - SurfaceMaps
         - WgpuNodeFrameState
         - WgpuNodeItemMaterial
         - WgpuNodeMaterialPipelineFactory
@@ -13422,11 +13616,18 @@ modules:
         - MAP_TEXTURE_BINDING
         - MAP_SAMPLER_BINDING
         - MAP_BINDING_WGSL
+        - SURFACE_MR_BINDING
+        - SURFACE_SAMPLER_BINDING
+        - SURFACE_NORMAL_BINDING
+        - SURFACE_OCCLUSION_BINDING
+        - SURFACE_EMISSIVE_BINDING
         - createDrawBindGroupLayout
         - createTextureBindGroupLayout
+        - createSurfaceBindGroupLayout
       functions:
         - createDrawBindGroupLayout
         - createTextureBindGroupLayout
+        - createSurfaceBindGroupLayout
       constants:
         - DRAW_VIEW_PROJECTION_OFFSET
         - DRAW_MODEL_OFFSET
@@ -13439,6 +13640,11 @@ modules:
         - MAP_TEXTURE_BINDING
         - MAP_SAMPLER_BINDING
         - MAP_BINDING_WGSL
+        - SURFACE_MR_BINDING
+        - SURFACE_SAMPLER_BINDING
+        - SURFACE_NORMAL_BINDING
+        - SURFACE_OCCLUSION_BINDING
+        - SURFACE_EMISSIVE_BINDING
     packages/render-webgpu/src/wgpu-skinning.ts:
       description: The skinned colour pipelines (§54, §62; RFC 0003) — a skinned variant of
       externalDependencies: []
@@ -13922,6 +14128,7 @@ modules:
       internalDependencies:
         - file: ./wgpu-bindings.js
           imports:
+            - DRAW_NORMAL_OFFSET
             - DRAW_UNIFORM_WGSL
             - MAP_BINDING_WGSL
         - file: ./webgpu-device.js
@@ -13936,6 +14143,13 @@ modules:
         - COLOR_BUFFER_LAYOUT
         - UV_SHADER_LOCATION
         - UV_BUFFER_LAYOUT
+        - POSITION1_SHADER_LOCATION
+        - NORMAL1_SHADER_LOCATION
+        - POSITION1_BUFFER_LAYOUT
+        - NORMAL1_BUFFER_LAYOUT
+        - DRAW_MORPH_WEIGHT_OFFSET
+        - MORPH_DRAW_UNIFORM_WGSL
+        - MORPH_WEIGHT_WGSL
         - VERTEX_ENTRY_POINT
         - FRAGMENT_ENTRY_POINT
         - CLEAR_VERTEX_COUNT
@@ -13954,6 +14168,13 @@ modules:
         - COLOR_BUFFER_LAYOUT
         - UV_SHADER_LOCATION
         - UV_BUFFER_LAYOUT
+        - POSITION1_SHADER_LOCATION
+        - NORMAL1_SHADER_LOCATION
+        - POSITION1_BUFFER_LAYOUT
+        - NORMAL1_BUFFER_LAYOUT
+        - DRAW_MORPH_WEIGHT_OFFSET
+        - MORPH_DRAW_UNIFORM_WGSL
+        - MORPH_WEIGHT_WGSL
         - VERTEX_ENTRY_POINT
         - FRAGMENT_ENTRY_POINT
         - CLEAR_VERTEX_COUNT
@@ -14166,6 +14387,10 @@ modules:
             - WgpuPipelineDescriptor
             - WgpuPipelineKind
           typeOnly: true
+        - file: ./wgpu-unlit.js
+          imports:
+            - WgpuMorph
+          typeOnly: true
         - file: ./wgpu-stencil.js
           imports:
             - STENCIL_ALL_BITS
@@ -14252,6 +14477,52 @@ modules:
         - PARTICLE_WIDE_INSTANCE_BUFFER_LAYOUT
         - PARTICLE_APPEARANCE_SHADER_SOURCE
         - PARTICLE_SHADER_SOURCE
+    packages/render-webgpu/src/wgpu-surface-group.ts:
+      description: "The standard family's surface bind groups (WP-W4.2): the five-entry group of"
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./webgpu-device.js
+          imports:
+            - GPU_TEXTURE_USAGE
+            - GpuBindGroup
+            - GpuBindGroupLayout
+            - GpuDevice
+            - GpuSampler
+            - GpuTexture
+            - GpuTextureView
+        - file: ./wgpu-bindings.js
+          imports:
+            - SURFACE_EMISSIVE_BINDING
+            - SURFACE_MR_BINDING
+            - SURFACE_NORMAL_BINDING
+            - SURFACE_OCCLUSION_BINDING
+            - SURFACE_SAMPLER_BINDING
+        - file: ./wgpu-standard.js
+          imports:
+            - SURFACE_DEFAULT_TEXELS
+        - file: ./wgpu-render-target.js
+          imports:
+            - WgpuRenderTargetCache
+          typeOnly: true
+        - file: ./wgpu-texture.js
+          imports:
+            - WgpuCacheableTexture
+            - WgpuTextureCache
+            - WgpuTextureRecord
+          typeOnly: true
+      workspaceDependencies:
+        - package: "@fourjs/render"
+          directory: packages/render
+          imports:
+            - isRenderTargetTexture
+            - RenderTarget
+      exports:
+        - WgpuSurfaceGroupCache
+      classes:
+        - WgpuSurfaceGroupCache
+      interfaces:
+        - SurfaceSources
     packages/render-webgpu/src/wgpu-particle-simulation.ts:
       description: '`WgpuParticleSimulation` — the device side of §36''s `simulation: "gpu"`'
       externalDependencies: []
@@ -14464,6 +14735,13 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
+        - file: ./wgpu-bindings.js
+          imports:
+            - SURFACE_EMISSIVE_BINDING
+            - SURFACE_MR_BINDING
+            - SURFACE_NORMAL_BINDING
+            - SURFACE_OCCLUSION_BINDING
+            - SURFACE_SAMPLER_BINDING
         - file: ./webgpu-device.js
           imports:
             - GPU_SHADER_STAGE
@@ -14488,8 +14766,11 @@ modules:
         - file: ./wgpu-unlit.js
           imports:
             - FRAGMENT_ENTRY_POINT
+            - WgpuMorph
       workspaceDependencies: []
       exports:
+        - NO_SURFACE_MAPS
+        - SURFACE_DEFAULT_TEXELS
         - STANDARD_VIEW_PROJECTION_OFFSET
         - STANDARD_MODEL_OFFSET
         - STANDARD_BASE_COLOR_OFFSET
@@ -14498,12 +14779,19 @@ modules:
         - STANDARD_SURFACE_OFFSET
         - STANDARD_UNIFORM_BYTES
         - STANDARD_UNIFORM_WGSL
+        - MORPH_STANDARD_UNIFORM_WGSL
+        - surfaceBindingWgsl
         - createStandardBindGroupLayout
         - standardShaderSource
+      interfaces:
+        - SurfaceMaps
       functions:
+        - surfaceBindingWgsl
         - createStandardBindGroupLayout
         - standardShaderSource
       constants:
+        - NO_SURFACE_MAPS
+        - SURFACE_DEFAULT_TEXELS
         - STANDARD_VIEW_PROJECTION_OFFSET
         - STANDARD_MODEL_OFFSET
         - STANDARD_BASE_COLOR_OFFSET
@@ -14512,6 +14800,7 @@ modules:
         - STANDARD_SURFACE_OFFSET
         - STANDARD_UNIFORM_BYTES
         - STANDARD_UNIFORM_WGSL
+        - MORPH_STANDARD_UNIFORM_WGSL
     packages/render-webgpu/src/wgpu-sprite.ts:
       description: The sprite pipeline in hand-written WGSL (§55, WP-R1.3), plus the uniform
       externalDependencies: []
@@ -14624,7 +14913,9 @@ modules:
             - SPRITE_SHADER_SOURCE
         - file: ./wgpu-standard.js
           imports:
+            - NO_SURFACE_MAPS
             - standardShaderSource
+            - SurfaceMaps
         - file: ./wgpu-unlit.js
           imports:
             - CLEAR_SHADER_SOURCE
@@ -14634,6 +14925,7 @@ modules:
             - VERTEX_ENTRY_POINT
             - unlitShaderSource
             - unlitVertexBufferLayouts
+            - WgpuMorph
       workspaceDependencies:
         - package: "@fourjs/render"
           directory: packages/render
@@ -14679,11 +14971,18 @@ modules:
         - file: ./wgpu-unlit.js
           imports:
             - FRAGMENT_ENTRY_POINT
+            - MORPH_DRAW_UNIFORM_WGSL
+            - MORPH_WEIGHT_WGSL
+            - NORMAL1_BUFFER_LAYOUT
+            - NORMAL1_SHADER_LOCATION
+            - POSITION1_BUFFER_LAYOUT
+            - POSITION1_SHADER_LOCATION
             - POSITION_BUFFER_LAYOUT
             - POSITION_SHADER_LOCATION
             - UV_BUFFER_LAYOUT
             - UV_SHADER_LOCATION
             - VERTEX_ENTRY_POINT
+            - WgpuMorph
       workspaceDependencies: []
       exports:
         - NORMAL_SHADER_LOCATION
@@ -14734,6 +15033,7 @@ modules:
             - DRAW_VIEW_PROJECTION_OFFSET
             - MAP_BIND_GROUP_INDEX
             - createDrawBindGroupLayout
+            - createSurfaceBindGroupLayout
         - file: ./wgpu-batch.js
           imports:
             - WgpuRenderBatching
@@ -14843,9 +15143,14 @@ modules:
             - SkinnedPrograms
             - SkinningPipelineHost
             - WgpuSkinnedDrawDescriptor
+        - file: ./wgpu-surface-group.js
+          imports:
+            - WgpuSurfaceGroupCache
+            - SurfaceSources
         - file: ./wgpu-unlit.js
           imports:
             - CLEAR_VERTEX_COUNT
+            - DRAW_MORPH_WEIGHT_OFFSET
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -20669,8 +20974,11 @@ dependencyGraph:
         - packages/assets/src/content-hash.ts
         - packages/assets/src/bounded-png.ts
         - packages/assets/src/gzip.ts
+        - packages/assets/src/bounded-raw-codec.ts
+        - packages/assets/src/bounded-webp.ts
         - packages/assets/src/wasm-memory.ts
         - packages/assets/src/bounded-jpeg.ts
+        - packages/assets/src/bounded-avif.ts
         - packages/assets/src/loaders.ts
     - name: Packages/physics-soft
       files:
@@ -20822,6 +21130,7 @@ dependencyGraph:
         - packages/render-webgpu/src/wgpu-lights.ts
         - packages/render-webgpu/src/wgpu-pipeline-memo.ts
         - packages/render-webgpu/src/wgpu-particles.ts
+        - packages/render-webgpu/src/wgpu-surface-group.ts
         - packages/render-webgpu/src/wgpu-particle-simulation.ts
         - packages/render-webgpu/src/wgpu-compute.ts
         - packages/render-webgpu/src/register.ts
@@ -20956,19 +21265,19 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 348
+  totalTypeScriptFiles: 352
   totalModules: 24
-  totalLinesOfCode: 166908
-  totalExports: 3509
-  totalClasses: 215
-  totalInterfaces: 652
-  totalFunctions: 592
+  totalLinesOfCode: 168168
+  totalExports: 3558
+  totalClasses: 216
+  totalInterfaces: 656
+  totalFunctions: 598
   totalTypeGuards: 32
   totalEnums: 0
-  totalConstants: 505
-  totalReExports: 2215
-  totalTypeOnlyImports: 446
+  totalConstants: 520
+  totalReExports: 2242
+  totalTypeOnlyImports: 456
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10
   unusedFilesCount: 0
-  unusedExportsCount: 9
+  unusedExportsCount: 10
