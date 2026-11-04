@@ -1518,8 +1518,33 @@
       "ViewRenderListOptions",
       "warnDisposedInUse"
     ],
-    "packages/render-canvas": ["PACKAGE_NAME"],
-    "packages/render-svg": ["PACKAGE_NAME"],
+    "packages/render-canvas": [
+      "Canvas2dContextLike",
+      "Canvas2dImageLike",
+      "Canvas2dRenderer",
+      "Canvas2dRendererOptions",
+      "Canvas2dSurface",
+      "canvasTop",
+      "cssColor",
+      "isCanvas2dSupported",
+      "PACKAGE_NAME",
+      "PixelRect",
+      "ProjectedPoint",
+      "projectPoint",
+      "registerCanvasRenderer",
+      "resolveViewRect"
+    ],
+    "packages/render-svg": [
+      "isSvgSupported",
+      "isSvgSurface",
+      "PACKAGE_NAME",
+      "registerSvgRenderer",
+      "SVG_NAMESPACE",
+      "SvgElement",
+      "SvgElementFactory",
+      "SvgRenderer",
+      "SvgSurface"
+    ],
     "packages/render-webgl": [
       "BatchGlContext",
       "CacheableGeometry",

@@ -1,15 +1,51 @@
 # @fourjs/render-canvas
 
-Canvas 2D backend — **a reserved stub. This package contains no implementation today.** Part of [fourJS](../../README.md).
+Canvas 2D backend (§62 backend 3) — part of [fourJS](../../README.md). A `Renderer` over `@fourjs/render`'s backend-independent interface that draws the shared scene model with 2D context calls: no GPU programs, no DOM types (the surface and context are structural, so it runs against a recording fake in Node).
 
-What a consumer gets by installing it: **one export, `PACKAGE_NAME`, and nothing else** — measured from a consumer seat on 2026-09-19 (dogfood cycle 9) against installed tarballs, in Node and in Chrome. `fourJS/render-canvas` imports cleanly and registers no backend. **The shipped rendering capability lives in [`@fourjs/render-webgl`](../render-webgl/README.md) and [`@fourjs/render-webgpu`](../render-webgpu/README.md)**; an application that needs Canvas 2D writes the backend itself, which the published surface supports — see [docs/guides/custom-renderer-backends.md](../../docs/guides/custom-renderer-backends.md) and the measured paragraph below.
+```ts
+import { Canvas2dRenderer } from "@fourjs/render-canvas";
 
-Reserved for the Canvas 2D rendering backend (2D scenes and fallback rendering) per §62 in [`docs/SPECIFICATION.md`](../../docs/SPECIFICATION.md). The §120 MVP renders with WebGL 2 only (`@fourjs/render-webgl`).
+const renderer = new Canvas2dRenderer({
+  // Optional. Pass { willReadFrequently: true } if you read pixels back.
+  contextAttributes: { willReadFrequently: true },
+});
+await renderer.initialize({ canvas });
+renderer.render(scene, [
+  { ...createFullscreenViewport(camera), clearColor: [0, 0, 0, 1] },
+]);
+```
 
-The package exists in the workspace so the §98 monorepo tree stays accurate. The barrel currently exports only `PACKAGE_NAME`, and `tests/` holds a single smoke test. When implemented, it will provide a `Renderer` implementation over `@fourjs/render`'s backend-independent interface.
+Or through §62's ladder (the `canvas2d` rung of `AUTO_RENDERER_ORDER`):
 
-**Until then, an application can write that backend itself**, and the published surface is sufficient for it: `@fourjs/render` exports the `Renderer` interface, `RendererCapabilities` (declare `backend: "canvas2d"`), `buildRenderList`, `createRenderStatistics`, and `registerRenderer`, so a consumer-authored Canvas 2D backend registers into the §62 ladder and is selected by `resolveRenderer("auto")` exactly as a first-party one would be. Verified from a clean consumer on 2026-09-19 against the shipped declarations under `strict` with `skipLibCheck: false`: 0 type errors, 82 triangles drawn, 35,851 lit pixels in Chrome, byte-identical across two runs (§33). Because this package is a stub, `AUTO_RENDERER_ORDER`'s `"canvas2d"` rung is unreachable from fourJS packages alone — only an application's own registration fills it.
+```ts
+import { registerCanvasRenderer } from "@fourjs/render-canvas";
 
-Unit tests are colocated in `tests/` per §92.
+registerCanvasRenderer(); // a call, not an import side effect ("sideEffects": false)
+const app = new Application({ renderer: "auto", canvas });
+```
 
-Workspace name `@fourjs/render-canvas`; publishes as `@danielsimonjr/fourjs-render-canvas`.
+`isSupported` only checks for the `CanvasRenderingContext2D` global and never touches the canvas; `create` builds without initializing.
+
+## What it draws
+
+| Item                                                                              | How                                                                                                                                                  |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `unlit` / `lit` / `standard` / skinned (bind pose)                                | each triangle projected through `projection * view * world` and filled as one flat polygon in the material colour (sRGB-encoded, `opacity` as alpha) |
+| `sprite`                                                                          | `drawImage` through an affine transform, when the texture resolves to an image (`imageOf`, default: its `image` property)                            |
+| `node` materials, particles, line geometry, sprites with no image, render targets | counted in `renderer.skippedItems`, skipped, one `devWarnOnce` each                                                                                  |
+
+Honest limits: no depth buffer (paint order is §64's sort, then index order), no lighting, no vertex colours, no mesh textures, triangles with a vertex at or behind the eye are skipped. `statistics` counts what was submitted (`drawCalls`, `triangles`).
+
+## Contract
+
+- Viewport rectangles are bottom-left origin (§48); the flip to Canvas 2D's top-left happens inside the package. The clear and every draw are clipped to the view rectangle.
+- A view without `clearColor` does not clear; an empty `views` array draws and clears nothing.
+- Nothing in the scene is mutated.
+- `dispose()` is idempotent, terminal, and leaves no listeners on `events`.
+- **Picking and `readPixels` are omitted, not emulated** (RFC 0005 Q6): `undefined` means "not taught to answer".
+- **RFC 0004:** a texture whose image resolves to the surface being rendered is refused with `FourError("INVALID_RENDER_GRAPH")` before anything is drawn.
+- §33: the same scene, camera and viewport produce a byte-identical `toDataURL()`. If you read pixels back, request `willReadFrequently` — Chromium otherwise moves a GPU canvas to software after the first readbacks and antialiasing changes between frames.
+
+See [docs/guides/custom-renderer-backends.md](../../docs/guides/custom-renderer-backends.md) for the seam this package implements, and `examples/canvas-backend` for a runnable page (the browser gate `tests/browser/backends-canvas.spec.ts` asserts its lit pixels against a meshes-removed control).
+
+Unit tests are colocated in `tests/` per §92. Workspace name `@fourjs/render-canvas`; publishes as `@danielsimonjr/fourjs-render-canvas`.

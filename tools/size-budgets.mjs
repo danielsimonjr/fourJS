@@ -130,6 +130,12 @@
  * double like `0.2` (5 000 → 5 000 on the shape row); the shipped mirror
  * holds doubles, and the unit test now uses `[0.2, 0.6, 1, 1]` for exactly
  * that reason. No limit was raised.
+ *
+ * **2026-11-04 (W3.1, `@fourjs/render-canvas` ships):** new row
+ * `examples/canvas-backend` - `Canvas2dRenderer` plus two unlit meshes and no
+ * GL program, measured 14.73 kB gzip. Limit 15.5 kB (~5 % headroom). The
+ * backend pulls only core/math/render's list builder, so it is the smallest
+ * rendering example by design; first-2d-scene's 150 kB gate is untouched.
  */
 
 export const SIZE_BUDGETS_DOC = "tools/size-budgets.mjs";

@@ -1,25 +1,25 @@
 {
   "generated": "2026-11-04",
-  "totalFiles": 900,
+  "totalFiles": 915,
   "byDisposition": {
-    "reachable": 295,
+    "reachable": 300,
     "build-entry": 48,
     "test-only": 4,
     "orphan": 0,
-    "test": 521,
+    "test": 529,
     "tool": 1,
-    "config": 17,
-    "example": 14
+    "config": 18,
+    "example": 15
   },
   "byArea": {
-    "examples": 14,
-    "config": 17,
-    "src": 347,
-    "tests": 521,
+    "examples": 15,
+    "config": 18,
+    "src": 352,
+    "tests": 529,
     "tools": 1
   },
   "byPackage": {
-    "(root)": 238,
+    "(root)": 245,
     "@fourjs/animation": 33,
     "@fourjs/assets": 32,
     "@fourjs/core": 26,
@@ -35,8 +35,8 @@
     "@fourjs/physics-rapier": 23,
     "@fourjs/physics-soft": 2,
     "@fourjs/physics": 59,
-    "@fourjs/render-canvas": 2,
-    "@fourjs/render-svg": 2,
+    "@fourjs/render-canvas": 7,
+    "@fourjs/render-svg": 5,
     "@fourjs/render-webgl": 35,
     "@fourjs/render-webgpu": 53,
     "@fourjs/render": 72,
@@ -55,6 +55,20 @@
     },
     {
       "file": "examples/blending/vite.config.ts",
+      "package": "(root)",
+      "area": "config",
+      "disposition": "config",
+      "loc": 17
+    },
+    {
+      "file": "examples/canvas-backend/main.ts",
+      "package": "(root)",
+      "area": "examples",
+      "disposition": "example",
+      "loc": 107
+    },
+    {
+      "file": "examples/canvas-backend/vite.config.ts",
       "package": "(root)",
       "area": "config",
       "disposition": "config",
@@ -2865,7 +2879,7 @@
       "package": "@fourjs/physics",
       "area": "src",
       "disposition": "reachable",
-      "loc": 4647
+      "loc": 4625
     },
     {
       "file": "packages/physics/tests/capabilities.test.ts",
@@ -3068,7 +3082,7 @@
       "package": "@fourjs/physics",
       "area": "tests",
       "disposition": "test",
-      "loc": 166
+      "loc": 151
     },
     {
       "file": "packages/physics/tests/world-space-mode.test.ts",
@@ -3103,35 +3117,91 @@
       "package": "@fourjs/physics",
       "area": "tests",
       "disposition": "test",
-      "loc": 1827
+      "loc": 1803
+    },
+    {
+      "file": "packages/render-canvas/src/canvas2d-renderer.ts",
+      "package": "@fourjs/render-canvas",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 617
     },
     {
       "file": "packages/render-canvas/src/index.ts",
       "package": "@fourjs/render-canvas",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 2
+      "loc": 21
     },
     {
-      "file": "packages/render-canvas/tests/smoke.test.ts",
+      "file": "packages/render-canvas/src/project.ts",
+      "package": "@fourjs/render-canvas",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 83
+    },
+    {
+      "file": "packages/render-canvas/src/register.ts",
+      "package": "@fourjs/render-canvas",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 55
+    },
+    {
+      "file": "packages/render-canvas/tests/canvas2d-renderer.test.ts",
       "package": "@fourjs/render-canvas",
       "area": "tests",
       "disposition": "test",
-      "loc": 10
+      "loc": 676
+    },
+    {
+      "file": "packages/render-canvas/tests/helpers.ts",
+      "package": "@fourjs/render-canvas",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 231
+    },
+    {
+      "file": "packages/render-canvas/tests/register.test.ts",
+      "package": "@fourjs/render-canvas",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 68
     },
     {
       "file": "packages/render-svg/src/index.ts",
       "package": "@fourjs/render-svg",
       "area": "src",
       "disposition": "build-entry",
-      "loc": 2
+      "loc": 10
     },
     {
-      "file": "packages/render-svg/tests/smoke.test.ts",
+      "file": "packages/render-svg/src/register.ts",
+      "package": "@fourjs/render-svg",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 50
+    },
+    {
+      "file": "packages/render-svg/src/svg-renderer.ts",
+      "package": "@fourjs/render-svg",
+      "area": "src",
+      "disposition": "reachable",
+      "loc": 494
+    },
+    {
+      "file": "packages/render-svg/tests/helpers.ts",
       "package": "@fourjs/render-svg",
       "area": "tests",
       "disposition": "test",
-      "loc": 10
+      "loc": 127
+    },
+    {
+      "file": "packages/render-svg/tests/svg-renderer.test.ts",
+      "package": "@fourjs/render-svg",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 351
     },
     {
       "file": "packages/render-webgl/src/gl-batch.ts",
@@ -3908,7 +3978,7 @@
       "package": "@fourjs/render",
       "area": "src",
       "disposition": "reachable",
-      "loc": 847
+      "loc": 842
     },
     {
       "file": "packages/render/src/renderer.ts",
@@ -4174,7 +4244,7 @@
       "package": "@fourjs/render",
       "area": "tests",
       "disposition": "test",
-      "loc": 511
+      "loc": 513
     },
     {
       "file": "packages/render/tests/renderer.test.ts",
@@ -4891,6 +4961,27 @@
       "loc": 996
     },
     {
+      "file": "tests/browser/backends-agreement.spec.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 79
+    },
+    {
+      "file": "tests/browser/backends-canvas.spec.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 110
+    },
+    {
+      "file": "tests/browser/backends-svg.spec.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 108
+    },
+    {
       "file": "tests/browser/batching.spec.ts",
       "package": "(root)",
       "area": "tests",
@@ -4902,7 +4993,7 @@
       "package": "(root)",
       "area": "tests",
       "disposition": "test",
-      "loc": 1168
+      "loc": 1173
     },
     {
       "file": "tests/browser/bounded-png.spec.ts",
@@ -4952,6 +5043,20 @@
       "area": "tests",
       "disposition": "test",
       "loc": 756
+    },
+    {
+      "file": "tests/browser/fixtures/backends-agreement-page.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 142
+    },
+    {
+      "file": "tests/browser/fixtures/backends-svg-page.ts",
+      "package": "(root)",
+      "area": "tests",
+      "disposition": "test",
+      "loc": 86
     },
     {
       "file": "tests/browser/fixtures/batching-page.ts",

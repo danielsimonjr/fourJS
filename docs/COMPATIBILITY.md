@@ -28,8 +28,7 @@ releases that have not happened; the format and API versions in sections 3–4
 exist today and are the ones a document on disk has to match.
 
 **Decision 2026-09-06 — publish the reserved stubs as real 0.x packages.** The
-four reserved directories (`physics-box2d`, `physics-soft`, `render-canvas`,
-`render-svg`) already exist, build, and export `PACKAGE_NAME`; the umbrella
+two reserved directories (`physics-box2d`, `physics-soft`) already exist, build, and export `PACKAGE_NAME`; the umbrella
 depends on them and re-exports each as a subpath, so Changesets cannot
 `ignore` them without also skipping `four` (see `.changeset/README.md`).
 Dropping the subpaths would break §98; optional peers would push the
@@ -141,8 +140,8 @@ with the date it stopped being true.)
 | WebGPU      | `"webgpu"`        | `@fourjs/render-webgpu` | **shipped (WP-R1.1–R1.9, 2026-08-21…29; the R-1 plan is complete)** — `WebgpuRenderer` behind `registerWebgpuRenderer()`: unlit/sprite/lit/standard families, opt-in §65 batching, textures + samplers, §67 clips + §57 stencil parity, render targets / §70 effects / `readPixels`, the §69 directional shadow tier, §36 instanced particles, §82 compute, §60 node materials + §70 graph effects behind `registerWebgpuNodeMaterialPipeline()`, §71 picking behind `registerPickingPipeline()` (`createPickingService` throws until registered; the id pass draws one id per particle emitter on the CPU 8-float stream and a deformed silhouette for skinned meshes), and RFC 0003's skinned colour pair behind `registerSkinningPipeline()` (unlit + lit + §69 caster via `acquireShadow`). Absent, not stubbed: GPU morph / CPU skinning / bone-texture palette |
 | WebGL 2     | `"webgl2"`        | `@fourjs/render-webgl`  | **shipped** — `WebglRenderer` behind `registerWebglRenderer()`; the §120 MVP tier, feature table below                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | headless    | `"null"`          | `@fourjs/render`        | **shipped** — `NullRenderer`, alongside the `Renderer` interface                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Canvas 2D   | `"canvas2d"`      | `@fourjs/render-canvas` | reserved stub — the package builds and exports `PACKAGE_NAME`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| SVG         | `"svg"`           | `@fourjs/render-svg`    | reserved stub — the package builds and exports `PACKAGE_NAME`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Canvas 2D   | `"canvas2d"`      | `@fourjs/render-canvas` | **shipped (2026-11-04)** — `Canvas2dRenderer` behind `registerCanvasRenderer()`: each triangle projected on the CPU and filled flat; sprites via `drawImage`; RFC 0004 feedback refused. Declared by omission: no depth buffer, no lighting, no picking, no `readPixels`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| SVG         | `"svg"`           | `@fourjs/render-svg`    | **shipped (2026-11-04)** — `SvgRenderer` behind `registerSvgRenderer()`: retained `<polygon>` per unlit triangle (no DOM writes for a static scene). Declared by omission: no depth, lighting, textures, picking or `readPixels`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 Registering the WebGPU backend is a real decision, not a free upgrade:
 `AUTO_RENDERER_ORDER` prefers WebGPU, so an application that calls
@@ -204,30 +203,25 @@ generator change, not a prose edit.
      WebGPU fields) stay at the construction-time floor until a context
      exists. Those floors mean "not yet queried", not "this backend cannot". -->
 
-| Declaration                | `null`           | `webgl2`               | `webgpu`                |
-| -------------------------- | ---------------- | ---------------------- | ----------------------- |
-| Package (§98)              | `@fourjs/render` | `@fourjs/render-webgl` | `@fourjs/render-webgpu` |
-| Exported class             | `NullRenderer`   | `WebglRenderer`        | `WebgpuRenderer`        |
-| `backend`                  | `null`           | `webgl2`               | `webgpu`                |
-| `maxTextureSize`           | 0                | 0                      | 0                       |
-| `maxAnisotropy`            | 1                | not reported           | not reported            |
-| `textureFormats`           | none             | `rgba8`                | none                    |
-| `multisampling`            | no               | yes                    | no                      |
-| `floatRenderTargets`       | no               | no                     | no                      |
-| `timestampQueries`         | no               | no                     | no                      |
-| `storageBuffers`           | no               | no                     | no                      |
-| `computeShaders`           | no               | no                     | no                      |
-| `indirectDraw`             | no               | no                     | no                      |
-| `compressedTextureFormats` | none             | none                   | none                    |
-| `shaderPrecision`          | `none`           | `highp`                | `none`                  |
-| `maxUniformBufferBytes`    | 0                | not reported           | 0                       |
-| `maxBindings`              | 0                | not reported           | 0                       |
-| `maximumSkinningJoints`    | 0                | 48                     | 48                      |
-
-Renderer packages that declare no renderer class:
-
-- `@fourjs/render-canvas` — reserved stub (§62): the package builds and exports `PACKAGE_NAME` only.
-- `@fourjs/render-svg` — reserved stub (§62): the package builds and exports `PACKAGE_NAME` only.
+| Declaration                | `null`           | `canvas2d`              | `svg`                | `webgl2`               | `webgpu`                |
+| -------------------------- | ---------------- | ----------------------- | -------------------- | ---------------------- | ----------------------- |
+| Package (§98)              | `@fourjs/render` | `@fourjs/render-canvas` | `@fourjs/render-svg` | `@fourjs/render-webgl` | `@fourjs/render-webgpu` |
+| Exported class             | `NullRenderer`   | `Canvas2dRenderer`      | `SvgRenderer`        | `WebglRenderer`        | `WebgpuRenderer`        |
+| `backend`                  | `null`           | `canvas2d`              | `svg`                | `webgl2`               | `webgpu`                |
+| `maxTextureSize`           | 0                | 4096                    | 0                    | 0                      | 0                       |
+| `maxAnisotropy`            | 1                | not reported            | not reported         | not reported           | not reported            |
+| `textureFormats`           | none             | not reported            | not reported         | `rgba8`                | none                    |
+| `multisampling`            | no               | not reported            | no                   | yes                    | no                      |
+| `floatRenderTargets`       | no               | not reported            | no                   | no                     | no                      |
+| `timestampQueries`         | no               | not reported            | not reported         | no                     | no                      |
+| `storageBuffers`           | no               | not reported            | not reported         | no                     | no                      |
+| `computeShaders`           | no               | not reported            | no                   | no                     | no                      |
+| `indirectDraw`             | no               | not reported            | not reported         | no                     | no                      |
+| `compressedTextureFormats` | none             | not reported            | not reported         | none                   | none                    |
+| `shaderPrecision`          | `none`           | not reported            | `none`               | `highp`                | `none`                  |
+| `maxUniformBufferBytes`    | 0                | not reported            | not reported         | not reported           | 0                       |
+| `maxBindings`              | 0                | not reported            | not reported         | not reported           | 0                       |
+| `maximumSkinningJoints`    | 0                | not reported            | not reported         | 48                     | 48                      |
 
 <!-- END GENERATED: renderer-backends -->
 

@@ -64,6 +64,10 @@ const repositoryRoot = join(import.meta.dirname, "..", "..");
 const ALLOWED_PACKAGES: ReadonlySet<string> = new Set([
   "render",
   "render-webgl",
+  // 2026-11-04 (wave 3): the Canvas 2D backend draws CanvasTexture sprites to
+  // a display canvas. A renderer: runs on the render path only, never on a
+  // fixed-step path, and nothing it reads re-enters simulation state.
+  "render-canvas",
   "fourjs",
 ]);
 
