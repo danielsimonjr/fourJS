@@ -671,6 +671,12 @@ export class AnimationController implements Advanceable {
 
   /** Compiled edges, scanned in declaration order (§33). */
   readonly #transitions: readonly CompiledTransition[];
+  /**
+   * Per-source-state candidate lists: the named edges leaving the state merged
+   * with the `"*"` edges that may fire from it, in declaration order. Built
+   * once so a frame scans only the active state's bucket.
+   */
+  readonly #buckets: ReadonlyMap<string, readonly CompiledTransition[]>;
 
   /** Declared number parameters. Looked up only. */
   readonly #numbers = new Map<string, number>();
@@ -818,6 +824,7 @@ export class AnimationController implements Advanceable {
     this.#channelSpecs = channelSpecs;
     this.#channelIndex = channelIndex;
     this.#transitions = this.#compileTransitions(options.transitions ?? []);
+    this.#buckets = this.#bucketTransitions(this.#transitions);
 
     const initialName = options.initialState ?? Object.keys(options.states)[0];
     const initial = this.#states.get(initialName);
@@ -1517,6 +1524,24 @@ export class AnimationController implements Advanceable {
     };
   }
 
+  /**
+   * Buckets transitions by source state, preserving declaration order within
+   * each bucket. An any-state edge is included wherever {@link #matchesFrom}
+   * would accept it (self-transitions excluded unless `allowSelf`).
+   */
+  #bucketTransitions(
+    transitions: readonly CompiledTransition[],
+  ): ReadonlyMap<string, readonly CompiledTransition[]> {
+    const buckets = new Map<string, readonly CompiledTransition[]>();
+    for (const name of this.#states.keys()) {
+      buckets.set(
+        name,
+        transitions.filter((transition) => this.#matchesFrom(transition, name)),
+      );
+    }
+    return buckets;
+  }
+
   /** Validates every transition and resolves its destination once. */
   #compileTransitions(
     transitions: readonly AnimationTransition[],
@@ -1686,11 +1711,9 @@ export class AnimationController implements Advanceable {
     }
     const from = (this.#current.definition as StateDefinition).name;
     const elapsed = this.#current.elapsed;
-    for (const transition of this.#transitions) {
-      if (
-        elapsed < transition.exitTime ||
-        !this.#matchesFrom(transition, from)
-      ) {
+    const bucket = this.#buckets.get(from) as readonly CompiledTransition[];
+    for (const transition of bucket) {
+      if (elapsed < transition.exitTime) {
         continue;
       }
       if (!this.#conditionsHold(transition.when)) {

@@ -366,6 +366,10 @@ export class AnimationTrack<T> implements AnimationTrackLike {
    * Scratch for the cubic modes: five slots of `#layout.size` — the four
    * contributing values and the result — allocated once so sampling cannot.
    */
+  /** Span hint for {@link AnimationTrack.#spanIndex}; always a valid span. */
+  #lastSpan = 0;
+  /** Precomputed Catmull-Rom tangents; empty unless cubic. */
+  readonly #cubicTangents: Float64Array;
   readonly #scratch: Float64Array;
 
   /**
@@ -458,6 +462,73 @@ export class AnimationTrack<T> implements AnimationTrackLike {
     this.#layout = layout ?? numberLayout;
     this.#scratch =
       layout === undefined ? NO_SCRATCH : new Float64Array(layout.size * 5);
+    this.#cubicTangents =
+      interpolation === "cubic" && layout !== undefined
+        ? this.#buildCubicTangents(layout)
+        : NO_SCRATCH;
+  }
+
+  /**
+   * Catmull-Rom tangents (per second) for every span, laid out
+   * `[(span * 2 + end) * size + component]` (`end` 0 = start tangent, 1 = end
+   * tangent). Stored per span, not per key, because the start tangent of span
+   * `k` and the end tangent of span `k - 1` are algebraically equal but are
+   * evaluated in different operation orders; per-span storage keeps samples
+   * bit-identical to the original per-sample arithmetic.
+   */
+  #buildCubicTangents(layout: ComponentLayout): Float64Array {
+    const { times, values } = this;
+    const size = layout.size;
+    const spans = times.length - 1;
+    const tangents = new Float64Array(Math.max(spans, 0) * 2 * size);
+    const read = new Float64Array(size * 4);
+    const [previousSlot, startSlot, endSlot, nextSlot] = [
+      0,
+      size,
+      size * 2,
+      size * 3,
+    ];
+    for (let index = 0; index < spans; index += 1) {
+      const hasPrevious = index > 0;
+      const hasNext = index + 2 < times.length;
+      layout.read(values[index], read, startSlot);
+      layout.read(values[index + 1], read, endSlot);
+      if (hasPrevious) {
+        layout.read(values[index - 1], read, previousSlot);
+      }
+      if (hasNext) {
+        layout.read(values[index + 2], read, nextSlot);
+      }
+      const startTime = times[index];
+      const endTime = times[index + 1];
+      const spanSeconds = endTime - startTime;
+      const previousTime = hasPrevious ? times[index - 1] : startTime;
+      const nextTime = hasNext ? times[index + 2] : endTime;
+      for (let component = 0; component < size; component += 1) {
+        const start = read[startSlot + component];
+        const end = read[endSlot + component];
+        const secant = (end - start) / spanSeconds;
+        let startTangent = secant;
+        if (hasPrevious) {
+          const previous = read[previousSlot + component];
+          startTangent =
+            (start - previous) / (startTime - previousTime) -
+            (end - previous) / (endTime - previousTime) +
+            secant;
+        }
+        let endTangent = secant;
+        if (hasNext) {
+          const next = read[nextSlot + component];
+          endTangent =
+            secant -
+            (next - start) / (nextTime - startTime) +
+            (next - end) / (nextTime - endTime);
+        }
+        tangents[index * 2 * size + component] = startTangent;
+        tangents[(index * 2 + 1) * size + component] = endTangent;
+      }
+    }
+    return tangents;
   }
 
   /** Number of keyframes; always at least one. */
@@ -516,6 +587,17 @@ export class AnimationTrack<T> implements AnimationTrackLike {
    */
   #spanIndex(timeSeconds: number): number {
     const times = this.times;
+    // Playback is temporally coherent: try the last span, then the next one.
+    const last = this.#lastSpan;
+    if (times[last] <= timeSeconds) {
+      if (timeSeconds < times[last + 1]) {
+        return last;
+      }
+      if (last + 2 < times.length && timeSeconds < times[last + 2]) {
+        this.#lastSpan = last + 1;
+        return last + 1;
+      }
+    }
     let low = 0;
     let high = times.length - 2;
     while (low < high) {
@@ -526,6 +608,7 @@ export class AnimationTrack<T> implements AnimationTrackLike {
         high = middle - 1;
       }
     }
+    this.#lastSpan = low;
     return low;
   }
 
@@ -563,32 +646,17 @@ export class AnimationTrack<T> implements AnimationTrackLike {
    * straight line between them, matching the trajectory's two-point case.
    */
   #sampleCubic(index: number, u: number, spanSeconds: number, out: T): T {
-    const times = this.times;
     const values = this.values;
     const layout = this.#layout;
     const scratch = this.#scratch;
     const size = layout.size;
-    const previousSlot = 0;
     const startSlot = size;
     const endSlot = size * 2;
-    const nextSlot = size * 3;
     const resultSlot = size * 4;
 
-    const hasPrevious = index > 0;
-    const hasNext = index + 2 < times.length;
     layout.read(values[index], scratch, startSlot);
     layout.read(values[index + 1], scratch, endSlot);
-    if (hasPrevious) {
-      layout.read(values[index - 1], scratch, previousSlot);
-    }
-    if (hasNext) {
-      layout.read(values[index + 2], scratch, nextSlot);
-    }
-
-    const startTime = times[index];
-    const endTime = times[index + 1];
-    const previousTime = hasPrevious ? times[index - 1] : startTime;
-    const nextTime = hasNext ? times[index + 2] : endTime;
+    const tangents = this.#cubicTangents;
 
     const uu = u * u;
     const uuu = uu * u;
@@ -600,25 +668,8 @@ export class AnimationTrack<T> implements AnimationTrackLike {
     for (let component = 0; component < size; component += 1) {
       const start = scratch[startSlot + component];
       const end = scratch[endSlot + component];
-      const secant = (end - start) / spanSeconds;
-
-      let startTangent = secant;
-      if (hasPrevious) {
-        const previous = scratch[previousSlot + component];
-        startTangent =
-          (start - previous) / (startTime - previousTime) -
-          (end - previous) / (endTime - previousTime) +
-          secant;
-      }
-
-      let endTangent = secant;
-      if (hasNext) {
-        const next = scratch[nextSlot + component];
-        endTangent =
-          secant -
-          (next - start) / (nextTime - startTime) +
-          (next - end) / (nextTime - endTime);
-      }
+      const startTangent = tangents[index * 2 * size + component];
+      const endTangent = tangents[(index * 2 + 1) * size + component];
 
       scratch[resultSlot + component] =
         h00 * start +
