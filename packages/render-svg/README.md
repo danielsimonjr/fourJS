@@ -31,3 +31,12 @@ Only `unlit` triangle items draw, flat-filled in render-list (painter's) order: 
 Unit tests are colocated in `tests/` per §92; the browser gate is `tests/browser/backends-svg.spec.ts`.
 
 Workspace name `@fourjs/render-svg`; publishes as `@danielsimonjr/fourjs-render-svg`.
+
+## Antialiasing seams
+
+Adjacent triangles that share an edge are antialiased independently by the SVG
+rasterizer, so the shared diagonal of a quad blends two partial coverages and
+can read slightly darker than the Canvas 2D or WebGL picture of the same scene
+(measured: 480 of 230,400 pixels on a six-plane test scene). Set
+`shape-rendering="crispEdges"` on the root `<svg>` when pixel agreement matters
+more than smooth edges; the picture-agreement browser gate does exactly that.

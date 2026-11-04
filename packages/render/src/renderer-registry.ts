@@ -109,20 +109,17 @@ export type RendererSelection = "auto" | RendererBackend;
  * preference, so two applications that register the same backends in different
  * orders must still resolve `"auto"` the same way (§33).
  *
- * ## `"canvas2d"` and `"svg"` are rungs no fourJS package can fill — kept on purpose
+ * ## `"canvas2d"` and `"svg"` are filled by first-party packages — and stay open to consumers
  *
- * `@fourjs/render-canvas` and `@fourjs/render-svg` are §102 reserved stubs (one
- * export each, no `Renderer`), so from fourJS packages alone these two rungs are
- * unreachable and `"auto"` stops at WebGPU/WebGL 2. **The rungs stay**, because
- * they are not decoration: they are the published contract an **application's
- * own** backend registers into. `registerRenderer({ backend: "canvas2d", … })`
+ * `@fourjs/render-canvas` and `@fourjs/render-svg` fill these two rungs through
+ * `registerCanvasRenderer()` and `registerSvgRenderer()` (a call, not an import
+ * side effect). The rungs are also the published contract an **application's
+ * own** backend registers into: `registerRenderer({ backend: "canvas2d", … })`
  * from consumer code makes `resolveRenderer("auto")` select it exactly as it
  * would a first-party backend — measured end to end in dogfood cycle 9A, which
  * wrote a Canvas 2D backend against published exports only (~120 lines,
  * **35,851 lit pixels / 3 draw calls / 82 triangles** against a 0-pixel control)
  * and an SVG one beside it (**83 elements** against a 1-element control).
- * Dropping the rungs to tidy the cosmetic gap would remove a working extension
- * point; a stub package shipping later fills its own rung with no change here.
  * The recipe is `docs/guides/custom-renderer-backends.md`.
  */
 export const AUTO_RENDERER_ORDER = [
@@ -342,13 +339,10 @@ function describeBackends(backends: readonly RendererBackend[]): string {
  * other three (dogfood cycle 9A: asking for `"canvas2d"` was told to call the
  * WebGL registrar).
  *
- * `"canvas2d"` and `"svg"` are §102 reserved stubs: `@fourjs/render-canvas`
- * and `@fourjs/render-svg` export a package name and nothing else, so there is
- * no register function to point at and pretending otherwise sends a reader to
- * an import that does not exist. Those rungs say so plainly — they are
- * reachable, but only through an application's own {@link registerRenderer}
- * (which cycle 9A proved works). `"null"` is the same shape: the headless tier
- * is whatever the caller registers.
+ * `"canvas2d"` and `"svg"` name `registerCanvasRenderer()` and
+ * `registerSvgRenderer()` from the first-party packages (an application's own
+ * {@link registerRenderer} still works for a different backend). `"null"` has
+ * no package of its own: the headless tier is whatever the caller registers.
  *
  * Selection is untouched by any of this; only the text changes.
  */
@@ -359,8 +353,9 @@ function registrationAdvice(backend: RendererBackend): string {
     case "webgl2":
       return "Call `registerWebglRenderer()` from the render-webgl package first, or pass a Renderer instance (§45).";
     case "canvas2d":
+      return 'Call `registerCanvasRenderer()` from the render-canvas package first, register your own backend with registerRenderer({ backend: "canvas2d", isSupported, create }), or pass a Renderer instance (§45).';
     case "svg":
-      return `No fourJS package implements the ${JSON.stringify(backend)} backend yet — it is a reserved §102 stub — so nothing exports a register function for it. Register your own implementation with registerRenderer({ backend: ${JSON.stringify(backend)}, isSupported, create }), or pass a Renderer instance (§45).`;
+      return 'Call `registerSvgRenderer()` from the render-svg package first, register your own backend with registerRenderer({ backend: "svg", isSupported, create }), or pass a Renderer instance (§45).';
     case "null":
       return 'The headless tier has no package of its own: register your own implementation with registerRenderer({ backend: "null", isSupported, create }), or pass a Renderer instance (§45).';
   }
