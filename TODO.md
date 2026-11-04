@@ -14,8 +14,8 @@ changes in `CHANGELOG.md`.
   strict decoding path is PNG to RGBA8, not arbitrary native ImageBitmap decoding.
 - Fixed image rejection cleanup, invalid probe/dimension/backing-store acceptance,
   mutable decoder options, and worker-transfer expansion-ratio bypasses.
-- This focused branch starts at `7fe7098` on main. Earlier Draco/Basis work remains
-  in local roadmap commit `b1240b4`; it is not duplicated or marked landed here.
+- This focused branch starts at `7fe7098` on main. Draco/Basis landed 2026-11-04 (waves 7 and
+  11) over the raw codec ABI; the local roadmap commit `b1240b4` is superseded.
 - 2026-10-05: JPEG joins the same factory shape (`createBoundedJpegDecoder`, pin
   `@jsquash/jpeg@1.6.0`) with SOF/WebP/PNG header probes (`image-probe.ts`).
 - Validation: 7,763 package tests, 685 integration/determinism tests, assets
@@ -43,7 +43,7 @@ readback, and texture paths. Follow-up corrections:
   widths even without the optional glyph-ID map.
 - §96 next packet: `createGzipLoader` supplies bounded raw gzip decoding through
   an injected pull reader, with cancellation, cleanup and checksum-before-return.
-  Draco/Basis and host-internal allocation limits remain open.
+  Draco/Basis DONE 2026-11-04; host-internal allocation limits remain open.
 - Corrected stale glTF and decompression documentation. No broad roadmap row is
   closed by this packet; remaining GPU/rendering/text work stays listed below.
 
@@ -74,19 +74,20 @@ are accepted; spec revision 1.16 records the §56 shaping decision. This pass do
   reads and feedback provenance across all standard material texture slots.
 - RFC 0003: CPU skinning now feeds Mesh rendering, interpolation, bounds, picking and
   serialization; **one-target GPU morph shipped 2026-10-05** (locations 6/7, WebGL mix,
-  WebGPU skip). Bone-texture palettes remain open.
+  WebGPU skip). Bone-texture palettes DONE 2026-11-04 (wave 6); weights channels DONE 2026-11-04 (wave 11).
 - RFC 0001: opt-in std140 WebGL transport, reusable/declarative subgraphs, finite named
   variants and node source maps. Storage-buffer graph bindings, automatic scene-light
   inputs and IR conditional defines/cache specialization DONE 2026-11-04 (wave 7).
 - RFC 0004/R-30c: regional texture updates, CanvasTexture sampler settings, bitmap/video
   adapters, residency and asynchronous preparation. **In-place `CanvasTexture.resize()`
-  shipped 2026-10-05.** Cube/array/3D/compressed sampling remain open.
-- Lighting: WebGL normal/occlusion maps and factors, including glTF ingestion. WebGPU
-  map parity, multi-directional/area/clustered lights, wider shadows, IBL and tone mapping
-  remain open.
-- R-1 deferred graph pooling/barriers/staging rings/GPU-field/depth-collision work,
-  shaded instancing/atlas packing, first npm publication,
-  and standing dogfooding remain open. No hardware result or release is fabricated.
+  shipped 2026-10-05.** Cube/array/3D (wave 5), compressed (wave 7) and `KHR_texture_basisu` (wave 11) DONE 2026-11-04.
+- Lighting: WebGL normal/occlusion maps and factors, including glTF ingestion. WebGPU map
+  parity (wave 4), multi-directional lights (wave 5), cascades and point/spot shadows (wave 6)
+  DONE 2026-11-04; area/clustered lights, transparent masks, contact shadows, IBL and the
+  tone-map operator remain open (post-1.0 tier).
+- R-1 deferred graph pooling/barriers/staging rings/GPU-field/depth-collision work and
+  shaded instancing/atlas packing DONE 2026-11-04 (waves 5, 6, 11); first npm publication
+  (owner step) and standing dogfooding remain open. No hardware result or release is fabricated.
 
 Final validation evidence is recorded in CHANGELOG and the pull request. The historical
 rows below remain the per-feature source of truth; checked rows are not reopened merely
@@ -1545,7 +1546,7 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
                                                       the WebGPU packet mirrors `gl-node-program.ts` over the wgpu pipeline cache
                                                       (screen domain included, for §70 graph effects).
 
-- [ ] **RFC 0001 residue:** std140 WebGL uniform blocks with call/byte
+- [x] **RFC 0001 residue — CLOSED 2026-11-04 (wave 7; ticked wave 11):** std140 WebGL uniform blocks with call/byte
       measurement, reusable named subgraphs, safe data-declared operators and
       per-node GLSL/WGSL source maps **DONE 2026-09-11**. Finite explicit
       `ShaderVariantSet` families also shipped. ~~Still open: IR-level conditional
@@ -1570,8 +1571,10 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       `positions1`/`normals1` at 6/7, weight in the draw uniform's spare word
       at byte 156); ~~further targets~~ **DONE 2026-11-04 (wave 5)**: up to four
       targets (`BufferGeometry.extraMorphTargets`, locations 10–15, `vec4` weights,
-      glTF `targets[0..3]`; spec revision row dated 2026-11-04; `weights` animation
-      channels still refused — instantiation-tier wiring open);
+      glTF `targets[0..3]`; spec revision row dated 2026-11-04; ~~`weights` animation
+      channels still refused — instantiation-tier wiring open~~ **DONE 2026-11-04 (wave 11:
+      the loader reads `weights` channels as N scalars per key and `instantiateGltf` binds
+      them to `MorphWeights` as tracks `morphWeights.<node>.<k>`; `GltfInstance.morphWeights`)**);
       ~~skinned shadow caster program (the §69 pass skips skinned draws — a bind-pose
       shadow is a different picture)~~ **DONE 2026-09-09** (WebGL
       `SkinnedShadowProgram` via `acquireShadow()` on the first skinned
@@ -1786,7 +1789,7 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
 - [x] **R-31 mechanism closed on WebGPU (WP-R1.8, 2026-08-29)** — see the R-31
       residue item above for the remaining `@fourjs/particles` wiring; WebGL 2
       declares the tier absent.
-- [ ] **Follow-ups the R-1 plan explicitly defers** (each needs its own filing): ~~§63
+- [x] **Follow-ups the R-1 plan explicitly defers — ALL DONE 2026-11-04 (waves 5–6; ticked wave 11)** (each needs its own filing): ~~§63
       transient-target pooling and barrier scheduling (must land on both backends or
       neither)~~ **DONE 2026-11-04 (wave 6: `AddPassOptions.transient`, static lifetimes,
       deterministic first-fit slot aliasing through the `TransientTargetPool` seam each
@@ -2016,8 +2019,11 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       §65 batching, which closes §65's glyph-batching strategy at the label level"_, and
       `four/src/text-node.ts:71` repeats it, adding that the residue is grouping labels
       that do NOT share a material — which is the atlas-grouping sub-part already listed
-      separately below, not a second open claim; texture-atlas _grouping_ of distinct textures (needs a
-      packer); ~~a change-detecting batch cache so a still scene re-uploads nothing (§86's
+      separately below, not a second open claim; ~~texture-atlas _grouping_ of distinct textures (needs a
+      packer)~~ **DONE 2026-11-04 (wave 11: opt-in `atlas: { pageSize, maxPages }` on the
+      batcher — deterministic shelf packer over fixed pages with 1-texel edge-duplicated
+      padding; consecutive items differing only by texture merge; browser gate 8 draws → 2,
+      0 pixels differ; repeat/mirror wrap, mip chains and anisotropy refused)**; ~~a change-detecting batch cache so a still scene re-uploads nothing (§86's
       idle-scene row — today a batched run re-uploads every frame)~~ **DONE
       (already on the tree):** `RenderBatch.contentVersion` +
       `createGlBatching` `#canSkipUpload`;
@@ -2080,7 +2086,8 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       backends)**, ~~compressed containers~~ **DONE 2026-11-04 (wave 7: KTX2 parser +
       `createBoundedBasisTranscoder` over the raw codec ABI, closed `TextureFormat` set
       bc7 / etc2 / astc-4x4 with rgba8 fallback, uploads on both backends; glTF
-      `KHR_texture_basisu` routing still open)**,
+      `KHR_texture_basisu` routing DONE 2026-11-04 (wave 11: `GltfLoaderOptions.basisTranscoder`
+      + `supportedFormats`; fallback to `source`; `ignoredTextures` entry without one))**,
       ~~video/`ImageBitmap`, async upload~~ **DONE 2026-09-11** (host surface
       adapters + frame invalidation, explicit `prepareTexture` fences/queue completion).
 
@@ -2388,8 +2395,11 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       shader/plugin trust boundaries remain implemented. ~~Separate Draco/Basis
       work exists in local roadmap commit `b1240b4` but is not on this branch~~ Basis
       **DONE 2026-11-04** (wave 7: bounded KTX2/Basis transcoder, §96 budget and
-      poisoning rules in the security guide); Draco still absent, so
-      the aggregate row remains open. Process RSS, native platform heaps, and
+      poisoning rules in the security guide); Draco **DONE 2026-11-04** (wave 11:
+      `createBoundedDracoDecoder` over the raw codec ABI, `GltfLoaderOptions.dracoDecoder`
+      routes `KHR_draco_mesh_compression`, `extensionsRequired` rules, 16 malformed-output
+      refusals each poisoning the instance). The aggregate row stays open only for what
+      cannot be bounded from here: Process RSS, native platform heaps, and
       host gzip internals remain outside the PNG linear-heap guarantee; see the
       security guide.
 - [x] **Regenerate `docs/Architecture/` graph artifacts** (`pnpm graph`) — dependency

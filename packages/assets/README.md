@@ -54,6 +54,36 @@ in `bc7-rgba-unorm`, `etc2-rgba8unorm` or `astc-4x4-unorm` (per the caller's
 `supportedFormats`) with a mip chain in `levels`, or `rgba8unorm` data as the
 fallback. ABI and limits: `docs/guides/security-and-untrusted-content.md`.
 
+## Draco mesh compression (glTF `KHR_draco_mesh_compression`)
+
+`createBoundedDracoDecoder({ wasmBinary, maximumWorkingBytes?,
+maximumDecodedBytes? })` runs an application-pinned raw-ABI Draco decoder
+(`memory`, `malloc`, `free`, `decode(ptr, len, infoPtr) -> outPtr`) and returns
+the primitive streams the glTF loader already builds (positions, normals, uvs,
+colors, joints, weights, indices). Pass it as `createGltfLoader({ dracoDecoder })`;
+without it a required extension is refused and an optional one uses the
+uncompressed accessors. Counts, sizes and budgets are verified and any ABI
+failure poisons the instance. ABI: `docs/guides/security-and-untrusted-content.md`.
+
+## glTF `KHR_texture_basisu` and morph-weight clips
+
+`createGltfLoader({ basisTranscoder, supportedFormats? })` routes a texture
+whose `extensions.KHR_texture_basisu.source` names a KTX2 image through the
+bounded Basis transcoder into a compressed `TextureSource` (`format` +
+`levels`, sampler filter/wrap folded in; `GltfAsset.textures` is
+`TextureAsset | GltfCompressedTexture`). Without a transcoder the plain
+`textures[i].source` fallback is used, else the slot is dropped and recorded in
+the material's `ignoredTextures`; `extensionsRequired` without a transcoder is
+refused. A KTX2 is routed only when its `KTXorientation` is `ru` (rows
+bottom-up, matching the loader's flipped UVs; toktx
+`--lower_left_maps_to_s0t0`); `rd` or a missing key falls back to `source` or
+is recorded in `ignoredTextures`, unless `basisOrientation: "trust"` is set by
+an application that pre-flipped its rows. Transcodes are capped per call by
+`maximumDecodedBytes` and per document by `maximumWorkingBytes`. `weights`
+animation channels parse (SCALAR output, N values per key)
+and bind at `morphWeights.<node>.<k>`. Still refused: `CUBICSPLINE`, `TANGENT`
+morph streams, more than four targets, sparse accessors.
+
 ## Bounded WebP and AVIF decoding (§96)
 
 `createBoundedWebpDecoder` and `createBoundedAvifDecoder` take the same options

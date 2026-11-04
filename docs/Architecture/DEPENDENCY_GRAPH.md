@@ -60,13 +60,13 @@ The codebase is organized into the following modules:
 - **packages/render-svg**: 3 files
 - **packages/physics-box2d**: 4 files
 - **packages/scene**: 17 files
-- **packages/assets**: 20 files
+- **packages/assets**: 21 files
 - **packages/physics-soft**: 4 files
 - **packages/physics-rapier**: 8 files
 - **packages/render-webgl**: 25 files
 - **packages/physics**: 25 files
 - **packages/geometry**: 13 files
-- **packages/render**: 37 files
+- **packages/render**: 38 files
 - **packages/input**: 9 files
 - **packages/render-webgpu**: 32 files
 - **packages/physics-physjs**: 3 files
@@ -94,13 +94,13 @@ The codebase is organized into the following modules:
 | `@fourjs/render-svg` (`packages/render-svg/`)         | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 3              | 0               |
 | `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/physics`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 4              | 0               |
 | `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 17             | 0               |
-| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 20             | 0               |
+| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 21             | 0               |
 | `@fourjs/physics-soft` (`packages/physics-soft/`)     | `@fourjs/core`, `@fourjs/geometry`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                           | 4              | 0               |
 | `@fourjs/physics-rapier` (`packages/physics-rapier/`) | `@fourjs/physics`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 8              | 0               |
 | `@fourjs/render-webgl` (`packages/render-webgl/`)     | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 25             | 0               |
 | `@fourjs/physics` (`packages/physics/`)               | `@fourjs/core`, `@fourjs/math`, `@fourjs/motion`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 25             | 0               |
 | `@fourjs/geometry` (`packages/geometry/`)             | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 13             | 0               |
-| `@fourjs/render` (`packages/render/`)                 | `@fourjs/math`, `@fourjs/materials`, `@fourjs/geometry`, `@fourjs/core`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                        | 37             | 0               |
+| `@fourjs/render` (`packages/render/`)                 | `@fourjs/math`, `@fourjs/materials`, `@fourjs/geometry`, `@fourjs/core`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                        | 38             | 0               |
 | `@fourjs/input` (`packages/input/`)                   | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 9              | 0               |
 | `@fourjs/render-webgpu` (`packages/render-webgpu/`)   | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                               | 32             | 0               |
 | `@fourjs/physics-physjs` (`packages/physics-physjs/`) | `@fourjs/core`, `@fourjs/math`, `@fourjs/physics`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 3              | 0               |
@@ -1925,18 +1925,21 @@ graph LR
 
 **Internal Dependencies:**
 
-| File                 | Imports                                                                                                   | Type   |
-| -------------------- | --------------------------------------------------------------------------------------------------------- | ------ |
-| `./image-memory.js`  | `assertImageDecoderMemory`                                                                                | Import |
-| `./asset-manager.js` | `DEFAULT_MAXIMUM_BYTES, resolveGlobalFetch, AssetLoadContext, AssetLoader, FetchLike, FetchResponse`      | Import |
-| `./content-hash.js`  | `resolveGlobalTextDecoder, TextDecodeLike`                                                                | Import |
-| `./texture.js`       | `createTextureDecoder, TexelDecodeLike, TexelProbeLike, TextureAsset, TextureFilterMode, TextureWrapMode` | Import |
+| File                 | Imports                                                                                                   | Type               |
+| -------------------- | --------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./bounded-draco.js` | `DracoAttributeIds, DracoDecoder, DracoStreams`                                                           | Import (type-only) |
+| `./image-memory.js`  | `assertImageDecoderMemory`                                                                                | Import             |
+| `./ktx2.js`          | `parseKtx2`                                                                                               | Import             |
+| `./asset-manager.js` | `DEFAULT_MAXIMUM_BYTES, resolveGlobalFetch, AssetLoadContext, AssetLoader, FetchLike, FetchResponse`      | Import             |
+| `./content-hash.js`  | `resolveGlobalTextDecoder, TextDecodeLike`                                                                | Import             |
+| `./bounded-basis.js` | `BasisTextureFormat, BasisTextureSource, BasisTranscoder`                                                 | Import (type-only) |
+| `./texture.js`       | `createTextureDecoder, TexelDecodeLike, TexelProbeLike, TextureAsset, TextureFilterMode, TextureWrapMode` | Import             |
 
 **Exports:**
 
 - Classes: `GltfAsset`
 - Interfaces: `GltfPrimitiveRecord`, `GltfMeshRecord`, `GltfMaterialRecord`, `GltfNodeRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `GltfChannelRecord`, `GltfAnimationRecord`, `GltfLoaderOptions`
-- Types: `GltfPrimitiveMode`, `GltfChannelPath`
+- Types: `GltfCompressedTexture`, `GltfTexture`, `GltfPrimitiveMode`, `GltfChannelPath`
 - Functions: `createGltfLoader`
 
 ---
@@ -1995,6 +1998,7 @@ graph LR
 | `./bounded-webp.js`    | `createBoundedWebpDecoder`                                                                                                                                                                                                                                                                                            | Re-export             |
 | `./bounded-avif.js`    | `createBoundedAvifDecoder`                                                                                                                                                                                                                                                                                            | Re-export             |
 | `./bounded-basis.js`   | `BASIS_TARGET_CODES, createBoundedBasisTranscoder`                                                                                                                                                                                                                                                                    | Re-export             |
+| `./bounded-draco.js`   | `DRACO_COMPONENT_CODES, DRACO_INFO_BYTES, DRACO_MAX_ATTRIBUTES, createBoundedDracoDecoder`                                                                                                                                                                                                                            | Re-export             |
 | `./ktx2.js`            | `KTX2_HEADER_BYTES, KTX2_IDENTIFIER, parseKtx2`                                                                                                                                                                                                                                                                       | Re-export             |
 | `./image-probe.js`     | `probeAvif, probeImage, probeJpeg, probePng, probeWebp`                                                                                                                                                                                                                                                               | Re-export             |
 | `./loader-registry.js` | `RegisteredAssetLoader`                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
@@ -2002,7 +2006,7 @@ graph LR
 | `./content-hash.js`    | `DigestLike, TextDecodeLike`                                                                                                                                                                                                                                                                                          | Re-export (type-only) |
 | `./manifest.js`        | `AssetManifest, AssetManifestEntry, ManifestLoadOptions, ManifestParseOptions`                                                                                                                                                                                                                                        | Re-export (type-only) |
 | `./texture.js`         | `DecodedTexels, TexelDecodeLike, TexelProbeLike, TextureColorSpace, TextureFilterMode, TextureLoaderOptions, TextureWrapMode`                                                                                                                                                                                         | Re-export (type-only) |
-| `./gltf.js`            | `GltfAnimationRecord, GltfChannelPath, GltfChannelRecord, GltfLoaderOptions, GltfMaterialRecord, GltfMeshRecord, GltfNodeRecord, GltfPrimitiveMode, GltfPrimitiveRecord, GltfSceneRecord, GltfSkinRecord`                                                                                                             | Re-export (type-only) |
+| `./gltf.js`            | `GltfAnimationRecord, GltfChannelPath, GltfCompressedTexture, GltfTexture, GltfChannelRecord, GltfLoaderOptions, GltfMaterialRecord, GltfMeshRecord, GltfNodeRecord, GltfPrimitiveMode, GltfPrimitiveRecord, GltfSceneRecord, GltfSkinRecord`                                                                         | Re-export (type-only) |
 | `./loaders.js`         | `ImageBitmapLike, ImageDecodeLike, ImageLoaderOptions`                                                                                                                                                                                                                                                                | Re-export (type-only) |
 | `./gzip.js`            | `GzipDecodeLike, GzipLoaderOptions, GzipReader`                                                                                                                                                                                                                                                                       | Re-export (type-only) |
 | `./bounded-png.js`     | `BoundedPngDecoderOptions`                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
@@ -2010,13 +2014,14 @@ graph LR
 | `./bounded-webp.js`    | `BoundedWebpDecoderOptions`                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
 | `./bounded-avif.js`    | `BoundedAvifDecoderOptions`                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
 | `./bounded-basis.js`   | `BasisTextureFormat, BasisTextureSource, BasisTranscodeRequest, BasisTranscoder, BoundedBasisTranscoderOptions`                                                                                                                                                                                                       | Re-export (type-only) |
+| `./bounded-draco.js`   | `BoundedDracoDecoderOptions, DracoAttributeIds, DracoDecoder, DracoStreams`                                                                                                                                                                                                                                           | Re-export (type-only) |
 | `./ktx2.js`            | `Ktx2BasisCodec, Ktx2Dfd, Ktx2Info, Ktx2Level, Ktx2ParseOptions, Ktx2Supercompression`                                                                                                                                                                                                                                | Re-export (type-only) |
 | `./image-probe.js`     | `ImageDimensions`                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `ASSET_LOADERS`, `AssetLoaderRegistry`, `AssetManager`, `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`, `CONTENT_HASH_ALGORITHM`, `loadFromManifest`, `manifestLoader`, `manifestUrl`, `parseAssetManifest`, `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`, `TextureAsset`, `createTextureDecoder`, `createTextureLoader`, `GltfAsset`, `createGltfLoader`, `ImageAsset`, `binaryLoader`, `createImageLoader`, `jsonLoader`, `textLoader`, `createGzipLoader`, `createBoundedPngDecoder`, `DEFAULT_IMAGE_WORKING_BYTES`, `createBoundedJpegDecoder`, `createBoundedWebpDecoder`, `createBoundedAvifDecoder`, `BASIS_TARGET_CODES`, `createBoundedBasisTranscoder`, `KTX2_HEADER_BYTES`, `KTX2_IDENTIFIER`, `parseKtx2`, `probeAvif`, `probeImage`, `probeJpeg`, `probePng`, `probeWebp`, `RegisteredAssetLoader`, `AbortHandle`, `AbortSignalLike`, `AssetGraph`, `AssetGraphLoadOptions`, `AssetLoadOptions`, `AssetLoadContext`, `AssetLoader`, `AssetManagerOptions`, `AssetProgressEvent`, `AssetWatchLike`, `AssetWithDependencies`, `ByteReaderLike`, `FetchInit`, `FetchLike`, `FetchResponse`, `ReadableBodyLike`, `ResponseHeadersLike`, `TimerLike`, `WorkerLike`, `DigestLike`, `TextDecodeLike`, `AssetManifest`, `AssetManifestEntry`, `ManifestLoadOptions`, `ManifestParseOptions`, `DecodedTexels`, `TexelDecodeLike`, `TexelProbeLike`, `TextureColorSpace`, `TextureFilterMode`, `TextureLoaderOptions`, `TextureWrapMode`, `GltfAnimationRecord`, `GltfChannelPath`, `GltfChannelRecord`, `GltfLoaderOptions`, `GltfMaterialRecord`, `GltfMeshRecord`, `GltfNodeRecord`, `GltfPrimitiveMode`, `GltfPrimitiveRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `ImageBitmapLike`, `ImageDecodeLike`, `ImageLoaderOptions`, `GzipDecodeLike`, `GzipLoaderOptions`, `GzipReader`, `BoundedPngDecoderOptions`, `BoundedJpegDecoderOptions`, `BoundedWebpDecoderOptions`, `BoundedAvifDecoderOptions`, `BasisTextureFormat`, `BasisTextureSource`, `BasisTranscodeRequest`, `BasisTranscoder`, `BoundedBasisTranscoderOptions`, `Ktx2BasisCodec`, `Ktx2Dfd`, `Ktx2Info`, `Ktx2Level`, `Ktx2ParseOptions`, `Ktx2Supercompression`, `ImageDimensions`
+- Re-exports: `ASSET_LOADERS`, `AssetLoaderRegistry`, `AssetManager`, `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`, `CONTENT_HASH_ALGORITHM`, `loadFromManifest`, `manifestLoader`, `manifestUrl`, `parseAssetManifest`, `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`, `TextureAsset`, `createTextureDecoder`, `createTextureLoader`, `GltfAsset`, `createGltfLoader`, `ImageAsset`, `binaryLoader`, `createImageLoader`, `jsonLoader`, `textLoader`, `createGzipLoader`, `createBoundedPngDecoder`, `DEFAULT_IMAGE_WORKING_BYTES`, `createBoundedJpegDecoder`, `createBoundedWebpDecoder`, `createBoundedAvifDecoder`, `BASIS_TARGET_CODES`, `createBoundedBasisTranscoder`, `DRACO_COMPONENT_CODES`, `DRACO_INFO_BYTES`, `DRACO_MAX_ATTRIBUTES`, `createBoundedDracoDecoder`, `KTX2_HEADER_BYTES`, `KTX2_IDENTIFIER`, `parseKtx2`, `probeAvif`, `probeImage`, `probeJpeg`, `probePng`, `probeWebp`, `RegisteredAssetLoader`, `AbortHandle`, `AbortSignalLike`, `AssetGraph`, `AssetGraphLoadOptions`, `AssetLoadOptions`, `AssetLoadContext`, `AssetLoader`, `AssetManagerOptions`, `AssetProgressEvent`, `AssetWatchLike`, `AssetWithDependencies`, `ByteReaderLike`, `FetchInit`, `FetchLike`, `FetchResponse`, `ReadableBodyLike`, `ResponseHeadersLike`, `TimerLike`, `WorkerLike`, `DigestLike`, `TextDecodeLike`, `AssetManifest`, `AssetManifestEntry`, `ManifestLoadOptions`, `ManifestParseOptions`, `DecodedTexels`, `TexelDecodeLike`, `TexelProbeLike`, `TextureColorSpace`, `TextureFilterMode`, `TextureLoaderOptions`, `TextureWrapMode`, `GltfAnimationRecord`, `GltfChannelPath`, `GltfCompressedTexture`, `GltfTexture`, `GltfChannelRecord`, `GltfLoaderOptions`, `GltfMaterialRecord`, `GltfMeshRecord`, `GltfNodeRecord`, `GltfPrimitiveMode`, `GltfPrimitiveRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `ImageBitmapLike`, `ImageDecodeLike`, `ImageLoaderOptions`, `GzipDecodeLike`, `GzipLoaderOptions`, `GzipReader`, `BoundedPngDecoderOptions`, `BoundedJpegDecoderOptions`, `BoundedWebpDecoderOptions`, `BoundedAvifDecoderOptions`, `BasisTextureFormat`, `BasisTextureSource`, `BasisTranscodeRequest`, `BasisTranscoder`, `BoundedBasisTranscoderOptions`, `BoundedDracoDecoderOptions`, `DracoAttributeIds`, `DracoDecoder`, `DracoStreams`, `Ktx2BasisCodec`, `Ktx2Dfd`, `Ktx2Info`, `Ktx2Level`, `Ktx2ParseOptions`, `Ktx2Supercompression`, `ImageDimensions`
 
 ---
 
@@ -2066,6 +2071,31 @@ graph LR
 - Types: `AssetWatchLike`, `FetchLike`
 - Functions: `resolveGlobalFetch`
 - Constants: `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`
+
+---
+
+### `packages/assets/src/bounded-draco.ts` - Bounded Draco mesh decoder (§96; R-30c, the glTF `KHR_draco_mesh_compression`
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File               | Imports                         | Type   |
+| ------------------ | ------------------------------- | ------ |
+| `./bounded-png.js` | `DEFAULT_IMAGE_WORKING_BYTES`   | Import |
+| `./texture.js`     | `DEFAULT_MAXIMUM_DECODED_BYTES` | Import |
+| `./wasm-memory.js` | `limitWasmMemory`               | Import |
+
+**Exports:**
+
+- Interfaces: `BoundedDracoDecoderOptions`, `DracoAttributeIds`, `DracoStreams`
+- Types: `DracoDecoder`
+- Functions: `createBoundedDracoDecoder`
+- Constants: `DRACO_MAX_ATTRIBUTES`, `DRACO_INFO_BYTES`, `DRACO_COMPONENT_CODES`
 
 ---
 
@@ -3134,10 +3164,10 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| `@fourjs/math`   | `Matrix4`                                                                                   |
-| `@fourjs/render` | `INSTANCE_FLOATS, RenderBatcher, InstancedRun, RenderBatch, RenderBatchOptions, RenderItem` |
+| Package          | Import                                                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/math`   | `Matrix4`                                                                                                         |
+| `@fourjs/render` | `INSTANCE_FLOATS, RenderBatcher, BatchAtlasStatistics, InstancedRun, RenderBatch, RenderBatchOptions, RenderItem` |
 
 **Internal Dependencies:**
 
@@ -4304,6 +4334,7 @@ graph LR
 | File                       | Imports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Type                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
 | `./batch.js`               | `DEFAULT_MAX_BATCH_VERTICES, INSTANCE_FLOATS, RenderBatcher`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./texture-atlas.js`       | `ATLAS_PADDING, DEFAULT_ATLAS_MAX_PAGES, DEFAULT_ATLAS_PAGE_SIZE, MAX_ATLAS_PAGE_SIZE, TextureAtlas`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
 | `./bounds.js`              | `computeWorldBoundingSphere, computeWorldBoundingSphereFromBox`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
 | `./capabilities.js`        | `COMPUTE_WORKLOADS, RENDERER_REGISTRY, RENDER_GRAPH`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export             |
 | `./compute-workloads.js`   | `ComputeWorkloadRegistry`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
@@ -4338,7 +4369,8 @@ graph LR
 | `./gpu-readback.js`        | `GpuReadbackSource, isGpuReadbackSource`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Re-export             |
 | `./raster-limits.js`       | `DEFAULT_RASTER_MAXIMUM_BYTES`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
 | `./host-texture.js`        | `ImageBitmapTexture, VideoTexture`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Re-export             |
-| `./batch.js`               | `BatchableItem, BatchableMaterial, InstanceableItem, InstancedRun, RenderBatch, RenderBatchOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./batch.js`               | `BatchableItem, BatchableMaterial, BatchAtlasStatistics, InstanceableItem, InstancedRun, RenderBatch, RenderBatchOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
+| `./texture-atlas.js`       | `AtlasEntry, TextureAtlasOptions, TextureAtlasStatistics`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export (type-only) |
 | `./bounds.js`              | `BoundingSphere`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
 | `./compute-workloads.js`   | `ComputeWorkloadFactory`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Re-export (type-only) |
 | `./clip.js`                | `ClipScope, RenderItemClip, RenderItemStencil`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
@@ -4372,7 +4404,7 @@ graph LR
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `DEFAULT_MAX_BATCH_VERTICES`, `INSTANCE_FLOATS`, `RenderBatcher`, `computeWorldBoundingSphere`, `computeWorldBoundingSphereFromBox`, `COMPUTE_WORKLOADS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `ComputeWorkloadRegistry`, `ClipPlaneAllocator`, `MAX_CLIP_PLANES`, `intersectScissor`, `scissorsEqual`, `COMPUTE_ENTRY_POINT`, `supportsCompute`, `COLOR_GRADE_DEFAULTS`, `COPY_EFFECT`, `OUTPUT_TRANSFORM_EFFECT`, `supportsScreenEffects`, `validateEffectRenderPass`, `EXTRA_DIRECTIONAL_FLAG`, `MAX_DIRECTIONAL_LIGHTS`, `MAX_LIGHT_SLOTS`, `MAX_PUNCTUAL_LIGHTS`, `collectSceneLights`, `unionViewLayerMask`, `createSceneLights`, `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `MAX_SHADOWED_PUNCTUAL_LIGHTS`, `MAX_SHADOW_CASCADES`, `MAX_SHADOW_TILES`, `MAX_SPOT_SHADOW_FOV`, `SHADOW_ATLAS_MAX_EDGE`, `SHADOW_CUBE_FACES`, `SHADOW_KIND_POINT`, `SHADOW_KIND_SPOT`, `computeAtlasGrid`, `computeCascadeSplits`, `fitDirectionalCascades`, `writeCubeFaceShadowMatrix`, `writeSpotShadowMatrix`, `PARTICLE_COLOR_OFFSET`, `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_POSITION_OFFSET`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SIZE_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `TRAIL_COLOR_OFFSET`, `TRAIL_POSITION_OFFSET`, `TRAIL_VERTEX_FLOATS`, `isParticleDrawable`, `particleQuadGeometry`, `buildInterpolatedRenderList`, `buildRenderList`, `compareRenderItems`, `groupRenderListByPipeline`, `isLitItem`, `isNodeItem`, `isParticlesItem`, `isSkinnedLitItem`, `isSkinnedUnlitItem`, `isSpriteItem`, `isStandardItem`, `isUnlitItem`, `viewLayerMask`, `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_STORAGE`, `MAX_SHADER_GRAPH_TEXTURES`, `SHADER_ATTRIBUTE_TYPES`, `SHADER_LIGHT_ARRAY_TYPES`, `SHADER_LIGHT_SLOTS`, `SHADER_VALUE_COMPONENTS`, `analyzeShaderGraph`, `forEachShaderNodeReference`, `resolveShaderSelect`, `RenderGraph`, `RenderTargetPool`, `planTransientSlots`, `resolveTransientSpec`, `transientKeyString`, `CanvasTexture`, `supportsReadPixels`, `validateReadbackRegion`, `MAX_PICK_CANDIDATES`, `assertEncodableCandidateCount`, `collectPickCandidates`, `decodePickId`, `encodePickId`, `supportsPicking`, `RenderTarget`, `isRenderTargetTexture`, `RENDER_TARGET_COLOR_BYTES`, `RENDER_TARGET_DEPTH_RENDERBUFFER_BYTES`, `RENDER_TARGET_DEPTH_STENCIL_BYTES`, `RENDER_TARGET_DEPTH_TEXTURE_BYTES`, `RENDER_TARGET_RGBA16F_BYTES`, `RENDER_TARGET_RGBA32F_BYTES`, `RENDER_TARGET_RGBA8_BYTES`, `colorAttachmentBytesPerTexel`, `depthAttachmentBytesPerTexel`, `renderTargetByteLength`, `Renderable`, `MAX_SKINNING_JOINTS`, `Mesh`, `restoreMeshSkeleton`, `MAX_TEXTURE_SKINNING_JOINTS`, `SKIN_PALETTE_FLOATS_PER_ROW`, `SKIN_PALETTE_JOINTS_PER_ROW`, `SKIN_PALETTE_TEXELS_PER_JOINT`, `SKIN_PALETTE_TEXTURE_FORMAT`, `SKIN_PALETTE_TEXTURE_WIDTH`, `skinPaletteRows`, `stageSkinPalette`, `AUTO_RENDERER_ORDER`, `RENDERER_CAPABILITY_NAMES`, `RendererRegistry`, `clearRegisteredRenderers`, `missingCapabilities`, `registerRenderer`, `registeredRenderers`, `resolveRenderer`, `validateCapabilityDeclaration`, `NullRenderer`, `liveRenderTargetCount`, `liveTextureCount`, `textureMemoryBytes`, `warnDisposedInUse`, `createRenderStatistics`, `resetRenderStatistics`, `supportsRenderStatistics`, `Arc`, `Circle`, `clearRegisteredShapePaints`, `Ellipse`, `Line`, `PathShape`, `Polygon`, `Polyline`, `Rectangle`, `RegularPolygon`, `resolveShapePaintSupport`, `Ring`, `Sector`, `setShapePaintSupport`, `Shape2D`, `Star`, `registerShapePaints`, `Sprite`, `groupSpritesByTexture`, `COMPRESSED_BLOCK_BYTES`, `COMPRESSED_TEXTURE_FORMATS`, `Texture`, `compressedLevelBytes`, `buildViewRenderList`, `sortRenderListByDepth`, `GpuReadbackSource`, `isGpuReadbackSource`, `DEFAULT_RASTER_MAXIMUM_BYTES`, `createShaderSourceMap`, `ImageBitmapTexture`, `VideoTexture`, `BatchableItem`, `BatchableMaterial`, `InstanceableItem`, `InstancedRun`, `RenderBatch`, `RenderBatchOptions`, `BoundingSphere`, `ComputeWorkloadFactory`, `ClipScope`, `RenderItemClip`, `RenderItemStencil`, `ScissorRect`, `ComputeBinding`, `ComputeBindingAccess`, `ComputeBuffer`, `ComputeDispatcher`, `ComputePassDescriptor`, `ColorGradeEffect`, `CopyEffect`, `EffectDestinationRect`, `EffectRenderPass`, `GraphEffect`, `OutputTransformEffect`, `ScreenEffect`, `ScreenEffectKind`, `ScreenEffectRenderer`, `AmbientLightSource`, `DirectionalLightSource`, `PunctualShadowSource`, `DirectionalShadowSource`, `HemisphereLightSource`, `PointLightSource`, `PunctualLightSource`, `PunctualLightSourceBase`, `SceneLights`, `SpotLightSource`, `ShadowCubeFace`, `ShadowFitCamera`, `ParticleDrawable`, `LitRenderItem`, `NodeRenderItem`, `ParticleRenderItem`, `RenderItem`, `RenderItemKind`, `SkinnedLitRenderItem`, `SkinnedUnlitRenderItem`, `SpriteRenderItem`, `StandardRenderItem`, `UnlitRenderItem`, `ShaderAttributeName`, `ShaderBinaryOp`, `ShaderDomain`, `ShaderGraph`, `ShaderGraphAnalysis`, `ShaderNode`, `ShaderLightArrayMember`, `ShaderLightMember`, `ShaderLightScalarMember`, `ShaderNodeId`, `ShaderReflection`, `ShaderStorageElementType`, `ShaderStorageReflection`, `ShaderTextureReflection`, `ShaderUnaryOp`, `ShaderUniformReflection`, `ShaderValueType`, `ShaderStorageBuffer`, `AddPassOptions`, `CustomRenderPass`, `RenderGraphIssue`, `RenderGraphIssueCode`, `RenderGraphIssueSeverity`, `RenderGraphPass`, `RenderPass`, `RenderPassContext`, `SceneRenderPass`, `TransientPlan`, `PassUsageRecord`, `TransientRequest`, `TransientSlot`, `TransientTargetKey`, `TransientTargetPool`, `TransientTargetSpec`, `TransientTargetUsage`, `UsageTransition`, `CanvasTextureOptions`, `RasterOrigin`, `RasterSource`, `PixelReader`, `PickRequest`, `PickResult`, `PickingService`, `RenderTargetFormat`, `RenderTargetOptions`, `RenderTargetTexture`, `RenderableOptions`, `SurfaceMaterial`, `RendererCapabilityDeclaration`, `RendererCapabilityName`, `RendererCapabilityShortfall`, `RendererFallbackReason`, `RendererFallbackReport`, `RendererRegistration`, `RendererResolveOptions`, `RendererSelection`, `RenderInterpolation`, `Renderer`, `RendererBackend`, `RendererCapabilities`, `RendererEventMap`, `RendererOptions`, `ResizeRecord`, `DisposedResourceKind`, `RenderStatistics`, `RenderStatisticsReporter`, `ArcOptions`, `CircleOptions`, `EllipseOptions`, `ConicGradientPaint`, `GradientStop`, `LinearGradientPaint`, `LineOptions`, `ObjectPaint`, `Paint`, `PathShapeOptions`, `PatternPaint`, `PolygonOptions`, `PolylineOptions`, `RadialGradientPaint`, `RectangleOptions`, `RegularPolygonOptions`, `RingOptions`, `SectorOptions`, `ResolvedConicGradientPaint`, `ResolvedGradientStop`, `ResolvedLinearGradientPaint`, `ResolvedObjectPaint`, `ResolvedPaint`, `ResolvedPatternPaint`, `ResolvedRadialGradientPaint`, `ResolvedShapeFill`, `ResolvedSolidPaint`, `ResolvedStrokeStyle`, `Shape2DOptions`, `ShapeFill`, `ShapePaintPlan`, `ShapePaintSupport`, `SolidPaint`, `StarOptions`, `StrokeStyle`, `SpriteFrame`, `SpriteOptions`, `SpriteTextureCarrier`, `SpriteTextureRun`, `TextureDimension`, `TextureFilter`, `TextureMapRole`, `TextureMinFilter`, `TextureSource`, `TextureWrap`, `TextureFormat`, `ViewRenderListOptions`, `GpuReadbackSourceOptions`, `ShaderSourceLocation`, `ShaderSourceMap`, `ImageReadSurface`, `HostTextureOptions`, `VideoTextureSource`
+- Re-exports: `DEFAULT_MAX_BATCH_VERTICES`, `INSTANCE_FLOATS`, `RenderBatcher`, `ATLAS_PADDING`, `DEFAULT_ATLAS_MAX_PAGES`, `DEFAULT_ATLAS_PAGE_SIZE`, `MAX_ATLAS_PAGE_SIZE`, `TextureAtlas`, `computeWorldBoundingSphere`, `computeWorldBoundingSphereFromBox`, `COMPUTE_WORKLOADS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `ComputeWorkloadRegistry`, `ClipPlaneAllocator`, `MAX_CLIP_PLANES`, `intersectScissor`, `scissorsEqual`, `COMPUTE_ENTRY_POINT`, `supportsCompute`, `COLOR_GRADE_DEFAULTS`, `COPY_EFFECT`, `OUTPUT_TRANSFORM_EFFECT`, `supportsScreenEffects`, `validateEffectRenderPass`, `EXTRA_DIRECTIONAL_FLAG`, `MAX_DIRECTIONAL_LIGHTS`, `MAX_LIGHT_SLOTS`, `MAX_PUNCTUAL_LIGHTS`, `collectSceneLights`, `unionViewLayerMask`, `createSceneLights`, `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `MAX_SHADOWED_PUNCTUAL_LIGHTS`, `MAX_SHADOW_CASCADES`, `MAX_SHADOW_TILES`, `MAX_SPOT_SHADOW_FOV`, `SHADOW_ATLAS_MAX_EDGE`, `SHADOW_CUBE_FACES`, `SHADOW_KIND_POINT`, `SHADOW_KIND_SPOT`, `computeAtlasGrid`, `computeCascadeSplits`, `fitDirectionalCascades`, `writeCubeFaceShadowMatrix`, `writeSpotShadowMatrix`, `PARTICLE_COLOR_OFFSET`, `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_POSITION_OFFSET`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SIZE_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `TRAIL_COLOR_OFFSET`, `TRAIL_POSITION_OFFSET`, `TRAIL_VERTEX_FLOATS`, `isParticleDrawable`, `particleQuadGeometry`, `buildInterpolatedRenderList`, `buildRenderList`, `compareRenderItems`, `groupRenderListByPipeline`, `isLitItem`, `isNodeItem`, `isParticlesItem`, `isSkinnedLitItem`, `isSkinnedUnlitItem`, `isSpriteItem`, `isStandardItem`, `isUnlitItem`, `viewLayerMask`, `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_STORAGE`, `MAX_SHADER_GRAPH_TEXTURES`, `SHADER_ATTRIBUTE_TYPES`, `SHADER_LIGHT_ARRAY_TYPES`, `SHADER_LIGHT_SLOTS`, `SHADER_VALUE_COMPONENTS`, `analyzeShaderGraph`, `forEachShaderNodeReference`, `resolveShaderSelect`, `RenderGraph`, `RenderTargetPool`, `planTransientSlots`, `resolveTransientSpec`, `transientKeyString`, `CanvasTexture`, `supportsReadPixels`, `validateReadbackRegion`, `MAX_PICK_CANDIDATES`, `assertEncodableCandidateCount`, `collectPickCandidates`, `decodePickId`, `encodePickId`, `supportsPicking`, `RenderTarget`, `isRenderTargetTexture`, `RENDER_TARGET_COLOR_BYTES`, `RENDER_TARGET_DEPTH_RENDERBUFFER_BYTES`, `RENDER_TARGET_DEPTH_STENCIL_BYTES`, `RENDER_TARGET_DEPTH_TEXTURE_BYTES`, `RENDER_TARGET_RGBA16F_BYTES`, `RENDER_TARGET_RGBA32F_BYTES`, `RENDER_TARGET_RGBA8_BYTES`, `colorAttachmentBytesPerTexel`, `depthAttachmentBytesPerTexel`, `renderTargetByteLength`, `Renderable`, `MAX_SKINNING_JOINTS`, `Mesh`, `restoreMeshSkeleton`, `MAX_TEXTURE_SKINNING_JOINTS`, `SKIN_PALETTE_FLOATS_PER_ROW`, `SKIN_PALETTE_JOINTS_PER_ROW`, `SKIN_PALETTE_TEXELS_PER_JOINT`, `SKIN_PALETTE_TEXTURE_FORMAT`, `SKIN_PALETTE_TEXTURE_WIDTH`, `skinPaletteRows`, `stageSkinPalette`, `AUTO_RENDERER_ORDER`, `RENDERER_CAPABILITY_NAMES`, `RendererRegistry`, `clearRegisteredRenderers`, `missingCapabilities`, `registerRenderer`, `registeredRenderers`, `resolveRenderer`, `validateCapabilityDeclaration`, `NullRenderer`, `liveRenderTargetCount`, `liveTextureCount`, `textureMemoryBytes`, `warnDisposedInUse`, `createRenderStatistics`, `resetRenderStatistics`, `supportsRenderStatistics`, `Arc`, `Circle`, `clearRegisteredShapePaints`, `Ellipse`, `Line`, `PathShape`, `Polygon`, `Polyline`, `Rectangle`, `RegularPolygon`, `resolveShapePaintSupport`, `Ring`, `Sector`, `setShapePaintSupport`, `Shape2D`, `Star`, `registerShapePaints`, `Sprite`, `groupSpritesByTexture`, `COMPRESSED_BLOCK_BYTES`, `COMPRESSED_TEXTURE_FORMATS`, `Texture`, `compressedLevelBytes`, `buildViewRenderList`, `sortRenderListByDepth`, `GpuReadbackSource`, `isGpuReadbackSource`, `DEFAULT_RASTER_MAXIMUM_BYTES`, `createShaderSourceMap`, `ImageBitmapTexture`, `VideoTexture`, `BatchableItem`, `BatchableMaterial`, `BatchAtlasStatistics`, `InstanceableItem`, `InstancedRun`, `RenderBatch`, `RenderBatchOptions`, `AtlasEntry`, `TextureAtlasOptions`, `TextureAtlasStatistics`, `BoundingSphere`, `ComputeWorkloadFactory`, `ClipScope`, `RenderItemClip`, `RenderItemStencil`, `ScissorRect`, `ComputeBinding`, `ComputeBindingAccess`, `ComputeBuffer`, `ComputeDispatcher`, `ComputePassDescriptor`, `ColorGradeEffect`, `CopyEffect`, `EffectDestinationRect`, `EffectRenderPass`, `GraphEffect`, `OutputTransformEffect`, `ScreenEffect`, `ScreenEffectKind`, `ScreenEffectRenderer`, `AmbientLightSource`, `DirectionalLightSource`, `PunctualShadowSource`, `DirectionalShadowSource`, `HemisphereLightSource`, `PointLightSource`, `PunctualLightSource`, `PunctualLightSourceBase`, `SceneLights`, `SpotLightSource`, `ShadowCubeFace`, `ShadowFitCamera`, `ParticleDrawable`, `LitRenderItem`, `NodeRenderItem`, `ParticleRenderItem`, `RenderItem`, `RenderItemKind`, `SkinnedLitRenderItem`, `SkinnedUnlitRenderItem`, `SpriteRenderItem`, `StandardRenderItem`, `UnlitRenderItem`, `ShaderAttributeName`, `ShaderBinaryOp`, `ShaderDomain`, `ShaderGraph`, `ShaderGraphAnalysis`, `ShaderNode`, `ShaderLightArrayMember`, `ShaderLightMember`, `ShaderLightScalarMember`, `ShaderNodeId`, `ShaderReflection`, `ShaderStorageElementType`, `ShaderStorageReflection`, `ShaderTextureReflection`, `ShaderUnaryOp`, `ShaderUniformReflection`, `ShaderValueType`, `ShaderStorageBuffer`, `AddPassOptions`, `CustomRenderPass`, `RenderGraphIssue`, `RenderGraphIssueCode`, `RenderGraphIssueSeverity`, `RenderGraphPass`, `RenderPass`, `RenderPassContext`, `SceneRenderPass`, `TransientPlan`, `PassUsageRecord`, `TransientRequest`, `TransientSlot`, `TransientTargetKey`, `TransientTargetPool`, `TransientTargetSpec`, `TransientTargetUsage`, `UsageTransition`, `CanvasTextureOptions`, `RasterOrigin`, `RasterSource`, `PixelReader`, `PickRequest`, `PickResult`, `PickingService`, `RenderTargetFormat`, `RenderTargetOptions`, `RenderTargetTexture`, `RenderableOptions`, `SurfaceMaterial`, `RendererCapabilityDeclaration`, `RendererCapabilityName`, `RendererCapabilityShortfall`, `RendererFallbackReason`, `RendererFallbackReport`, `RendererRegistration`, `RendererResolveOptions`, `RendererSelection`, `RenderInterpolation`, `Renderer`, `RendererBackend`, `RendererCapabilities`, `RendererEventMap`, `RendererOptions`, `ResizeRecord`, `DisposedResourceKind`, `RenderStatistics`, `RenderStatisticsReporter`, `ArcOptions`, `CircleOptions`, `EllipseOptions`, `ConicGradientPaint`, `GradientStop`, `LinearGradientPaint`, `LineOptions`, `ObjectPaint`, `Paint`, `PathShapeOptions`, `PatternPaint`, `PolygonOptions`, `PolylineOptions`, `RadialGradientPaint`, `RectangleOptions`, `RegularPolygonOptions`, `RingOptions`, `SectorOptions`, `ResolvedConicGradientPaint`, `ResolvedGradientStop`, `ResolvedLinearGradientPaint`, `ResolvedObjectPaint`, `ResolvedPaint`, `ResolvedPatternPaint`, `ResolvedRadialGradientPaint`, `ResolvedShapeFill`, `ResolvedSolidPaint`, `ResolvedStrokeStyle`, `Shape2DOptions`, `ShapeFill`, `ShapePaintPlan`, `ShapePaintSupport`, `SolidPaint`, `StarOptions`, `StrokeStyle`, `SpriteFrame`, `SpriteOptions`, `SpriteTextureCarrier`, `SpriteTextureRun`, `TextureDimension`, `TextureFilter`, `TextureMapRole`, `TextureMinFilter`, `TextureSource`, `TextureWrap`, `TextureFormat`, `ViewRenderListOptions`, `GpuReadbackSourceOptions`, `ShaderSourceLocation`, `ShaderSourceMap`, `ImageReadSurface`, `HostTextureOptions`, `VideoTextureSource`
 
 ---
 
@@ -4719,16 +4751,17 @@ graph LR
 
 **Internal Dependencies:**
 
-| File               | Imports                                                                            | Type               |
-| ------------------ | ---------------------------------------------------------------------------------- | ------------------ |
-| `./clip.js`        | `RenderItemClip`                                                                   | Import (type-only) |
-| `./scissor.js`     | `scissorsEqual, ScissorRect`                                                       | Import             |
-| `./render-list.js` | `LitRenderItem, RenderItem, SpriteRenderItem, StandardRenderItem, UnlitRenderItem` | Import (type-only) |
+| File                 | Imports                                                                            | Type               |
+| -------------------- | ---------------------------------------------------------------------------------- | ------------------ |
+| `./clip.js`          | `RenderItemClip`                                                                   | Import (type-only) |
+| `./scissor.js`       | `scissorsEqual, ScissorRect`                                                       | Import             |
+| `./texture-atlas.js` | `TextureAtlas, AtlasEntry, TextureAtlasOptions, TextureAtlasStatistics`            | Import             |
+| `./render-list.js`   | `LitRenderItem, RenderItem, SpriteRenderItem, StandardRenderItem, UnlitRenderItem` | Import (type-only) |
 
 **Exports:**
 
 - Classes: `RenderBatcher`
-- Interfaces: `RenderBatchOptions`, `RenderBatch`, `InstancedRun`
+- Interfaces: `RenderBatchOptions`, `BatchAtlasStatistics`, `RenderBatch`, `InstancedRun`
 - Types: `BatchableMaterial`, `BatchableItem`, `InstanceableItem`
 - Constants: `DEFAULT_MAX_BATCH_VERTICES`, `INSTANCE_FLOATS`
 
@@ -4895,6 +4928,29 @@ graph LR
 - Classes: `ClipPlaneAllocator`
 - Interfaces: `RenderItemStencil`, `RenderItemClip`, `ClipScope`
 - Constants: `MAX_CLIP_PLANES`
+
+---
+
+### `packages/render/src/texture-atlas.ts` - §65 atlas grouping — a deterministic shelf packer that lets distinct 2D
+
+**Workspace Dependencies:**
+
+| Package             | Import                   |
+| ------------------- | ------------------------ |
+| `@fourjs/math`      | `Rectangle2, ColorSpace` |
+| `@fourjs/materials` | `MaterialTexture`        |
+
+**Internal Dependencies:**
+
+| File           | Imports   | Type   |
+| -------------- | --------- | ------ |
+| `./texture.js` | `Texture` | Import |
+
+**Exports:**
+
+- Classes: `TextureAtlas`
+- Interfaces: `TextureAtlasOptions`, `AtlasEntry`, `TextureAtlasStatistics`
+- Constants: `ATLAS_PADDING`, `DEFAULT_ATLAS_PAGE_SIZE`, `DEFAULT_ATLAS_MAX_PAGES`, `MAX_ATLAS_PAGE_SIZE`
 
 ---
 
@@ -5822,10 +5878,10 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `FourError`                                                                                 |
-| `@fourjs/render` | `INSTANCE_FLOATS, RenderBatcher, InstancedRun, RenderBatch, RenderBatchOptions, RenderItem` |
+| Package          | Import                                                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `FourError`                                                                                                       |
+| `@fourjs/render` | `INSTANCE_FLOATS, RenderBatcher, BatchAtlasStatistics, InstancedRun, RenderBatch, RenderBatchOptions, RenderItem` |
 
 **Internal Dependencies:**
 
@@ -7457,16 +7513,16 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package             | Import                                                                                 |
-| ------------------- | -------------------------------------------------------------------------------------- |
-| `@fourjs/assets`    | `GltfAsset`                                                                            |
-| `@fourjs/animation` | `AnimationClip, AnimationTrack, quaternionAdapter, vector3Adapter, AnimationTrackLike` |
-| `@fourjs/core`      | `FourError`                                                                            |
-| `@fourjs/geometry`  | `BufferGeometry`                                                                       |
-| `@fourjs/materials` | `StandardMaterial`                                                                     |
-| `@fourjs/math`      | `Matrix4, Quaternion, Vector3`                                                         |
-| `@fourjs/render`    | `Mesh, Texture`                                                                        |
-| `@fourjs/scene`     | `Bone, Group, MorphWeights, Skeleton, Node`                                            |
+| Package             | Import                                                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `@fourjs/assets`    | `GltfAsset`                                                                                           |
+| `@fourjs/animation` | `AnimationClip, AnimationTrack, numberAdapter, quaternionAdapter, vector3Adapter, AnimationTrackLike` |
+| `@fourjs/core`      | `FourError`                                                                                           |
+| `@fourjs/geometry`  | `BufferGeometry`                                                                                      |
+| `@fourjs/materials` | `StandardMaterial`                                                                                    |
+| `@fourjs/math`      | `Matrix4, Quaternion, Vector3`                                                                        |
+| `@fourjs/render`    | `Mesh, Texture`                                                                                       |
+| `@fourjs/scene`     | `Bone, Group, MorphWeights, Skeleton, Node`                                                           |
 
 **Exports:**
 
@@ -8157,7 +8213,7 @@ graph LR
 
 | File                                             | Imports From | Exports To |
 | ------------------------------------------------ | ------------ | ---------- |
-| `packages/render/src/index`                      | 35 files     | 0 files    |
+| `packages/render/src/index`                      | 36 files     | 0 files    |
 | `packages/render-webgpu/src/webgpu-device`       | 0 files      | 30 files   |
 | `packages/render-webgpu/src/index`               | 29 files     | 0 files    |
 | `packages/render-webgpu/src/webgpu-renderer`     | 24 files     | 2 files    |
@@ -8167,28 +8223,28 @@ graph LR
 | `packages/render-webgl/src/gl-program`           | 0 files      | 21 files   |
 | `packages/physics/src/world`                     | 15 files     | 6 files    |
 | `packages/materials/src/index`                   | 17 files     | 0 files    |
+| `packages/assets/src/index`                      | 17 files     | 0 files    |
 | `packages/render-webgl/src/webgl-renderer`       | 15 files     | 2 files    |
 | `packages/render-webgpu/src/wgpu-unlit`          | 2 files      | 15 files   |
 | `packages/scene/src/index`                       | 16 files     | 0 files    |
-| `packages/assets/src/index`                      | 16 files     | 0 files    |
 | `packages/physics/src/types`                     | 0 files      | 16 files   |
 | `packages/render-webgpu/src/wgpu-pipeline-cache` | 9 files      | 7 files    |
 | `packages/ui/src/index`                          | 14 files     | 0 files    |
 | `packages/physics/src/descriptors`               | 4 files      | 10 files   |
 | `packages/scene/src/node`                        | 4 files      | 9 files    |
+| `packages/assets/src/texture`                    | 2 files      | 11 files   |
 | `packages/render/src/render-target`              | 2 files      | 11 files   |
 | `packages/render-webgpu/src/wgpu-bindings`       | 1 file       | 12 files   |
 | `packages/animation/src/index`                   | 13 files     | 0 files    |
 | `packages/core/src/index`                        | 13 files     | 0 files    |
-| `packages/assets/src/texture`                    | 2 files      | 10 files   |
 | `packages/animation/src/controller`              | 9 files      | 3 files    |
+| `packages/assets/src/bounded-png`                | 3 files      | 8 files    |
 | `packages/physics/src/rigid-body`                | 4 files      | 7 files    |
 | `packages/physics/src/collider`                  | 8 files      | 3 files    |
 | `packages/render/src/render-list`                | 6 files      | 5 files    |
 | `packages/render/src/renderer`                   | 6 files      | 5 files    |
 | `packages/diagnostics/src/index`                 | 11 files     | 0 files    |
 | `packages/math/src/index`                        | 10 files     | 0 files    |
-| `packages/assets/src/bounded-png`                | 3 files      | 7 files    |
 | `packages/geometry/src/index`                    | 10 files     | 0 files    |
 | `packages/render-webgpu/src/wgpu-node-program`   | 9 files      | 1 file     |
 | `packages/render-webgpu/src/wgpu-shadow`         | 4 files      | 6 files    |
@@ -8330,10 +8386,10 @@ graph TD
         N70[index]
         N71[texture]
         N72[asset-manager]
-        N73[loader-registry]
-        N74[manifest]
-        N75[content-hash]
-        N76[...10 more]
+        N73[bounded-draco]
+        N74[loader-registry]
+        N75[manifest]
+        N76[...11 more]
     end
 
     subgraph Packages/physics-soft
@@ -8407,7 +8463,7 @@ graph TD
         N129[compute-workloads]
         N130[texture]
         N131[render-target-bytes]
-        N132[...27 more]
+        N132[...28 more]
     end
 
     subgraph Packages/input
@@ -8612,17 +8668,17 @@ graph TD
 
 | Category                | Count  |
 | ----------------------- | ------ |
-| Total TypeScript Files  | 369    |
+| Total TypeScript Files  | 371    |
 | Total Modules           | 25     |
-| Total Lines of Code     | 183737 |
-| Total Exports           | 3852   |
-| Total Re-exports        | 2398   |
-| Total Classes           | 231    |
-| Total Interfaces        | 701    |
-| Total Functions         | 646    |
+| Total Lines of Code     | 185595 |
+| Total Exports           | 3880   |
+| Total Re-exports        | 2417   |
+| Total Classes           | 232    |
+| Total Interfaces        | 708    |
+| Total Functions         | 647    |
 | Total Type Guards       | 34     |
 | Total Enums             | 0      |
-| Type-only Imports       | 464    |
+| Type-only Imports       | 468    |
 | Runtime Circular Deps   | 0      |
 | Type-only Circular Deps | 10     |
 

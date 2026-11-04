@@ -17,8 +17,9 @@ deployer can write their headers from.
 ceiling before initialization. Native image callbacks remain uncapped unless a
 strict policy refuses them; output-size estimates alone cannot cap those heaps.
 Texture decoding and raw gzip loading also have bounded output/expansion checks.
-The aggregate decompression row remains **partial** on this branch because the
-separate Draco/Basis implementation has not landed here.
+Draco (`createBoundedDracoDecoder`) and Basis (`createBoundedBasisTranscoder`)
+landed 2026-11-04 over the same raw codec ABI; the aggregate decompression row
+stays **partial** only because native platform decoders cannot be pre-bounded.
 
 | §96 requirement                                  | State                                                 | Where                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | ------------------------------------------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -27,7 +28,7 @@ separate Draco/Basis implementation has not landed here.
 | input-size limits                                | **met**                                               | `AssetManagerOptions.maximumBytes` for transport; `maximumTextLength` on `decodeSceneDocument` / `decodeReplayRecording` for documents — all three finite by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | cancellation and timeouts for expensive decoders | **met**                                               | `AssetManagerOptions.timeoutSeconds` bounds a whole load, transport and decode together; `load(url, loader, { signal })` cancels one caller's load, and `AssetManagerOptions.abortController` extends both to the request itself (`canAbortTransport` reports whether a manager has it)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | documented content-security-policy behavior      | **met**                                               | this guide's "CSP posture" section, enforced by `tests/integration/security-csp.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| decompression limits                             | **partial overall; bounded PNG and gzip implemented** | `createBoundedPngDecoder` caps the actual Wasm heap before initialization, checks PNG framing/checksums and output budgets, and refuses allocator failures. Image/texture/glTF `maximumWorkingBytes` rejects uncappable callbacks before loading. `createTextureLoader` and `createImageLoader` enforce finite decoded-byte and expansion-ratio limits, and `createGzipLoader` bounds streamed gzip output while cancelling on overflow. Separate Draco/Basis work has not landed on this branch, and native platform decoders still cannot be pre-bounded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| decompression limits                             | **partial overall; bounded PNG and gzip implemented** | `createBoundedPngDecoder` caps the actual Wasm heap before initialization, checks PNG framing/checksums and output budgets, and refuses allocator failures. Image/texture/glTF `maximumWorkingBytes` rejects uncappable callbacks before loading. `createTextureLoader` and `createImageLoader` enforce finite decoded-byte and expansion-ratio limits, and `createGzipLoader` bounds streamed gzip output while cancelling on overflow. Draco and Basis decode through the same bounded raw-ABI seam (2026-11-04); native platform decoders still cannot be pre-bounded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | safe shader/plugin boundaries                    | **met**                                               | the plugin half (2026-08-28, `A-3`/RFC 0002): a plugin is a **value** the application installs — `PluginHost.add` and `ApplicationOptions.plugins` accept no URL, no module specifier, and no name from a document, and `tests/integration/plugin-boundary.test.ts` fails if any deserializing package reaches the host. It is a boundary, **not a sandbox** — see "Plugins run with your authority". The shader half (2026-08-28, `R-14`/RFC 0001, spec revision 1.11): **shading is a graph of closed operators, never source text** — §60's shipped surface (`ShaderGraph`/`NodeMaterial`/`NodeMaterialBuilder`, `@fourjs/materials`) accepts no GLSL or WGSL anywhere, a graph is plain JSON whose every operator is a member of a closed union validated at construction (§85, with node and sampler caps), every texture it samples is enumerable (so §63's feedback/ordering checks still see a §70 graph effect's full sample set), and §57's `ShaderMaterial` — the name a source-string material would have had — is recorded **permanently unshipped**. An operator the engine has not implemented is a refused value, not an executed one |
 
 Depth limiting is the sixth item's neighbour rather than one of the seven, and
@@ -185,6 +186,62 @@ caller's `supportedFormats` (bc7, astc, etc2, in that order) with per-level
 chain). Transcoding is deterministic. Run it off the main thread for large
 files; the call is synchronous Wasm.
 
+## Compressed meshes: Draco (`KHR_draco_mesh_compression`)
+
+`createBoundedDracoDecoder({ wasmBinary, maximumWorkingBytes?,
+maximumDecodedBytes? })` follows the raw-codec pattern: no dependency, no glue,
+no network; the application pins a Draco decoder Wasm. The module must import
+nothing and export `memory`, `malloc(len)`, `free(ptr, len)` and
+`decode(ptr, len, infoPtr) -> outPtr` (0 on failure), where `ptr/len` is the
+extension's buffer view. The host allocates 276 bytes for `info`; the decoder
+writes u32 LE words: vertexCount, indexCount (0 = non-indexed), attributeCount
+(1..16), indexByteLength, index component bytes (2 or 4), then per attribute
+`{ id, componentCount, componentType, byteLength }` with `id` the Draco unique
+attribute id and `componentType` 0 float32, 1 uint8, 2 uint16, 3 uint32.
+`outPtr` addresses the attribute streams in declared order followed by the
+index stream, tightly packed little-endian.
+
+The host checks, before copying: every named attribute present once with the
+component count and type its glTF semantic allows (POSITION/NORMAL f32x3,
+TEXCOORD_0 f32x2, COLOR_0 f32x3/x4, JOINTS_0 u8/u16x4, WEIGHTS_0 f32x4), every
+byte length equal to `vertexCount * components * size`, index bytes equal to
+`indexCount * indexBytes` (Uint16 only up to 65536 vertices), the total within
+`maximumDecodedBytes` and, with the input, within `maximumWorkingBytes`, and
+all ranges inside the capped heap. Attributes the primitive does not name are
+budgeted and skipped. Floats must be finite and every index below vertexCount.
+Any failure poisons the instance. `createGltfLoader({ dracoDecoder })` routes
+each primitive's extension through it and cross-checks the vertex and index
+counts against the primitive's accessors; a document that lists the extension
+in `extensionsRequired` without a decoder is refused, while an optional use
+falls back to the uncompressed accessors. Decoding is deterministic and
+synchronous Wasm: run it off the main thread for large files.
+
+## Compressed textures: `KHR_texture_basisu`
+
+`createGltfLoader({ basisTranscoder, supportedFormats? })` sends each texture's
+`extensions.KHR_texture_basisu.source` KTX2 image through the bounded Basis
+transcoder (`createBoundedBasisTranscoder`), so the container preflight, the
+heap cap and the decoded-byte budget of that transcoder apply unchanged; the
+glTF loader adds no second decode path. Without the option the texture's plain
+`source` (the extension's fallback) is decoded by `decodeTexture` when present,
+else the slot is dropped and listed in the material's `ignoredTextures`; a
+document that lists the extension in `extensionsRequired` is refused with a
+message naming `GltfLoaderOptions.basisTranscoder`.
+
+Two further limits apply per document. **Orientation:** the glTF loader flips
+every `TEXCOORD_0` (`v -> 1 - v`) to match the row flip of the image tier, and
+BC7/ETC2/ASTC blocks cannot be flipped in place, so a KTX2 is transcoded only
+when its `KTXorientation` key/value is `ru` (rows bottom-up; `toktx
+--lower_left_maps_to_s0t0` writes it). `rd`, or a missing key (counted as
+`rd`), would sample vertically mirrored: the loader falls back to
+`textures[i].source` when present, else drops the slot and records
+`... (KHR_texture_basisu: KTX2 orientation 'rd' would sample mirrored; ...)` in
+`ignoredTextures`. An application that has pre-flipped its KTX2 rows opts out
+with `basisOrientation: "trust"`. **Budget:** each transcode is capped by the
+loader's `maximumDecodedBytes` (passed as a per-call `maximumDecodedBytes`,
+honoured as the smaller of the transcoder's own and the call's), and the bytes
+transcoded across one document may not exceed `maximumWorkingBytes`.
+
 ## Documents: length and depth
 
 ```ts
@@ -321,8 +378,9 @@ are the ones that most affect how you deploy:
    output. It separately checks the host RGBA copy before allocation. It cannot cap
    browser/OS bookkeeping, Wasm compilation, other decoder instances, retained
    assets, or an arbitrary native decoder. Texture and gzip output bounds do not cap
-   their host decoder's internal memory. The separate Draco/Basis work is outside
-   this branch.
+   their host decoder's internal memory. Draco and Basis are bounded through the
+   raw codec ABI, but a transcoder's own Wasm heap is what `limitWasmMemory` caps,
+   not the host's allocator.
 2. **Shader boundaries left this list on 2026-08-28 (`R-14`/RFC 0001).** There
    is no path by which a scene file — or anything else — can name shader
    source, and spec revision 1.11 makes that permanent: shading is a graph of

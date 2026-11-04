@@ -19,6 +19,8 @@ import {
   type FetchResponse,
   type GltfAsset,
   type GltfLoaderOptions,
+  type TextureAsset,
+  type BasisTranscoder,
 } from "../src/index.js";
 
 /** Standard base64 of some bytes (tests run under Node). */
@@ -2456,18 +2458,63 @@ describe("animations", () => {
     );
   });
 
-  it("refuses a morph-weight channel by name", async () => {
-    await expectRefusal(
-      load(
-        corrupt(skinnedDocument(), (c) => {
-          const animations = c["animations"] as {
-            channels: { target: { path: string } }[];
-          }[];
-          animations[0].channels[0].target.path = "weights";
-        }),
-      ),
-      /morph-weight channels are refused/,
+  it("parses a morph-weight channel (N scalars per key)", async () => {
+    const delta = new Float32Array(9).fill(1);
+    const times = new Float32Array([0, 1]);
+    const weights = new Float32Array([0, 0, 0, 0, 1, 0.5, 0.25, 0]);
+    const { bytes, offsets } = pack(
+      TRI_POSITIONS,
+      TRI_INDICES,
+      delta,
+      times,
+      weights,
     );
+    const asset = await load({
+      asset: { version: "2.0" },
+      buffers: [{ byteLength: bytes.byteLength, uri: dataUri(bytes) }],
+      bufferViews: [36, 6, 36, 8, 32].map((byteLength, i) => ({
+        buffer: 0,
+        byteOffset: offsets[i],
+        byteLength,
+      })),
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 1, componentType: 5123, count: 3, type: "SCALAR" },
+        { bufferView: 2, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 3, componentType: 5126, count: 2, type: "SCALAR" },
+        { bufferView: 4, componentType: 5126, count: 8, type: "SCALAR" },
+      ],
+      meshes: [
+        {
+          primitives: [
+            {
+              attributes: { POSITION: 0 },
+              indices: 1,
+              targets: [
+                { POSITION: 2 },
+                { POSITION: 2 },
+                { POSITION: 2 },
+                { POSITION: 2 },
+              ],
+            },
+          ],
+        },
+      ],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+      animations: [
+        {
+          samplers: [{ input: 3, output: 4 }],
+          channels: [{ sampler: 0, target: { node: 0, path: "weights" } }],
+        },
+      ],
+    });
+    const channel = asset.animations[0].channels[0];
+    expect(channel.path).toBe("weights");
+    expect(channel.node).toBe(0);
+    expect(Array.from(channel.values)).toEqual(Array.from(weights));
+    expect(channel.values.length / channel.times.length).toBe(4);
   });
 
   it("refuses an unknown target path", async () => {
@@ -2807,7 +2854,7 @@ describe("disposal (§83)", () => {
     asset.dispose();
     asset.dispose();
     expect(asset.isDisposed).toBe(true);
-    expect(texture?.isDisposed).toBe(true);
+    expect((texture as TextureAsset).isDisposed).toBe(true);
     // Records stay readable — they are plain data.
     expect(asset.meshes).toHaveLength(1);
   });
@@ -2830,5 +2877,414 @@ describe("sub-resource abort signal (2026-09-11)", () => {
     await loader.load(jsonResponse(document), "/m/model.gltf", { signal });
     await loader.load(jsonResponse(document), "/m/model.gltf");
     expect(inits).toEqual([{ signal }, undefined]);
+  });
+});
+
+describe("KHR_texture_basisu routing (R-30c)", () => {
+  /** A minimal one-level KTX2 whose key/value block carries `orientation`. */
+  function ktxFile(orientation?: string): Uint8Array {
+    const entry =
+      orientation === undefined
+        ? []
+        : [
+            ...Array.from("KTXorientation", (c) => c.charCodeAt(0)),
+            0,
+            ...Array.from(orientation, (c) => c.charCodeAt(0)),
+            0,
+          ];
+    const kv: number[] =
+      entry.length === 0 ? [] : [entry.length, 0, 0, 0, ...entry];
+    while (kv.length % 4 !== 0) kv.push(0);
+    const kvOffset = 104;
+    const dataOffset = kvOffset + kv.length;
+    const out = new Uint8Array(dataOffset + 16);
+    const view = new DataView(out.buffer);
+    out.set([
+      0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a,
+    ]);
+    view.setUint32(16, 1, true);
+    view.setUint32(20, 4, true);
+    view.setUint32(24, 4, true);
+    view.setUint32(36, 1, true);
+    view.setUint32(40, 1, true);
+    view.setUint32(56, kvOffset, true);
+    view.setUint32(60, kv.length, true);
+    out.set(kv, kvOffset);
+    view.setBigUint64(80, BigInt(dataOffset), true);
+    view.setBigUint64(88, 16n, true);
+    view.setBigUint64(96, 16n, true);
+    return out;
+  }
+  const KTX2 = ktxFile("ru");
+
+  function basisDocument(
+    edit?: (copy: Record<string, unknown>) => void,
+  ): Record<string, unknown> {
+    return corrupt(texturedDocument(), (copy) => {
+      copy["images"] = [
+        { uri: dataUri(ENCODED_IMAGE), mimeType: "image/png" },
+        { uri: dataUri(KTX2), mimeType: "image/ktx2" },
+      ];
+      copy["textures"] = [
+        {
+          source: 0,
+          sampler: 0,
+          extensions: { KHR_texture_basisu: { source: 1 } },
+        },
+      ];
+      copy["extensionsUsed"] = ["KHR_texture_basisu"];
+      edit?.(copy);
+    });
+  }
+
+  const requests: unknown[] = [];
+  const seen: Uint8Array[] = [];
+  const transcoder: BasisTranscoder = (ktx2, request) => {
+    requests.push(request);
+    seen.push(new Uint8Array(ktx2));
+    return {
+      width: 4,
+      height: 4,
+      format: "bc7-rgba-unorm",
+      colorSpace: "linear",
+      levels: [new Uint8Array(16)],
+    };
+  };
+
+  it("routes the KTX2 image through the transcoder into a compressed source", async () => {
+    requests.length = 0;
+    seen.length = 0;
+    const asset = await load(basisDocument(), {
+      basisTranscoder: transcoder,
+      supportedFormats: ["bc7-rgba-unorm"],
+      // No decodeTexture: the basis path needs none.
+    });
+    const texture = asset.textures[0];
+    expect(texture).toMatchObject({
+      format: "bc7-rgba-unorm",
+      width: 4,
+      colorSpace: "srgb",
+      filter: "nearest",
+      wrap: "clamp-to-edge",
+    });
+    expect((texture as { levels: readonly unknown[] }).levels).toHaveLength(1);
+    expect(Array.from(seen[0])).toEqual(Array.from(KTX2));
+    expect(requests[0]).toMatchObject({ supportedFormats: ["bc7-rgba-unorm"] });
+    asset.dispose();
+  });
+
+  it("passes no request when supportedFormats is absent", async () => {
+    requests.length = 0;
+    await load(basisDocument(), { basisTranscoder: transcoder });
+    expect(requests[0]).not.toHaveProperty("supportedFormats");
+  });
+
+  it("falls back to textures[i].source without a transcoder", async () => {
+    const asset = await load(basisDocument(), { decodeTexture: fakeDecode });
+    expect(asset.textures[0]).toMatchObject({ width: 1, height: 2 });
+  });
+
+  it("records a fallback-less texture in ignoredTextures without a transcoder", async () => {
+    const asset = await load(
+      basisDocument((c) => {
+        c["textures"] = [{ extensions: { KHR_texture_basisu: { source: 1 } } }];
+      }),
+    );
+    expect(asset.textures[0]).toBeNull();
+    expect(asset.materials[0].baseColorTexture).toBeNull();
+    expect(asset.materials[0].ignoredTextures).toEqual([
+      expect.stringMatching(/baseColorTexture .*KHR_texture_basisu/),
+    ]);
+  });
+
+  it("refuses extensionsRequired without a transcoder and accepts it with one", async () => {
+    const required = basisDocument((c) => {
+      c["extensionsRequired"] = ["KHR_texture_basisu"];
+    });
+    await expectRefusal(load(required), /GltfLoaderOptions\.basisTranscoder/);
+    const asset = await load(required, { basisTranscoder: transcoder });
+    expect((asset.textures[0] as { format: string }).format).toBe(
+      "bc7-rgba-unorm",
+    );
+  });
+
+  it("refuses an extension with no source index and a texture with neither", async () => {
+    await expectRefusal(
+      load(
+        basisDocument((c) => {
+          c["textures"] = [{ extensions: { KHR_texture_basisu: {} } }];
+        }),
+      ),
+      /source/,
+    );
+    await expectRefusal(
+      load(
+        basisDocument((c) => {
+          c["textures"] = [{}];
+        }),
+      ),
+      /without an image source/,
+    );
+  });
+
+  const withKtx = (orientation: string | undefined, basisOnly = false) =>
+    basisDocument((c) => {
+      (c["images"] as { uri: string }[])[1].uri = dataUri(ktxFile(orientation));
+      if (basisOnly) {
+        c["textures"] = [
+          { sampler: 0, extensions: { KHR_texture_basisu: { source: 1 } } },
+        ];
+      }
+    });
+
+  it("falls back to textures[i].source for a top-down (rd) KTX2", async () => {
+    requests.length = 0;
+    const asset = await load(withKtx("rd"), {
+      basisTranscoder: transcoder,
+      decodeTexture: fakeDecode,
+    });
+    expect(requests).toHaveLength(0);
+    expect(asset.textures[0]).toMatchObject({ width: 1, height: 2 });
+    expect(asset.materials[0].ignoredTextures).toEqual([]);
+  });
+
+  it("ignores a basisu-only rd texture with the orientation reason", async () => {
+    requests.length = 0;
+    const asset = await load(withKtx("rd", true), {
+      basisTranscoder: transcoder,
+    });
+    expect(requests).toHaveLength(0);
+    expect(asset.textures[0]).toBeNull();
+    expect(asset.materials[0].baseColorTexture).toBeNull();
+    expect(asset.materials[0].ignoredTextures).toEqual([
+      expect.stringMatching(
+        /baseColorTexture .*KHR_texture_basisu: KTX2 orientation 'rd' would sample mirrored; re-encode with rows bottom-up or set basisOrientation/,
+      ),
+    ]);
+  });
+
+  it("counts a missing KTXorientation key as rd", async () => {
+    requests.length = 0;
+    const asset = await load(withKtx(undefined, true), {
+      basisTranscoder: transcoder,
+    });
+    expect(requests).toHaveLength(0);
+    expect(asset.materials[0].ignoredTextures[0]).toMatch(/orientation 'rd'/);
+  });
+
+  it("routes an rd KTX2 when basisOrientation is 'trust'", async () => {
+    requests.length = 0;
+    const asset = await load(withKtx("rd", true), {
+      basisTranscoder: transcoder,
+      basisOrientation: "trust",
+    });
+    expect(requests).toHaveLength(1);
+    expect(asset.textures[0]).toMatchObject({ format: "bc7-rgba-unorm" });
+  });
+
+  it("caps each transcode by maximumDecodedBytes and the document by maximumWorkingBytes", async () => {
+    requests.length = 0;
+    await load(basisDocument(), {
+      basisTranscoder: transcoder,
+      maximumDecodedBytes: 1000,
+    });
+    expect(requests[0]).toMatchObject({ maximumDecodedBytes: 1000 });
+    // Two textures of 16 transcoded bytes each; the working budget admits one.
+    const two = basisDocument((c) => {
+      c["textures"] = [
+        { sampler: 0, extensions: { KHR_texture_basisu: { source: 1 } } },
+        { sampler: 0, extensions: { KHR_texture_basisu: { source: 1 } } },
+      ];
+      (c["materials"] as Record<string, unknown>[])[0] = {
+        pbrMetallicRoughness: { baseColorTexture: { index: 0 } },
+        emissiveTexture: { index: 1 },
+      };
+    });
+    const big: BasisTranscoder = () => ({
+      width: 4,
+      height: 4,
+      format: "bc7-rgba-unorm",
+      colorSpace: "linear",
+      levels: [new Uint8Array(40_000)],
+    });
+    await expectRefusal(
+      load(two, { basisTranscoder: big, maximumWorkingBytes: 65_536 }),
+      /transcoded textures exceed the working-memory budget/,
+    );
+    await load(two, { basisTranscoder: big, maximumWorkingBytes: 200_000 });
+  });
+});
+
+describe("morph weights channel and target-count uniformity (wave 11)", () => {
+  function morphDocument(options: {
+    weights: number[];
+    times?: number[];
+    secondPrimitiveTargets?: number;
+  }): Record<string, unknown> {
+    const delta = new Float32Array(9).fill(1);
+    const times = new Float32Array(options.times ?? [0, 1]);
+    const weights = new Float32Array(options.weights);
+    const { bytes, offsets } = pack(
+      TRI_POSITIONS,
+      TRI_INDICES,
+      delta,
+      times,
+      weights,
+    );
+    const primitive = (targets: number): Record<string, unknown> => ({
+      attributes: { POSITION: 0 },
+      indices: 1,
+      targets: Array.from({ length: targets }, () => ({ POSITION: 2 })),
+    });
+    const primitives = [primitive(2)];
+    if (options.secondPrimitiveTargets !== undefined) {
+      primitives.push(primitive(options.secondPrimitiveTargets));
+    }
+    return {
+      asset: { version: "2.0" },
+      buffers: [{ byteLength: bytes.byteLength, uri: dataUri(bytes) }],
+      bufferViews: [36, 6, 36, times.byteLength, weights.byteLength].map(
+        (byteLength, i) => ({
+          buffer: 0,
+          byteOffset: offsets[i],
+          byteLength,
+        }),
+      ),
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 1, componentType: 5123, count: 3, type: "SCALAR" },
+        { bufferView: 2, componentType: 5126, count: 3, type: "VEC3" },
+        {
+          bufferView: 3,
+          componentType: 5126,
+          count: times.length,
+          type: "SCALAR",
+        },
+        {
+          bufferView: 4,
+          componentType: 5126,
+          count: weights.length,
+          type: "SCALAR",
+        },
+      ],
+      meshes: [{ primitives }],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+      animations: [
+        {
+          samplers: [{ input: 3, output: 4 }],
+          channels: [{ sampler: 0, target: { node: 0, path: "weights" } }],
+        },
+      ],
+    };
+  }
+
+  it("accepts a whole 1..4 component weights channel and records the mesh target count", async () => {
+    const asset = await load(morphDocument({ weights: [0, 0, 1, 1] }));
+    expect(asset.meshes[0].morphTargetCount).toBe(2);
+  });
+
+  it("refuses a weights channel with a fractional per-key component count", async () => {
+    await expectRefusal(
+      load(morphDocument({ weights: [0, 0, 1, 1, 1] })),
+      /weights channel carries 2\.5 values per key/,
+    );
+  });
+
+  it("refuses a weights channel wider than the morph-target ceiling", async () => {
+    await expectRefusal(
+      load(morphDocument({ weights: new Array<number>(10).fill(0) })),
+      /weights channel carries 5 values per key/,
+    );
+  });
+
+  it("refuses primitives of one mesh with differing target counts", async () => {
+    await expectRefusal(
+      load(morphDocument({ weights: [0, 0, 1, 1], secondPrimitiveTargets: 1 })),
+      /primitives\[1\]\.targets.*same targets\.length/,
+    );
+    const ok = await load(
+      morphDocument({ weights: [0, 0, 1, 1], secondPrimitiveTargets: 2 }),
+    );
+    expect(ok.meshes[0].primitives).toHaveLength(2);
+  });
+});
+
+describe("Draco route primitive-size and weight rules (wave 11)", () => {
+  const EXT = "KHR_draco_mesh_compression";
+  const doc = (mode: number, skinned: boolean): Record<string, unknown> => ({
+    asset: { version: "2.0" },
+    extensionsUsed: [EXT],
+    buffers: [{ byteLength: 8, uri: dataUri(new Uint8Array(8)) }],
+    bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: 8 }],
+    accessors: [
+      { componentType: 5126, count: 3, type: "VEC3" },
+      { componentType: 5126, count: 3, type: "VEC4" },
+      { componentType: 5121, count: 3, type: "VEC4" },
+      { componentType: 5123, count: 3, type: "SCALAR" },
+    ],
+    meshes: [
+      {
+        primitives: [
+          {
+            mode,
+            ...(skinned ? {} : { indices: 3 }),
+            attributes: skinned
+              ? { POSITION: 0, WEIGHTS_0: 1, JOINTS_0: 2 }
+              : { POSITION: 0 },
+            extensions: {
+              [EXT]: {
+                bufferView: 0,
+                attributes: skinned
+                  ? { POSITION: 0, WEIGHTS_0: 1, JOINTS_0: 2 }
+                  : { POSITION: 0 },
+              },
+            },
+          },
+        ],
+      },
+    ],
+    nodes: [{ mesh: 0 }],
+    scenes: [{ nodes: [0] }],
+    scene: 0,
+  });
+  const stub = (extra: Record<string, unknown>) => () => ({
+    vertexCount: 3,
+    positions: new Float32Array(9),
+    ...extra,
+  });
+
+  it("refuses an index count that is not a whole number of triangles", async () => {
+    await expectRefusal(
+      load(doc(4, false), {
+        dracoDecoder: stub({ indices: new Uint16Array([0, 1, 2, 0]) }),
+      }),
+      /4 indices; triangles need a multiple of 3/,
+    );
+    await load(doc(4, false), {
+      dracoDecoder: stub({ indices: new Uint16Array([0, 1, 2]) }),
+    });
+  });
+
+  it("refuses an odd index count for lines", async () => {
+    await expectRefusal(
+      load(doc(1, false), {
+        dracoDecoder: stub({ indices: new Uint16Array([0, 1, 2]) }),
+      }),
+      /3 indices; lines need a multiple of 2/,
+    );
+  });
+
+  it("refuses a negative Draco weight", async () => {
+    await expectRefusal(
+      load(doc(4, true), {
+        dracoDecoder: stub({
+          joints: new Uint16Array(12),
+          weights: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, -0.5, 0, 0, 0]),
+        }),
+      }),
+      /negative weight/,
+    );
   });
 });

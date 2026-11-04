@@ -50,19 +50,25 @@
  * - **Animations**: `translation`/`rotation`/`scale` channels with `LINEAR`
  *   and `STEP` samplers, parsed into per-channel keyframe arrays that
  *   `instantiateGltf` binds through RFC 0003's indexed-array forms
- *   (`nodes.<i>.transform.<channel>`).
+ *   (`nodes.<i>.transform.<channel>`), and `weights` channels (SCALAR output,
+ *   N = values / times per key, bound at `morphWeights.<node>.<k>`).
+ * - **Compression**: `KHR_draco_mesh_compression` primitives through
+ *   {@link GltfLoaderOptions.dracoDecoder}; `KHR_texture_basisu` textures
+ *   through {@link GltfLoaderOptions.basisTranscoder} into a compressed
+ *   {@link GltfCompressedTexture} (`format` + `levels`), falling back to
+ *   `textures[i].source` or an `ignoredTextures` record when absent.
  * - **User metadata**: `extras` on the document, nodes, meshes, and materials,
  *   detached via `cloneJsonValue`.
  *
  * **Refused, loudly and by name** (§85, §96 — retrying cannot fix a file):
- * any `extensionsRequired` entry (Draco and every other compression extension
- * arrives as one), sparse accessors, more than four morph targets
- * (`primitive.targets.length` or `meshes.weights`/`nodes.weights` outside
- * 1..4, a target `TANGENT` stream), `weights` animation channels (the
- * GPU path ships static weights; a clip that deforms them is a follow-up),
- * `CUBICSPLINE` samplers, `MASK` alpha (no cutoff in the material tier),
- * point/strip/fan primitive modes, `TEXCOORD_1`-indexed texture slots,
- * accessors without a buffer view, and non-base64 `data:` URIs.
+ * any `extensionsRequired` entry other than `KHR_draco_mesh_compression`
+ * (with `dracoDecoder`) and `KHR_texture_basisu` (with `basisTranscoder`),
+ * sparse accessors, more than four morph targets (`primitive.targets.length`
+ * or `meshes.weights`/`nodes.weights` outside 1..4, a target `TANGENT`
+ * stream), `CUBICSPLINE` samplers, `MASK` alpha (no cutoff in the material
+ * tier), point/strip/fan primitive modes, `TEXCOORD_1`-indexed texture slots,
+ * accessors without a buffer view (except Draco-backed ones), and non-base64
+ * `data:` URIs.
  *
  * **Ignored with a record** (content whose absence cannot corrupt the
  * picture; each is pushed into {@link GltfAsset.ignored} and §85-warned
@@ -107,7 +113,13 @@
  * precedent, one level up: data below the seam, assembly above it).
  */
 
+import type {
+  DracoAttributeIds,
+  DracoDecoder,
+  DracoStreams,
+} from "./bounded-draco.js";
 import { assertImageDecoderMemory } from "./image-memory.js";
+import { parseKtx2 } from "./ktx2.js";
 
 import {
   FourError,
@@ -131,6 +143,11 @@ import {
   resolveGlobalTextDecoder,
   type TextDecodeLike,
 } from "./content-hash.js";
+import type {
+  BasisTextureFormat,
+  BasisTextureSource,
+  BasisTranscoder,
+} from "./bounded-basis.js";
 import {
   createTextureDecoder,
   type TexelDecodeLike,
@@ -139,6 +156,22 @@ import {
   type TextureFilterMode,
   type TextureWrapMode,
 } from "./texture.js";
+
+const BASISU_EXTENSION = "KHR_texture_basisu";
+
+/**
+ * A compressed (or transcoded) texture produced by a
+ * {@link GltfLoaderOptions.basisTranscoder}: structurally a `@fourjs/render`
+ * `TextureSource` (`format` + `levels`, or the RGBA8 fallback `data`), with
+ * the glTF sampler's filter/wrap folded in. It is plain data (no `dispose`).
+ */
+export type GltfCompressedTexture = BasisTextureSource & {
+  readonly filter?: TextureFilterMode;
+  readonly wrap?: TextureWrapMode;
+};
+
+/** One decoded glTF texture: RGBA8 {@link TextureAsset} or a transcoded KTX2 source. */
+export type GltfTexture = TextureAsset | GltfCompressedTexture;
 
 /** GLB header magic — `"glTF"` read as a little-endian `u32`. */
 const GLB_MAGIC = 0x46546c67;
@@ -177,7 +210,7 @@ const TYPE_COMPONENTS: Readonly<Record<string, number>> = {
 export type GltfPrimitiveMode = "triangles" | "lines";
 
 /** An animation channel's target transform channel (§17). */
-export type GltfChannelPath = "translation" | "rotation" | "scale";
+export type GltfChannelPath = "translation" | "rotation" | "scale" | "weights";
 
 /** One primitive's decoded vertex streams, in the geometry layer's layout. */
 export interface GltfPrimitiveRecord {
@@ -223,6 +256,11 @@ export interface GltfMeshRecord {
   readonly name: string;
   /** The mesh's primitives, in file order; never empty. */
   readonly primitives: readonly GltfPrimitiveRecord[];
+  /**
+   * The uniform `targets.length` (1..4) every primitive of this mesh carries;
+   * absent when the mesh has no morph targets.
+   */
+  readonly morphTargetCount?: number;
   /** Morph weights (1..4) from `meshes[i].weights`, when authored. */
   readonly morphWeights?: Float32Array;
   /** §78 user metadata (`extras`), detached from the parsed document. */
@@ -342,7 +380,8 @@ export interface GltfChannelRecord {
   readonly times: Float32Array;
   /**
    * Keyframe values, tightly packed — 3 floats per key for
-   * `translation`/`scale`, 4 for `rotation`. Finite (§96).
+   * `translation`/`scale`, 4 for `rotation`, N (the node's target count) for
+   * `weights`. Finite (§96).
    */
   readonly values: Float32Array;
 }
@@ -405,6 +444,43 @@ export interface GltfLoaderOptions {
   /** Require a bounded image decoder; forwarded to the texture tier (§96). */
   readonly maximumWorkingBytes?: number;
   /**
+   * Draco mesh decoder for `KHR_draco_mesh_compression` primitives — the
+   * product of {@link createBoundedDracoDecoder}. **Presence is the
+   * capability**: without it a document listing the extension in
+   * `extensionsRequired` is refused; an optional (used-only) extension falls
+   * back to the primitive's uncompressed accessors when they exist.
+   */
+  readonly dracoDecoder?: DracoDecoder;
+  /**
+   * Basis Universal transcoder for `KHR_texture_basisu` textures — the product
+   * of {@link createBoundedBasisTranscoder}. **Presence is the capability**: a
+   * texture whose `extensions.KHR_texture_basisu.source` names a KTX2 image is
+   * transcoded into a compressed {@link GltfCompressedTexture} (`format` +
+   * `levels`) instead of going through `decodeTexture`. Without it the
+   * texture's plain `source` (the extension's fallback) is used when present,
+   * else the slot is dropped and recorded in the material's
+   * `ignoredTextures`; a document listing the extension in
+   * `extensionsRequired` is refused. The transcoder enforces the §96 budgets.
+   */
+  readonly basisTranscoder?: BasisTranscoder;
+  /**
+   * Orientation policy for transcoded `KHR_texture_basisu` images. The loader
+   * flips every `TEXCOORD_0` (`v -> 1 - v`) because the image tier flips
+   * rows; transcoded block data cannot be flipped in-block (BC7/ETC2/ASTC), so
+   * a KTX2 is routed only when its `KTXorientation` is `"ru"` (rows
+   * bottom-up; toktx `--lower_left_maps_to_s0t0` writes it). Any other
+   * orientation (a missing key counts as `"rd"`) falls back to
+   * `textures[i].source` or is recorded in `ignoredTextures`. Set `"trust"` only
+   * when the application has pre-flipped its KTX2 rows: the check is skipped.
+   */
+  readonly basisOrientation?: "trust";
+  /**
+   * Compressed formats the device supports, forwarded to
+   * {@link GltfLoaderOptions.basisTranscoder}. Empty or absent selects the
+   * uncompressed `"rgba8unorm"` fallback.
+   */
+  readonly supportedFormats?: readonly BasisTextureFormat[];
+  /**
    * UTF-8 decoder for `.gltf` bodies and GLB JSON chunks. Defaults to
    * `globalThis.TextDecoder`; refused loudly when neither exists.
    */
@@ -436,7 +512,7 @@ export class GltfAsset implements Disposable {
    * array; `null` for entries no supported material slot references (they are
    * validated, never decoded).
    */
-  readonly textures: readonly (TextureAsset | null)[];
+  readonly textures: readonly (GltfTexture | null)[];
 
   /** The nodes, in file order — the index is the animation-binding ABI. */
   readonly nodes: readonly GltfNodeRecord[];
@@ -470,7 +546,7 @@ export class GltfAsset implements Disposable {
     url: string;
     meshes: readonly GltfMeshRecord[];
     materials: readonly GltfMaterialRecord[];
-    textures: readonly (TextureAsset | null)[];
+    textures: readonly (GltfTexture | null)[];
     nodes: readonly GltfNodeRecord[];
     scenes: readonly GltfSceneRecord[];
     defaultScene: number | null;
@@ -510,7 +586,9 @@ export class GltfAsset implements Disposable {
     }
     this.#disposed = true;
     for (const texture of this.textures) {
-      texture?.dispose();
+      if (texture !== null && "dispose" in texture) {
+        texture.dispose();
+      }
     }
   }
 }
@@ -908,6 +986,7 @@ interface ParseContext {
   readonly views: readonly ViewRecord[];
   readonly accessors: readonly AccessorRecord[];
   readonly ignored: string[];
+  readonly draco: DracoDecoder | undefined;
 }
 
 /** Records an ignored feature once, in parse order, and §85-warns once. */
@@ -971,7 +1050,7 @@ function readFloats(
 
   const components = TYPE_COMPONENTS[accessor.type];
   const componentBytes = COMPONENT_BYTES[componentType];
-  const view = context.views[accessor.view];
+  const view = viewOf(context, accessor, accessorIndex, where);
   const elementBytes = components * componentBytes;
   const stride = view.byteStride ?? elementBytes;
   boundAccessor(context, accessor, accessorIndex, stride, elementBytes, where);
@@ -1032,7 +1111,7 @@ function readJoints(
     );
   }
   const componentBytes = COMPONENT_BYTES[componentType];
-  const view = context.views[accessor.view];
+  const view = viewOf(context, accessor, accessorIndex, where);
   const elementBytes = 4 * componentBytes;
   const stride = view.byteStride ?? elementBytes;
   boundAccessor(context, accessor, accessorIndex, stride, elementBytes, where);
@@ -1085,7 +1164,7 @@ function readIndices(
       { accessor: accessorIndex, componentType },
     );
   }
-  const view = context.views[accessor.view];
+  const view = viewOf(context, accessor, accessorIndex, where);
   if (view.byteStride !== null) {
     refuse(url, where, "an index buffer view must not declare byteStride.", {
       accessor: accessorIndex,
@@ -1128,6 +1207,24 @@ function readIndices(
   return out;
 }
 
+/** Resolves an accessor's view; a view-less accessor is refused by name. */
+function viewOf(
+  context: ParseContext,
+  accessor: AccessorRecord,
+  accessorIndex: number,
+  where: string,
+): ViewRecord {
+  if (accessor.view < 0) {
+    refuse(
+      context.url,
+      where,
+      `accessor ${String(accessorIndex)} has no bufferView (an all-zeros accessor), refused by name at this tier.`,
+      { accessor: accessorIndex },
+    );
+  }
+  return context.views[accessor.view];
+}
+
 /** Bounds-checks one accessor read against its buffer view (§96). */
 function boundAccessor(
   context: ParseContext,
@@ -1145,7 +1242,7 @@ function boundAccessor(
       { accessor: accessorIndex, stride, elementBytes },
     );
   }
-  const view = context.views[accessor.view];
+  const view = viewOf(context, accessor, accessorIndex, where);
   const needed =
     accessor.byteOffset + stride * (accessor.count - 1) + elementBytes;
   if (needed > view.bytes.byteLength) {
@@ -1271,6 +1368,10 @@ export function createGltfLoader(
         maximumExpansionRatio: options.maximumExpansionRatio,
         maximumWorkingBytes: options.maximumWorkingBytes,
         decodeText,
+        dracoDecoder: options.dracoDecoder,
+        basisTranscoder: options.basisTranscoder,
+        supportedFormats: options.supportedFormats,
+        basisOrientation: options.basisOrientation,
         name,
         allowAbsoluteUris: options.allowAbsoluteUris ?? false,
         signal: context?.signal,
@@ -1289,6 +1390,10 @@ interface ResolvedOptions {
   readonly maximumExpansionRatio: number | undefined;
   readonly maximumWorkingBytes: number | undefined;
   readonly decodeText: TextDecodeLike | undefined;
+  readonly dracoDecoder: DracoDecoder | undefined;
+  readonly basisTranscoder: BasisTranscoder | undefined;
+  readonly supportedFormats: readonly BasisTextureFormat[] | undefined;
+  readonly basisOrientation: "trust" | undefined;
   readonly name: string;
   readonly allowAbsoluteUris: boolean;
   /** The erased abort signal of the parent request, forwarded to sub-resource fetches. */
@@ -1515,13 +1620,25 @@ async function parseGltf(
   const required = document["extensionsRequired"];
   if (required !== undefined) {
     const list = asArray(required, url, "extensionsRequired");
-    if (list.length > 0) {
+    const unsupported = list.filter(
+      (entry) =>
+        !(
+          (entry === DRACO_EXTENSION && options.dracoDecoder !== undefined) ||
+          (entry === BASISU_EXTENSION && options.basisTranscoder !== undefined)
+        ),
+    );
+    if (unsupported.length > 0) {
       refuse(
         url,
         "extensionsRequired",
-        `the document requires extension(s) ${list.map(String).join(", ")}; ` +
-          "no extension — compression included — is in the §78 tier.",
-        { extensions: list.map(String) },
+        `the document requires extension(s) ${unsupported.map(String).join(", ")}; ` +
+          "no extension — compression included — is in the §78 tier" +
+          (unsupported.includes(DRACO_EXTENSION)
+            ? " (supply GltfLoaderOptions.dracoDecoder for Draco)."
+            : unsupported.includes(BASISU_EXTENSION)
+              ? " (supply GltfLoaderOptions.basisTranscoder for KHR_texture_basisu)."
+              : "."),
+        { extensions: unsupported.map(String) },
       );
     }
   }
@@ -1531,6 +1648,7 @@ async function parseGltf(
     views: [],
     accessors: [],
     ignored,
+    draco: options.dracoDecoder,
   };
 
   const used = document["extensionsUsed"];
@@ -1624,19 +1742,18 @@ async function parseGltf(
       refuse(url, where, "sparse accessors are refused by name at this tier.");
     }
     const viewValue = record["bufferView"];
-    if (viewValue === undefined) {
+    // Draco accessors carry only metadata; every read guards `view < 0`.
+    if (viewValue === undefined && options.dracoDecoder === undefined) {
       refuse(
         url,
         where,
         "an accessor without a bufferView (an all-zeros accessor) is refused by name at this tier.",
       );
     }
-    const view = requiredIndex(
-      viewValue,
-      views.length,
-      url,
-      `${where}.bufferView`,
-    );
+    const view =
+      viewValue === undefined
+        ? -1
+        : requiredIndex(viewValue, views.length, url, `${where}.bufferView`);
     const byteOffset = optionalNumber(record, "byteOffset", 0, url, where);
     if (!Number.isInteger(byteOffset) || byteOffset < 0) {
       refuse(url, `${where}.byteOffset`, "expected a non-negative integer.", {
@@ -1733,25 +1850,51 @@ async function parseGltf(
   const imageRecords = collection(document, "images", url);
   const textureRecords = collection(document, "textures", url);
   interface TextureRef {
-    readonly source: number;
+    /** Plain `source` (or the extension's fallback), when present. */
+    readonly source: number | null;
+    /** `KHR_texture_basisu` KTX2 image, kept only with a transcoder. */
+    readonly basis: number | null;
     readonly sampler: number | null;
+    /** No plain `source`: unusable without a transcoder. */
+    readonly basisOnly: boolean;
   }
   const textureRefs: TextureRef[] = [];
   for (let i = 0; i < textureRecords.length; i += 1) {
     const where = `textures[${String(i)}]`;
     const record = asObject(textureRecords[i], url, where);
     const sourceValue = record["source"];
-    if (sourceValue === undefined) {
+    let basis: number | null = null;
+    const extensionsValue = record["extensions"];
+    if (extensionsValue !== undefined) {
+      const extensions = asObject(extensionsValue, url, `${where}.extensions`);
+      const basisValue = extensions[BASISU_EXTENSION];
+      if (basisValue !== undefined) {
+        const basisWhere = `${where}.extensions.${BASISU_EXTENSION}`;
+        const basisRecord = asObject(basisValue, url, basisWhere);
+        basis = requiredIndex(
+          basisRecord["source"],
+          imageRecords.length,
+          url,
+          `${basisWhere}.source`,
+        );
+      }
+    }
+    if (sourceValue === undefined && basis === null) {
       refuse(url, where, "a texture without an image source is refused.");
     }
     textureRefs.push({
-      source: requiredIndex(
-        sourceValue,
-        imageRecords.length,
-        url,
-        `${where}.source`,
-      ),
+      source:
+        sourceValue === undefined
+          ? null
+          : requiredIndex(
+              sourceValue,
+              imageRecords.length,
+              url,
+              `${where}.source`,
+            ),
+      basis: options.basisTranscoder === undefined ? null : basis,
       sampler: optionalIndex(record, "sampler", samplers.length, url, where),
+      basisOnly: sourceValue === undefined,
     });
   }
 
@@ -1876,6 +2019,30 @@ async function parseGltf(
         { found: alphaMode },
       );
     }
+    // A KHR_texture_basisu-only texture with no transcoder has no usable
+    // image: drop the slot and record it, as the fallback-less spec demands.
+    const usable = (slot: string, index: number | null): number | null => {
+      if (index === null) {
+        return null;
+      }
+      const ref = textureRefs[index];
+      if (ref.source === null && ref.basis === null) {
+        referencedTextures.delete(index);
+        ignoredTextures.push(
+          `${slot} (textures[${String(index)}]: ${BASISU_EXTENSION} without GltfLoaderOptions.basisTranscoder)`,
+        );
+        return null;
+      }
+      return index;
+    };
+    baseColorTexture = usable("baseColorTexture", baseColorTexture);
+    metallicRoughnessTexture = usable(
+      "metallicRoughnessTexture",
+      metallicRoughnessTexture,
+    );
+    emissiveTexture = usable("emissiveTexture", emissiveTexture);
+    normalTexture = usable("normalTexture", normalTexture);
+    occlusionTexture = usable("occlusionTexture", occlusionTexture);
     const material: GltfMaterialRecord = {
       name: nameOf(record, url, where),
       baseColor: [baseColor[0], baseColor[1], baseColor[2], baseColor[3]],
@@ -1898,27 +2065,23 @@ async function parseGltf(
   }
 
   // --- decode the referenced textures, ascending index order (§33) -----
-  const textures: (TextureAsset | null)[] = new Array<TextureAsset | null>(
+  const textures: (GltfTexture | null)[] = new Array<GltfTexture | null>(
     textureRefs.length,
   ).fill(null);
   const wanted = [...referencedTextures].sort((a, b) => a - b);
-  for (const index of wanted) {
-    const where = `textures[${String(index)}]`;
-    if (options.decodeTexture === undefined) {
-      refuse(
-        url,
-        where,
-        "a material samples this texture but the loader was built without a " +
-          "decoder. Pass { decodeTexture } to createGltfLoader.",
-      );
-    }
-    const ref = textureRefs[index];
-    const imageWhere = `images[${String(ref.source)}]`;
-    const image = asObject(imageRecords[ref.source], url, imageWhere);
+  /** Texture index -> why a basisu-only texture was dropped (orientation). */
+  const basisRejected = new Map<number, string>();
+  // §96 aggregate: transcoded bytes across one document may not exceed the
+  // working-memory budget (default 128 MiB, the transcoder's own default).
+  const transcodeBudget = options.maximumWorkingBytes ?? 134217728;
+  let transcodedBytes = 0;
+  const loadImage = async (
+    imageIndex: number,
+  ): Promise<{ encoded: Uint8Array; textureUrl: string }> => {
+    const imageWhere = `images[${String(imageIndex)}]`;
+    const image = asObject(imageRecords[imageIndex], url, imageWhere);
     const uri = image["uri"];
     const viewValue = image["bufferView"];
-    let encoded: Uint8Array;
-    let textureUrl: string;
     if (uri !== undefined && viewValue !== undefined) {
       refuse(
         url,
@@ -1935,23 +2098,20 @@ async function parseGltf(
             "only base64 data: URIs are supported.",
           );
         }
-        encoded = decodeBase64(
-          uri.slice(comma + 1),
-          options.maximumBytes,
-          url,
-          `${imageWhere}.uri`,
-        );
-        textureUrl = `${url}#${imageWhere}`;
-      } else {
-        encoded = await fetchSubresource(
-          uri,
-          url,
-          "image",
-          imageWhere,
-          options,
-        );
-        textureUrl = resolveUri(url, uri);
+        return {
+          encoded: decodeBase64(
+            uri.slice(comma + 1),
+            options.maximumBytes,
+            url,
+            `${imageWhere}.uri`,
+          ),
+          textureUrl: `${url}#${imageWhere}`,
+        };
       }
+      return {
+        encoded: await fetchSubresource(uri, url, "image", imageWhere, options),
+        textureUrl: resolveUri(url, uri),
+      };
     } else if (viewValue !== undefined) {
       const view = requiredIndex(
         viewValue,
@@ -1959,15 +2119,89 @@ async function parseGltf(
         url,
         `${imageWhere}.bufferView`,
       );
-      encoded = views[view].bytes;
-      textureUrl = `${url}#${imageWhere}`;
-    } else {
-      refuse(url, imageWhere, "an image needs a uri or a bufferView.");
+      return { encoded: views[view].bytes, textureUrl: `${url}#${imageWhere}` };
     }
+    refuse(url, imageWhere, "an image needs a uri or a bufferView.");
+  };
+  for (const index of wanted) {
+    const where = `textures[${String(index)}]`;
+    const ref = textureRefs[index];
     const sampler =
       ref.sampler === null
         ? { filter: "linear" as const, wrap: "repeat" as const }
         : samplers[ref.sampler];
+    if (ref.basis !== null && options.basisTranscoder !== undefined) {
+      const candidate = await loadImage(ref.basis);
+      // The loader flips TEXCOORD_0 (v -> 1 - v) to match the image tier's row
+      // flip; block data cannot be flipped, so only a bottom-up ("ru") KTX2
+      // matches that convention. A missing key counts as the KTX2 default "rd".
+      const orientation =
+        options.basisOrientation === "trust"
+          ? "ru"
+          : parseKtx2(candidate.encoded.slice().buffer, {
+              ...(options.maximumWorkingBytes === undefined
+                ? {}
+                : { maximumWorkingBytes: options.maximumWorkingBytes }),
+            }).orientation;
+      if (orientation === "ru") {
+        const remaining = transcodeBudget - transcodedBytes;
+        if (remaining < 1) {
+          refuse(
+            url,
+            where,
+            "the document's transcoded textures exceed the working-memory budget (maximumWorkingBytes).",
+            { limit: transcodeBudget },
+          );
+        }
+        const transcoded = options.basisTranscoder(
+          candidate.encoded.slice().buffer,
+          {
+            ...(options.supportedFormats === undefined
+              ? {}
+              : { supportedFormats: options.supportedFormats }),
+            maximumDecodedBytes:
+              options.maximumDecodedBytes === undefined
+                ? remaining
+                : Math.min(options.maximumDecodedBytes, remaining),
+          },
+        );
+        transcodedBytes +=
+          transcoded.levels === undefined
+            ? (transcoded.data?.byteLength ?? 0)
+            : transcoded.levels.reduce((sum, one) => sum + one.byteLength, 0);
+        if (transcodedBytes > transcodeBudget) {
+          refuse(
+            url,
+            where,
+            "the document's transcoded textures exceed the working-memory budget (maximumWorkingBytes).",
+            { limit: transcodeBudget, found: transcodedBytes },
+          );
+        }
+        textures[index] = {
+          ...transcoded,
+          colorSpace: textureColorSpace.get(index) ?? transcoded.colorSpace,
+          filter: sampler.filter,
+          wrap: sampler.wrap,
+        };
+        continue;
+      }
+      if (ref.source === null) {
+        basisRejected.set(
+          index,
+          `textures[${String(index)}]: ${BASISU_EXTENSION}: KTX2 orientation '${orientation ?? "rd"}' would sample mirrored; re-encode with rows bottom-up or set basisOrientation`,
+        );
+        continue;
+      }
+    }
+    if (options.decodeTexture === undefined) {
+      refuse(
+        url,
+        where,
+        "a material samples this texture but the loader was built without a " +
+          "decoder. Pass { decodeTexture } to createGltfLoader.",
+      );
+    }
+    const loaded = await loadImage(ref.source as number);
     // The landed texture tier does the decoding, the §96 decompression
     // bounds, the §7a row flip, and the finite-dimension checks — reused
     // whole through its own decode seam rather than restated.
@@ -1982,7 +2216,45 @@ async function parseGltf(
       maximumExpansionRatio: options.maximumExpansionRatio,
       maximumWorkingBytes: options.maximumWorkingBytes,
     });
-    textures[index] = await decodeTexture(encoded.slice().buffer, textureUrl);
+    textures[index] = await decodeTexture(
+      loaded.encoded.slice().buffer,
+      loaded.textureUrl,
+    );
+  }
+  if (basisRejected.size > 0) {
+    // Drop every material slot that pointed at a rejected basisu-only texture.
+    for (let m = 0; m < materials.length; m += 1) {
+      const material = materials[m];
+      const dropped: string[] = [];
+      const drop = (slot: string, index: number | null): number | null => {
+        if (index === null) {
+          return null;
+        }
+        const reason = basisRejected.get(index);
+        if (reason === undefined) {
+          return index;
+        }
+        dropped.push(`${slot} (${reason})`);
+        return null;
+      };
+      const next = {
+        ...material,
+        baseColorTexture: drop("baseColorTexture", material.baseColorTexture),
+        metallicRoughnessTexture: drop(
+          "metallicRoughnessTexture",
+          material.metallicRoughnessTexture,
+        ),
+        emissiveTexture: drop("emissiveTexture", material.emissiveTexture),
+        normalTexture: drop("normalTexture", material.normalTexture),
+        occlusionTexture: drop("occlusionTexture", material.occlusionTexture),
+      };
+      if (dropped.length > 0) {
+        materials[m] = {
+          ...next,
+          ignoredTextures: [...material.ignoredTextures, ...dropped],
+        };
+      }
+    }
   }
 
   // --- meshes -----------------------------------------------------------
@@ -2028,20 +2300,37 @@ async function parseGltf(
       );
     }
     const primitives: GltfPrimitiveRecord[] = [];
+    let morphTargetCount = 0;
     for (let p = 0; p < primitiveValues.length; p += 1) {
       const primitiveWhere = `${where}.primitives[${String(p)}]`;
+      const primitiveRecord = asObject(primitiveValues[p], url, primitiveWhere);
       primitives.push(
         parsePrimitive(
           context,
-          asObject(primitiveValues[p], url, primitiveWhere),
+          primitiveRecord,
           materials.length,
           primitiveWhere,
         ),
       );
+      // parsePrimitive has validated `targets` as an array of 1..4 entries.
+      const count = Array.isArray(primitiveRecord["targets"])
+        ? primitiveRecord["targets"].length
+        : 0;
+      if (p === 0) {
+        morphTargetCount = count;
+      } else if (count !== morphTargetCount) {
+        refuse(
+          url,
+          `${primitiveWhere}.targets`,
+          `has ${String(count)} morph targets; primitives[0] has ${String(morphTargetCount)} (glTF requires every primitive of a mesh to carry the same targets.length).`,
+          { count, expected: morphTargetCount },
+        );
+      }
     }
     const mesh: GltfMeshRecord = {
       name: nameOf(record, url, where),
       primitives,
+      ...(morphTargetCount === 0 ? {} : { morphTargetCount }),
       ...(morphWeights === undefined ? {} : { morphWeights }),
     };
     const extras = extrasOf(record);
@@ -2371,14 +2660,12 @@ async function parseGltf(
         `${channelWhere}.target.node`,
       );
       const path = target["path"];
-      if (path === "weights") {
-        refuse(
-          url,
-          `${channelWhere}.target.path`,
-          "morph-weight channels are refused by name at this tier: the instantiated binding root for a mesh's MorphWeights component is outside the loader's node-indexed track paths (a follow-up in the instantiation tier).",
-        );
-      }
-      if (path !== "translation" && path !== "rotation" && path !== "scale") {
+      if (
+        path !== "translation" &&
+        path !== "rotation" &&
+        path !== "scale" &&
+        path !== "weights"
+      ) {
         refuse(
           url,
           `${channelWhere}.target.path`,
@@ -2428,22 +2715,48 @@ async function parseGltf(
       );
       const times = readTimes(context, inputIndex, `${samplerWhere}.input`);
       const values =
-        path === "rotation"
+        path === "weights"
           ? readFloats(
               context,
               outputIndex,
-              ["VEC4"],
-              "all",
-              `${samplerWhere}.output`,
-            )
-          : readFloats(
-              context,
-              outputIndex,
-              ["VEC3"],
+              ["SCALAR"],
               "none",
               `${samplerWhere}.output`,
-            );
-      const components = path === "rotation" ? 4 : 3;
+            )
+          : path === "rotation"
+            ? readFloats(
+                context,
+                outputIndex,
+                ["VEC4"],
+                "all",
+                `${samplerWhere}.output`,
+              )
+            : readFloats(
+                context,
+                outputIndex,
+                ["VEC3"],
+                "none",
+                `${samplerWhere}.output`,
+              );
+      const components =
+        path === "rotation"
+          ? 4
+          : path === "weights"
+            ? values.length / times.length
+            : 3;
+      if (
+        path === "weights" &&
+        (!Number.isInteger(components) ||
+          components < 1 ||
+          components > MAX_GLTF_MORPH_TARGETS)
+      ) {
+        refuse(
+          url,
+          `${samplerWhere}.output`,
+          `a weights channel carries ${String(components)} values per key; this tier ships 1..${String(MAX_GLTF_MORPH_TARGETS)} GPU morph targets, so it must be a whole number in that range.`,
+          { found: components },
+        );
+      }
       if (values.length !== times.length * components) {
         refuse(
           url,
@@ -2489,6 +2802,115 @@ const KNOWN_ATTRIBUTES = new Set([
   "WEIGHTS_0",
 ]);
 
+/** The glTF extension name this tier decodes through an injected decoder. */
+const DRACO_EXTENSION = "KHR_draco_mesh_compression";
+
+/**
+ * Decodes a primitive's `KHR_draco_mesh_compression` payload when the
+ * extension is present and a decoder was supplied; `undefined` otherwise (the
+ * uncompressed accessors then carry the primitive). Declared sizes are checked
+ * against the primitive's accessors before the streams are trusted (§96).
+ */
+function decodeDraco(
+  context: ParseContext,
+  record: Record<string, unknown>,
+  attributes: Record<string, unknown>,
+  vertexCount: number,
+  mode: GltfPrimitiveMode,
+  where: string,
+): DracoStreams | undefined {
+  const { url } = context;
+  const extensions = record["extensions"];
+  if (context.draco === undefined || extensions === undefined) {
+    return undefined;
+  }
+  const extension = asObject(extensions, url, `${where}.extensions`)[
+    DRACO_EXTENSION
+  ];
+  if (extension === undefined) {
+    return undefined;
+  }
+  const at = `${where}.extensions.${DRACO_EXTENSION}`;
+  const body = asObject(extension, url, at);
+  const view = requiredIndex(
+    body["bufferView"],
+    context.views.length,
+    url,
+    `${at}.bufferView`,
+  );
+  const ids = asObject(body["attributes"], url, `${at}.attributes`);
+  const mapped: Record<string, number> = {};
+  for (const key of Object.keys(ids)) {
+    const id = ids[key];
+    if (typeof id !== "number" || !Number.isInteger(id) || id < 0) {
+      refuse(
+        url,
+        `${at}.attributes.${key}`,
+        "expected a non-negative integer.",
+        {
+          found: id,
+        },
+      );
+    }
+    if (KNOWN_ATTRIBUTES.has(key)) {
+      if (attributes[key] === undefined) {
+        refuse(
+          url,
+          `${at}.attributes.${key}`,
+          "names an attribute the primitive does not declare.",
+        );
+      }
+      mapped[key] = id;
+    } else {
+      ignore(context, `${at}.attributes.${key}`);
+    }
+  }
+  if (mapped["POSITION"] === undefined) {
+    refuse(url, `${at}.attributes`, "POSITION is required at this tier.");
+  }
+  const streams = context.draco(
+    context.views[view].bytes,
+    mapped as unknown as DracoAttributeIds,
+  );
+  if (streams.vertexCount !== vertexCount) {
+    refuse(
+      url,
+      at,
+      `the Draco stream holds ${String(streams.vertexCount)} vertices; POSITION declares ${String(vertexCount)} (§85).`,
+      { count: streams.vertexCount, vertexCount },
+    );
+  }
+  // The Draco route has no accessor to prove the index count against: a
+  // count that is not a whole number of triangles (lines) is refused here.
+  const step = mode === "triangles" ? 3 : 2;
+  if (streams.indices !== undefined && streams.indices.length % step !== 0) {
+    refuse(
+      url,
+      at,
+      `the Draco stream holds ${String(streams.indices.length)} indices; ${mode} need a multiple of ${String(step)}.`,
+      { count: streams.indices.length },
+    );
+  }
+  // Skin weights are non-negative by the glTF spec (the plain path only ever
+  // sees them as FLOAT or unsigned-normalized); Draco hands back raw floats.
+  const draco = streams.weights;
+  if (draco !== undefined) {
+    for (let i = 0; i < draco.length; i += 1) {
+      if (draco[i] < 0) {
+        refuse(
+          url,
+          at,
+          "the Draco WEIGHTS_0 stream carries a negative weight.",
+          {
+            element: i,
+          },
+        );
+      }
+    }
+  }
+  return streams;
+}
+
 /** Parses one mesh primitive into the geometry layer's layout (§53, §96). */
 function parsePrimitive(
   context: ParseContext,
@@ -2531,14 +2953,24 @@ function parsePrimitive(
     url,
     `${where}.attributes.POSITION`,
   );
-  const positions = readFloats(
-    context,
-    positionIndex,
-    ["VEC3"],
-    "none",
-    `${where}.attributes.POSITION`,
-  );
   const vertexCount = context.accessors[positionIndex].count;
+  const compressed = decodeDraco(
+    context,
+    record,
+    attributes,
+    vertexCount,
+    mode,
+    where,
+  );
+  const positions =
+    compressed?.positions ??
+    readFloats(
+      context,
+      positionIndex,
+      ["VEC3"],
+      "none",
+      `${where}.attributes.POSITION`,
+    );
 
   /** Resolves one optional attribute accessor, enforcing the shared count. */
   const attributeIndex = (key: string): number | null => {
@@ -2567,24 +2999,27 @@ function parsePrimitive(
   const normals =
     normalIndex === null
       ? undefined
-      : readFloats(
+      : (compressed?.normals ??
+        readFloats(
           context,
           normalIndex,
           ["VEC3"],
           "none",
           `${where}.attributes.NORMAL`,
-        );
+        ));
 
   const uvIndex = attributeIndex("TEXCOORD_0");
   let uvs: Float32Array | undefined;
   if (uvIndex !== null) {
-    uvs = readFloats(
-      context,
-      uvIndex,
-      ["VEC2"],
-      "unsigned",
-      `${where}.attributes.TEXCOORD_0`,
-    );
+    uvs =
+      compressed?.uvs?.slice() ??
+      readFloats(
+        context,
+        uvIndex,
+        ["VEC2"],
+        "unsigned",
+        `${where}.attributes.TEXCOORD_0`,
+      );
     // glTF's `v` points down from the image's top row; the engine's points up
     // from the bottom one, and the texture tier flips the rows to match — so
     // the coordinate converts here, once, at parse (§7a; module header).
@@ -2595,7 +3030,9 @@ function parsePrimitive(
 
   const colorIndex = attributeIndex("COLOR_0");
   let colors: Float32Array | undefined;
-  if (colorIndex !== null) {
+  if (colorIndex !== null && compressed?.colors !== undefined) {
+    colors = compressed.colors;
+  } else if (colorIndex !== null) {
     const raw = readFloats(
       context,
       colorIndex,
@@ -2628,17 +3065,19 @@ function parsePrimitive(
   const joints =
     jointsIndex === null
       ? undefined
-      : readJoints(context, jointsIndex, `${where}.attributes.JOINTS_0`);
+      : (compressed?.joints ??
+        readJoints(context, jointsIndex, `${where}.attributes.JOINTS_0`));
   const weights =
     weightsIndex === null
       ? undefined
-      : readFloats(
+      : (compressed?.weights ??
+        readFloats(
           context,
           weightsIndex,
           ["VEC4"],
           "unsigned",
           `${where}.attributes.WEIGHTS_0`,
-        );
+        ));
 
   const indicesValue = record["indices"];
   let indices: Uint16Array | Uint32Array | undefined;
@@ -2649,7 +3088,24 @@ function parsePrimitive(
       url,
       `${where}.indices`,
     );
-    indices = readIndices(context, index, vertexCount, `${where}.indices`);
+    if (compressed?.indices !== undefined) {
+      if (context.accessors[index].count !== compressed.indices.length) {
+        refuse(
+          url,
+          `${where}.indices`,
+          `accessor declares ${String(context.accessors[index].count)} indices; the Draco stream holds ${String(compressed.indices.length)} (§85).`,
+        );
+      }
+      indices = compressed.indices;
+    } else {
+      indices = readIndices(context, index, vertexCount, `${where}.indices`);
+    }
+  } else if (compressed?.indices !== undefined) {
+    refuse(
+      url,
+      where,
+      "a Draco primitive with indices needs primitive.indices.",
+    );
   }
 
   const primitiveSize = mode === "triangles" ? 3 : 2;

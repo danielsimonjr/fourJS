@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 369
+  totalFiles: 371
   totalModules: 25
-  totalExports: 3852
+  totalExports: 3880
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -3888,9 +3888,18 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
+        - file: ./bounded-draco.js
+          imports:
+            - DracoAttributeIds
+            - DracoDecoder
+            - DracoStreams
+          typeOnly: true
         - file: ./image-memory.js
           imports:
             - assertImageDecoderMemory
+        - file: ./ktx2.js
+          imports:
+            - parseKtx2
         - file: ./asset-manager.js
           imports:
             - DEFAULT_MAXIMUM_BYTES
@@ -3903,6 +3912,12 @@ modules:
           imports:
             - resolveGlobalTextDecoder
             - TextDecodeLike
+        - file: ./bounded-basis.js
+          imports:
+            - BasisTextureFormat
+            - BasisTextureSource
+            - BasisTranscoder
+          typeOnly: true
         - file: ./texture.js
           imports:
             - createTextureDecoder
@@ -4050,6 +4065,13 @@ modules:
             - BASIS_TARGET_CODES
             - createBoundedBasisTranscoder
           reExport: true
+        - file: ./bounded-draco.js
+          imports:
+            - DRACO_COMPONENT_CODES
+            - DRACO_INFO_BYTES
+            - DRACO_MAX_ATTRIBUTES
+            - createBoundedDracoDecoder
+          reExport: true
         - file: ./ktx2.js
           imports:
             - KTX2_HEADER_BYTES
@@ -4121,6 +4143,8 @@ modules:
           imports:
             - GltfAnimationRecord
             - GltfChannelPath
+            - GltfCompressedTexture
+            - GltfTexture
             - GltfChannelRecord
             - GltfLoaderOptions
             - GltfMaterialRecord
@@ -4175,6 +4199,14 @@ modules:
             - BoundedBasisTranscoderOptions
           reExport: true
           typeOnly: true
+        - file: ./bounded-draco.js
+          imports:
+            - BoundedDracoDecoderOptions
+            - DracoAttributeIds
+            - DracoDecoder
+            - DracoStreams
+          reExport: true
+          typeOnly: true
         - file: ./ktx2.js
           imports:
             - Ktx2BasisCodec
@@ -4222,6 +4254,10 @@ modules:
         - createBoundedAvifDecoder
         - BASIS_TARGET_CODES
         - createBoundedBasisTranscoder
+        - DRACO_COMPONENT_CODES
+        - DRACO_INFO_BYTES
+        - DRACO_MAX_ATTRIBUTES
+        - createBoundedDracoDecoder
         - KTX2_HEADER_BYTES
         - KTX2_IDENTIFIER
         - parseKtx2
@@ -4266,6 +4302,8 @@ modules:
         - TextureWrapMode
         - GltfAnimationRecord
         - GltfChannelPath
+        - GltfCompressedTexture
+        - GltfTexture
         - GltfChannelRecord
         - GltfLoaderOptions
         - GltfMaterialRecord
@@ -4290,6 +4328,10 @@ modules:
         - BasisTranscodeRequest
         - BasisTranscoder
         - BoundedBasisTranscoderOptions
+        - BoundedDracoDecoderOptions
+        - DracoAttributeIds
+        - DracoDecoder
+        - DracoStreams
         - Ktx2BasisCodec
         - Ktx2Dfd
         - Ktx2Info
@@ -4328,6 +4370,10 @@ modules:
         - createBoundedAvifDecoder
         - BASIS_TARGET_CODES
         - createBoundedBasisTranscoder
+        - DRACO_COMPONENT_CODES
+        - DRACO_INFO_BYTES
+        - DRACO_MAX_ATTRIBUTES
+        - createBoundedDracoDecoder
         - KTX2_HEADER_BYTES
         - KTX2_IDENTIFIER
         - parseKtx2
@@ -4371,6 +4417,8 @@ modules:
         - TextureWrapMode
         - GltfAnimationRecord
         - GltfChannelPath
+        - GltfCompressedTexture
+        - GltfTexture
         - GltfChannelRecord
         - GltfLoaderOptions
         - GltfMaterialRecord
@@ -4395,6 +4443,10 @@ modules:
         - BasisTranscodeRequest
         - BasisTranscoder
         - BoundedBasisTranscoderOptions
+        - BoundedDracoDecoderOptions
+        - DracoAttributeIds
+        - DracoDecoder
+        - DracoStreams
         - Ktx2BasisCodec
         - Ktx2Dfd
         - Ktx2Info
@@ -4491,6 +4543,40 @@ modules:
       constants:
         - DEFAULT_MAXIMUM_BYTES
         - DEFAULT_TIMEOUT_SECONDS
+    packages/assets/src/bounded-draco.ts:
+      description: Bounded Draco mesh decoder (§96; R-30c, the glTF `KHR_draco_mesh_compression`
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./bounded-png.js
+          imports:
+            - DEFAULT_IMAGE_WORKING_BYTES
+        - file: ./texture.js
+          imports:
+            - DEFAULT_MAXIMUM_DECODED_BYTES
+        - file: ./wasm-memory.js
+          imports:
+            - limitWasmMemory
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+      exports:
+        - DRACO_MAX_ATTRIBUTES
+        - DRACO_INFO_BYTES
+        - DRACO_COMPONENT_CODES
+        - createBoundedDracoDecoder
+      interfaces:
+        - BoundedDracoDecoderOptions
+        - DracoAttributeIds
+        - DracoStreams
+      functions:
+        - createBoundedDracoDecoder
+      constants:
+        - DRACO_MAX_ATTRIBUTES
+        - DRACO_INFO_BYTES
+        - DRACO_COMPONENT_CODES
     packages/assets/src/loader-registry.ts:
       description: The §81 asset-format registry — a named map of {@link AssetLoader}s a
       externalDependencies: []
@@ -7252,6 +7338,7 @@ modules:
           imports:
             - INSTANCE_FLOATS
             - RenderBatcher
+            - BatchAtlasStatistics
             - InstancedRun
             - RenderBatch
             - RenderBatchOptions
@@ -10566,6 +10653,14 @@ modules:
             - INSTANCE_FLOATS
             - RenderBatcher
           reExport: true
+        - file: ./texture-atlas.js
+          imports:
+            - ATLAS_PADDING
+            - DEFAULT_ATLAS_MAX_PAGES
+            - DEFAULT_ATLAS_PAGE_SIZE
+            - MAX_ATLAS_PAGE_SIZE
+            - TextureAtlas
+          reExport: true
         - file: ./bounds.js
           imports:
             - computeWorldBoundingSphere
@@ -10822,10 +10917,18 @@ modules:
           imports:
             - BatchableItem
             - BatchableMaterial
+            - BatchAtlasStatistics
             - InstanceableItem
             - InstancedRun
             - RenderBatch
             - RenderBatchOptions
+          reExport: true
+          typeOnly: true
+        - file: ./texture-atlas.js
+          imports:
+            - AtlasEntry
+            - TextureAtlasOptions
+            - TextureAtlasStatistics
           reExport: true
           typeOnly: true
         - file: ./bounds.js
@@ -11137,6 +11240,11 @@ modules:
         - DEFAULT_MAX_BATCH_VERTICES
         - INSTANCE_FLOATS
         - RenderBatcher
+        - ATLAS_PADDING
+        - DEFAULT_ATLAS_MAX_PAGES
+        - DEFAULT_ATLAS_PAGE_SIZE
+        - MAX_ATLAS_PAGE_SIZE
+        - TextureAtlas
         - computeWorldBoundingSphere
         - computeWorldBoundingSphereFromBox
         - COMPUTE_WORKLOADS
@@ -11301,10 +11409,14 @@ modules:
         - PACKAGE_NAME
         - BatchableItem
         - BatchableMaterial
+        - BatchAtlasStatistics
         - InstanceableItem
         - InstancedRun
         - RenderBatch
         - RenderBatchOptions
+        - AtlasEntry
+        - TextureAtlasOptions
+        - TextureAtlasStatistics
         - BoundingSphere
         - ComputeWorkloadFactory
         - ClipScope
@@ -11471,6 +11583,11 @@ modules:
         - DEFAULT_MAX_BATCH_VERTICES
         - INSTANCE_FLOATS
         - RenderBatcher
+        - ATLAS_PADDING
+        - DEFAULT_ATLAS_MAX_PAGES
+        - DEFAULT_ATLAS_PAGE_SIZE
+        - MAX_ATLAS_PAGE_SIZE
+        - TextureAtlas
         - computeWorldBoundingSphere
         - computeWorldBoundingSphereFromBox
         - COMPUTE_WORKLOADS
@@ -11634,10 +11751,14 @@ modules:
         - VideoTexture
         - BatchableItem
         - BatchableMaterial
+        - BatchAtlasStatistics
         - InstanceableItem
         - InstancedRun
         - RenderBatch
         - RenderBatchOptions
+        - AtlasEntry
+        - TextureAtlasOptions
+        - TextureAtlasStatistics
         - BoundingSphere
         - ComputeWorkloadFactory
         - ClipScope
@@ -12411,6 +12532,12 @@ modules:
           imports:
             - scissorsEqual
             - ScissorRect
+        - file: ./texture-atlas.js
+          imports:
+            - TextureAtlas
+            - AtlasEntry
+            - TextureAtlasOptions
+            - TextureAtlasStatistics
         - file: ./render-list.js
           imports:
             - LitRenderItem
@@ -12448,6 +12575,7 @@ modules:
         - RenderBatcher
       interfaces:
         - RenderBatchOptions
+        - BatchAtlasStatistics
         - RenderBatch
         - InstancedRun
       constants:
@@ -12746,6 +12874,41 @@ modules:
         - ClipScope
       constants:
         - MAX_CLIP_PLANES
+    packages/render/src/texture-atlas.ts:
+      description: §65 atlas grouping — a deterministic shelf packer that lets distinct 2D
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./texture.js
+          imports:
+            - Texture
+      workspaceDependencies:
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Rectangle2
+            - ColorSpace
+        - package: "@fourjs/materials"
+          directory: packages/materials
+          imports:
+            - MaterialTexture
+      exports:
+        - ATLAS_PADDING
+        - DEFAULT_ATLAS_PAGE_SIZE
+        - DEFAULT_ATLAS_MAX_PAGES
+        - MAX_ATLAS_PAGE_SIZE
+        - TextureAtlas
+      classes:
+        - TextureAtlas
+      interfaces:
+        - TextureAtlasOptions
+        - AtlasEntry
+        - TextureAtlasStatistics
+      constants:
+        - ATLAS_PADDING
+        - DEFAULT_ATLAS_PAGE_SIZE
+        - DEFAULT_ATLAS_MAX_PAGES
+        - MAX_ATLAS_PAGE_SIZE
     packages/render/src/resource-memory.ts:
       description: §83 resource accounting for textures and render targets — how many are live,
       externalDependencies: []
@@ -16013,6 +16176,7 @@ modules:
           imports:
             - INSTANCE_FLOATS
             - RenderBatcher
+            - BatchAtlasStatistics
             - InstancedRun
             - RenderBatch
             - RenderBatchOptions
@@ -20779,6 +20943,7 @@ modules:
           imports:
             - AnimationClip
             - AnimationTrack
+            - numberAdapter
             - quaternionAdapter
             - vector3Adapter
             - AnimationTrackLike
@@ -22474,6 +22639,7 @@ dependencyGraph:
         - packages/assets/src/index.ts
         - packages/assets/src/texture.ts
         - packages/assets/src/asset-manager.ts
+        - packages/assets/src/bounded-draco.ts
         - packages/assets/src/loader-registry.ts
         - packages/assets/src/manifest.ts
         - packages/assets/src/content-hash.ts
@@ -22605,6 +22771,7 @@ dependencyGraph:
         - packages/render/src/raster-limits.ts
         - packages/render/src/bounds.ts
         - packages/render/src/clip.ts
+        - packages/render/src/texture-atlas.ts
         - packages/render/src/resource-memory.ts
         - packages/render/src/shape.ts
         - packages/render/src/renderer-registry.ts
@@ -22785,18 +22952,18 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 369
+  totalTypeScriptFiles: 371
   totalModules: 25
-  totalLinesOfCode: 183737
-  totalExports: 3852
-  totalClasses: 231
-  totalInterfaces: 701
-  totalFunctions: 646
+  totalLinesOfCode: 185595
+  totalExports: 3880
+  totalClasses: 232
+  totalInterfaces: 708
+  totalFunctions: 647
   totalTypeGuards: 34
   totalEnums: 0
-  totalConstants: 596
-  totalReExports: 2398
-  totalTypeOnlyImports: 464
+  totalConstants: 603
+  totalReExports: 2417
+  totalTypeOnlyImports: 468
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10
   unusedFilesCount: 0

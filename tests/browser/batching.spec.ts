@@ -249,3 +249,71 @@ test.describe("§65 instanced shaded meshes draw the same picture (R-22)", () =>
     expect(differing).toBeLessThanOrEqual(SHADED_MAX_DIFFERING_PIXELS);
   });
 });
+
+/** W11.4: eight sprites, eight textures, two samplers. */
+const ATLAS_UNBATCHED_DRAW_CALLS = 8;
+const ATLAS_BATCHED_DRAW_CALLS = 2;
+
+interface AtlasProbe extends Probe {
+  readonly uploads: number;
+  readonly stats: {
+    pages: number;
+    textures: number;
+    runs: number;
+    drawsSaved: number;
+  } | null;
+}
+
+test.describe("§65 atlas grouping draws the same picture (W11.4)", () => {
+  test("eight distinct textures batch over two atlas pages with 0 differing pixels and no re-upload", async ({
+    page,
+  }) => {
+    const code = await bundleFixture();
+    await page.goto(`http://localhost:${String(PORT)}/`);
+    await page.setContent("<!doctype html><body></body>");
+    await page.addScriptTag({ content: code, type: "module" });
+    await page.waitForSelector("body[data-atlas-ready='1']", {
+      timeout: 30_000,
+    });
+
+    const plain = (await page.evaluate(() =>
+      window.fourAtlasProbe?.(false, 1),
+    )) as AtlasProbe;
+    const first = (await page.evaluate(() =>
+      window.fourAtlasProbe?.(true, 1),
+    )) as AtlasProbe;
+    // A still scene: the third frame must upload nothing at all.
+    const still = (await page.evaluate(() =>
+      window.fourAtlasProbe?.(true, 3),
+    )) as AtlasProbe;
+
+    expect(plain.drawCalls).toBe(ATLAS_UNBATCHED_DRAW_CALLS);
+    expect(first.drawCalls).toBe(ATLAS_BATCHED_DRAW_CALLS);
+    expect(still.drawCalls).toBe(ATLAS_BATCHED_DRAW_CALLS);
+    expect(first.uploads).toBeGreaterThan(0);
+    expect(still.uploads).toBe(0);
+    expect(still.stats).toMatchObject({ pages: 2, textures: 8 });
+
+    let differing = 0;
+    let drawn = 0;
+    for (let i = 0; i < still.pixels.length; i += 4) {
+      let delta = 0;
+      for (let c = 0; c < 4; c += 1) {
+        delta = Math.max(
+          delta,
+          Math.abs(still.pixels[i + c] - plain.pixels[i + c]),
+        );
+      }
+      if (delta > 0) differing += 1;
+      if (plain.pixels[i] > 8 || plain.pixels[i + 1] > 8) drawn += 1;
+    }
+    console.log(
+      `atlas vs unbatched: ${String(differing)} of ${String(
+        WIDTH * HEIGHT,
+      )} pixels differ; ${String(drawn)} non-background; ` +
+        `first-frame uploads ${String(first.uploads)}`,
+    );
+    expect(drawn).toBeGreaterThan(WIDTH * HEIGHT * 0.05);
+    expect(differing).toBe(0);
+  });
+});

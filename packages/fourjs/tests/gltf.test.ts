@@ -11,7 +11,7 @@
 import {
   createGltfLoader,
   type FetchResponse,
-  type GltfAsset,
+  GltfAsset,
 } from "@fourjs/assets";
 import { AnimationMixer } from "@fourjs/animation";
 import { isFourError, resetDevWarnings } from "@fourjs/core";
@@ -653,5 +653,276 @@ describe("instantiateGltf: one-target morph (RFC 0003 WP-SK.4)", () => {
     expect(weights).toBeDefined();
     expect(Array.from(weights!.weights)).toEqual([0.25]);
     expect(mesh.morphTargetWeights).toBe(weights!.weights);
+  });
+});
+
+describe("instantiateGltf: weights animation channels (RFC 0003 residue)", () => {
+  const DELTA = [0, 1, 0, 0, 1, 0, 0, 1, 0];
+
+  async function fourTargetAsset(): Promise<GltfAsset> {
+    const target = new Float32Array(DELTA);
+    const { bytes, offsets } = pack(TRI_POSITIONS, TRI_INDICES, target);
+    return parse({
+      asset: { version: "2.0" },
+      buffers: [{ byteLength: bytes.byteLength, uri: dataUri(bytes) }],
+      bufferViews: [
+        { buffer: 0, byteOffset: offsets[0], byteLength: 36 },
+        { buffer: 0, byteOffset: offsets[1], byteLength: 6 },
+        { buffer: 0, byteOffset: offsets[2], byteLength: 36 },
+      ],
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 1, componentType: 5123, count: 3, type: "SCALAR" },
+        { bufferView: 2, componentType: 5126, count: 3, type: "VEC3" },
+      ],
+      meshes: [
+        {
+          primitives: [
+            {
+              attributes: { POSITION: 0 },
+              indices: 1,
+              targets: [
+                { POSITION: 2 },
+                { POSITION: 2 },
+                { POSITION: 2 },
+                { POSITION: 2 },
+              ],
+            },
+          ],
+        },
+      ],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+    });
+  }
+
+  /** Re-wraps a parsed asset with a hand-built weights channel. */
+  function withChannel(
+    base: GltfAsset,
+    values: number[],
+    interpolation: "linear" | "step" = "linear",
+  ): GltfAsset {
+    return new GltfAsset({
+      url: base.url,
+      meshes: base.meshes,
+      materials: base.materials,
+      textures: base.textures,
+      nodes: base.nodes,
+      scenes: base.scenes,
+      defaultScene: base.defaultScene,
+      skins: base.skins,
+      ignored: base.ignored,
+      animations: [
+        {
+          name: "morph",
+          channels: [
+            {
+              node: 0,
+              path: "weights" as const,
+              interpolation,
+              times: new Float32Array([0, 1]),
+              values: new Float32Array(values),
+            },
+          ],
+        },
+      ],
+    });
+  }
+
+  it("binds one scalar track per target and drives MorphWeights", async () => {
+    const asset = withChannel(
+      await fourTargetAsset(),
+      [0, 0, 0, 0, 1, 0.5, 0.25, 0],
+    );
+    const instance = instantiateGltf(asset);
+    const clip = instance.animations[0];
+    expect(clip.tracks.map((track) => track.path)).toEqual([
+      "morphWeights.0.0",
+      "morphWeights.0.1",
+      "morphWeights.0.2",
+      "morphWeights.0.3",
+    ]);
+    const mesh = instance.nodes[0] as Mesh;
+    const weights = mesh.getComponent(MorphWeights)!;
+    expect(instance.morphWeights[0]).toBe(weights.weights);
+
+    const mixer = new AnimationMixer(instance);
+    mixer.play(clip);
+    mixer.advance(0.5);
+    expect(weights.weights[0]).toBeCloseTo(0.5, 5);
+    expect(weights.weights[1]).toBeCloseTo(0.25, 5);
+    expect(weights.weights[2]).toBeCloseTo(0.125, 5);
+    expect(weights.weights[3]).toBe(0);
+    expect(mesh.morphTargetWeights).toBe(weights.weights);
+    expect(mesh.morphTargetWeights![0]).toBeCloseTo(0.5, 5);
+  });
+
+  it("sizes the shared weights array from the mesh's uniform target count", async () => {
+    const base = await fourTargetAsset();
+    expect(base.meshes[0].morphTargetCount).toBe(4);
+    expect(instantiateGltf(base).morphWeights[0]).toHaveLength(4);
+    const shrunk = new GltfAsset({
+      url: base.url,
+      meshes: base.meshes.map((mesh) => ({ ...mesh, morphTargetCount: 3 })),
+      materials: base.materials,
+      textures: base.textures,
+      nodes: base.nodes,
+      scenes: base.scenes,
+      defaultScene: base.defaultScene,
+      skins: base.skins,
+      ignored: base.ignored,
+      animations: [],
+    });
+    expect(instantiateGltf(shrunk).morphWeights[0]).toHaveLength(3);
+  });
+
+  it("steps when the sampler is STEP", async () => {
+    const asset = withChannel(
+      await fourTargetAsset(),
+      [0, 0, 0, 0, 1, 1, 1, 1],
+      "step",
+    );
+    const instance = instantiateGltf(asset);
+    const mixer = new AnimationMixer(instance);
+    mixer.play(instance.animations[0]);
+    mixer.advance(0.5);
+    expect(instance.morphWeights[0]![0]).toBe(0);
+  });
+
+  it("refuses a channel whose width differs from the target count", async () => {
+    const asset = withChannel(await fourTargetAsset(), [0, 0, 0, 1, 1, 1]);
+    expect(() => instantiateGltf(asset)).toThrow(/3 values per key/);
+  });
+
+  it("drives MorphWeights from a weights channel parsed by the real loader", async () => {
+    const target = new Float32Array(DELTA);
+    const times = new Float32Array([0, 1]);
+    const keys = new Float32Array([0, 0, 0, 0, 1, 0.5, 0.25, 0]);
+    const { bytes, offsets } = pack(
+      TRI_POSITIONS,
+      TRI_INDICES,
+      target,
+      times,
+      keys,
+    );
+    const asset = await parse({
+      asset: { version: "2.0" },
+      buffers: [{ byteLength: bytes.byteLength, uri: dataUri(bytes) }],
+      bufferViews: [36, 6, 36, 8, 32].map((byteLength, i) => ({
+        buffer: 0,
+        byteOffset: offsets[i],
+        byteLength,
+      })),
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 1, componentType: 5123, count: 3, type: "SCALAR" },
+        { bufferView: 2, componentType: 5126, count: 3, type: "VEC3" },
+        { bufferView: 3, componentType: 5126, count: 2, type: "SCALAR" },
+        { bufferView: 4, componentType: 5126, count: 8, type: "SCALAR" },
+      ],
+      meshes: [
+        {
+          primitives: [
+            {
+              attributes: { POSITION: 0 },
+              indices: 1,
+              targets: [
+                { POSITION: 2 },
+                { POSITION: 2 },
+                { POSITION: 2 },
+                { POSITION: 2 },
+              ],
+            },
+          ],
+        },
+      ],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+      animations: [
+        {
+          name: "morph",
+          samplers: [{ input: 3, output: 4 }],
+          channels: [{ sampler: 0, target: { node: 0, path: "weights" } }],
+        },
+      ],
+    });
+    const instance = instantiateGltf(asset);
+    const clip = instance.animations[0];
+    expect(clip.tracks.map((track) => track.path)).toEqual([
+      "morphWeights.0.0",
+      "morphWeights.0.1",
+      "morphWeights.0.2",
+      "morphWeights.0.3",
+    ]);
+    const mixer = new AnimationMixer(instance);
+    mixer.play(clip);
+    mixer.advance(0.5);
+    const weights = instance.morphWeights[0]!;
+    expect(weights[0]).toBeCloseTo(0.5, 5);
+    expect(weights[1]).toBeCloseTo(0.25, 5);
+    expect(weights[2]).toBeCloseTo(0.125, 5);
+    expect(weights[3]).toBe(0);
+  });
+
+  it("refuses a weights channel on a node without morph targets", async () => {
+    const asset = withChannel(
+      await parse(triangleDocument()),
+      [0, 0, 0, 0, 1, 1, 1, 1],
+    );
+    expect(() => instantiateGltf(asset)).toThrow(/no morph targets/);
+  });
+
+  it("reports null morph weights for plain nodes", async () => {
+    const instance = instantiateGltf(await parse(triangleDocument()));
+    expect(instance.morphWeights).toEqual([null]);
+  });
+});
+
+describe("instantiateGltf: KHR_texture_basisu compressed maps (R-30c)", () => {
+  it("accepts a transcoded compressed TextureSource for a material map", async () => {
+    const levels = [new Uint8Array(16)];
+    const asset = await createGltfLoader({
+      basisOrientation: "trust",
+      basisTranscoder: () => ({
+        width: 4,
+        height: 4,
+        format: "bc7-rgba-unorm",
+        colorSpace: "srgb",
+        levels,
+      }),
+    }).load(
+      jsonResponse(
+        triangleDocument((c) => {
+          c["images"] = [
+            {
+              uri: dataUri(new Uint8Array([0xab, 0x4b, 0x54, 0x58])),
+              mimeType: "image/ktx2",
+            },
+          ];
+          c["textures"] = [
+            { extensions: { KHR_texture_basisu: { source: 0 } } },
+          ];
+          c["extensionsUsed"] = ["KHR_texture_basisu"];
+          c["extensionsRequired"] = ["KHR_texture_basisu"];
+          c["materials"] = [
+            { pbrMetallicRoughness: { baseColorTexture: { index: 0 } } },
+          ];
+          const meshes = c["meshes"] as {
+            primitives: { material?: number }[];
+          }[];
+          meshes[0].primitives[0].material = 0;
+        }),
+      ),
+      "/model.gltf",
+    );
+    const instance = instantiateGltf(asset);
+    const material = (instance.nodes[0] as Mesh).material as unknown as {
+      map: { source: { format: string; levels: unknown } };
+    };
+    const map = material.map;
+    expect(map.source.format).toBe("bc7-rgba-unorm");
+    expect(map.source.levels).toBe(levels);
   });
 });

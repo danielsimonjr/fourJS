@@ -78,6 +78,7 @@ import { FourError } from "@fourjs/core";
 import {
   INSTANCE_FLOATS,
   RenderBatcher,
+  type BatchAtlasStatistics,
   type InstancedRun,
   type RenderBatch,
   type RenderBatchOptions,
@@ -233,6 +234,12 @@ export interface WgpuRenderBatching {
 
   /** Destroys the GPU handles on a live device (§83). */
   dispose(): void;
+
+  /**
+   * W11.4: the atlas-grouping counters (pages, packed textures, draws saved),
+   * or `null` when atlas grouping is off. Optional for hand-written uploaders.
+   */
+  atlasStatistics?(): BatchAtlasStatistics | null;
 }
 
 /** One batch slot's persistent buffers and their current capacities. */
@@ -341,6 +348,10 @@ export class WgpuBatching implements WgpuRenderBatching {
     return this.#batcher.nextInstanced(items, from, layerMask);
   }
 
+  atlasStatistics(): BatchAtlasStatistics | null {
+    return this.#batcher.atlasStatistics();
+  }
+
   beginFrame(): void {
     this.#requireLive();
     this.#slot = 0;
@@ -434,6 +445,7 @@ export class WgpuBatching implements WgpuRenderBatching {
       return;
     }
     this.#disposed = true;
+    this.#batcher.dispose();
     for (const slot of this.#slots) {
       slot.vertexBuffer.destroy();
       slot.indexBuffer.destroy();

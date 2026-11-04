@@ -13,6 +13,8 @@
  * const renderer = new WebglRenderer();
  * await renderer.initialize({ canvas });
  * renderer.batching = createGlBatching();     // §65, opt in
+ * // W11.4: also merge draws that differ only by texture, over atlas pages —
+ * // renderer.batching = createGlBatching({ atlas: { pageSize: 1024 } });
  * ```
  *
  * ## Why batching is opt-in (decision, R-9)
@@ -117,6 +119,7 @@ import { Matrix4 } from "@fourjs/math";
 import {
   INSTANCE_FLOATS,
   RenderBatcher,
+  type BatchAtlasStatistics,
   type InstancedRun,
   type RenderBatch,
   type RenderBatchOptions,
@@ -383,6 +386,13 @@ export interface RenderBatching {
     run: InstancedRun,
   ): void;
 
+  /**
+   * W11.4: the atlas-grouping counters (pages, packed textures, draws saved),
+   * or `null` when atlas grouping is off. Optional so a hand-written batching
+   * object keeps working.
+   */
+  atlasStatistics?(): BatchAtlasStatistics | null;
+
   /** Drops the GL objects without touching the context (§61 context loss). */
   forget(): void;
 
@@ -479,6 +489,10 @@ export class GlBatching implements RenderBatching {
     layerMask?: number,
   ): InstancedRun | null {
     return this.#batcher.nextInstanced(items, from, layerMask);
+  }
+
+  atlasStatistics(): BatchAtlasStatistics | null {
+    return this.#batcher.atlasStatistics();
   }
 
   instancedLit(gl: WebglContext): LitProgram | null {
@@ -653,6 +667,7 @@ export class GlBatching implements RenderBatching {
   }
 
   dispose(): void {
+    this.#batcher.dispose();
     const gl = this.#gl;
     if (gl !== null) {
       for (const vertexArray of this.#vertexArrays) {
