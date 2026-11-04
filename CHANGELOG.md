@@ -10,6 +10,11 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **`@fourjs/render-canvas` and `@fourjs/render-svg` are real backends (2026-11-04, wave 3)**:
+  `Canvas2dRenderer` / `registerCanvasRenderer()` (flat CPU-projected polygons, sprites via
+  `drawImage`, RFC 0004 feedback refusal) and `SvgRenderer` / `registerSvgRenderer()` (retained
+  `<polygon>` elements). Both declare no depth, lighting, picking or `readPixels`.
+  `docs/COMPATIBILITY.md` regenerated; a browser gate asserts the two draw the same picture.
 - **Program wave 1 (2026-11-04) — the decision-free backlog**, following the
   optimization audit: the seven optimizations it deferred, the two browser-flake rows, the
   `tools/` quote-only read-through, and the Dependabot restoration.

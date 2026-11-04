@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 343
+  totalFiles: 348
   totalModules: 24
-  totalExports: 3476
+  totalExports: 3509
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -59,7 +59,7 @@ entryPoints:
     description: "`@fourjs/render-webgpu` — the WebGPU backend (§62 backend 1)."
   - file: packages/render-canvas/src/index.ts
     type: main
-    description: Entry Point
+    description: "`@fourjs/render-canvas` — the Canvas 2D backend (§62 backend 3)."
   - file: packages/motion/src/index.ts
     type: main
     description: §81's motion-side capability token (RFC 0002), declared by the package that
@@ -2542,15 +2542,118 @@ modules:
         - Vector4
   packages/render-svg:
     packages/render-svg/src/index.ts:
-      description: Entry point exporting 1 symbols
+      description: Package entry point for @fourjs/render-svg (re-exports 8 symbols)
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./register.js
+          imports:
+            - isSvgSupported
+            - registerSvgRenderer
+          reExport: true
+        - file: ./svg-renderer.js
+          imports:
+            - SVG_NAMESPACE
+            - SvgRenderer
+            - isSvgSurface
+          reExport: true
+        - file: ./svg-renderer.js
+          imports:
+            - SvgElement
+            - SvgElementFactory
+            - SvgSurface
+          reExport: true
+          typeOnly: true
+      workspaceDependencies: []
+      exports:
+        - isSvgSupported
+        - registerSvgRenderer
+        - SVG_NAMESPACE
+        - SvgRenderer
+        - isSvgSurface
+        - PACKAGE_NAME
+        - SvgElement
+        - SvgElementFactory
+        - SvgSurface
+      reExported:
+        - isSvgSupported
+        - registerSvgRenderer
+        - SVG_NAMESPACE
+        - SvgRenderer
+        - isSvgSurface
+        - SvgElement
+        - SvgElementFactory
+        - SvgSurface
+      constants:
+        - PACKAGE_NAME
+    packages/render-svg/src/svg-renderer.ts:
+      description: The SVG backend (§62 rung `svg`) — a retained-mode vector renderer.
       externalDependencies: []
       nodeDependencies: []
       internalDependencies: []
-      workspaceDependencies: []
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - DEV
+            - EventEmitter
+            - FourError
+            - devWarnOnce
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix4
+            - linearToSrgb
+        - package: "@fourjs/render"
+          directory: packages/render
+          imports:
+            - buildInterpolatedRenderList
+            - buildRenderList
+            - buildViewRenderList
+            - RenderInterpolation
+            - RenderItem
+            - RenderStatistics
+            - RenderTarget
+            - Renderer
+            - RendererCapabilities
+            - RendererEventMap
+            - RendererOptions
       exports:
-        - PACKAGE_NAME
+        - SVG_NAMESPACE
+        - isSvgSurface
+        - SvgRenderer
+      classes:
+        - SvgRenderer
+      interfaces:
+        - SvgElement
+        - SvgElementFactory
+        - SvgSurface
+      functions:
+        - isSvgSurface
       constants:
-        - PACKAGE_NAME
+        - SVG_NAMESPACE
+    packages/render-svg/src/register.ts:
+      description: This backend's opt-in to §62's renderer registry — the mirror of
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./svg-renderer.js
+          imports:
+            - SvgRenderer
+            - isSvgSurface
+      workspaceDependencies:
+        - package: "@fourjs/render"
+          directory: packages/render
+          imports:
+            - registerRenderer
+            - RendererOptions
+            - RendererRegistry
+      exports:
+        - isSvgSupported
+        - registerSvgRenderer
+      functions:
+        - isSvgSupported
+        - registerSvgRenderer
   packages/physics-box2d:
     packages/physics-box2d/src/index.ts:
       description: Entry point exporting 1 symbols
@@ -14799,15 +14902,167 @@ modules:
         - hostGpu
   packages/render-canvas:
     packages/render-canvas/src/index.ts:
-      description: Entry point exporting 1 symbols
+      description: "`@fourjs/render-canvas` — the Canvas 2D backend (§62 backend 3)."
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./canvas2d-renderer.js
+          imports:
+            - Canvas2dRenderer
+            - cssColor
+          reExport: true
+        - file: ./project.js
+          imports:
+            - canvasTop
+            - projectPoint
+            - resolveViewRect
+          reExport: true
+        - file: ./register.js
+          imports:
+            - isCanvas2dSupported
+            - registerCanvasRenderer
+          reExport: true
+        - file: ./canvas2d-renderer.js
+          imports:
+            - Canvas2dContextLike
+            - Canvas2dImageLike
+            - Canvas2dRendererOptions
+            - Canvas2dSurface
+          reExport: true
+          typeOnly: true
+        - file: ./project.js
+          imports:
+            - PixelRect
+            - ProjectedPoint
+          reExport: true
+          typeOnly: true
+      workspaceDependencies: []
+      exports:
+        - Canvas2dRenderer
+        - cssColor
+        - canvasTop
+        - projectPoint
+        - resolveViewRect
+        - isCanvas2dSupported
+        - registerCanvasRenderer
+        - PACKAGE_NAME
+        - Canvas2dContextLike
+        - Canvas2dImageLike
+        - Canvas2dRendererOptions
+        - Canvas2dSurface
+        - PixelRect
+        - ProjectedPoint
+      reExported:
+        - Canvas2dRenderer
+        - cssColor
+        - canvasTop
+        - projectPoint
+        - resolveViewRect
+        - isCanvas2dSupported
+        - registerCanvasRenderer
+        - Canvas2dContextLike
+        - Canvas2dImageLike
+        - Canvas2dRendererOptions
+        - Canvas2dSurface
+        - PixelRect
+        - ProjectedPoint
+      constants:
+        - PACKAGE_NAME
+    packages/render-canvas/src/project.ts:
+      description: Projection helpers for the Canvas 2D backend (§48, §7a).
       externalDependencies: []
       nodeDependencies: []
       internalDependencies: []
       workspaceDependencies: []
       exports:
-        - PACKAGE_NAME
-      constants:
-        - PACKAGE_NAME
+        - resolveViewRect
+        - canvasTop
+        - projectPoint
+      interfaces:
+        - PixelRect
+        - ProjectedPoint
+      functions:
+        - resolveViewRect
+        - canvasTop
+        - projectPoint
+    packages/render-canvas/src/canvas2d-renderer.ts:
+      description: The Canvas 2D backend (§62 backend 3) — a `Renderer` over `buildRenderList`.
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./project.js
+          imports:
+            - canvasTop
+            - projectPoint
+            - resolveViewRect
+            - PixelRect
+            - ProjectedPoint
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - DEV
+            - EventEmitter
+            - FourError
+            - devWarnOnce
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Matrix4
+            - linearToSrgb
+        - package: "@fourjs/render"
+          directory: packages/render
+          imports:
+            - buildInterpolatedRenderList
+            - buildRenderList
+            - createRenderStatistics
+            - viewLayerMask
+            - RenderInterpolation
+            - RenderItem
+            - RenderStatistics
+            - RenderTarget
+            - Renderer
+            - RendererCapabilities
+            - RendererEventMap
+            - RendererOptions
+        - package: "@fourjs/scene"
+          directory: packages/scene
+          imports:
+            - Node
+            - Viewport
+      exports:
+        - cssColor
+        - Canvas2dRenderer
+      classes:
+        - Canvas2dRenderer
+      interfaces:
+        - Canvas2dImageLike
+        - Canvas2dContextLike
+        - Canvas2dSurface
+        - Canvas2dRendererOptions
+      functions:
+        - cssColor
+    packages/render-canvas/src/register.ts:
+      description: This backend's opt-in to §62's renderer registry — see
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./canvas2d-renderer.js
+          imports:
+            - Canvas2dRenderer
+      workspaceDependencies:
+        - package: "@fourjs/render"
+          directory: packages/render
+          imports:
+            - registerRenderer
+            - RendererOptions
+            - RendererRegistry
+      exports:
+        - isCanvas2dSupported
+        - registerCanvasRenderer
+      functions:
+        - isCanvas2dSupported
+        - registerCanvasRenderer
   packages/motion:
     packages/motion/src/systems.ts:
       description: Simulation systems and the priority registry (§39).
@@ -20376,6 +20631,8 @@ dependencyGraph:
     - name: Packages/render-svg
       files:
         - packages/render-svg/src/index.ts
+        - packages/render-svg/src/svg-renderer.ts
+        - packages/render-svg/src/register.ts
     - name: Packages/physics-box2d
       files:
         - packages/physics-box2d/src/index.ts
@@ -20579,6 +20836,9 @@ dependencyGraph:
     - name: Packages/render-canvas
       files:
         - packages/render-canvas/src/index.ts
+        - packages/render-canvas/src/project.ts
+        - packages/render-canvas/src/canvas2d-renderer.ts
+        - packages/render-canvas/src/register.ts
     - name: Packages/motion
       files:
         - packages/motion/src/systems.ts
@@ -20696,18 +20956,18 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 343
+  totalTypeScriptFiles: 348
   totalModules: 24
-  totalLinesOfCode: 165609
-  totalExports: 3476
-  totalClasses: 213
-  totalInterfaces: 643
-  totalFunctions: 583
-  totalTypeGuards: 29
+  totalLinesOfCode: 166908
+  totalExports: 3509
+  totalClasses: 215
+  totalInterfaces: 652
+  totalFunctions: 592
+  totalTypeGuards: 32
   totalEnums: 0
-  totalConstants: 504
-  totalReExports: 2194
-  totalTypeOnlyImports: 443
+  totalConstants: 505
+  totalReExports: 2215
+  totalTypeOnlyImports: 446
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10
   unusedFilesCount: 0

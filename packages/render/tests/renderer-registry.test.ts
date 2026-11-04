@@ -446,8 +446,11 @@ describe("the unregistered-backend message names the right register call", () =>
     );
   });
 
-  for (const backend of ["canvas2d", "svg"] as const) {
-    it(`says no fourJS package implements ${backend}, and names registerRenderer`, async () => {
+  for (const [backend, registrar] of [
+    ["canvas2d", "registerCanvasRenderer()"],
+    ["svg", "registerSvgRenderer()"],
+  ] as const) {
+    it(`names ${registrar} for ${backend}, and registerRenderer`, async () => {
       let thrown: unknown;
       try {
         await resolveRenderer(backend);
@@ -457,9 +460,8 @@ describe("the unregistered-backend message names the right register call", () =>
       expect(isFourError(thrown)).toBe(true);
       if (!isFourError(thrown)) return;
       expect(thrown.code).toBe("RENDERER_INITIALIZATION_FAILED");
-      expect(thrown.message).toContain("No fourJS package implements");
+      expect(thrown.message).toContain(registrar);
       expect(thrown.message).toContain(`"${backend}"`);
-      expect(thrown.message).toContain("reserved §102 stub");
       expect(thrown.message).toContain("registerRenderer(");
       // The wrong advice, in every rendering: it must not send a reader to
       // the WebGL or WebGPU package for a backend neither provides.
@@ -492,7 +494,7 @@ describe("the unregistered-backend message names the right register call", () =>
     if (!isFourError(thrown)) return;
     expect(thrown.message).toContain('No "canvas2d" renderer is registered');
     expect(thrown.message).toContain('Registered: "webgl2"');
-    expect(thrown.message).toContain("No fourJS package implements");
+    expect(thrown.message).toContain("registerCanvasRenderer()");
     expect(thrown.message).not.toContain("registerWebglRenderer");
   });
 

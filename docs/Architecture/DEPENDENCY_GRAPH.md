@@ -56,7 +56,7 @@ The codebase is organized into the following modules:
 - **packages/ui**: 16 files
 - **packages/text**: 6 files
 - **packages/math**: 11 files
-- **packages/render-svg**: 1 file
+- **packages/render-svg**: 3 files
 - **packages/physics-box2d**: 1 file
 - **packages/scene**: 17 files
 - **packages/assets**: 15 files
@@ -68,7 +68,7 @@ The codebase is organized into the following modules:
 - **packages/render**: 34 files
 - **packages/input**: 9 files
 - **packages/render-webgpu**: 30 files
-- **packages/render-canvas**: 1 file
+- **packages/render-canvas**: 4 files
 - **packages/motion**: 24 files
 - **packages/animation**: 14 files
 - **packages/diagnostics**: 12 files
@@ -89,7 +89,7 @@ The codebase is organized into the following modules:
 | `@fourjs/ui` (`packages/ui/`)                         | `@fourjs/text`, `@fourjs/math`, `@fourjs/input`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                      | 16             | 0               |
 | `@fourjs/text` (`packages/text/`)                     | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 6              | 3               |
 | `@fourjs/math` (`packages/math/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 11             | 0               |
-| `@fourjs/render-svg` (`packages/render-svg/`)         | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
+| `@fourjs/render-svg` (`packages/render-svg/`)         | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`                                                                                                                                                                                                                                                                                                                                                                                                                                      | 3              | 0               |
 | `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
 | `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 17             | 0               |
 | `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 15             | 0               |
@@ -101,7 +101,7 @@ The codebase is organized into the following modules:
 | `@fourjs/render` (`packages/render/`)                 | `@fourjs/math`, `@fourjs/materials`, `@fourjs/geometry`, `@fourjs/core`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                              | 34             | 0               |
 | `@fourjs/input` (`packages/input/`)                   | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 9              | 0               |
 | `@fourjs/render-webgpu` (`packages/render-webgpu/`)   | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 30             | 0               |
-| `@fourjs/render-canvas` (`packages/render-canvas/`)   | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 1              | 0               |
+| `@fourjs/render-canvas` (`packages/render-canvas/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`, `@fourjs/scene`                                                                                                                                                                                                                                                                                                                                                                                                                     | 4              | 0               |
 | `@fourjs/motion` (`packages/motion/`)                 | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                       | 24             | 0               |
 | `@fourjs/animation` (`packages/animation/`)           | `@fourjs/core`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                     | 14             | 0               |
 | `@fourjs/diagnostics` (`packages/diagnostics/`)       | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 12             | 1               |
@@ -150,6 +150,9 @@ graph LR
     P2 --> P7
     P2 --> P21
     P3 --> P21
+    P5 --> P21
+    P5 --> P4
+    P5 --> P14
     P7 --> P4
     P7 --> P21
     P8 --> P21
@@ -177,6 +180,10 @@ graph LR
     P16 --> P21
     P16 --> P4
     P16 --> P7
+    P17 --> P21
+    P17 --> P4
+    P17 --> P14
+    P17 --> P7
     P18 --> P4
     P18 --> P7
     P18 --> P21
@@ -1339,11 +1346,59 @@ graph LR
 
 ## Packages/render svg Dependencies
 
-### `packages/render-svg/src/index.ts` - Entry point exporting 1 symbols
+### `packages/render-svg/src/index.ts` - Package entry point for @fourjs/render-svg (re-exports 8 symbols)
+
+**Internal Dependencies:**
+
+| File                | Imports                                     | Type                  |
+| ------------------- | ------------------------------------------- | --------------------- |
+| `./register.js`     | `isSvgSupported, registerSvgRenderer`       | Re-export             |
+| `./svg-renderer.js` | `SVG_NAMESPACE, SvgRenderer, isSvgSurface`  | Re-export             |
+| `./svg-renderer.js` | `SvgElement, SvgElementFactory, SvgSurface` | Re-export (type-only) |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
+- Re-exports: `isSvgSupported`, `registerSvgRenderer`, `SVG_NAMESPACE`, `SvgRenderer`, `isSvgSurface`, `SvgElement`, `SvgElementFactory`, `SvgSurface`
+
+---
+
+### `packages/render-svg/src/svg-renderer.ts` - The SVG backend (§62 rung `svg`) — a retained-mode vector renderer.
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEV, EventEmitter, FourError, devWarnOnce`                                                                                                                                                             |
+| `@fourjs/math`   | `Matrix4, linearToSrgb`                                                                                                                                                                                 |
+| `@fourjs/render` | `buildInterpolatedRenderList, buildRenderList, buildViewRenderList, RenderInterpolation, RenderItem, RenderStatistics, RenderTarget, Renderer, RendererCapabilities, RendererEventMap, RendererOptions` |
+
+**Exports:**
+
+- Classes: `SvgRenderer`
+- Interfaces: `SvgElement`, `SvgElementFactory`, `SvgSurface`
+- Functions: `isSvgSurface`
+- Constants: `SVG_NAMESPACE`
+
+---
+
+### `packages/render-svg/src/register.ts` - This backend's opt-in to §62's renderer registry — the mirror of
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                |
+| ---------------- | ----------------------------------------------------- |
+| `@fourjs/render` | `registerRenderer, RendererOptions, RendererRegistry` |
+
+**Internal Dependencies:**
+
+| File                | Imports                     | Type   |
+| ------------------- | --------------------------- | ------ |
+| `./svg-renderer.js` | `SvgRenderer, isSvgSurface` | Import |
+
+**Exports:**
+
+- Functions: `isSvgSupported`, `registerSvgRenderer`
 
 ---
 
@@ -5521,11 +5576,76 @@ graph LR
 
 ## Packages/render canvas Dependencies
 
-### `packages/render-canvas/src/index.ts` - Entry point exporting 1 symbols
+### `packages/render-canvas/src/index.ts` - `@fourjs/render-canvas` — the Canvas 2D backend (§62 backend 3).
+
+**Internal Dependencies:**
+
+| File                     | Imports                                                                            | Type                  |
+| ------------------------ | ---------------------------------------------------------------------------------- | --------------------- |
+| `./canvas2d-renderer.js` | `Canvas2dRenderer, cssColor`                                                       | Re-export             |
+| `./project.js`           | `canvasTop, projectPoint, resolveViewRect`                                         | Re-export             |
+| `./register.js`          | `isCanvas2dSupported, registerCanvasRenderer`                                      | Re-export             |
+| `./canvas2d-renderer.js` | `Canvas2dContextLike, Canvas2dImageLike, Canvas2dRendererOptions, Canvas2dSurface` | Re-export (type-only) |
+| `./project.js`           | `PixelRect, ProjectedPoint`                                                        | Re-export (type-only) |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
+- Re-exports: `Canvas2dRenderer`, `cssColor`, `canvasTop`, `projectPoint`, `resolveViewRect`, `isCanvas2dSupported`, `registerCanvasRenderer`, `Canvas2dContextLike`, `Canvas2dImageLike`, `Canvas2dRendererOptions`, `Canvas2dSurface`, `PixelRect`, `ProjectedPoint`
+
+---
+
+### `packages/render-canvas/src/project.ts` - Projection helpers for the Canvas 2D backend (§48, §7a).
+
+**Exports:**
+
+- Interfaces: `PixelRect`, `ProjectedPoint`
+- Functions: `resolveViewRect`, `canvasTop`, `projectPoint`
+
+---
+
+### `packages/render-canvas/src/canvas2d-renderer.ts` - The Canvas 2D backend (§62 backend 3) — a `Renderer` over `buildRenderList`.
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                                                                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEV, EventEmitter, FourError, devWarnOnce`                                                                                                                                                                               |
+| `@fourjs/math`   | `Matrix4, linearToSrgb`                                                                                                                                                                                                   |
+| `@fourjs/render` | `buildInterpolatedRenderList, buildRenderList, createRenderStatistics, viewLayerMask, RenderInterpolation, RenderItem, RenderStatistics, RenderTarget, Renderer, RendererCapabilities, RendererEventMap, RendererOptions` |
+| `@fourjs/scene`  | `Node, Viewport`                                                                                                                                                                                                          |
+
+**Internal Dependencies:**
+
+| File           | Imports                                                               | Type   |
+| -------------- | --------------------------------------------------------------------- | ------ |
+| `./project.js` | `canvasTop, projectPoint, resolveViewRect, PixelRect, ProjectedPoint` | Import |
+
+**Exports:**
+
+- Classes: `Canvas2dRenderer`
+- Interfaces: `Canvas2dImageLike`, `Canvas2dContextLike`, `Canvas2dSurface`, `Canvas2dRendererOptions`
+- Functions: `cssColor`
+
+---
+
+### `packages/render-canvas/src/register.ts` - This backend's opt-in to §62's renderer registry — see
+
+**Workspace Dependencies:**
+
+| Package          | Import                                                |
+| ---------------- | ----------------------------------------------------- |
+| `@fourjs/render` | `registerRenderer, RendererOptions, RendererRegistry` |
+
+**Internal Dependencies:**
+
+| File                     | Imports            | Type   |
+| ------------------------ | ------------------ | ------ |
+| `./canvas2d-renderer.js` | `Canvas2dRenderer` | Import |
+
+**Exports:**
+
+- Functions: `isCanvas2dSupported`, `registerCanvasRenderer`
 
 ---
 
@@ -7668,217 +7788,222 @@ graph TD
 
     subgraph Packages/render-svg
         N48[index]
+        N49[svg-renderer]
+        N50[register]
     end
 
     subgraph Packages/physics-box2d
-        N49[index]
+        N51[index]
     end
 
     subgraph Packages/scene
-        N50[transform]
-        N51[layers]
-        N52[node-space]
-        N53[index]
-        N54[skeleton]
-        N55[group]
-        N56[screen-camera]
-        N57[light]
-        N58[trackball]
-        N59[world-transforms]
-        N60[...7 more]
+        N52[transform]
+        N53[layers]
+        N54[node-space]
+        N55[index]
+        N56[skeleton]
+        N57[group]
+        N58[screen-camera]
+        N59[light]
+        N60[trackball]
+        N61[world-transforms]
+        N62[...7 more]
     end
 
     subgraph Packages/assets
-        N61[image-probe]
-        N62[gltf]
-        N63[image-memory]
-        N64[capabilities]
-        N65[index]
-        N66[texture]
-        N67[asset-manager]
-        N68[loader-registry]
-        N69[manifest]
-        N70[content-hash]
-        N71[...5 more]
+        N63[image-probe]
+        N64[gltf]
+        N65[image-memory]
+        N66[capabilities]
+        N67[index]
+        N68[texture]
+        N69[asset-manager]
+        N70[loader-registry]
+        N71[manifest]
+        N72[content-hash]
+        N73[...5 more]
     end
 
     subgraph Packages/physics-soft
-        N72[index]
+        N74[index]
     end
 
     subgraph Packages/physics-rapier
-        N73[ccd]
-        N74[index]
-        N75[conversions2d]
-        N76[rapier2d-adapter]
-        N77[rapier3d-adapter]
-        N78[register]
-        N79[conversions3d]
-        N80[init]
+        N75[ccd]
+        N76[index]
+        N77[conversions2d]
+        N78[rapier2d-adapter]
+        N79[rapier3d-adapter]
+        N80[register]
+        N81[conversions3d]
+        N82[init]
     end
 
     subgraph Packages/render-webgl
-        N81[gl-render-target]
-        N82[gl-picking]
-        N83[gl-effect]
-        N84[gl-shadow-registry]
-        N85[index]
-        N86[gl-standard-registry]
-        N87[gl-skinning-glsl]
-        N88[gl-particles]
-        N89[gl-picking-registry]
-        N90[gl-geometry]
-        N91[...15 more]
+        N83[gl-render-target]
+        N84[gl-picking]
+        N85[gl-effect]
+        N86[gl-shadow-registry]
+        N87[index]
+        N88[gl-standard-registry]
+        N89[gl-skinning-glsl]
+        N90[gl-particles]
+        N91[gl-picking-registry]
+        N92[gl-geometry]
+        N93[...15 more]
     end
 
     subgraph Packages/physics
-        N92[solver-registry]
-        N93[capabilities]
-        N94[index]
-        N95[world]
-        N96[rigid-body]
-        N97[validation]
-        N98[joints]
-        N99[descriptors]
-        N100[swept-character-controller]
-        N101[physics-event-system]
-        N102[...15 more]
+        N94[solver-registry]
+        N95[capabilities]
+        N96[index]
+        N97[world]
+        N98[rigid-body]
+        N99[validation]
+        N100[joints]
+        N101[descriptors]
+        N102[swept-character-controller]
+        N103[physics-event-system]
+        N104[...15 more]
     end
 
     subgraph Packages/geometry
-        N103[index]
-        N104[tessellation]
-        N105[path-boolean]
-        N106[path]
-        N107[svg-document]
-        N108[geometry]
-        N109[primitives-3d]
-        N110[primitive-support]
-        N111[resource-memory]
-        N112[buffer-geometry]
-        N113[...3 more]
+        N105[index]
+        N106[tessellation]
+        N107[path-boolean]
+        N108[path]
+        N109[svg-document]
+        N110[geometry]
+        N111[primitives-3d]
+        N112[primitive-support]
+        N113[resource-memory]
+        N114[buffer-geometry]
+        N115[...3 more]
     end
 
     subgraph Packages/render
-        N114[read-pixels]
-        N115[shape-paint]
-        N116[scissor]
-        N117[sprite]
-        N118[capabilities]
-        N119[view-list]
-        N120[index]
-        N121[compute-workloads]
-        N122[texture]
-        N123[render-target-bytes]
-        N124[...24 more]
+        N116[read-pixels]
+        N117[shape-paint]
+        N118[scissor]
+        N119[sprite]
+        N120[capabilities]
+        N121[view-list]
+        N122[index]
+        N123[compute-workloads]
+        N124[texture]
+        N125[render-target-bytes]
+        N126[...24 more]
     end
 
     subgraph Packages/input
-        N125[pick]
-        N126[index]
-        N127[keyboard-input]
-        N128[key-events]
-        N129[pointer-events]
-        N130[pointer-input]
-        N131[drag]
-        N132[keyboard-state]
-        N133[propagation]
+        N127[pick]
+        N128[index]
+        N129[keyboard-input]
+        N130[key-events]
+        N131[pointer-events]
+        N132[pointer-input]
+        N133[drag]
+        N134[keyboard-state]
+        N135[propagation]
     end
 
     subgraph Packages/render-webgpu
-        N134[wgpu-geometry]
-        N135[webgpu-device]
-        N136[wgpu-effect]
-        N137[index]
-        N138[wgpu-bindings]
-        N139[wgpu-skinning]
-        N140[wgpu-node-program]
-        N141[wgpu-shadow]
-        N142[wgpu-gpu-timer]
-        N143[wgpu-readback]
-        N144[...20 more]
+        N136[wgpu-geometry]
+        N137[webgpu-device]
+        N138[wgpu-effect]
+        N139[index]
+        N140[wgpu-bindings]
+        N141[wgpu-skinning]
+        N142[wgpu-node-program]
+        N143[wgpu-shadow]
+        N144[wgpu-gpu-timer]
+        N145[wgpu-readback]
+        N146[...20 more]
     end
 
     subgraph Packages/render-canvas
-        N145[index]
+        N147[index]
+        N148[project]
+        N149[canvas2d-renderer]
+        N150[register]
     end
 
     subgraph Packages/motion
-        N146[systems]
-        N147[ik]
-        N148[capabilities]
-        N149[character-controller]
-        N150[clock]
-        N151[index]
-        N152[waypoint-graph-planner]
-        N153[kinematic-controller]
-        N154[scheduler]
-        N155[steering]
-        N156[...14 more]
+        N151[systems]
+        N152[ik]
+        N153[capabilities]
+        N154[character-controller]
+        N155[clock]
+        N156[index]
+        N157[waypoint-graph-planner]
+        N158[kinematic-controller]
+        N159[scheduler]
+        N160[steering]
+        N161[...14 more]
     end
 
     subgraph Packages/animation
-        N157[tween]
-        N158[timeline]
-        N159[animation-system]
-        N160[index]
-        N161[when]
-        N162[track]
-        N163[binding]
-        N164[mixer]
-        N165[blend-tree]
-        N166[values]
-        N167[...4 more]
+        N162[tween]
+        N163[timeline]
+        N164[animation-system]
+        N165[index]
+        N166[when]
+        N167[track]
+        N168[binding]
+        N169[mixer]
+        N170[blend-tree]
+        N171[values]
+        N172[...4 more]
     end
 
     subgraph Packages/diagnostics
-        N168[checksum]
-        N169[leak-registry]
-        N170[index]
-        N171[validation]
-        N172[replay-format]
-        N173[recorder]
-        N174[stats]
-        N175[rollback]
-        N176[replay-player]
-        N177[debug-draw]
-        N178[...2 more]
+        N173[checksum]
+        N174[leak-registry]
+        N175[index]
+        N176[validation]
+        N177[replay-format]
+        N178[recorder]
+        N179[stats]
+        N180[rollback]
+        N181[replay-player]
+        N182[debug-draw]
+        N183[...2 more]
     end
 
     subgraph Packages/core
-        N179[units]
-        N180[leak-registry]
-        N181[index]
-        N182[disposable]
-        N183[conventions]
-        N184[dev]
-        N185[plugin]
-        N186[events]
-        N187[space]
-        N188[random]
-        N189[...4 more]
+        N184[units]
+        N185[leak-registry]
+        N186[index]
+        N187[disposable]
+        N188[conventions]
+        N189[dev]
+        N190[plugin]
+        N191[events]
+        N192[space]
+        N193[random]
+        N194[...4 more]
     end
 
     subgraph Packages/fourjs
-        N190[physics-box2d]
-        N191[gltf]
-        N192[application]
-        N193[capabilities]
-        N194[plugins]
-        N195[physics]
-        N196[compute-pass]
-        N197[index]
-        N198[core]
-        N199[render-webgpu]
-        N200[...25 more]
+        N195[physics-box2d]
+        N196[gltf]
+        N197[application]
+        N198[capabilities]
+        N199[plugins]
+        N200[physics]
+        N201[compute-pass]
+        N202[index]
+        N203[core]
+        N204[render-webgpu]
+        N205[...25 more]
     end
 
     subgraph Packages/serialization
-        N201[capabilities]
-        N202[migration]
-        N203[index]
-        N204[format]
-        N205[serializer]
+        N206[capabilities]
+        N207[migration]
+        N208[index]
+        N209[format]
+        N210[serializer]
     end
 
     N0 --> N1
@@ -7966,17 +8091,17 @@ graph TD
 
 | Category                | Count  |
 | ----------------------- | ------ |
-| Total TypeScript Files  | 343    |
+| Total TypeScript Files  | 348    |
 | Total Modules           | 24     |
-| Total Lines of Code     | 165609 |
-| Total Exports           | 3476   |
-| Total Re-exports        | 2194   |
-| Total Classes           | 213    |
-| Total Interfaces        | 643    |
-| Total Functions         | 583    |
-| Total Type Guards       | 29     |
+| Total Lines of Code     | 166908 |
+| Total Exports           | 3509   |
+| Total Re-exports        | 2215   |
+| Total Classes           | 215    |
+| Total Interfaces        | 652    |
+| Total Functions         | 592    |
+| Total Type Guards       | 32     |
 | Total Enums             | 0      |
-| Type-only Imports       | 443    |
+| Type-only Imports       | 446    |
 | Runtime Circular Deps   | 0      |
 | Type-only Circular Deps | 10     |
 

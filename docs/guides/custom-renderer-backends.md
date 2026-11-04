@@ -3,11 +3,12 @@
 Nothing in fourJS draws pixels directly: an application hands a **`Renderer`**
 to `Application`, and §61's interface is the only thing the rest of the engine
 knows about a backend. `render-webgl` and `render-webgpu` ship one each.
-`render-canvas` and `render-svg` are **reserved stubs** — one source line
-apiece, exporting only `PACKAGE_NAME` — so `AUTO_RENDERER_ORDER`'s `canvas2d`
-and `svg` rungs cannot be filled by any fourJS package today.
+`render-canvas` and `render-svg` ship one each too (2026-11-04), filling
+`AUTO_RENDERER_ORDER`'s `canvas2d` and `svg` rungs through
+`registerCanvasRenderer()` and `registerSvgRenderer()`.
 
-That is what makes this guide worth having rather than academic. It is the
+This guide remains the recipe for a **consumer** backend: a different Canvas 2D
+or SVG implementation, or any other tier. It is the
 renderer seam's counterpart to
 [custom solver adapters](custom-solver-adapters.md), and everything below was
 written and measured **from a consumer seat** during dogfood cycle 9
@@ -213,15 +214,16 @@ All from a consumer seat, on the same scene, in headless Chromium:
   `@fourjs/render-webgpu`. `NullRenderer`, in `@fourjs/render`, is the
   conformance fixture: the interface minus every line of GL, and the reference
   a backend author should read first.
-- Reserved stubs: `@fourjs/render-canvas` and `@fourjs/render-svg` (§62, §102).
-  Each builds, publishes, and exports `PACKAGE_NAME` and nothing else —
-  measured from a consumer seat 2026-09-19 as **1 export apiece**, in Node and
-  in Chrome. `fourJS/render-canvas` and `fourJS/render-svg` import cleanly and
-  register no backend.
-- The unregistered-backend error names `registerWebglRenderer()` whichever
-  backend was asked for; the second half of its advice ("or pass a `Renderer`
-  instance") is always right. Recorded in `TODO.md`, not yet fixed.
-- Picking is deliberately absent on the future Canvas 2D and SVG tiers even
+- First-party 2D backends: `@fourjs/render-canvas` and `@fourjs/render-svg`
+  (§62) fill the `canvas2d` and `svg` rungs via `registerCanvasRenderer()` /
+  `registerSvgRenderer()`. The consumer route in this guide still works
+  unchanged and is still how you add a different backend: a consumer
+  `registerRenderer({ backend: "canvas2d", … })` is selected exactly as a
+  first-party one would be.
+- The unregistered-backend error names the requested backend's own registrar
+  (`registerCanvasRenderer()`, `registerSvgRenderer()`, …); the second half of
+  its advice ("or pass a `Renderer` instance") is always right.
+- Picking is deliberately absent on the Canvas 2D and SVG tiers even
   though both could answer `"pixel"` natively (`isPointInPath`, SVG hit
   testing): emulation would make §71's result _quality_ vary by backend
   (RFC 0005 Q6).

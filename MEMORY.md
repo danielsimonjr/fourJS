@@ -12,8 +12,8 @@ readable; never delete the pointer itself.
 
 - The repository is **fully implemented** (implementation plan complete 2026-08-02; this
   bullet said "scaffold only" until 2026-08-05 — it predated Phase 0): 24 packages build,
-  test (~3,000 unit + suites + browser/visual), and lint, with ≥95% coverage gates. Four
-  packages are deliberate reserved stubs (physics-box2d/soft, render-canvas/svg).
+  test (~3,000 unit + suites + browser/visual), and lint, with ≥95% coverage gates. Two
+  packages are deliberate reserved stubs (physics-box2d/soft; render-canvas/svg shipped 2026-11-04).
   `render-webgpu` left that list 2026-08-21…29 (the R-1 plan; standing-fact wording
   corrected 2026-08-30).
 - `docs/SPECIFICATION.md` is the working reference — the current revision is whatever tops
@@ -4842,3 +4842,24 @@ pin. Draco/Basis remain open.
 bundle (particles-demo would exceed its 46 kB budget); draw-call wins only on thousands of
 like consecutive unlit items; lit meshes do not batch yet (R-22). Evidence:
 `docs/benchmarks/batching-default-on.md`.
+## 2026-11-04 — wave 3: Canvas 2D and SVG backends shipped
+
+- `@fourjs/render-canvas` (`Canvas2dRenderer`, `registerCanvasRenderer()`) and
+  `@fourjs/render-svg` (`SvgRenderer`, `registerSvgRenderer()`) fill the `canvas2d` and `svg`
+  rungs of `AUTO_RENDERER_ORDER`. Two reserved stubs remain: `physics-box2d`, `physics-soft`.
+- **Structural surfaces:** both take structural canvas/SVG/context types (no `lib.dom`), so
+  Node tests run against recording fakes; registration is a call, not an import side effect.
+- **Retained SVG:** slot _n_ reuses slot _n_'s element and writes an attribute only when its
+  text changed; a static scene performs no DOM writes and two runs serialize byte-identically.
+- **Canvas determinism under readback:** contexts accept `willReadFrequently`; without it
+  Chromium moves a GPU canvas to software after the first readbacks and antialiasing changes
+  between frames (§33).
+- **Declared by omission:** no depth, lighting, picking or `readPixels` on either backend
+  (undefined = "not taught to answer", RFC 0005 Q6; no emulation). The generated capability
+  table shows `not reported` for omitted fields.
+- **RFC 0004:** canvas refuses a texture whose image is the surface being rendered with
+  `FourError("INVALID_RENDER_GRAPH")` before drawing; this closed the RFC 0004 residue row.
+- **Packaging question resolved for these two:** the "Changesets cannot `ignore` the stubs"
+  problem no longer applies to `render-canvas`/`render-svg`, since they are real 0.x packages
+  the umbrella legitimately depends on and re-exports; it remains only for the two physics stubs.
+- `registrationAdvice` in `render` now names `registerCanvasRenderer()` / `registerSvgRenderer()`.

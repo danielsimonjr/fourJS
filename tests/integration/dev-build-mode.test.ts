@@ -294,6 +294,14 @@ const GATED: ReadonlyMap<string, string> = new Map([
     "§78's ignored-texture-slot warning at instantiation (A-19, 2026-08-29). Message only: the instantiated nodes, materials (factors applied, unsampleable slots absent), and clips are identical in both builds — the slot list itself is parse data on the material record — and only the console.warn saying the base map is the one sampled moves with the flag. Assembly runs outside the fixed step and writes nothing any simulation reads",
   ],
   [
+    join("packages", "render-canvas", "src", "canvas2d-renderer.ts"),
+    "Canvas 2D backend's unsupported-feature notices (W3.1, 2026-11-04). Message only: a display-only render tier that never runs on a fixed-step path; the feature is skipped identically in both builds and only the console.warn moves with the flag. Rendering is outside the §33 envelope regardless; nothing a frame draws re-enters simulation state (§42/§43)",
+  ],
+  [
+    join("packages", "render-svg", "src", "svg-renderer.ts"),
+    "SVG backend's unsupported-feature notices (W3.2, 2026-11-04). Message only: a display-only render tier that never runs on a fixed-step path; the item is skipped identically in both builds and only the console.warn moves with the flag. Rendering is outside the §33 envelope regardless; nothing a frame draws re-enters simulation state (§42/§43)",
+  ],
+  [
     join("packages", "render-webgl", "src", "gl-node-program.ts"),
     "§60's per-graph compile-failure notice (RFC 0001, 2026-08-28). Message only: the cache latches the failed graph `null` in both builds — its draws are skipped identically, the latch is the behaviour and it is unconditional — and only the console.warn carrying §89's log moves with the flag. Rendering is outside the §33 envelope regardless; nothing a shader draws re-enters simulation state (§42/§43)",
   ],

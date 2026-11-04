@@ -10,37 +10,37 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 
 **Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every tracked `.ts` appears below with an explicit disposition.
 
-**Total files**: 900
+**Total files**: 915
 
 ## Disposition counts
 
 | Disposition   |   Count | Meaning                                                                                                      |
 | ------------- | ------: | ------------------------------------------------------------------------------------------------------------ |
-| `reachable`   |     295 | A `src/` file in the module graph, reachable from a root.                                                    |
+| `reachable`   |     300 | A `src/` file in the module graph, reachable from a root.                                                    |
 | `build-entry` |      48 | A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …). |
 | `test-only`   |       4 | A `src/` file not reachable from src roots but imported by a test.                                           |
 | `orphan`      |       0 | A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate).                        |
-| `test`        |     521 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
+| `test`        |     529 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
 | `tool`        |       1 | A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks).                                        |
-| `config`      |      17 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).                                |
-| `example`     |      14 | An `examples/` or `docs/` reference/illustration source.                                                     |
-| **Total**     | **900** |                                                                                                              |
+| `config`      |      18 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).                                |
+| `example`     |      15 | An `examples/` or `docs/` reference/illustration source.                                                     |
+| **Total**     | **915** |                                                                                                              |
 
 ## Per-area counts
 
 | Area       | Files |
 | ---------- | ----: |
-| `config`   |    17 |
-| `examples` |    14 |
-| `src`      |   347 |
-| `tests`    |   521 |
+| `config`   |    18 |
+| `examples` |    15 |
+| `src`      |   352 |
+| `tests`    |   529 |
 | `tools`    |     1 |
 
 ## Per-package counts
 
 | Package                  | Files |
 | ------------------------ | ----: |
-| `(root)`                 |   238 |
+| `(root)`                 |   245 |
 | `@fourjs/animation`      |    33 |
 | `@fourjs/assets`         |    32 |
 | `@fourjs/core`           |    26 |
@@ -56,8 +56,8 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `@fourjs/physics-rapier` |    23 |
 | `@fourjs/physics-soft`   |     2 |
 | `@fourjs/render`         |    72 |
-| `@fourjs/render-canvas`  |     2 |
-| `@fourjs/render-svg`     |     2 |
+| `@fourjs/render-canvas`  |     7 |
+| `@fourjs/render-svg`     |     5 |
 | `@fourjs/render-webgl`   |    35 |
 | `@fourjs/render-webgpu`  |    53 |
 | `@fourjs/scene`          |    35 |
@@ -72,6 +72,8 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | ----------------------------------------------------------------- | ---------------------- | -------- | ----------- |
 | `examples/blending/main.ts`                                       | (root)                 | examples | example     |
 | `examples/blending/vite.config.ts`                                | (root)                 | config   | config      |
+| `examples/canvas-backend/main.ts`                                 | (root)                 | examples | example     |
+| `examples/canvas-backend/vite.config.ts`                          | (root)                 | config   | config      |
 | `examples/character-controller/main.ts`                           | (root)                 | examples | example     |
 | `examples/character-controller/vite.config.ts`                    | (root)                 | config   | config      |
 | `examples/first-2d-scene/main.ts`                                 | (root)                 | examples | example     |
@@ -507,10 +509,18 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/physics/tests/world-units.test.ts`                      | @fourjs/physics        | tests    | test        |
 | `packages/physics/tests/world-velocities.test.ts`                 | @fourjs/physics        | tests    | test        |
 | `packages/physics/tests/world.test.ts`                            | @fourjs/physics        | tests    | test        |
+| `packages/render-canvas/src/canvas2d-renderer.ts`                 | @fourjs/render-canvas  | src      | reachable   |
 | `packages/render-canvas/src/index.ts`                             | @fourjs/render-canvas  | src      | build-entry |
-| `packages/render-canvas/tests/smoke.test.ts`                      | @fourjs/render-canvas  | tests    | test        |
+| `packages/render-canvas/src/project.ts`                           | @fourjs/render-canvas  | src      | reachable   |
+| `packages/render-canvas/src/register.ts`                          | @fourjs/render-canvas  | src      | reachable   |
+| `packages/render-canvas/tests/canvas2d-renderer.test.ts`          | @fourjs/render-canvas  | tests    | test        |
+| `packages/render-canvas/tests/helpers.ts`                         | @fourjs/render-canvas  | tests    | test        |
+| `packages/render-canvas/tests/register.test.ts`                   | @fourjs/render-canvas  | tests    | test        |
 | `packages/render-svg/src/index.ts`                                | @fourjs/render-svg     | src      | build-entry |
-| `packages/render-svg/tests/smoke.test.ts`                         | @fourjs/render-svg     | tests    | test        |
+| `packages/render-svg/src/register.ts`                             | @fourjs/render-svg     | src      | reachable   |
+| `packages/render-svg/src/svg-renderer.ts`                         | @fourjs/render-svg     | src      | reachable   |
+| `packages/render-svg/tests/helpers.ts`                            | @fourjs/render-svg     | tests    | test        |
+| `packages/render-svg/tests/svg-renderer.test.ts`                  | @fourjs/render-svg     | tests    | test        |
 | `packages/render-webgl/src/gl-batch.ts`                           | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-effect-registry.ts`                 | @fourjs/render-webgl   | src      | reachable   |
 | `packages/render-webgl/src/gl-effect.ts`                          | @fourjs/render-webgl   | src      | reachable   |
@@ -762,6 +772,9 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/ui/tests/widget.test.ts`                                | @fourjs/ui             | tests    | test        |
 | `playwright.config.ts`                                            | (root)                 | config   | config      |
 | `tests/browser/animation.spec.ts`                                 | (root)                 | tests    | test        |
+| `tests/browser/backends-agreement.spec.ts`                        | (root)                 | tests    | test        |
+| `tests/browser/backends-canvas.spec.ts`                           | (root)                 | tests    | test        |
+| `tests/browser/backends-svg.spec.ts`                              | (root)                 | tests    | test        |
 | `tests/browser/batching.spec.ts`                                  | (root)                 | tests    | test        |
 | `tests/browser/blending.spec.ts`                                  | (root)                 | tests    | test        |
 | `tests/browser/bounded-png.spec.ts`                               | (root)                 | tests    | test        |
@@ -771,6 +784,8 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `tests/browser/culling.spec.ts`                                   | (root)                 | tests    | test        |
 | `tests/browser/example.spec.ts`                                   | (root)                 | tests    | test        |
 | `tests/browser/first-3d-scene.spec.ts`                            | (root)                 | tests    | test        |
+| `tests/browser/fixtures/backends-agreement-page.ts`               | (root)                 | tests    | test        |
+| `tests/browser/fixtures/backends-svg-page.ts`                     | (root)                 | tests    | test        |
 | `tests/browser/fixtures/batching-page.ts`                         | (root)                 | tests    | test        |
 | `tests/browser/fixtures/bounded-png-page.ts`                      | (root)                 | tests    | test        |
 | `tests/browser/fixtures/clipping-page.ts`                         | (root)                 | tests    | test        |

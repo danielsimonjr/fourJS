@@ -251,9 +251,9 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 
 ## Now
 
-### Four of the 24 packages are reserved stubs, and each is its own open item
+### Two of the 24 packages are reserved stubs, and each is its own open item
 
-**These four are deliberate §102 / RFC-0004 decisions, not defects — the defect was that the fact
+**These (originally four; `render-canvas` and `render-svg` shipped 2026-11-04) are deliberate §102 / RFC-0004 decisions, not defects — the defect was that the fact
 lived only inside a dogfooding write-up, where it read as history and nobody actioned it.** Each
 stub is filed below as its own `- [ ]` so one can be ticked when it ships without pretending the
 other three did. Common to all four, measured from a consumer seat on 2026-09-19 (dogfood cycle 9)
@@ -288,39 +288,6 @@ against installed tarballs, in Node and in Chrome: **one source line each, expor
       different seam; rigid-body simulation through `physics-rapier` is the nearest shipped thing.
       **Closes when:** §35 gets a scheduled implementation phase and that phase lands. No phase is
       scheduled today.
-
-- [ ] **`@fourjs/render-canvas` is a reserved stub — 1 export, no backend.**
-      **Reserved for:** the §62 Canvas 2D rendering backend (2D scenes and fallback rendering). The
-      §120 MVP renders with WebGL 2 only.
-      **Today a consumer gets:** `PACKAGE_NAME` and nothing else — no `Renderer` implementation, no
-      registration call.
-      **Symptom on selection:** `AUTO_RENDERER_ORDER`'s `"canvas2d"` rung
-      (`renderer-registry.ts:112`) is **unreachable from fourJS packages alone**; with nothing else
-      registered, asking for it yields §62's *"no backend is registered"* error (which, separately,
-      always names `registerWebglRenderer()` — filed under *Cycle 9 residue*).
-      **Workaround — real, and measured:** an application can register **its own** Canvas 2D
-      backend against published exports only (`Renderer`, `RendererCapabilities`,
-      `buildRenderList`, `createRenderStatistics`, `registerRenderer`), and
-      `resolveRenderer("auto")` then selects it exactly as it would a first-party one. Cycle 9
-      wrote one in ~120 lines and measured **35,851 lit pixels / 3 draw calls / 82 triangles**
-      against a meshes-removed control of 0 pixels, byte-identical `toDataURL()` over two runs
-      (§33). The recipe is now `docs/guides/custom-renderer-backends.md`.
-      **Closes when:** the package ships a `Renderer` implementation over `@fourjs/render`'s
-      backend-independent interface and fills the `canvas2d` rung itself.
-
-- [ ] **`@fourjs/render-svg` is a reserved stub — 1 export, no backend.**
-      **Reserved for:** the §62 SVG rendering backend (vector output and 2D fallback).
-      **Today a consumer gets:** `PACKAGE_NAME` and nothing else.
-      **Symptom on selection:** `AUTO_RENDERER_ORDER`'s `"svg"` rung is unreachable from fourJS
-      packages alone, exactly as `canvas2d` is, with the same error.
-      **Workaround — real, and measured:** the same consumer-authored route. Cycle 9's SVG backend
-      emitted **83 elements** (one background `<rect>` plus 82 `<polygon>`) against an
-      emptied-scene control of 1 element, with `outerHTML` byte-identical over two runs (§33), and
-      drew the same picture as its Canvas 2D sibling to **1 pixel in 230,400**. Note the cost of
-      moving between them is **three consumer lines, not two** — import, constructor, *and the
-      surface type*, because Canvas 2D and SVG do not share `HTMLCanvasElement`.
-      **Closes when:** the package ships a `Renderer` implementation and fills the `svg` rung
-      itself.
 
 - [x] **No job in any of the five workflows had `timeout-minutes`, so a wedged run could hold a
       runner to the 6-hour ceiling.** **FIXED 2026-09-16.** Planned work, not discovered — it was
@@ -1543,20 +1510,6 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       skinning → 0001 shader/node materials → 0005 pixel picking → 0004 raster
       painting. **The RFC queue (0001–0005) is COMPLETE** (2026-08-29). R-1
       completed 2026-08-29 (WP-R1.1–R1.9 all landed).
-- [ ] **RFC 0004 residue (all deferred by the RFC's own §6 table, none
-      scheduled):** ~~video textures (frame-arrival signal, DOM-free)~~ **DONE 2026-09-11**;
-      ~~`ImageBitmap` raster sources, partial/dirty-rect uploads and raster
-      mipmaps/filter modes~~ **DONE 2026-09-11** (explicit host surfaces and bounded
-      multi-reader upload journal). ~~In-place resize~~ **DONE 2026-10-05**
-      (`CanvasTexture.resize()`; `version` waits for `update()`). ~~GPU readback as a raster source (wants its own RFC)~~ **Implemented
-      2026-09-11** (`docs/rfcs/0009-gpu-readback-raster-source.md` — display-only
-      snapshot, not riding 0004/0005; corrected 2026-09-10, plan
-      `docs/plans/RFC-0009-GPU-READBACK_PLAN.md`); the §62
-      Canvas 2D backend (stays a stub **by decision** — and if ever built,
-      refusing a feedback `CanvasTexture` sampling the surface being rendered is
-      that packet's named obligation); ~~a docs/guides page carrying the browser adapter~~ (done 2026-08-29:
-      `docs/guides/raster-painting.md`, listed as guide 15).
-
 - [x] **A-11 analytic tier (`"geometry"`) — DONE 2026-08-29** (adopted RFC 0005
       Q3 executed): `node.hitTestMode` (`null` default = engine-selects;
       `"custom"` omitted until a callback strategy exists) +
