@@ -4832,3 +4832,28 @@ provably never received. Blanket retries remain forbidden.
   problem no longer applies to `render-canvas`/`render-svg`, since they are real 0.x packages
   the umbrella legitimately depends on and re-exports; it remains only for the two physics stubs.
 - `registrationAdvice` in `render` now names `registerCanvasRenderer()` / `registerSvgRenderer()`.
+
+## 2026-11-04 — wave 9: RFC 0010 PhysJS adapter
+
+- **Package:** `@fourjs/physics-physjs` (`PhysJSAdapter2D`/`3D`, `registerPhysJSSolver()`), PhysJS pinned
+  exactly at 0.5.0. `SolverName` widened with `"physjs"`; registered last, so `"auto"` still prefers Rapier.
+- **Persistent forces are re-fed per step.** PhysJS zeroes its force accumulators after every step; the
+  adapter keeps the §26 persistent sums and loads them as one-step forces before each step (skipped while
+  the body sleeps so a standing force does not keep waking it).
+- **Kinematic-position bodies are a one-step push.** For one step the body becomes kinematic-velocity with
+  the velocity that lands on the target, then is snapped to it and restored — dynamic bodies it touches see
+  a moving surface.
+- **Multi-hit raycast uses a scratch world.** PhysJS `raycast` returns only the nearest hit; `mode: "all"`
+  (or a filter rejecting the nearest) restores a snapshot into a scratch world and removes each hit in turn.
+  The live world is never touched.
+- **Snapshot envelope:** magic "F4PJ" (little-endian), format version, JSON meta (adapter name, PhysJS
+  version, id registries, force sums, pending kinematic targets, touching pairs, sleep flags), then PhysJS's
+  own float64 bytes. Foreign adapter/version snapshots are refused.
+- **What PhysJS cannot express (refused, not emulated):** sensors, collider offsets, collision-group masks,
+  shape casts, swept CCD, prismatic/rope joints, joint limits/motors, joint reactions (so no breakable
+  joints), five shape families, rolling/spinning friction, sleep thresholds. Friction combines as a geometric
+  mean (not Appendix A's average); joints are soft and drift; events carry no contact points.
+- **Conformance rule (RFC 0010 decisions 7-8):** suites run per adapter (`SOLVER_KITS`, `SOLVER_SUPPORT` in
+  `tests/integration/helpers/physics-scenarios.ts`) and assert solver-invariant properties only, never
+  cross-solver equality; unsupported scenarios are skipped with the reason in the test title. Rapier-specific
+  numbers stay in `physics-rapier.test.ts`. No PhysJS golden/cross-process determinism is recorded.

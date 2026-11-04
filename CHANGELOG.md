@@ -10,6 +10,14 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **`@fourjs/physics-physjs` — a third solver adapter (2026-11-04, wave 9, RFC 0010)**:
+  `PhysJSAdapter2D` / `PhysJSAdapter3D` over `@danielsimonjr/physjs` 0.5.0 and
+  `registerPhysJSSolver()`; `SolverName` (and `SolverRegistry`) widened to include `"physjs"`,
+  last in the `"auto"` order. Refuses (does not emulate) sensors, collider offsets, shape casts,
+  swept CCD, prismatic/rope joints, joint limits/motors. Cross-solver conformance
+  (`tests/integration/physics-solvers.test.ts`, `tests/determinism/solver-determinism.test.ts`),
+  a `PHYSICS_SOLVER=physjs` mode in `benchmarks/physics-step.mjs`, and
+  `docs/benchmarks/physjs-vs-rapier.md`.
 - **`@fourjs/render-canvas` and `@fourjs/render-svg` are real backends (2026-11-04, wave 3)**:
   `Canvas2dRenderer` / `registerCanvasRenderer()` (flat CPU-projected polygons, sprites via
   `drawImage`, RFC 0004 feedback refusal) and `SvgRenderer` / `registerSvgRenderer()` (retained
