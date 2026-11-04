@@ -209,7 +209,7 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 - RFC 0003 residue (staged in source, 2026-08-28): WebGPU colour pair DONE 2026-09-09; WebGL shadow caster DONE 2026-09-09; WebGPU skinned id DONE 2026-09-10 (lives in `wgpu-picking.ts`); CPU skinning DONE 2026-09-11; WebGPU skinned shadow DONE 2026-09-10. ~~GPU morph~~ **DONE 2026-10-05** (one-target WebGL at 6/7; WebGPU skip). Bone-texture palette DONE 2026-11-04 (wave 6).
 - RFC 0003 prototype measurements — DONE 2026-09-09 (`benchmarks/skinning-resolve.mjs`):
 - Tokens for the five absent §81 extension points — DONE 2026-09-06 (`ASSET_LOADERS`, `SHADER_OPERATORS`, `UI_CONTROLS`, `EDITOR_TOOLS`, `COMPUTE_WORKLOADS`)
-- Lighting follow-ups (MVP tier shipped 2026-08-04 — see Done): ~~point/spot multi-light~~ **DONE 2026-08-09** (R-17, 8 punctual); ~~hemisphere~~ **DONE 2026-09-10** (`HemisphereLight`, first-match, +Y sky); still area + clustered path (multi-directional DONE 2026-11-04), shadows (§69 — directional tier shipped; cascades, point/spot maps, the atlas, transparent masks and contact shadows remain), §59 PBR rest, §60a tone-mapping operator + IBL (sRGB encode + color grade shipped), light layers. CSS light colors + WebGL/WebGPU normal-matrix hoist DONE 2026-09-09. WebGPU `metalRoughnessMap` sampling DONE 2026-09-09. WebGL `emissiveMap` (unit 3) DONE 2026-09-09 (still open: area / clustered, cascades, PBR rest, tone-map operator, light layers, WebGPU `normalMap` / `occlusionMap` and emissive; WebGL normal/AO DONE 2026-09-11).
+- Lighting follow-ups (MVP tier shipped 2026-08-04 — see Done): ~~point/spot multi-light~~ **DONE 2026-08-09** (R-17, 8 punctual); ~~hemisphere~~ **DONE 2026-09-10** (`HemisphereLight`, first-match, +Y sky); still area + clustered path (multi-directional DONE 2026-11-04), shadows (§69 — directional tier shipped; cascades, point/spot maps and the atlas DONE 2026-11-04; transparent masks and contact shadows remain), §59 PBR rest, §60a tone-mapping operator + IBL (sRGB encode + color grade shipped), light layers. CSS light colors + WebGL/WebGPU normal-matrix hoist DONE 2026-09-09. WebGPU `metalRoughnessMap` sampling DONE 2026-09-09. WebGL `emissiveMap` (unit 3) DONE 2026-09-09 (still open: area / clustered, cascades, PBR rest, tone-map operator, light layers, WebGPU `normalMap` / `occlusionMap` and emissive; WebGL normal/AO DONE 2026-09-11).
 - First publish (§94 0.1): Changesets release workflow + the @danielsimonjr/fourjs publish-name mapping — owner step
 - Follow-ups the R-1 plan explicitly defers
 - PH-11c — character/dynamics push interaction — DONE 2026-09-06 (`pushMass` / reduced-mass impulse / wake).
@@ -1635,8 +1635,11 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       `unionViewLayerMask`, WebGPU light block 784 bytes / 1024 stride). Remaining light
       types: ~~hemisphere~~ **DONE 2026-09-10**, rectangular area, clustered /
       forward-plus. Shadows (§69 — directional tier shipped 2026-08-09;
-      cascades, point/spot maps, the atlas, transparent masks and contact
-      shadows remain),
+      ~~cascades, point/spot maps, the atlas~~ **DONE 2026-11-04 (wave 6:
+      `DirectionalLightShadow.cascades` 1–4 with the practical split, `PunctualLightShadow`
+      on spot (one map) and point (six faces) lights, at most 4 shadowed punctual lights in
+      one atlas of ≤ 28 tiles / 8192 texels per edge, single-map path unchanged)**;
+      transparent masks and contact shadows remain),
       §59 StandardMaterial/PBR rest (`normalMap` / `occlusionMap` WebGL DONE 2026-09-11, WebGPU DONE 2026-11-04;
       IBL / PhysicalMaterial extensions absent), §60a tone-mapping operator
       (sRGB encode + `ColorGradeEffect` shipped; operator waits on float

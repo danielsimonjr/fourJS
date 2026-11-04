@@ -4983,3 +4983,26 @@ positions, previous, velocities}]}` with float64 arrays; checksum is FNV-1a over
   re-implemented because the dependency matrix excludes diagnostics).
 - No `geometry`-package sphere generator is used by the package; pressure tests build their own
   welded icosphere. Stub count on merge: lead reconciles with wave 8 (`physics-box2d`).
+
+## 2026-11-04 — program wave 6 (GPU residues)
+
+- **D7 taken by the lead:** `RenderTargetFormat` widened to `"rgba8" | "rgba32float"` as a _texel_
+  format only; `floatRenderTargets` stays false and no backend allocates a float render target
+  (a target that asks is still allocated as rgba8 — a guard is a follow-up). The palette texture is
+  2048 wide (the WebGL 2 `MAX_TEXTURE_SIZE` floor), so 512 joints per row.
+- **Texture-palette limits:** shadow casters and the picking id pass keep the uniform palette, so a
+  `"texture"` rig over 48 joints casts no shadow and is not pickable (one warning). Follow-up row.
+- **GPU fields:** the params block is 224 floats (896 B): 32-float header (count, time, depth bias,
+  view-projection) + 8 × 24-float records; turbulence salts travel as uint32 through a cached view.
+  A one-radial stack still sends the legacy `radial` spelling so old driver recordings hold.
+- **Depth collide:** the backbuffer's `depth24plus` cannot be sampled; the caller renders into a
+  `depthTexture: true` target and calls `bindParticleSceneDepth` + `updateViewProjection` (no
+  automatic camera hookup). Reversed-z is not handled. Kill parks at 1e37; the CPU ages the slot.
+- **Transient pooling:** `validate()` still treats a transient pass output as "screen"; feedback is
+  impossible by construction (inputs must be earlier passes). Scene-material sampling of a transient
+  is not tracked by the usage list. Barriers are bookkeeping only on both backends.
+- **Shadows:** WebGPU `LIGHT_UNIFORM_STRIDE_BYTES` 1024 → 2048 with a 752-byte atlas tail after
+  byte 912 (`LIGHT_BINDING_BYTES` unchanged); WebGL takes the extended shader only when
+  `lights.shadowExtended` is true, so `FRAME_BEFORE_R18` still passes unmodified. Cascade
+  `normalBias` is not scaled per cascade and boundaries are not blended. Transparent masks and
+  contact shadows remain the §69 residue.
