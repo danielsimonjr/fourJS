@@ -284,7 +284,7 @@ describe.each(cases)(
       );
       expect(() => decode(make(100, 100).buffer)).toThrow(/budget/);
       // not poisoned by pre-codec refusals
-      expect(decode(make(2, 1).buffer).width).toBe(2);
+      expect((decode(make(2, 1).buffer) as { width: number }).width).toBe(2);
       const ratio = await create({ ...opts, maximumExpansionRatio: 0.01 });
       expect(() => ratio(make(2, 1).buffer)).toThrow(/budget/);
     });

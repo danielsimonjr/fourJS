@@ -4779,7 +4779,7 @@ describe("WebgpuRenderer standard surface maps (WP-W4.2)", () => {
   it("draws a render-target metallic-roughness map together with a normal map", () => {
     const target = new RenderTarget({ width: 8, height: 8 });
     const material = new TestStandardMaterial();
-    material.metalRoughnessMap = target.texture as never;
+    material.metalRoughnessMap = target.colorTexture as never;
     material.normalMap = new TestTexture();
     const drawsBefore = harness.gpu.countOf("pass.drawIndexed");
     draw(material);
