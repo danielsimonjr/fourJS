@@ -46,7 +46,6 @@ import {
   SKIN_PALETTE_FLOATS_PER_ROW,
   SKIN_PALETTE_TEXTURE_FORMAT,
   SKIN_PALETTE_TEXTURE_WIDTH,
-  skinPaletteRows,
 } from "@fourjs/render";
 
 import {
@@ -240,15 +239,15 @@ export function skinningWgsl(paletteGroup: number, texture = false): string {
   if (texture) {
     const width = String(SKIN_PALETTE_TEXTURE_WIDTH);
     return `struct JointPaletteInfo {
-  baseRow : u32,
+  baseTexel : u32,
 };
 
 @group(${String(paletteGroup)}) @binding(${String(JOINT_TEXTURE_BINDING)}) var jointTexture : texture_2d<f32>;
 @group(${String(paletteGroup)}) @binding(${String(JOINT_TEXTURE_INFO_BINDING)}) var<uniform> paletteInfo : JointPaletteInfo;
 
 fn jointMatrix(joint : u32) -> mat4x4<f32> {
-  let texel = joint * 4u;
-  let row = paletteInfo.baseRow + texel / ${width}u;
+  let texel = paletteInfo.baseTexel + joint * 4u;
+  let row = texel / ${width}u;
   let column = texel % ${width}u;
   return mat4x4<f32>(
     textureLoad(jointTexture, vec2<u32>(column, row), 0),
@@ -572,7 +571,8 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
 
   #textureRowCapacity = 0;
 
-  #textureRowsPacked = 0;
+  /** Texels packed so far — palettes are contiguous, 4 texels per joint. */
+  #textureTexelsPacked = 0;
 
   #infoBuffer: GpuBuffer | null = null;
 
@@ -651,7 +651,7 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
   }
 
   prepareTexture(device: GpuDevice, draws: number, rows: number): void {
-    this.#textureRowsPacked = 0;
+    this.#textureTexelsPacked = 0;
     this.#infoPacked = 0;
     if (this.#disposed || draws <= 0 || rows <= 0) {
       return;
@@ -663,41 +663,48 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
     }
     const layout = (this.#textureLayout ??=
       createJointPaletteTextureBindGroupLayout(device));
-    if (
-      wantRows <= this.#textureRowCapacity &&
-      draws <= this.#infoCapacity &&
-      this.#textureBindGroup !== null
-    ) {
+    const growTexture =
+      wantRows > this.#textureRowCapacity || this.#paletteTexture === null;
+    const growInfo = draws > this.#infoCapacity || this.#infoBuffer === null;
+    if (!growTexture && !growInfo && this.#textureBindGroup !== null) {
       return;
     }
-    const rowCapacity = Math.min(
-      maxRows,
-      Math.max(wantRows, this.#textureRowCapacity * 2),
-    );
-    const infoCapacity = Math.max(draws, this.#infoCapacity * 2);
-    this.#paletteTexture?.destroy?.();
-    this.#infoBuffer?.destroy();
-    const texture = device.createTexture({
-      label: "fourJS:joint-palette-texture",
-      size: [SKIN_PALETTE_TEXTURE_WIDTH, rowCapacity],
-      format: SKIN_PALETTE_TEXTURE_FORMAT,
-      usage: GPU_TEXTURE_USAGE.TEXTURE_BINDING | GPU_TEXTURE_USAGE.COPY_DST,
-    });
-    const info = device.createBuffer({
-      label: "fourJS:joint-palette-texture-info",
-      size: infoCapacity * JOINT_TEXTURE_INFO_STRIDE,
-      usage: GPU_BUFFER_USAGE.UNIFORM | GPU_BUFFER_USAGE.COPY_DST,
-    });
-    this.#paletteTexture = texture;
-    this.#infoBuffer = info;
-    this.#textureStaging = new Float32Array(
-      rowCapacity * SKIN_PALETTE_FLOATS_PER_ROW,
-    );
-    this.#infoStaging = new Uint32Array(
-      (infoCapacity * JOINT_TEXTURE_INFO_STRIDE) / 4,
-    );
-    this.#textureRowCapacity = rowCapacity;
-    this.#infoCapacity = infoCapacity;
+    // Grown independently: a bigger info buffer must not discard the texture
+    // (and vice versa); only the bind group follows either.
+    let texture = this.#paletteTexture;
+    if (growTexture || texture === null) {
+      const rowCapacity = Math.min(
+        maxRows,
+        Math.max(wantRows, this.#textureRowCapacity * 2),
+      );
+      this.#paletteTexture?.destroy?.();
+      texture = device.createTexture({
+        label: "fourJS:joint-palette-texture",
+        size: [SKIN_PALETTE_TEXTURE_WIDTH, rowCapacity],
+        format: SKIN_PALETTE_TEXTURE_FORMAT,
+        usage: GPU_TEXTURE_USAGE.TEXTURE_BINDING | GPU_TEXTURE_USAGE.COPY_DST,
+      });
+      this.#paletteTexture = texture;
+      this.#textureStaging = new Float32Array(
+        rowCapacity * SKIN_PALETTE_FLOATS_PER_ROW,
+      );
+      this.#textureRowCapacity = rowCapacity;
+    }
+    let info = this.#infoBuffer;
+    if (growInfo || info === null) {
+      const infoCapacity = Math.max(draws, this.#infoCapacity * 2);
+      this.#infoBuffer?.destroy();
+      info = device.createBuffer({
+        label: "fourJS:joint-palette-texture-info",
+        size: infoCapacity * JOINT_TEXTURE_INFO_STRIDE,
+        usage: GPU_BUFFER_USAGE.UNIFORM | GPU_BUFFER_USAGE.COPY_DST,
+      });
+      this.#infoBuffer = info;
+      this.#infoStaging = new Uint32Array(
+        (infoCapacity * JOINT_TEXTURE_INFO_STRIDE) / 4,
+      );
+      this.#infoCapacity = infoCapacity;
+    }
     this.#textureBindGroup = device.createBindGroup({
       label: "fourJS:joint-palette-texture",
       layout,
@@ -712,26 +719,23 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
   }
 
   packTexturePalette(palette: Float32Array): number {
-    const rows = skinPaletteRows(palette.length / 16);
+    const texels = palette.length / 4;
     const slot = this.#infoPacked;
     if (
       this.#textureBindGroup === null ||
-      this.#textureRowsPacked + rows > this.#textureRowCapacity ||
+      this.#textureTexelsPacked + texels >
+        this.#textureRowCapacity * SKIN_PALETTE_TEXTURE_WIDTH ||
       slot >= this.#infoCapacity
     ) {
       return -1;
     }
-    const base = this.#textureRowsPacked * SKIN_PALETTE_FLOATS_PER_ROW;
-    const staging = this.#textureStaging;
-    staging.set(palette, base);
-    staging.fill(
-      0,
-      base + palette.length,
-      base + rows * SKIN_PALETTE_FLOATS_PER_ROW,
-    );
+    // Contiguous by texel: a matrix is 4 texels and the width is a multiple
+    // of 4, so no matrix straddles a row; short rigs no longer burn a whole
+    // 32 KiB row each.
+    this.#textureStaging.set(palette, this.#textureTexelsPacked * 4);
     this.#infoStaging[(slot * JOINT_TEXTURE_INFO_STRIDE) / 4] =
-      this.#textureRowsPacked;
-    this.#textureRowsPacked += rows;
+      this.#textureTexelsPacked;
+    this.#textureTexelsPacked += texels;
     this.#infoPacked = slot + 1;
     return slot * JOINT_TEXTURE_INFO_STRIDE;
   }
@@ -825,15 +829,19 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
     const texture = this.#paletteTexture;
     const info = this.#infoBuffer;
     if (texture !== null && info !== null && this.#infoPacked !== 0) {
+      // Only the rows actually holding palettes, not the grown capacity.
+      const usedRows = Math.ceil(
+        this.#textureTexelsPacked / SKIN_PALETTE_TEXTURE_WIDTH,
+      );
       device.queue.writeTexture(
         { texture },
         this.#textureStaging,
         {
           offset: 0,
           bytesPerRow: SKIN_PALETTE_TEXTURE_WIDTH * 16,
-          rowsPerImage: this.#textureRowsPacked,
+          rowsPerImage: usedRows,
         },
-        [SKIN_PALETTE_TEXTURE_WIDTH, this.#textureRowsPacked],
+        [SKIN_PALETTE_TEXTURE_WIDTH, usedRows],
       );
       device.queue.writeBuffer(
         info,
@@ -874,7 +882,7 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
     this.#paletteTexture = null;
     this.#textureStaging = new Float32Array(0);
     this.#textureRowCapacity = 0;
-    this.#textureRowsPacked = 0;
+    this.#textureTexelsPacked = 0;
     this.#infoBuffer = null;
     this.#infoStaging = new Uint32Array(0);
     this.#infoCapacity = 0;

@@ -1852,6 +1852,41 @@ describe("registerRenderSerializers — defensive reads", () => {
     ]).toEqual([1024, 0.02, 0.02, 0.1, 50]);
   });
 
+  it("re-saves a default-shadow light document byte-stable and keeps a far-only record", () => {
+    const write = (node: DirectionalLight | PointLight | SpotLight): string =>
+      JSON.stringify(io.write.nodeDataOf(node));
+    const read = <T>(type: string, data: unknown): T =>
+      io.read.nodeFactory({ type, data: data as never }) as T;
+    // Old documents (no shadow keys at all) re-save with none.
+    const oldSun = '{"color":[1,1,1],"intensity":1}';
+    const sun = read<DirectionalLight>(
+      DIRECTIONAL_LIGHT_NODE_TYPE,
+      JSON.parse(oldSun),
+    );
+    expect(write(sun)).toBe(oldSun);
+    const oldLamp = JSON.stringify(JSON.parse(write(new PointLight())));
+    expect(oldLamp).not.toContain("shadow");
+    expect(oldLamp).not.toContain("castShadow");
+    expect(
+      write(read<PointLight>(POINT_LIGHT_NODE_TYPE, JSON.parse(oldLamp))),
+    ).toBe(oldLamp);
+    // Only differing fields are written, and a far-only record survives.
+    const lamp = read<PointLight>(POINT_LIGHT_NODE_TYPE, {
+      shadow: { far: 40 },
+    });
+    expect(lamp.shadow.far).toBe(40);
+    expect(JSON.parse(write(lamp)).shadow).toEqual({ far: 40 });
+    const nearOnly = read<PointLight>(POINT_LIGHT_NODE_TYPE, {
+      shadow: { near: 0.5 },
+    });
+    expect(nearOnly.shadow.near).toBe(0.5);
+    // A lone near that the default far could not bound is dropped.
+    const crossed = read<PointLight>(POINT_LIGHT_NODE_TYPE, {
+      shadow: { near: 500 },
+    });
+    expect(crossed.shadow.near).toBe(0.1);
+  });
+
   it("reads punctual payloads a build wrote in full", () => {
     const lamp = io.read.nodeFactory({
       type: POINT_LIGHT_NODE_TYPE,

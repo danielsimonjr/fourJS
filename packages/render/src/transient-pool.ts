@@ -5,7 +5,8 @@
  * A graph pass may declare a **transient** output ({@link TransientTargetSpec})
  * instead of an application-owned {@link RenderTarget}. The graph computes each
  * transient's lifetime — from the pass that produces it to the last pass that
- * consumes it through a declared `inputs` entry — and {@link planTransientSlots}
+ * consumes it through a declared `inputs` entry (or the whole frame when the
+ * spec is `persistent`) — and {@link planTransientSlots}
  * assigns **physical slots** by deterministic first-fit in declaration order
  * (§33): a slot is reused by a later transient with the same
  * {@link TransientTargetKey} once the earlier occupant's last consumer has run.
@@ -35,6 +36,13 @@ export type TransientTargetSpec =
       readonly format?: RenderTargetFormat;
       readonly depth?: boolean;
       readonly depthTexture?: boolean;
+      /**
+       * Keeps the slot live for the whole frame (never aliased). Required
+       * when a custom pass or application material reads the transient
+       * outside a declared `inputs` entry (`graph.transientTarget(x)`, or
+       * sampling its colour texture), which the lifetime planner cannot see.
+       */
+      readonly persistent?: boolean;
     }
   | {
       /** Fraction of the view size handed to `RenderGraph.execute` (1 = full). */
@@ -42,6 +50,13 @@ export type TransientTargetSpec =
       readonly format?: RenderTargetFormat;
       readonly depth?: boolean;
       readonly depthTexture?: boolean;
+      /**
+       * Keeps the slot live for the whole frame (never aliased). Required
+       * when a custom pass or application material reads the transient
+       * outside a declared `inputs` entry (`graph.transientTarget(x)`, or
+       * sampling its colour texture), which the lifetime planner cannot see.
+       */
+      readonly persistent?: boolean;
     };
 
 /** The pool key: two transients with equal keys may alias one slot. */

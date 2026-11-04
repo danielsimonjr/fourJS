@@ -282,7 +282,10 @@ export {
   WgpuParticleCache,
   createParticleBindGroupLayout,
 } from "./wgpu-particles.js";
-export type { WgpuParticleSimulationOptions } from "./wgpu-particle-simulation.js";
+export type {
+  ParticleDepthSource,
+  WgpuParticleSimulationOptions,
+} from "./wgpu-particle-simulation.js";
 export {
   DEFAULT_DEPTH_BIAS,
   PARTICLE_SIMULATION_SCRATCH_BYTES,

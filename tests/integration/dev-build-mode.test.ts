@@ -234,6 +234,10 @@ const GATED: ReadonlyMap<string, string> = new Map([
     "§68's punctual-light overflow notice (2026-09-06). Message only: the walk still takes the first MAX_PUNCTUAL_LIGHTS in scene-graph order and skips the rest in both builds — the skip is unconditional, and only which console path names it moves with the flag. Rendering is outside the §33 envelope; nothing a frame shades re-enters simulation state (§42/§43)",
   ],
   [
+    join("packages", "render", "src", "render-graph.ts"),
+    "the aliased-transient read notice on transientTarget() (2026-11-04). Message only: the returned surface and every slot assignment are identical in both builds; render-graph state never re-enters simulation (§42/§43)",
+  ],
+  [
     join("packages", "render", "src", "resource-warnings.ts"),
     "§83's disposed-in-use helper for render resources — a no-op in production; the draw is skipped identically either way and only the message moves with the flag",
   ],
@@ -256,6 +260,10 @@ const GATED: ReadonlyMap<string, string> = new Map([
   [
     join("packages", "render", "src", "clip.ts"),
     "§67's plane-exhaustion diagnostic (R-23, 2026-08-28). Message only: `allocate` returns `null` for the ninth clip in both builds — the over-limit clip is dropped and its subtree keeps the eight that fit, identically, whatever the flag says — so the list, its order, its stencil records, and every GL call derived from them are the same either way. If the gated block never ran, no number the engine computes would change; what the guard drops is the console.warn naming the first refused clip",
+  ],
+  [
+    join("packages", "render-webgl", "src", "gl-render-target.ts"),
+    "§63's transient feedback diagnostic (wave 6): `beginPass` returns at once in production; WebGL 2 has no barriers to emit, so the pass list, the pool's slot plan and every GL call are the same either way — the guard only counts and names a pass that samples the target it writes",
   ],
   [
     join("packages", "render-webgl", "src", "gl-texture.ts"),

@@ -5006,3 +5006,19 @@ positions, previous, velocities}]}` with float64 arrays; checksum is FNV-1a over
   `lights.shadowExtended` is true, so `FRAME_BEFORE_R18` still passes unmodified. Cascade
   `normalBias` is not scaled per cascade and boundaries are not blended. Transparent masks and
   contact shadows remain the §69 residue.
+- **Accepted transcript re-baselines (review findings 1–2, wave 6):** the WebGPU particle params
+  block grew from 16 to 224 floats (a one-radial scene uploads different bytes and a larger
+  buffer; the header lanes 2/3/8–10 are now zero and the radial lives in record 0) and the light
+  uniform stride doubled to 2048 for every lit scene (dynamic offsets i×2048, larger
+  `writeBuffer` lengths; in-block offsets unchanged). Neither moves a §33 golden: GPU pools are
+  excluded from goldens and light-block _contents_ for a one-light scene are byte-identical.
+  Recorded here so a future "byte-identical compute/lights transcript" claim is read against
+  this date; pixel output is unchanged.
+- **Size budgets re-based a second time today (wave 6):** the shadow-atlas GLSL (cascade select,
+  punctual sampling), the texture-palette program pair and the transient pool add about 2.5 kB
+  gzip to every `WebglRenderer` bundle. first-3d-scene 49 → 51 kB, particles-demo 49 → 53 kB,
+  ui-demo 57.5 → 61 kB, soft-body 46 → 50 kB over measured 49.6 / 51.5 / 59.1 / 48.5 kB. Same
+  rule as wave 5 (shipped features, not optional modes). **Standing concern, now a row:** two
+  re-bases in one day means the renderer module carries every shader family unconditionally;
+  a per-family lazy module split (shadow atlas, texture skinning, morph > 1) is the honest fix and
+  is filed in TODO.md under the batching/size follow-ups rather than re-basing a third time.

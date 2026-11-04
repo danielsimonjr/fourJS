@@ -758,10 +758,9 @@ function readScissor(data: { readonly [key: string]: JsonValue }): {
  * the whole scene down with it**, because a document is data from outside and
  * §96's rule is that outside data is filtered, not trusted.
  *
- * `near` and `far` are admitted **as a pair or not at all**: their check is a
- * relation between them, so accepting one against the *other's default* is how
- * a document with a legal `near` of 200 would throw on a default `far` of 100.
- * Every document this module writes carries both.
+ * `near` and `far` are validated separately and checked against the other's
+ * default when it is absent (see `readNearFar`): the writer omits any field
+ * equal to its default, so a document may legitimately carry only one.
  */
 function readShadowOptions(value: JsonValue | undefined): {
   readonly [key: string]: number;
@@ -782,12 +781,11 @@ function readShadowOptions(value: JsonValue | undefined): {
   const extent = readFinite(data.extent);
   if (extent !== undefined && extent > 0) options.extent = extent;
 
-  const near = readFinite(data.near);
-  const far = readFinite(data.far);
-  if (near !== undefined && far !== undefined && near > 0 && near < far) {
-    options.near = near;
-    options.far = far;
-  }
+  readNearFar(
+    data,
+    options,
+    (referenceDirectional ??= new DirectionalLight()).shadow,
+  );
   // §69 cascades (W6.3): the same filter-not-trust rule, field by field.
   const cascades = readFinite(data.cascades);
   if (
@@ -809,15 +807,92 @@ function readShadowOptions(value: JsonValue | undefined): {
   return options;
 }
 
-/** A point or spot light's §69 shadow record as a document field (W6.3). */
-function punctualShadowJson(light: PointLight | SpotLight): JsonValue {
-  return {
-    mapSize: light.shadow.mapSize,
-    bias: light.shadow.bias,
-    normalBias: light.shadow.normalBias,
-    near: light.shadow.near,
-    far: light.shadow.far,
-  };
+/**
+ * The shadow fields of a light document — `castShadow` and the `shadow`
+ * record — written **only where they differ from a fresh light's defaults**,
+ * so a document written before shadows existed re-saves byte-for-byte. The
+ * readers already restore every absent field to its default.
+ */
+function shadowFields(
+  light: DirectionalLight | PointLight | SpotLight,
+  shadowJson: (light: never) => { [key: string]: number },
+): { castShadow?: boolean; shadow?: JsonValue } {
+  const out: { castShadow?: boolean; shadow?: JsonValue } = {};
+  if (light.castShadow) out.castShadow = true;
+  const shadow = shadowJson(light as never);
+  if (Object.keys(shadow).length > 0) out.shadow = shadow;
+  return out;
+}
+
+/** Keeps only the entries of `current` that differ from `reference`. */
+function differing(
+  current: { readonly [key: string]: number },
+  reference: { readonly [key: string]: number },
+): { [key: string]: number } {
+  const out: { [key: string]: number } = {};
+  for (const key of Object.keys(current)) {
+    if (current[key] !== reference[key]) out[key] = current[key];
+  }
+  return out;
+}
+
+let referenceDirectional: DirectionalLight | undefined;
+let referencePunctual: PointLight | undefined;
+
+function directionalShadowJson(light: DirectionalLight): {
+  [key: string]: number;
+} {
+  const reference = (referenceDirectional ??= new DirectionalLight()).shadow;
+  const pick = (shadow: DirectionalLight["shadow"]) => ({
+    mapSize: shadow.mapSize,
+    bias: shadow.bias,
+    normalBias: shadow.normalBias,
+    extent: shadow.extent,
+    near: shadow.near,
+    far: shadow.far,
+    // §69 cascades (W6.3): additive — absent means one cascade.
+    cascades: shadow.cascades,
+    cascadeLambda: shadow.cascadeLambda,
+    cascadeDistance: shadow.cascadeDistance,
+  });
+  return differing(pick(light.shadow), pick(reference));
+}
+
+/** A point or spot light's §69 shadow record (W6.3): non-default fields only. */
+function punctualShadowJson(light: PointLight | SpotLight): {
+  [key: string]: number;
+} {
+  const reference = (referencePunctual ??= new PointLight()).shadow;
+  const pick = (shadow: PointLight["shadow"]) => ({
+    mapSize: shadow.mapSize,
+    bias: shadow.bias,
+    normalBias: shadow.normalBias,
+    near: shadow.near,
+    far: shadow.far,
+  });
+  return differing(pick(light.shadow), pick(reference));
+}
+
+/**
+ * `near` and `far`, each validated on its own (`near > 0`, `far > 0`): the
+ * writer omits whichever equals its default, so a document may carry just
+ * one. Planes that would not bound a volume (against the default of the
+ * absent one) are dropped, so the class never sees a relation it refuses.
+ */
+function readNearFar(
+  data: { readonly [key: string]: JsonValue | undefined },
+  options: Record<string, number>,
+  reference: { readonly near: number; readonly far: number },
+): void {
+  const near = readFinite(data.near);
+  const far = readFinite(data.far);
+  const validNear = near !== undefined && near > 0 ? near : undefined;
+  const validFar = far !== undefined && far > 0 ? far : undefined;
+  if ((validNear ?? reference.near) >= (validFar ?? reference.far)) {
+    return;
+  }
+  if (validNear !== undefined) options.near = validNear;
+  if (validFar !== undefined) options.far = validFar;
 }
 
 /**
@@ -840,12 +915,7 @@ function readPunctualShadowOptions(value: JsonValue | undefined): {
   if (normalBias !== undefined && normalBias >= 0) {
     options.normalBias = normalBias;
   }
-  const near = readFinite(data.near);
-  const far = readFinite(data.far);
-  if (near !== undefined && far !== undefined && near > 0 && near < far) {
-    options.near = near;
-    options.far = far;
-  }
+  readNearFar(data, options, (referencePunctual ??= new PointLight()).shadow);
   return options;
 }
 
@@ -1739,20 +1809,7 @@ export function registerRenderSerializers(
             // neither key; `readBoolean` answers `undefined` and the light
             // restores with `castShadow: false` and the default settings, which
             // is what that document meant.
-            castShadow: light.castShadow,
-            shadow: {
-              mapSize: light.shadow.mapSize,
-              bias: light.shadow.bias,
-              normalBias: light.shadow.normalBias,
-              extent: light.shadow.extent,
-              near: light.shadow.near,
-              far: light.shadow.far,
-              // §69 cascades (W6.3, 2026-11-04) — additive: a document written
-              // before this build carries none and restores one cascade.
-              cascades: light.shadow.cascades,
-              cascadeLambda: light.shadow.cascadeLambda,
-              cascadeDistance: light.shadow.cascadeDistance,
-            },
+            ...shadowFields(light, directionalShadowJson),
           };
         }
         if (constructor === PointLight) {
@@ -1761,8 +1818,7 @@ export function registerRenderSerializers(
             color: [light.color[0], light.color[1], light.color[2]],
             intensity: light.intensity,
             range: light.range,
-            castShadow: light.castShadow,
-            shadow: punctualShadowJson(light),
+            ...shadowFields(light, punctualShadowJson),
           };
         }
         if (constructor === SpotLight) {
@@ -1773,8 +1829,7 @@ export function registerRenderSerializers(
             range: light.range,
             innerConeAngle: light.innerConeAngle,
             outerConeAngle: light.outerConeAngle,
-            castShadow: light.castShadow,
-            shadow: punctualShadowJson(light),
+            ...shadowFields(light, punctualShadowJson),
           };
         }
         if (constructor === HemisphereLight) {

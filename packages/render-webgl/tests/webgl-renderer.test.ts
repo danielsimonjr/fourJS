@@ -14651,7 +14651,8 @@ describe("bone-texture skinning in WebglRenderer (decision D7)", () => {
       0,
       0,
       0,
-      2048,
+      // Only the texels the 3-joint rig fills (12), not the whole row.
+      skeleton.jointMatrices.length / 4,
       1,
       GL.RGBA,
       GL.FLOAT,
@@ -14891,7 +14892,7 @@ class TestPunctualShadowLight extends Renderable {
 
   constructor(
     readonly lightType: "point" | "spot",
-    readonly position: [number, number, number] = [0, 3, 0],
+    readonly lightPosition: [number, number, number] = [0, 3, 0],
   ) {
     super(
       new TestGeometry(new Float32Array(0)).asGeometry,
@@ -14904,7 +14905,11 @@ class TestPunctualShadowLight extends Renderable {
   readonly outerConeAngle = 0.5;
 
   getWorldPosition(out: Vector3): Vector3 {
-    return out.set(this.position[0], this.position[1], this.position[2]);
+    return out.set(
+      this.lightPosition[0],
+      this.lightPosition[1],
+      this.lightPosition[2],
+    );
   }
 
   getWorldDirection(out: Vector3): Vector3 {

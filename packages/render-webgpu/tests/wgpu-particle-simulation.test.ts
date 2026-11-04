@@ -510,4 +510,74 @@ describe("integrate — the §27 field stack and scene-depth collision", () => {
       "INVALID_APPLICATION_STATE",
     );
   });
+
+  /** Depth-collide bind groups (the only ones with a binding-3 depth view). */
+  const depthGroups = (gpu: ReturnType<typeof rig>["gpu"]): number =>
+    gpu
+      .callsOf("device.createBindGroup")
+      .filter((call) =>
+        (call.args[0] as { entries: { binding: number }[] }).entries.some(
+          (entry) => entry.binding === 3,
+        ),
+      ).length;
+
+  it("rebinding the same depth view each frame creates one bind group (§7b)", () => {
+    const { gpu, simulation } = rig(8);
+    const view = {};
+    gpu.reset();
+    for (let frame = 0; frame < 3; frame += 1) {
+      simulation.bindSceneDepth(view, identity);
+      simulation.integrate(2, 1 / 60, 0, 0, 0, { collisions: "depth-buffer" });
+    }
+    expect(depthGroups(gpu)).toBe(1);
+    simulation.bindSceneDepth({}, identity);
+    simulation.integrate(2, 1 / 60, 0, 0, 0, { collisions: "depth-buffer" });
+    expect(depthGroups(gpu)).toBe(2);
+  });
+
+  it("re-resolves a depth source each step and rebuilds the group on a new view", () => {
+    const { gpu, simulation } = rig(8);
+    let current: object | null = { id: "a" };
+    simulation.bindSceneDepth({ depthView: () => current }, identity);
+    gpu.reset();
+    const step = (): void =>
+      simulation.integrate(2, 1 / 60, 0, 0, 0, { collisions: "depth-buffer" });
+    step();
+    step();
+    expect(depthGroups(gpu)).toBe(1);
+    const resized = { id: "b" };
+    current = resized;
+    step();
+    expect(depthGroups(gpu)).toBe(2);
+    const last = gpu.callsOf("device.createBindGroup").at(-1)!.args[0] as {
+      entries: { binding: number; resource: unknown }[];
+    };
+    expect(last.entries.find((e) => e.binding === 3)!.resource).toBe(resized);
+    current = null;
+    expect(simulation.hasSceneDepth).toBe(false);
+  });
+
+  it("reuses one radial record across fresh legacy literals", () => {
+    const { gpu, simulation } = rig(8);
+    simulation.integrate(2, 1 / 60, 0, 0, 0, {
+      radial: {
+        originX: 1,
+        originY: 2,
+        originZ: 3,
+        strength: -4,
+        minDistance: 1,
+      },
+    });
+    simulation.integrate(2, 1 / 60, 0, 0, 0, {
+      radial: {
+        originX: 5,
+        originY: 2,
+        originZ: 3,
+        strength: 9,
+        minDistance: 1,
+      },
+    });
+    const params = lastParams(gpu);
+    expect(params[PARTICLE_SIMULATION_HEADER_FLOATS + 1]).toBe(9);
+  });
 });

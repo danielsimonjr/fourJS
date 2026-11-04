@@ -118,7 +118,8 @@ import {
   buildViewRenderList,
   MAX_SKINNING_JOINTS,
   MAX_TEXTURE_SKINNING_JOINTS,
-  skinPaletteRows,
+  SKIN_PALETTE_TEXELS_PER_JOINT,
+  SKIN_PALETTE_TEXTURE_WIDTH,
   MAX_SHADOWED_PUNCTUAL_LIGHTS,
   MAX_SHADOW_CASCADES,
   collectSceneLights,
@@ -216,6 +217,7 @@ import {
   type WgpuParticleRecord,
 } from "./wgpu-particles.js";
 import {
+  type ParticleDepthSource,
   WgpuParticleSimulation,
   type WgpuParticleSimulationOptions,
 } from "./wgpu-particle-simulation.js";
@@ -912,6 +914,11 @@ export class WebgpuRenderer implements Renderer {
    * empty map and CPU-simulated scenes stay byte-identical.
    */
   readonly #particleSimulations = new Map<string, WgpuParticleSimulation>();
+  /** Per-simulation live depth source of `bindParticleSceneDepth` (one per bound target). */
+  readonly #particleDepthSources = new WeakMap<
+    WgpuParticleSimulation,
+    ParticleDepthSource & { readonly target: RenderTarget }
+  >();
 
   /**
    * §60's registered node pipeline store (RFC 0001; WP-R1.9,
@@ -1407,7 +1414,7 @@ export class WebgpuRenderer implements Renderer {
     let hasLitItems = false;
     let skinnedCount = 0;
     let skinnedTextureDraws = 0;
-    let skinnedTextureRows = 0;
+    let skinnedTextureTexels = 0;
     for (const item of items) {
       if (
         item.kind === "lit" ||
@@ -1420,7 +1427,8 @@ export class WebgpuRenderer implements Renderer {
         skinnedCount += 1;
         if (item.paletteTexture === true) {
           skinnedTextureDraws += 1;
-          skinnedTextureRows += skinPaletteRows(item.jointCount);
+          skinnedTextureTexels +=
+            item.jointCount * SKIN_PALETTE_TEXELS_PER_JOINT;
         }
       }
     }
@@ -1485,7 +1493,9 @@ export class WebgpuRenderer implements Renderer {
         skinnedPrograms.prepareTexture(
           device,
           skinnedTextureDraws * views.length,
-          skinnedTextureRows * views.length,
+          Math.ceil(
+            (skinnedTextureTexels * views.length) / SKIN_PALETTE_TEXTURE_WIDTH,
+          ),
         );
       }
     }
@@ -3009,7 +3019,21 @@ export class WebgpuRenderer implements Renderer {
         { context: { target: target.id } },
       );
     }
-    simulation.bindSceneDepth(record.depthView, viewProjection, bias);
+    let bound = this.#particleDepthSources.get(simulation);
+    if (bound === undefined || bound.target !== target) {
+      bound = {
+        target,
+        depthView: () => {
+          const live = this.#renderTargets?.acquire(target) ?? null;
+          return live !== null &&
+            live.depthFormat === RENDER_TARGET_DEPTH_TEXTURE_FORMAT
+            ? live.depthView
+            : null;
+        },
+      };
+      this.#particleDepthSources.set(simulation, bound);
+    }
+    simulation.bindSceneDepth(bound, viewProjection, bias);
   }
 
   /**

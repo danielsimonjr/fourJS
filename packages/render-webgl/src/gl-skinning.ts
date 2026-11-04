@@ -224,12 +224,19 @@ export class JointPaletteTextures implements Disposable {
       gl.bindTexture(GL.TEXTURE_2D, entry.texture);
     }
     stageSkinPalette(palette, entry.staging);
+    // A single-row rig (up to 512 joints) uploads only the texels it fills
+    // rather than the whole 32 KiB row; the unread tail keeps stale bytes.
+    const texels = palette.length / 4;
+    const width =
+      entry.rows === 1
+        ? Math.max(1, Math.min(texels, SKIN_PALETTE_TEXTURE_WIDTH))
+        : SKIN_PALETTE_TEXTURE_WIDTH;
     gl.texSubImage2D?.(
       GL.TEXTURE_2D,
       0,
       0,
       0,
-      SKIN_PALETTE_TEXTURE_WIDTH,
+      width,
       entry.rows,
       GL.RGBA,
       GL.FLOAT,

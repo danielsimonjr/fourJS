@@ -36,7 +36,7 @@ import { CanvasTexture } from "./raster.js";
  * | viewport-specific pipelines    | **shipped** — every pass carries its own `views`                        |
  * | debug visualization            | **partial** — {@link RenderGraph.describe} is textual. §63 also wants the pass outputs *on screen*, which needed §70's full-screen blit; R-6 shipped it, so an on-screen view of any intermediate target is now one `{ kind: "effect", source, effect: COPY_EFFECT }` pass. Building that view — a viewport-tiled inspector — is this module's remaining follow-up, not a missing capability |
  * | transient render targets       | **shipped** (W6.1, 2026-11-04) — {@link AddPassOptions.transient}: a pass declares a size/format/depth instead of passing a `RenderTarget`; slots come from a backend-owned {@link TransientTargetPool}, aliased by first-fit over lifetimes (`transient-pool.ts`). Application-owned targets are untouched |
- * | resource lifetime              | **shipped** (W6.1) — a transient lives from its producing pass to the last pass naming it in `inputs`; slots persist across frames and are released by {@link RenderGraph.dispose}; pooled bytes are `RenderTarget.byteLength`s, so §83 already counts them |
+ * | resource lifetime              | **shipped** (W6.1) — a transient lives from its producing pass to the last pass naming it in `inputs` (reading it any other way — `transientTarget(x)`, or sampling its colour texture from a custom pass or a material — requires `persistent: true` on the spec, which keeps the slot live all frame and never aliases it); slots persist across frames and are released by {@link RenderGraph.dispose}; pooled bytes are `RenderTarget.byteLength`s, so §83 already counts them |
  * | barriers and state transitions | **shipped** (W6.1) — {@link RenderGraph.usageTransitions} derives the per-target texture/attachment list; WebGPU consults it for slot usage flags (and its passes already end/begin at every transition), WebGL 2 emits nothing and only asserts in DEV that no target is sampled while attached |
  *
  * Two reasons the linear tier is the honest stopping point rather than a
@@ -91,7 +91,7 @@ import { CanvasTexture } from "./raster.js";
  *    target is reported as sampling an `"unwritten"` surface.
  */
 
-import { FourError } from "@fourjs/core";
+import { DEV, FourError, devWarnOnce } from "@fourjs/core";
 import type { Node, Viewport } from "@fourjs/scene";
 
 import {
@@ -273,6 +273,11 @@ export interface AddPassOptions {
    * owns the surface this pass draws into. Mutually exclusive with the pass's
    * own `target`. Read the physical surface with
    * {@link RenderGraph.transientTarget} after {@link RenderGraph.compile}.
+   *
+   * The slot's lifetime ends at the last pass naming this pass in `inputs`,
+   * after which it may be aliased. A custom pass or application material that
+   * reads the transient *without* listing it in `inputs` must set
+   * `persistent: true` on the spec, or it may read another pass's pixels.
    */
   readonly transient?: TransientTargetSpec;
 
@@ -331,7 +336,14 @@ interface CompiledPlan {
   readonly slotTargets: readonly RenderTarget[];
   readonly byName: ReadonlyMap<string, RenderTarget>;
   readonly records: readonly PassUsageRecord[];
+  /** Per-pass reusable effect descriptors (substituted source/target), or `null`. */
+  readonly effectDescriptors: readonly (MutableEffectPass | null)[];
 }
+
+/** An {@link EffectRenderPass} the graph may rewrite in place (its own copy). */
+type MutableEffectPass = {
+  -readonly [K in keyof EffectRenderPass]: EffectRenderPass[K];
+};
 
 /** Public view of {@link RenderGraph.compile}. */
 export interface TransientPlan {
@@ -721,7 +733,8 @@ export class RenderGraph {
    * {@link supportsScreenEffects} answers the same question without a frame.
    *
    * Allocates one context record per custom pass per call and nothing else; a
-   * graph of scene and effect passes allocates nothing at all.
+   * graph of scene and effect passes allocates nothing at all (a transient
+   * effect pass reuses one cached descriptor, rewritten in place).
    */
   execute(
     renderer: Renderer,
@@ -732,7 +745,9 @@ export class RenderGraph {
       ? this.#ensureCompiled(renderer, viewSize)
       : null;
     let executed = 0;
-    for (const [index, entry] of this.#passes.entries()) {
+    const passes = this.#passes;
+    for (let index = 0; index < passes.length; index += 1) {
+      const entry = passes[index];
       if (!entry.enabled) {
         continue;
       }
@@ -768,11 +783,13 @@ export class RenderGraph {
               ? pass.source
               : (plan.byName.get(entry.sourceTransient)?.colorTexture ??
                 pass.source);
-          renderer.renderEffect({
-            ...pass,
-            source,
-            target: slot ?? pass.target,
-          });
+          // One cached descriptor per pass (§7b): refresh the fields in place.
+          const descriptor = plan.effectDescriptors[index] ?? { ...pass };
+          descriptor.effect = pass.effect;
+          descriptor.rect = pass.rect;
+          descriptor.source = source;
+          descriptor.target = slot ?? pass.target;
+          renderer.renderEffect(descriptor);
         } else {
           renderer.renderEffect(pass);
         }
@@ -816,7 +833,26 @@ export class RenderGraph {
    * same surface — by construction never while both are live.
    */
   transientTarget(name: string): RenderTarget | undefined {
-    return this.#compiled?.byName.get(name);
+    const compiled = this.#compiled;
+    if (DEV && compiled !== undefined && compiled !== null) {
+      const spec = this.#byName.get(name)?.transient;
+      if (
+        spec !== undefined &&
+        spec.persistent !== true &&
+        compiled.slots.some(
+          (slot) => slot.names.length > 1 && slot.names.includes(name),
+        )
+      ) {
+        devWarnOnce(
+          `render-graph-transient-alias:${name}`,
+          `RenderGraph.transientTarget(${JSON.stringify(name)}) reads an ` +
+            "aliased transient whose slot is reused after its last declared " +
+            "input. Reading it outside `inputs` needs `persistent: true` on " +
+            "its transient spec (§63).",
+        );
+      }
+    }
+    return compiled?.byName.get(name);
   }
 
   /** Bytes of the pooled slots this graph currently holds (§83); 0 if none. */
@@ -901,9 +937,13 @@ export class RenderGraph {
         continue;
       }
       let last = index;
-      for (const [other, consumer] of this.#passes.entries()) {
-        if (other > last && consumer.inputs.includes(entry.name)) {
-          last = other;
+      if (entry.transient.persistent === true) {
+        last = this.#passes.length - 1;
+      } else {
+        for (let other = index + 1; other < this.#passes.length; other += 1) {
+          if (this.#passes[other].inputs.includes(entry.name)) {
+            last = other;
+          }
         }
       }
       requests.push({
@@ -973,6 +1013,9 @@ export class RenderGraph {
       slotTargets,
       byName,
       records: this.#usageRecords(byName),
+      effectDescriptors: this.#passes.map((entry) =>
+        isEffectPass(entry.pass) ? { ...entry.pass } : null,
+      ),
     };
     this.#compiled = compiled;
     return compiled;

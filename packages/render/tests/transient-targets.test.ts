@@ -1,5 +1,5 @@
 /** §63 transient pooling, aliasing and usage transitions (W6.1). */
-import { FourError } from "@fourjs/core";
+import { FourError, resetDevWarnings } from "@fourjs/core";
 import { Scene, createFullscreenViewport } from "@fourjs/scene";
 import { describe, expect, it, vi } from "vitest";
 
@@ -342,5 +342,73 @@ describe("RenderGraph transients", () => {
         .usageTransitions()
         .some((t) => t.from === "texture" && t.to === "attachment"),
     ).toBe(true);
+  });
+
+  it("hands the renderer one reused effect descriptor across frames", () => {
+    const graph = new RenderGraph();
+    const placeholder = new RenderTarget({ width: 1, height: 1 });
+    graph.addPass(
+      "world",
+      { root: new Scene(), views: [] },
+      { transient: spec },
+    );
+    graph.addPass(
+      "copy",
+      { kind: "effect", source: placeholder.colorTexture, effect: COPY_EFFECT },
+      { inputs: ["world"], transient: spec, sourceTransient: "world" },
+    );
+    const seen: EffectRenderPass[] = [];
+    const renderer = new NullRenderer();
+    renderer.renderEffect = (p) => {
+      seen.push(p);
+    };
+    graph.execute(renderer);
+    graph.execute(renderer);
+    expect(seen).toHaveLength(2);
+    expect(seen[1]).toBe(seen[0]);
+    expect(seen[1].source).toBe(graph.transientTarget("world")!.colorTexture);
+  });
+
+  it("persistent keeps a transient's slot out of aliasing", () => {
+    const scene = new Scene();
+    const views = [] as never[];
+    const build = (persistent: boolean): RenderGraph => {
+      const g = new RenderGraph();
+      g.addPass(
+        "a",
+        { root: scene, views },
+        { transient: { ...spec, persistent } },
+      );
+      g.addPass(
+        "b",
+        { root: scene, views },
+        { transient: spec, inputs: ["a"] },
+      );
+      g.addPass(
+        "c",
+        { root: scene, views },
+        { transient: spec, inputs: ["b"] },
+      );
+      return g;
+    };
+    const renderer = new NullRenderer();
+    expect(build(false).compile(renderer)!.slots).toHaveLength(2);
+    const plan = build(true).compile(renderer)!;
+    expect(plan.slots).toHaveLength(3);
+    expect(plan.assignment.get("a")).not.toBe(plan.assignment.get("c"));
+  });
+
+  it("warns once in DEV when an aliased non-persistent transient is read directly", () => {
+    resetDevWarnings();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { graph } = chain();
+    const renderer = new NullRenderer();
+    graph.compile(renderer);
+    graph.transientTarget("a");
+    graph.transientTarget("a");
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain("persistent");
+    warn.mockRestore();
+    resetDevWarnings();
   });
 });

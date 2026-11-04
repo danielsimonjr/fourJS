@@ -5252,6 +5252,32 @@ describe("bone-texture skinning in WebgpuRenderer (decision D7)", () => {
     expect(bindGroupOffsets(harness.gpu, 1)).toContainEqual([0]);
   });
 
+  it("grows the info buffer without recreating the palette texture", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const a = renderable(skinnedTriangle());
+    withTextureSkeleton(a, 3);
+    root.add(a);
+    harness.renderer.render(root, [createView()]);
+    const countOf = (kind: "createTexture" | "createBuffer"): number =>
+      harness.gpu
+        .callsOf(`device.${kind}`)
+        .filter((c) =>
+          ((c.args[0] as { label?: string }).label ?? "").startsWith(
+            "fourJS:joint-palette-texture",
+          ),
+        ).length;
+    expect(countOf("createTexture")).toBe(1);
+    expect(countOf("createBuffer")).toBe(1);
+    const b = renderable(skinnedTriangle());
+    withTextureSkeleton(b, 3, 7);
+    root.add(b);
+    harness.renderer.render(root, [createView()]);
+    // More draws, same rows: the info buffer grew, the texture stayed.
+    expect(countOf("createBuffer")).toBe(2);
+    expect(countOf("createTexture")).toBe(1);
+  });
+
   it("packs several draws end to end with distinct base rows and distinct pipelines", async () => {
     const harness = await initialized();
     const root = createRoot();
@@ -5267,15 +5293,15 @@ describe("bone-texture skinning in WebgpuRenderer (decision D7)", () => {
 
     const uploads = textureUploads(harness.gpu);
     expect(uploads).toHaveLength(1);
-    // 2 rows for the 513-joint rig, 1 row for the 3-joint rig.
-    expect(uploads[0].size).toEqual([2048, 3]);
+    // Contiguous by texel: 2052 + 12 texels span 2 rows, not 3.
+    expect(uploads[0].size).toEqual([2048, 2]);
     const infoWrite = harness.gpu
       .callsOf("queue.writeBuffer")
       .find((c) => c.args[4] === 128);
     const info = infoWrite?.args[2] as number[];
     expect(info[0]).toBe(0);
-    expect(info[64]).toBe(2);
-    expect(uploads[0].data[2 * 8192]).toBe(100);
+    expect(info[64]).toBe(2052);
+    expect(uploads[0].data[2052 * 4]).toBe(100);
     // The texture and uniform variants are distinct pipelines.
     const labels = pipelineLabels(harness.gpu).filter((l) =>
       l.startsWith("fourJS:skinned-unlit|"),

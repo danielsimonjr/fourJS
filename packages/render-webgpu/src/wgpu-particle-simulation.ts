@@ -129,6 +129,16 @@ function unsupported(message: string): never {
  * ownership rule), and its buffers die with the device either way (a
  * destroyed device makes `destroy()` a defined no-op).
  */
+/**
+ * A live provider of the scene-depth view. The renderer supplies one per
+ * bound `RenderTarget`; it answers the target's *current* depth view (or
+ * `null` once the target is disposed / lost its depth texture), so the
+ * simulation never keeps a destroyed view bound.
+ */
+export interface ParticleDepthSource {
+  depthView(): GpuTextureView | null;
+}
+
 export class WgpuParticleSimulation {
   /** `@fourjs/particles`' structural brand — a literal `true`. */
   readonly isParticleGpuSimulation = true;
@@ -169,14 +179,26 @@ export class WgpuParticleSimulation {
   #disposed = false;
 
   #sceneDepth: GpuTextureView | null = null;
+  /** Live source of the depth view (a render target's cache record), re-resolved per step. */
+  #depthSource: ParticleDepthSource | null = null;
   #depthBias = DEFAULT_DEPTH_BIAS;
   readonly #viewProjection = new Float32Array(16);
   #depthPipeline: GpuComputePipeline | null = null;
   #depthLayout: object | null = null;
   #depthGroup: GpuBindGroup | null = null;
   #lastCount = 0;
-  #radialSource: object | null = null;
-  #radialStackCache: readonly ParticleSimulationField[] = [];
+  /** The one reusable legacy-`radial` record (fields copied per step, no allocation). */
+  readonly #radialRecord = {
+    kind: "radial" as const,
+    originX: 0,
+    originY: 0,
+    originZ: 0,
+    strength: 0,
+    minDistance: 0,
+  };
+  readonly #radialStackCache: readonly ParticleSimulationField[] = [
+    this.#radialRecord,
+  ];
 
   /**
    * Internal — obtain instances through
@@ -302,7 +324,7 @@ export class WgpuParticleSimulation {
         { count, capacity: this.capacity },
       );
     }
-    const sceneDepth = this.#sceneDepth !== null;
+    const sceneDepth = this.#resolveSceneDepth() !== null;
     const radial = extras?.radial;
     // The legacy single-radial spelling is a one-record stack.
     const stack =
@@ -356,7 +378,25 @@ export class WgpuParticleSimulation {
 
   /** Whether a scene depth view is bound (`collisions: "depth-buffer"` kills against it). */
   get hasSceneDepth(): boolean {
-    return this.#sceneDepth !== null;
+    return this.#resolveSceneDepth() !== null;
+  }
+
+  /**
+   * The depth view to use this step. A bound {@link ParticleDepthSource} is
+   * re-resolved so a resized / disposed target or re-acquired pooled slot
+   * never leaves a destroyed view bound; the bind group is dropped only when
+   * the view identity actually changed.
+   */
+  #resolveSceneDepth(): GpuTextureView | null {
+    const source = this.#depthSource;
+    if (source !== null) {
+      const view = source.depthView();
+      if (view !== this.#sceneDepth) {
+        this.#sceneDepth = view;
+        this.#depthGroup = null;
+      }
+    }
+    return this.#sceneDepth;
   }
 
   /**
@@ -364,21 +404,28 @@ export class WgpuParticleSimulation {
    * `depth32float` view with `TEXTURE_BINDING` (a `RenderTarget` made with
    * `depthTexture: true` — the main backbuffer's `depth24plus` is not
    * sampleable) and the column-major view-projection that produced it.
-   * Rebinding replaces the previous view. `viewProjection` is copied.
+   * Rebinding replaces the previous view, but rebinding the *same* view
+   * (the documented every-frame call) keeps the bind group (§7b). Pass a
+   * {@link ParticleDepthSource} instead of a view to have the view re-resolved
+   * every step (resize / dispose safe). `viewProjection` is copied.
    *
    * @throws FourError `INVALID_APPLICATION_STATE` after dispose or for a
    * matrix that is not 16 numbers.
    */
   bindSceneDepth(
-    depthView: GpuTextureView,
+    depthView: GpuTextureView | ParticleDepthSource,
     viewProjection: ArrayLike<number>,
     bias = DEFAULT_DEPTH_BIAS,
   ): void {
     this.#requireLive("bindSceneDepth");
     this.updateViewProjection(viewProjection);
-    this.#sceneDepth = depthView;
+    this.#depthSource = "depthView" in depthView ? depthView : null;
+    const view = "depthView" in depthView ? depthView.depthView() : depthView;
+    if (view !== this.#sceneDepth) {
+      this.#sceneDepth = view;
+      this.#depthGroup = null;
+    }
     this.#depthBias = bias;
-    this.#depthGroup = null;
   }
 
   /** Replaces the view-projection (copied, no allocation) — call per frame. */
@@ -396,11 +443,12 @@ export class WgpuParticleSimulation {
 
   /** Unbinds the scene depth; `"depth-buffer"` falls back to resting on the ground plane. */
   unbindSceneDepth(): void {
+    this.#depthSource = null;
     this.#sceneDepth = null;
     this.#depthGroup = null;
   }
 
-  /** The one-record stack of the legacy `radial` spelling, rebuilt only when the object changes. */
+  /** The one-record stack of the legacy `radial` spelling, copied into one reusable record. */
   #radialStack(radial: {
     readonly originX: number;
     readonly originY: number;
@@ -408,16 +456,18 @@ export class WgpuParticleSimulation {
     readonly strength: number;
     readonly minDistance: number;
   }): readonly ParticleSimulationField[] {
-    if (this.#radialSource !== radial) {
-      this.#radialSource = radial;
-      this.#radialStackCache = [{ kind: "radial", ...radial }];
-    }
+    const record = this.#radialRecord;
+    record.originX = radial.originX;
+    record.originY = radial.originY;
+    record.originZ = radial.originZ;
+    record.strength = radial.strength;
+    record.minDistance = radial.minDistance;
     return this.#radialStackCache;
   }
 
   /** The second dispatch: project, sample the scene depth, kill hits. */
   #collideWithSceneDepth(): void {
-    const view = this.#sceneDepth;
+    const view = this.#resolveSceneDepth();
     const device = this.#device;
     if (view === null || device.createComputePipeline === undefined) {
       return;
@@ -607,6 +657,7 @@ export class WgpuParticleSimulation {
     this.velocities.dispose();
     this.#params.dispose();
     this.#scratch.destroy();
+    this.#depthSource = null;
     this.#sceneDepth = null;
     this.#depthGroup = null;
     this.#onDispose?.();

@@ -165,15 +165,16 @@ export interface SkinnedPrograms {
   paletteBindGroup(): GpuBindGroup | null;
   /**
    * Sizes the bone-texture palette (decision D7) for `draws` palettes totalling
-   * `rows` texture rows. Call **before** the pass is recorded, like
+   * `rows` texture rows (palettes pack contiguously by texel, so `rows` is
+   * the ceiling of the total texel count over the texture width). Call **before** the pass is recorded, like
    * {@link SkinnedPrograms.prepare}; `0` is a no-op, and a frame with no
    * texture-mode mesh creates nothing.
    */
   prepareTexture(device: GpuDevice, draws: number, rows: number): void;
   /**
-   * Packs `palette` (16 floats per joint) into the next free rows of the
+   * Packs `palette` (16 floats per joint) into the next free texels of the
    * shared palette texture and returns the dynamic offset of the draw's
-   * base-row uniform, or `-1` when the texture has no room (the draw is
+   * base-texel uniform, or `-1` when the texture has no room (the draw is
    * skipped, never truncated).
    */
   packTexturePalette(palette: Float32Array): number;

@@ -178,7 +178,7 @@
  * engine does.
  */
 
-import { FourError, devWarnOnce } from "@fourjs/core";
+import { FourError } from "@fourjs/core";
 import { Vector3, Vector4 } from "@fourjs/math";
 
 import { ParticlePool } from "./pool.js";
@@ -564,12 +564,12 @@ export class ParticleEmitter {
         ? 10
         : 8;
 
-    if (collisions === "depth-buffer" && simulation !== "gpu") {
-      devWarnOnce(
-        "particles:depth-buffer-cpu",
-        'ParticleEmitter: collisions "depth-buffer" on a CPU emitter kills particles below the ground plane (collisionPlaneY or y = 0); scene-depth collide-and-kill needs simulation "gpu" on WebGPU (capabilities.particleDepthCollision).',
-      );
-    }
+    // No development-build warning here: `particles` is a §33 simulation
+    // package and may not import the §85 flag (`dev-build-mode` suite). The
+    // CPU fallback for `collisions: "depth-buffer"` — kill below the ground
+    // plane — is documented in the header table and in the option's JSDoc;
+    // scene-depth collide-and-kill needs `simulation: "gpu"` on WebGPU
+    // (`capabilities.particleDepthCollision`).
     const authoredFields =
       options.fields === undefined ? [] : [...options.fields];
     let gpuRadial: ParticleGpuRadialField | undefined;
