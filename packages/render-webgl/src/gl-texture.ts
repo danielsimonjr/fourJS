@@ -97,7 +97,7 @@
  *   invalid and the context must not be touched (§61).
  */
 
-import { FourError } from "@fourjs/core";
+import { DEV, FourError, devWarnOnce } from "@fourjs/core";
 import type { SpriteRenderItem } from "@fourjs/render";
 import { warnDisposedInUse } from "@fourjs/render";
 
@@ -541,9 +541,17 @@ export class TextureCache {
         : undefined;
     const compressedLevels =
       compressedEntry !== undefined &&
-      queryCompressedFormats(gl).includes(carried.format!)
+      cachedCompressedFormats(gl).includes(carried.format!)
         ? carried.levels!
         : null;
+    if (compressedEntry !== undefined && compressedLevels === null && DEV) {
+      devWarnOnce(
+        `gl-compressed-missing:${carried.format!}`,
+        `§77: compressed texture format "${carried.format!}" needs the ` +
+          `${compressedEntry.extension} extension, which this context lacks; ` +
+          "the texture uploads as empty RGBA8 (black).",
+      );
+    }
     // A compressed chain is authored, never generated.
     const mipmaps =
       compressedLevels === null
@@ -696,6 +704,18 @@ export function queryCompressedFormats(gl: WebglContext): readonly string[] {
       return extension !== undefined && extension !== null;
     })
     .map(([name]) => name);
+}
+
+const compressedProbe = new WeakMap<object, readonly string[]>();
+
+/** {@link queryCompressedFormats}, probed once per context. */
+function cachedCompressedFormats(gl: WebglContext): readonly string[] {
+  let found = compressedProbe.get(gl);
+  if (found === undefined) {
+    found = queryCompressedFormats(gl);
+    compressedProbe.set(gl, found);
+  }
+  return found;
 }
 
 /** Storage and sampler identity; a metadata edit requires a full upload. */

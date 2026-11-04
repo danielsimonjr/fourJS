@@ -125,12 +125,16 @@ export function parseKtx2(
   if (height === 0 && depth !== 0)
     throw refuse("KTX2 depth needs a non-zero height.");
 
+  if (faceCount === 6 && (width !== height || depth !== 0))
+    throw refuse("KTX2 cube maps must be square and have no depth.");
+
   const storedLevels = Math.max(1, declaredLevelCount);
   const indexEnd = KTX2_HEADER_BYTES + storedLevels * 24;
   if (indexEnd > total)
     throw refuse("KTX2 level index runs past the end of the data.");
 
   let sum = total;
+  const copies = Math.max(1, layerCount) * faceCount;
   const levels: Ktx2Level[] = [];
   for (let i = 0; i < storedLevels; i++) {
     const at = KTX2_HEADER_BYTES + i * 24;
@@ -145,7 +149,17 @@ export function parseKtx2(
     if (level.byteOffset < indexEnd) {
       throw refuse(`KTX2 level ${String(i)} overlaps the header.`);
     }
-    sum += level.uncompressedByteLength;
+    for (const prior of levels) {
+      if (
+        level.byteLength > 0 &&
+        prior.byteLength > 0 &&
+        level.byteOffset < prior.byteOffset + prior.byteLength &&
+        prior.byteOffset < level.byteOffset + level.byteLength
+      ) {
+        throw refuse(`KTX2 level ${String(i)} overlaps another level.`);
+      }
+    }
+    sum += level.uncompressedByteLength * copies;
     if (!Number.isSafeInteger(sum) || sum > limit) {
       throw refuse(
         "KTX2 declared level sizes exceed the working-memory budget.",

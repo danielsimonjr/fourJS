@@ -1,5 +1,6 @@
 import { Texture } from "@fourjs/render";
-import { describe, expect, it } from "vitest";
+import { resetDevWarnings } from "@fourjs/core";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   WgpuTextureCache,
@@ -65,6 +66,24 @@ describe("compressed WebGPU uploads (§77, R-30c)", () => {
     expect(gpu.countOf("queue.writeTexture")).toBe(0);
     expect(record.byteLength).toBe(340); // zero-filled full chain
     t.dispose();
+    cache.dispose();
+  });
+
+  it("warns once naming the format and missing device feature", () => {
+    resetDevWarnings();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const gpu = createRecordingGpu({ features: [] });
+    const cache = new WgpuTextureCache(gpu.device!);
+    for (let i = 0; i < 2; i++) {
+      cache.acquire(new Texture(source("etc2-rgba8unorm")));
+    }
+    const hits = warn.mock.calls.filter((c) =>
+      String(c[0]).includes("texture-compression-etc2"),
+    );
+    expect(hits).toHaveLength(1);
+    expect(String(hits[0][0])).toContain("etc2-rgba8unorm");
+    warn.mockRestore();
+    resetDevWarnings();
     cache.dispose();
   });
 });

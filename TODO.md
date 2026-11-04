@@ -77,7 +77,7 @@ are accepted; spec revision 1.16 records the §56 shaping decision. This pass do
   WebGPU skip). Bone-texture palettes remain open.
 - RFC 0001: opt-in std140 WebGL transport, reusable/declarative subgraphs, finite named
   variants and node source maps. Storage-buffer graph bindings, automatic scene-light
-  inputs and IR conditional defines/cache specialization remain open.
+  inputs and IR conditional defines/cache specialization DONE 2026-11-04 (wave 7).
 - RFC 0004/R-30c: regional texture updates, CanvasTexture sampler settings, bitmap/video
   adapters, residency and asynchronous preparation. **In-place `CanvasTexture.resize()`
   shipped 2026-10-05.** Cube/array/3D/compressed sampling remain open.
@@ -205,7 +205,7 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 - Fold steering's private interceptTime into prediction's export — interceptTime fold DONE 2026-09-06; ~~spatial-hash neighbors~~ DONE 2026-09-06; ~~spherical wander~~ DONE 2026-09-06; ~~CCD/FABRIK~~ DONE 2026-09-06; ~~path-planning adapters (RFC)~~ **Accepted; first packet implemented 2026-09-11** (`docs/rfcs/0007-path-planning-adapters.md`; corrected 2026-09-10, four-agent plan `docs/plans/RFC-0007-PATH-PLANNING_PLAN.md`); ~~text shaping engine (RFC)~~ **Accepted; first packet implemented 2026-09-11** (`docs/rfcs/0008-text-shaping-engine.md`; corrected 2026-09-10, plan `docs/plans/RFC-0008-TEXT-SHAPING_PLAN.md`); robotic joint commands utility (MAY declined — see prediction.ts staging note)
 - RFC 0004 residue (all deferred by the RFC's own §6 table, none scheduled):
 - RFC 0005 residue — **CLOSED 2026-09-10** (WebGPU skinned id pass). All named slices landed.
-- RFC 0001 residue (staged in source, 2026-08-28):
+- RFC 0001 residue (staged in source, 2026-08-28): CLOSED 2026-11-04 (wave 7: storage nodes, select/defines, light family).
 - RFC 0003 residue (staged in source, 2026-08-28): WebGPU colour pair DONE 2026-09-09; WebGL shadow caster DONE 2026-09-09; WebGPU skinned id DONE 2026-09-10 (lives in `wgpu-picking.ts`); CPU skinning DONE 2026-09-11; WebGPU skinned shadow DONE 2026-09-10. ~~GPU morph~~ **DONE 2026-10-05** (one-target WebGL at 6/7; WebGPU skip). Still bone-texture.
 - RFC 0003 prototype measurements — DONE 2026-09-09 (`benchmarks/skinning-resolve.mjs`):
 - Tokens for the five absent §81 extension points — DONE 2026-09-06 (`ASSET_LOADERS`, `SHADER_OPERATORS`, `UI_CONTROLS`, `EDITOR_TOOLS`, `COMPUTE_WORKLOADS`)
@@ -223,7 +223,7 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 - §27 field torque and field-driven waking — DONE 2026-09-06 (`sampleTorque` + per-entry `wakesSleepingBodies`).
 - Batching follow-ups (§65, after R-9's consecutive-run tier, 2026-08-09): ~~instanced meshes for the shaded pipelines (`R-22`)~~ DONE 2026-11-04; texture-atlas grouping; making batching the default (A-4). Idle-cache (GL + WebGPU) + glyph batching already shipped.
 - `buildRenderList` optimization — DONE 2026-09-06 (homogeneous sort skip + sprite fast path; benchmark re-recorded).
-- R-30c — the rest of §77, scoped by why each is not ordinary work: map roles DONE 2026-09-09; cube/array/3D DONE 2026-11-04; still compressed, video/`ImageBitmap`, async upload.
+- R-30c — the rest of §77, scoped by why each is not ordinary work: map roles DONE 2026-09-09; cube/array/3D DONE 2026-11-04; compressed containers (KTX2/Basis) DONE 2026-11-04; video/`ImageBitmap`, async upload DONE 2026-09-11.
 - §12 character controllers + first-person look — DONE (PH-11/PH-11b 2026-08-21; `examples/character-controller` browser gate 2026-08-29).
 - Staged rigs (R-36/R-37 residue, 2026-08-09): DONE 2026-09-06 (trackball, fly snippet, `CameraShake`).
 - §44/§47 camera rigs residue — DONE 2026-09-06 (orbit/follow/spring/look-at/trackball/fly/shake).
@@ -1545,11 +1545,14 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
 - [ ] **RFC 0001 residue:** std140 WebGL uniform blocks with call/byte
       measurement, reusable named subgraphs, safe data-declared operators and
       per-node GLSL/WGSL source maps **DONE 2026-09-11**. Finite explicit
-      `ShaderVariantSet` families also shipped. Still open: IR-level conditional
+      `ShaderVariantSet` families also shipped. ~~Still open: IR-level conditional
       variants/define cache specialization, graph storage-buffer bindings (§82),
-      and automatic lighting-aware graph inputs. See the dated addendum in
-      `docs/rfcs/0001-shader-extension-addendum.md`; explicit variants do not
-      silently close the IR conditional requirement.
+      and automatic lighting-aware graph inputs.~~ **DONE 2026-11-04 (wave 7, addendum
+      accepted — decision D4)**: `select` nodes over `graph.defines` (dead branch not
+      emitted, programs shared by emitted source), `storage` nodes (§82, WGSL
+      `var<storage, read>`, WebGL refuses), and the `light` input family bound to the
+      renderer's light block (`SHADER_LIGHT_SLOTS` = 11). See the "Acceptance" section of
+      `docs/rfcs/0001-shader-extension-addendum.md`. **RFC 0001 residue CLOSED.**
 
 - [x] **docs/guides/custom-shaders.md — DONE 2026-08-29**: rewritten around the
       landed §60 (builders, registration per backend, closed operator set,
@@ -2056,7 +2059,10 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       authored `colorSpace` always wins; backends still read `colorSpace`
       only). Still open: ~~cube/array/3D uploads~~ **DONE 2026-11-04 (wave 5:
       `TextureSource.dimension` `"cube"` / `"2d-array"` / `"3d"` + `depth` upload on both
-      backends)**, compressed containers,
+      backends)**, ~~compressed containers~~ **DONE 2026-11-04 (wave 7: KTX2 parser +
+      `createBoundedBasisTranscoder` over the raw codec ABI, closed `TextureFormat` set
+      bc7 / etc2 / astc-4x4 with rgba8 fallback, uploads on both backends; glTF
+      `KHR_texture_basisu` routing still open)**,
       ~~video/`ImageBitmap`, async upload~~ **DONE 2026-09-11** (host surface
       adapters + frame invalidation, explicit `prepareTexture` fences/queue completion).
 
@@ -2361,8 +2367,10 @@ Daniel delegated all four. Ordered by value-over-risk, not by how annoying each 
       (`createBoundedWebpDecoder`/`createBoundedAvifDecoder` over a raw codec ABI
       the application supplies; no dependency, no pin). Texture decoding and raw gzip
       output also have absolute decoded-size and expansion-ratio limits, and
-      shader/plugin trust boundaries remain implemented. Separate Draco/Basis
-      work exists in local roadmap commit `b1240b4` but is not on this branch, so
+      shader/plugin trust boundaries remain implemented. ~~Separate Draco/Basis
+      work exists in local roadmap commit `b1240b4` but is not on this branch~~ Basis
+      **DONE 2026-11-04** (wave 7: bounded KTX2/Basis transcoder, §96 budget and
+      poisoning rules in the security guide); Draco still absent, so
       the aggregate row remains open. Process RSS, native platform heaps, and
       host gzip internals remain outside the PNG linear-heap guarantee; see the
       security guide.

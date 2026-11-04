@@ -52,12 +52,14 @@ interface FakeSpec {
   trap?: boolean;
   withImport?: boolean;
   missingExport?: boolean;
+  /** Echo the 5th ABI argument (level limit) into output byte 1. */
+  echoLimit?: boolean;
 }
 /** Fake transcoder: malloc is a 2-way bump; transcode stores known blocks. */
 function fakeTranscoder(spec: FakeSpec): Uint8Array<ArrayBuffer> {
   const types = [
-    3, 0x60, 1, 0x7f, 1, 0x7f, 0x60, 2, 0x7f, 0x7f, 0, 0x60, 4, 0x7f, 0x7f,
-    0x7f, 0x7f, 1, 0x7f,
+    3, 0x60, 1, 0x7f, 1, 0x7f, 0x60, 2, 0x7f, 0x7f, 0, 0x60, 5, 0x7f, 0x7f,
+    0x7f, 0x7f, 0x7f, 1, 0x7f,
   ];
   // malloc(len): len > 60000 ? 0 : len == 76 ? 512 : 1024   (76 = 12 + 4*16)
   const malloc = body([
@@ -88,6 +90,7 @@ function fakeTranscoder(spec: FakeSpec): Uint8Array<ArrayBuffer> {
   );
   // byte 0 of the output echoes `target` (local 2)
   stores.push(...i32(OUT), 0x20, 2, 0x3a, 0, 0);
+  if (spec.echoLimit) stores.push(...i32(OUT + 1), 0x20, 4, 0x3a, 0, 0);
   spec.info.forEach((v, i) => stores.push(0x20, 3, ...i32(v), 0x36, 2, i * 4));
   const transcode = body([
     ...(spec.trap ? [0x00] : []),
@@ -212,6 +215,65 @@ function rejects(fn: () => unknown): void {
   }
   throw new Error("expected a rejection");
 }
+
+describe("parseKtx2 cube/layer/overlap refusals", () => {
+  const patch = (fn: (v: DataView) => void): ArrayBuffer => {
+    const copy = ktx2().slice();
+    fn(new DataView(copy.buffer));
+    return copy.buffer;
+  };
+  it("refuses non-square cubes", () => {
+    rejects(() =>
+      parseKtx2(
+        patch((v) => {
+          v.setUint32(36, 6, true);
+          v.setUint32(24, 4, true);
+        }),
+      ),
+    );
+    expect(parseKtx2(patch((v) => v.setUint32(36, 6, true))).faceCount).toBe(6);
+  });
+  it("refuses cubes with depth", () => {
+    rejects(() =>
+      parseKtx2(
+        patch((v) => {
+          v.setUint32(36, 6, true);
+          v.setUint32(28, 2, true);
+        }),
+      ),
+    );
+  });
+  it("refuses overlapping level ranges", () => {
+    rejects(() =>
+      parseKtx2(
+        patch((v) => v.setBigUint64(80 + 24, v.getBigUint64(80, true), true)),
+      ),
+    );
+  });
+  it("multiplies layers and faces into the working budget", () => {
+    const size = ktx2().byteLength;
+    const limit = size + 128 + 64;
+    expect(() =>
+      parseKtx2(ktx2().buffer, { maximumWorkingBytes: limit }),
+    ).not.toThrow();
+    rejects(() =>
+      parseKtx2(
+        patch((v) => v.setUint32(32, 8, true)),
+        {
+          maximumWorkingBytes: limit,
+        },
+      ),
+    );
+    rejects(() =>
+      parseKtx2(
+        patch((v) => v.setUint32(36, 6, true)),
+        {
+          maximumWorkingBytes: limit,
+        },
+      ),
+    );
+  });
+});
 
 describe("parseKtx2", () => {
   it("reads header, levels, DFD and key/value data", () => {
@@ -371,7 +433,7 @@ describe("createBoundedBasisTranscoder", () => {
     const transcode = await createBoundedBasisTranscoder({
       wasmBinary: fakeTranscoder({
         out: new Array<number>(80).fill(9),
-        info: [4, 4, 3, 64, 16, 4],
+        info: [4, 4, 1, 64],
       }),
     });
     expect(
@@ -467,5 +529,47 @@ describe("createBoundedBasisTranscoder", () => {
     const huge = new Uint8Array(61_000);
     huge.set(ktx2());
     rejects(() => big(huge.buffer, { supportedFormats: [...ALL] }));
+  });
+});
+
+describe("block alignment and single-level fallback", () => {
+  it("falls back to RGBA8 for non-multiple-of-4 sizes and builds a Texture", async () => {
+    const { Texture } = await import("@fourjs/render");
+    const bytes = 100 * 75 * 4;
+    const transcode = await createBoundedBasisTranscoder({
+      wasmBinary: fakeTranscoder({
+        out: new Array<number>(bytes).fill(7),
+        info: [100, 75, 1, bytes],
+      }),
+    });
+    const source = transcode(
+      ktx2({ width: 100, height: 75, levels: 1 }).buffer,
+      { supportedFormats: [...ALL] },
+    );
+    expect(source.format).toBe("rgba8unorm");
+    expect(source.levels).toBeUndefined();
+    expect(() => new Texture(source)).not.toThrow();
+  });
+
+  it("asks the ABI for a single level on the RGBA8 fallback", async () => {
+    const transcode = await createBoundedBasisTranscoder({
+      wasmBinary: fakeTranscoder({
+        out: new Array<number>(64).fill(9),
+        info: [4, 4, 1, 64],
+        echoLimit: true,
+      }),
+    });
+    const fallback = transcode(ktx2({ width: 4, height: 4, levels: 3 }).buffer);
+    expect(fallback.data![1]).toBe(1);
+    expect(fallback.mipmaps).toBe(true);
+    const block = await createBoundedBasisTranscoder({
+      wasmBinary: fakeTranscoder({
+        out: new Array<number>(80).fill(9),
+        info: [8, 8, 2, 64, 16],
+        echoLimit: true,
+      }),
+    });
+    const out = block(ktx2().buffer, { supportedFormats: [...ALL] });
+    expect(out.levels![0][1]).toBe(2);
   });
 });

@@ -100,7 +100,7 @@
  * allocations that belong to a device that is gone (§61).
  */
 
-import { FourError } from "@fourjs/core";
+import { DEV, FourError, devWarnOnce } from "@fourjs/core";
 import type { RenderItem } from "@fourjs/render";
 import { warnDisposedInUse } from "@fourjs/render";
 
@@ -855,6 +855,20 @@ export class WgpuTextureCache {
       ) === true
         ? carried.levels
         : null;
+    if (
+      DEV &&
+      compressedLevels === null &&
+      carried.format !== undefined &&
+      carried.format !== "rgba8unorm" &&
+      carried.levels != null
+    ) {
+      devWarnOnce(
+        `wgpu-compressed-missing:${carried.format}`,
+        `§77: compressed texture format "${carried.format}" needs the ` +
+          `"${COMPRESSED_FORMAT_FEATURES[carried.format] ?? "unknown"}" device ` +
+          "feature, which this device lacks; the texture is allocated empty.",
+      );
+    }
     const format =
       compressedLevels === null
         ? srgb

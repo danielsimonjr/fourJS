@@ -8,7 +8,8 @@ function setup(extensions: readonly string[] | "none") {
   const { gl } = createRecordingGl();
   const compressed = vi.fn();
   if (extensions !== "none") {
-    gl.compressedTexImage2D = compressed;
+    (gl as unknown as { compressedTexImage2D: unknown }).compressedTexImage2D =
+      compressed;
     gl.getExtension = (name: string) => (extensions.includes(name) ? {} : null);
   }
   return { gl, compressed };
@@ -80,5 +81,35 @@ describe("compressed GL uploads (§77, R-30c)", () => {
       expect(texImage.mock.calls[0][8]).toBeNull();
       t.dispose();
     }
+  });
+});
+
+describe("compressed GL diagnostics and probing", () => {
+  it("warns once naming the format and extension when it is missing", async () => {
+    const { resetDevWarnings } = await import("@fourjs/core");
+    resetDevWarnings();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { gl } = setup([]);
+    const cache = new TextureCache(gl);
+    for (let i = 0; i < 2; i++) {
+      cache.acquire(new Texture(source("etc2-rgba8unorm")));
+    }
+    const hits = warn.mock.calls.filter((c) =>
+      String(c[0]).includes("WEBGL_compressed_texture_etc"),
+    );
+    expect(hits).toHaveLength(1);
+    expect(String(hits[0][0])).toContain("etc2-rgba8unorm");
+    warn.mockRestore();
+    resetDevWarnings();
+  });
+
+  it("probes extensions once per context across uploads", () => {
+    const { gl } = setup(["WEBGL_compressed_texture_etc"]);
+    const probe = vi.spyOn(gl, "getExtension");
+    const cache = new TextureCache(gl);
+    cache.acquire(new Texture(source("etc2-rgba8unorm")));
+    const after = probe.mock.calls.length;
+    cache.acquire(new Texture(source("etc2-rgba8unorm")));
+    expect(probe.mock.calls.length).toBe(after);
   });
 });

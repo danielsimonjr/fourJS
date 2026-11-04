@@ -8,8 +8,9 @@
  * ## Raw transcoder ABI (no imports)
  *
  * Exports `memory`; `malloc(length) -> ptr`; `free(ptr, length)`; and
- * `transcode(ptr, length, target, infoPtr) -> outPtr` where `ptr/length` is the
- * whole KTX2 file and `target` is {@link BASIS_TARGET_CODES}
+ * `transcode(ptr, length, target, infoPtr, levelLimit) -> outPtr` where `ptr/length` is the
+ * whole KTX2 file, `levelLimit` caps the levels emitted (the host passes 1 for
+ * the RGBA8 fallback, else the file's level count) and `target` is {@link BASIS_TARGET_CODES}
  * (0 rgba8, 1 bc7, 2 etc2-rgba8, 3 astc-4x4). The transcoder writes
  * little-endian u32 `width`, `height`, `levelCount` at `infoPtr`, then
  * `levelCount` u32 level byte lengths (at most 16 levels; the host allocates
@@ -98,6 +99,7 @@ interface RawExports {
     length: number,
     target: number,
     info: number,
+    levelLimit: number,
   ) => number;
 }
 
@@ -181,12 +183,20 @@ export async function createBoundedBasisTranscoder(
       throw refuse("Only 2D, single-layer Basis textures are supported.");
     }
     const supported = request?.supportedFormats ?? [];
-    const format: BasisTextureFormat =
-      PREFERENCE.find((one) => supported.includes(one)) ?? "rgba8unorm";
-    const levelCount = info.levels.length;
-    if (levelCount > MAX_OUTPUT_LEVELS) {
+    // Block formats need whole 4x4 blocks: render's `validateCompressed`
+    // requires width and height to be multiples of 4, so anything else
+    // transcodes to RGBA8 instead of producing a source it would refuse.
+    const blockAligned = info.width % 4 === 0 && info.height % 4 === 0;
+    const format: BasisTextureFormat = blockAligned
+      ? (PREFERENCE.find((one) => supported.includes(one)) ?? "rgba8unorm")
+      : "rgba8unorm";
+    const sourceLevels = info.levels.length;
+    if (sourceLevels > MAX_OUTPUT_LEVELS) {
       throw refuse("Basis texture has too many mip levels.");
     }
+    // The RGBA8 source carries one level (the backend regenerates the chain),
+    // so only level 0 is transcoded and budgeted.
+    const levelCount = format === "rgba8unorm" ? 1 : sourceLevels;
     const expected: number[] = [];
     let expectedTotal = 0;
     for (let i = 0; i < levelCount; i++) {
@@ -234,6 +244,7 @@ export async function createBoundedBasisTranscoder(
           inputLength,
           BASIS_TARGET_CODES[format],
           infoPtr,
+          levelCount,
         ) >>> 0;
       heap = native.memory.buffer;
       const view = new DataView(heap);
@@ -270,10 +281,13 @@ export async function createBoundedBasisTranscoder(
       } as const;
       return Object.freeze(
         format === "rgba8unorm"
-          ? { ...base, data: levels[0], mipmaps: levelCount > 1 }
+          ? { ...base, data: levels[0], mipmaps: sourceLevels > 1 }
           : { ...base, levels: Object.freeze(levels) },
       );
     } catch (cause) {
+      // Deliberately no `free` here: a trap or bad pointer leaves the heap in
+      // an unknown state, so poisoning (every later call refuses) covers the
+      // leaked allocations, and the instance is discarded by its owner.
       poisoned = true;
       if (cause instanceof FourError) throw cause;
       throw refuse(
