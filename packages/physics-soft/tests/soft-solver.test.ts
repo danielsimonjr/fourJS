@@ -74,13 +74,13 @@ function horizontal(node: Node): void {
 describe("rope", () => {
   it("swings down from horizontal and settles hanging at its rest length", () => {
     const { body, system } = setup(rope, undefined, horizontal);
-    const p = body.solver!.positions;
+    const p = body.solver.positions;
     expect(minY(p)).toBeCloseTo(0, 9);
     run(system, 1800);
     expect(Math.abs(ropeLength(p) - 2) / 2).toBeLessThan(0.02);
     expect(minY(p)).toBeLessThan(-1.9);
     expect(minY(p)).toBeGreaterThan(-2.05);
-    expect(body.solver!.kineticEnergy()).toBeLessThan(1e-4);
+    expect(body.solver.kineticEnergy()).toBeLessThan(1e-4);
     // Pinned end never moved.
     expect(p[0]).toBeCloseTo(0, 12);
     expect(p[1]).toBeCloseTo(0, 12);
@@ -90,7 +90,7 @@ describe("rope", () => {
 describe("cloth", () => {
   it("settles below its pins and the energy decays with damping", () => {
     const { body, system } = setup(cloth);
-    const s = body.solver!;
+    const s = body.solver;
     expect(minY(s.positions)).toBe(0);
     let peak = 0;
     for (let i = 0; i < 90; i++) {
@@ -126,11 +126,9 @@ describe("determinism and allocation", () => {
     run(b.system, 200);
     const bytes = (x: Float64Array): string =>
       Buffer.from(x.buffer, x.byteOffset, x.byteLength).toString("hex");
-    expect(bytes(a.body.solver!.positions)).toBe(
-      bytes(b.body.solver!.positions),
-    );
-    expect(bytes(a.body.solver!.velocities)).toBe(
-      bytes(b.body.solver!.velocities),
+    expect(bytes(a.body.solver.positions)).toBe(bytes(b.body.solver.positions));
+    expect(bytes(a.body.solver.velocities)).toBe(
+      bytes(b.body.solver.velocities),
     );
     expect(Array.from(a.body.geometry.positions)).toEqual(
       Array.from(b.body.geometry.positions),
@@ -139,7 +137,7 @@ describe("determinism and allocation", () => {
 
   it("allocates nothing per step after warm-up", () => {
     const { body, system } = setup(cloth);
-    const s = body.solver!;
+    const s = body.solver;
     run(system, 5);
     const refs = [
       s.positions,
@@ -194,12 +192,12 @@ describe("stepping contract", () => {
       damping: 0,
     });
     run(system, 2);
-    expect(body.solver!.substepsRun).toBe(6);
-    expect(body.solver!.iterationsRun).toBe(30);
+    expect(body.solver.substepsRun).toBe(6);
+    expect(body.solver.iterationsRun).toBe(30);
     // Free fall (no pins): after 1 s total, drop is ~ g t^2 / 2.
     const free = setup({ ...cloth, pinned: [], damping: 0, substeps: 4 });
     run(free.system, 60);
-    const y = free.body.solver!.positions[1];
+    const y = free.body.solver.positions[1];
     expect(Math.abs(y + 0.5 * 9.81)).toBeLessThan(0.5 * 9.81 * 0.02);
   });
 
@@ -220,21 +218,21 @@ describe("stepping contract", () => {
     run(a.system, 30);
     g.y = 0;
     g.z = -9.81;
-    const vy = a.body.solver!.velocities[1];
+    const vy = a.body.solver.velocities[1];
     run(a.system, 30);
-    expect(a.body.solver!.velocities[1]).toBeCloseTo(vy, 6);
-    expect(a.body.solver!.velocities[2]).toBeLessThan(-4);
+    expect(a.body.solver.velocities[1]).toBeCloseTo(vy, 6);
+    expect(a.body.solver.velocities[2]).toBeLessThan(-4);
     const b = setup(free, { gravity: { x: 3, y: 0, z: 0 }, priority: 5 });
     expect(b.system.priority).toBe(5);
     run(b.system, 30);
-    expect(b.body.solver!.velocities[0]).toBeGreaterThan(1);
+    expect(b.body.solver.velocities[0]).toBeGreaterThan(1);
   });
 
   it("makes pinned particles follow a moved node, geometry staying node-local", () => {
     const { node, body, system } = setup(cloth);
     node.transform.position.set(3, 1, 0);
     run(system, 30);
-    const p = body.solver!.positions;
+    const p = body.solver.positions;
     expect(p[0]).toBeCloseTo(3 - 0.5, 9);
     expect(p[1]).toBeCloseTo(1, 9);
     expect(p[8 * 3]).toBeCloseTo(3 + 0.5, 9);
@@ -248,7 +246,7 @@ describe("stepping contract", () => {
     const system = new SoftBodySystem();
     system.track(body);
     run(system, 10);
-    expect(body.solver!.positions[1]).toBe(0);
+    expect(body.solver.positions[1]).toBe(0);
   });
 
   it("skips constraints between two pinned particles and coincident ones", () => {
@@ -259,7 +257,7 @@ describe("stepping contract", () => {
       pinned: [0, 1],
     });
     run(system, 3);
-    expect(body.solver!.positions[4]).toBeCloseTo(-1, 12);
+    expect(body.solver.positions[4]).toBeCloseTo(-1, 12);
     const solver = new PbdSolver(
       {
         rest: new Float64Array(6),
@@ -295,7 +293,7 @@ describe("SoftBodySystem registry", () => {
     expect(PRIORITY_SOFT_BODY).toBe(610);
   });
 
-  it("tracks in order, rejects duplicates and pressure bodies, untracks and disposes", () => {
+  it("tracks in order, rejects duplicates, untracks and disposes", () => {
     const system = new SoftBodySystem();
     system.initialize({} as never);
     const a = new SoftBody(rope);
@@ -304,14 +302,6 @@ describe("SoftBodySystem registry", () => {
     system.track(b);
     expect(system.bodies).toEqual([a, b]);
     expect(() => system.track(a)).toThrow(FourError);
-    const pressure = new SoftBody({
-      kind: "pressure",
-      positions: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]),
-      indices: new Uint32Array([0, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3]),
-    });
-    expect(() => system.track(pressure)).toThrow(
-      expect.objectContaining({ code: "NOT_IMPLEMENTED" }),
-    );
     expect(system.untrack(a)).toBe(true);
     expect(system.untrack(a)).toBe(false);
     system.dispose();
