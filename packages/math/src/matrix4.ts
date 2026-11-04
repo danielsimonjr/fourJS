@@ -3,6 +3,12 @@ import { setQuaternionFromBasis, type Quaternion } from "./quaternion.js";
 import type { Vector3 } from "./vector3.js";
 
 /**
+ * Default tolerance for {@link Matrix4.equalsApprox}. See `vector2.ts` for the
+ * rationale; every type in the family uses the same value.
+ */
+const DEFAULT_EPSILON = 1e-6;
+
+/**
  * Clip-space depth convention of a projection matrix (plan D8).
  *
  * - `"negative-one-to-one"` — OpenGL/WebGL 2 clip space, where the near plane
@@ -707,5 +713,45 @@ export class Matrix4 {
 
     this.onChanged?.();
     return this;
+  }
+
+  /**
+   * Transposes this matrix in place: the diagonal stays, the six off-diagonal
+   * pairs swap. Fires the change hook once, after the last write.
+   */
+  transpose(): this {
+    const e = this.elements;
+    const m01 = e[4];
+    const m02 = e[8];
+    const m03 = e[12];
+    const m12 = e[9];
+    const m13 = e[13];
+    const m23 = e[14];
+    e[4] = e[1];
+    e[8] = e[2];
+    e[12] = e[3];
+    e[9] = e[6];
+    e[13] = e[7];
+    e[14] = e[11];
+    e[1] = m01;
+    e[2] = m02;
+    e[3] = m03;
+    e[6] = m12;
+    e[7] = m13;
+    e[11] = m23;
+    this.onChanged?.();
+    return this;
+  }
+
+  /** Element-wise approximate equality over all sixteen elements (absolute `epsilon`). */
+  equalsApprox(m: Matrix4, epsilon: number = DEFAULT_EPSILON): boolean {
+    const a = this.elements;
+    const b = m.elements;
+    for (let i = 0; i < 16; i++) {
+      if (!(Math.abs(a[i] - b[i]) <= epsilon)) {
+        return false;
+      }
+    }
+    return true;
   }
 }

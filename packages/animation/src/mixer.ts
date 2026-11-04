@@ -83,7 +83,8 @@ import { FourError } from "@fourjs/core";
 import { Quaternion, type Vector3 } from "@fourjs/math";
 import {
   Node,
-  runOwnedTransformWrite,
+  beginOwnedTransformWrite,
+  endOwnedTransformWrite,
   warnAuthorityConflict,
 } from "@fourjs/scene";
 import type { TransformAuthority } from "@fourjs/scene";
@@ -1103,9 +1104,12 @@ export class AnimationMixer {
         warnAuthorityConflict(target, MIXER_AUTHORITY);
         return;
       }
-      runOwnedTransformWrite(() => {
+      beginOwnedTransformWrite();
+      try {
         target.transform.rotation.multiply(delta).normalize();
-      });
+      } finally {
+        endOwnedTransformWrite();
+      }
       return;
     }
 
@@ -1139,9 +1143,12 @@ export class AnimationMixer {
       warnAuthorityConflict(target, MIXER_AUTHORITY);
       return;
     }
-    runOwnedTransformWrite(() => {
+    beginOwnedTransformWrite();
+    try {
       target.transform.position.add(delta);
-    });
+    } finally {
+      endOwnedTransformWrite();
+    }
   }
 
   /**
@@ -1268,9 +1275,12 @@ export class AnimationMixer {
       }
     }
     if (this.#allowTransform) {
-      runOwnedTransformWrite(() => {
+      beginOwnedTransformWrite();
+      try {
         (this.#clip as AnimationClip).sampleAll(local, this.#sink);
-      });
+      } finally {
+        endOwnedTransformWrite();
+      }
     } else {
       (this.#clip as AnimationClip).sampleAll(local, this.#sink);
     }

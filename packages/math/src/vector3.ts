@@ -1,4 +1,5 @@
 import { noteConstruction } from "./alloc-counter.js";
+import type { Matrix4 } from "./matrix4.js";
 
 /**
  * Default tolerance for {@link Vector3.equalsApprox}. See `vector2.ts` for the
@@ -190,5 +191,124 @@ export class Vector3 {
       Math.abs(this.y - v.y) <= epsilon &&
       Math.abs(this.z - v.z) <= epsilon
     );
+  }
+
+  /** Euclidean distance to `v`; `sqrt` of the squared sum, never `Math.hypot`, so results are bit-stable per runtime. Does not mutate. */
+  distanceTo(v: Vector3): number {
+    return Math.sqrt(this.distanceToSq(v));
+  }
+
+  /** Squared distance to `v`; preferred over {@link Vector3.distanceTo} for comparisons. Does not mutate. */
+  distanceToSq(v: Vector3): number {
+    const dx = this.x - v.x;
+    const dy = this.y - v.y;
+    const dz = this.z - v.z;
+    return dx * dx + dy * dy + dz * dz;
+  }
+
+  /** Negates every component in place (reverses direction without allocating). */
+  negate(): this {
+    this.x = -this.x;
+    this.y = -this.y;
+    this.z = -this.z;
+    this.onChanged?.();
+    return this;
+  }
+
+  /** Multiplies by `v` component-wise (Hadamard product), e.g. for non-uniform scale. Alias-safe: `a.multiply(a)` squares. */
+  multiply(v: Vector3): this {
+    this.x *= v.x;
+    this.y *= v.y;
+    this.z *= v.z;
+    this.onChanged?.();
+    return this;
+  }
+
+  /** Replaces each component with the smaller of it and the matching component of `v` (AABB min accumulation). */
+  min(v: Vector3): this {
+    this.x = Math.min(this.x, v.x);
+    this.y = Math.min(this.y, v.y);
+    this.z = Math.min(this.z, v.z);
+    this.onChanged?.();
+    return this;
+  }
+
+  /** Replaces each component with the larger of it and the matching component of `v` (AABB max accumulation). */
+  max(v: Vector3): this {
+    this.x = Math.max(this.x, v.x);
+    this.y = Math.max(this.y, v.y);
+    this.z = Math.max(this.z, v.z);
+    this.onChanged?.();
+    return this;
+  }
+
+  /** Adds `v * s` in place (`this += v * s`) — the fused step integrators need, with no temporary vector. */
+  addScaled(v: Vector3, s: number): this {
+    this.x += v.x * s;
+    this.y += v.y * s;
+    this.z += v.z * s;
+    this.onChanged?.();
+    return this;
+  }
+
+  /**
+   * Transforms this vector as a **point** by the affine matrix `m`: columns
+   * 0-2 plus translation `e[12..14]`. Affine `m` only — the homogeneous row
+   * is ignored (use {@link Vector3.applyProjection} for projections).
+   * Operands are read into scalars first, so it is alias-safe.
+   */
+  applyMatrix4(m: Matrix4): this {
+    const e = m.elements;
+    const x = this.x;
+    const y = this.y;
+    const z = this.z;
+    this.x = e[0] * x + e[4] * y + e[8] * z + e[12];
+    this.y = e[1] * x + e[5] * y + e[9] * z + e[13];
+    this.z = e[2] * x + e[6] * y + e[10] * z + e[14];
+    this.onChanged?.();
+    return this;
+  }
+
+  /**
+   * Transforms this vector as a **direction** by the upper-left 3x3 of `m`
+   * (translation ignored). The result is **not renormalized**: callers such
+   * as ray picking need the scaled length to stay meaningful under scale.
+   */
+  transformDirection(m: Matrix4): this {
+    const e = m.elements;
+    const x = this.x;
+    const y = this.y;
+    const z = this.z;
+    this.x = e[0] * x + e[4] * y + e[8] * z;
+    this.y = e[1] * x + e[5] * y + e[9] * z;
+    this.z = e[2] * x + e[6] * y + e[10] * z;
+    this.onChanged?.();
+    return this;
+  }
+
+  /**
+   * Transforms this vector as a point by the full homogeneous matrix `m` and
+   * divides by `w`. When `w === 0` the result is `(0, 0, 0)` rather than
+   * `Infinity`/`NaN`, mirroring the unproject policy in `pick.ts` and
+   * `Matrix4.invert`'s refusal of singular input.
+   */
+  applyProjection(m: Matrix4): this {
+    const e = m.elements;
+    const x = this.x;
+    const y = this.y;
+    const z = this.z;
+    const w = e[3] * x + e[7] * y + e[11] * z + e[15];
+    if (w === 0) {
+      this.x = 0;
+      this.y = 0;
+      this.z = 0;
+    } else {
+      const inverseW = 1 / w;
+      this.x = (e[0] * x + e[4] * y + e[8] * z + e[12]) * inverseW;
+      this.y = (e[1] * x + e[5] * y + e[9] * z + e[13]) * inverseW;
+      this.z = (e[2] * x + e[6] * y + e[10] * z + e[14]) * inverseW;
+    }
+    this.onChanged?.();
+    return this;
   }
 }

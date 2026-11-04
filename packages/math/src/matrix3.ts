@@ -2,6 +2,12 @@ import { noteConstruction } from "./alloc-counter.js";
 import type { Matrix4 } from "./matrix4.js";
 
 /**
+ * Default tolerance for {@link Matrix3.equalsApprox}. See `vector2.ts` for the
+ * rationale; every type in the family uses the same value.
+ */
+const DEFAULT_EPSILON = 1e-6;
+
+/**
  * Mutable 3×3 matrix stored **column-major** in a `Float64Array(9)` (§7b).
  *
  * Element layout — `elements[column * 3 + row]`, the same order GPU APIs and
@@ -315,5 +321,17 @@ export class Matrix3 {
     this.onChanged = hook;
     this.onChanged?.();
     return this;
+  }
+
+  /** Element-wise approximate equality over all nine elements (absolute `epsilon`). */
+  equalsApprox(m: Matrix3, epsilon: number = DEFAULT_EPSILON): boolean {
+    const a = this.elements;
+    const b = m.elements;
+    for (let i = 0; i < 9; i++) {
+      if (!(Math.abs(a[i] - b[i]) <= epsilon)) {
+        return false;
+      }
+    }
+    return true;
   }
 }

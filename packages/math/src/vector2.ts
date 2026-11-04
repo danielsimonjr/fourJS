@@ -158,4 +158,61 @@ export class Vector2 {
       Math.abs(this.x - v.x) <= epsilon && Math.abs(this.y - v.y) <= epsilon
     );
   }
+
+  /** Euclidean distance to `v`; `sqrt` of the squared sum, never `Math.hypot`, so results are bit-stable per runtime. Does not mutate. */
+  distanceTo(v: Vector2): number {
+    return Math.sqrt(this.distanceToSq(v));
+  }
+
+  /** Squared distance to `v`; preferred over {@link Vector2.distanceTo} for comparisons. Does not mutate. */
+  distanceToSq(v: Vector2): number {
+    const dx = this.x - v.x;
+    const dy = this.y - v.y;
+    return dx * dx + dy * dy;
+  }
+
+  /** Negates every component in place (reverses direction without allocating). */
+  negate(): this {
+    this.x = -this.x;
+    this.y = -this.y;
+    this.onChanged?.();
+    return this;
+  }
+
+  /** Multiplies by `v` component-wise (Hadamard product), e.g. for non-uniform scale. Alias-safe: `a.multiply(a)` squares. */
+  multiply(v: Vector2): this {
+    this.x *= v.x;
+    this.y *= v.y;
+    this.onChanged?.();
+    return this;
+  }
+
+  /** Replaces each component with the smaller of it and the matching component of `v` (AABB min accumulation). */
+  min(v: Vector2): this {
+    this.x = Math.min(this.x, v.x);
+    this.y = Math.min(this.y, v.y);
+    this.onChanged?.();
+    return this;
+  }
+
+  /** Replaces each component with the larger of it and the matching component of `v` (AABB max accumulation). */
+  max(v: Vector2): this {
+    this.x = Math.max(this.x, v.x);
+    this.y = Math.max(this.y, v.y);
+    this.onChanged?.();
+    return this;
+  }
+
+  /** Adds `v * s` in place (`this += v * s`) — the fused step integrators need, with no temporary vector. */
+  addScaled(v: Vector2, s: number): this {
+    this.x += v.x * s;
+    this.y += v.y * s;
+    this.onChanged?.();
+    return this;
+  }
+
+  /** 2D cross product (z of the 3D cross): `this.x * v.y - this.y * v.x`. Positive when `v` is counter-clockwise of this. Does not mutate. */
+  cross(v: Vector2): number {
+    return this.x * v.y - this.y * v.x;
+  }
 }
