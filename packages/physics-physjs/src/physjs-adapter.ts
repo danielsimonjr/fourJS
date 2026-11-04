@@ -1,10 +1,32 @@
 /**
  * The PhysJS solver adapters (RFC 0010, §37, §102).
  *
- * W9.1 landed the package shape behind the §37 seam; W9.2 (this file) fills in
- * bodies, shapes, stepping, events and scene sync. Joints, queries, snapshots
- * are still `FourError("NOT_IMPLEMENTED")` (W9.3). Refusing loudly is the §37
- * contract for an unbuilt surface - nothing is approximated silently.
+ * W9.1 landed the package shape behind the §37 seam; W9.2 filled in bodies,
+ * shapes, stepping, events and scene sync; W9.3 (this file) adds joints,
+ * queries, snapshots and the checksum. Anything PhysJS cannot express is
+ * `FourError("NOT_IMPLEMENTED")` - nothing is approximated silently.
+ *
+ * ## Joints, queries, snapshots (W9.3)
+ *
+ * - **Joints.** `fixed` -> PhysJS `fixed`; `revolute` -> the 2-D pin
+ *   (`spherical`) or the 3-D `hinge`; `spherical` (3-D) -> `spherical`;
+ *   `spring` -> `spring`. fourJS anchors/axes are body-local; PhysJS takes
+ *   world frame, so they are transformed with the bodies' current poses.
+ *   `prismatic` and `rope`, limits and motors are refused (NOT_IMPLEMENTED).
+ *   PhysJS exposes no joint reaction, so `reportsJointReactions` is `false`
+ *   and a breakable joint is refused by the world.
+ * - **Queries** run over PhysJS's `raycast`/`overlap`/`pointQuery` and the
+ *   shared \u00a730 filter (`passesQueryFilter`; every collider is all-ones, so
+ *   group/mask filters on the *query* still apply). PhysJS `raycast` returns
+ *   only the nearest hit; `mode: "all"` (or a filter that rejects the nearest)
+ *   re-casts on a scratch copy restored from a snapshot with each hit removed,
+ *   so the live world is never touched. `shapeCast` is refused.
+ * - **Snapshots** are an envelope: magic, format, JSON meta (adapter name,
+ *   PhysJS version, the id registries, running force sums, pending kinematic
+ *   targets, touching pairs, sleep flags) and PhysJS's exact float64 bytes.
+ *   `restoreSnapshot` refuses a foreign adapter or version, keeps surviving
+ *   handles valid, and clears the undrained event queue. `checksum()` is
+ *   FNV-1a over PhysJS's own checksum plus the registry in ascending id order.
  *
  * ## What PhysJS 0.5.0 cannot express, and what this adapter does about it
  *
@@ -63,6 +85,7 @@
 
 import * as pj from "@danielsimonjr/physjs";
 import { FourError } from "@fourjs/core";
+import type { FourErrorCode } from "@fourjs/core";
 import { Quaternion, Vector3 } from "@fourjs/math";
 import type { Matrix3 } from "@fourjs/math";
 import {
@@ -76,7 +99,11 @@ import {
   resolveGravity,
   resolveRotation,
   resolveSleepingConfig,
+  passesQueryFilter,
+  resolveQueryOptions,
   validateColliderDescriptor,
+  validateJointDescriptor,
+  validateQueryShape,
   validatePhysicsWorldOptions,
   validateRigidBodyDescriptor,
   widenToVector3,
@@ -112,6 +139,9 @@ import type {
   SleepingConfig,
   SolverBodyAccess,
   SolverBodyTuningAccess,
+  SolverJointAccess,
+  SolverJointMotor,
+  QueryCandidate,
   Vector3Input,
 } from "@fourjs/physics";
 
@@ -148,14 +178,6 @@ const ADAPTER_ERROR_CODE = "INVALID_APPLICATION_STATE";
 
 /** Scalars below this are treated as zero when checking "is this offset/centre non-zero". */
 const ZERO_EPSILON = 1e-9;
-
-function notImplemented(adapter: string, operation: string): never {
-  throw new FourError(
-    "NOT_IMPLEMENTED",
-    `${adapter}.${operation} is not implemented yet (RFC 0010 packets W9.3-W9.4).`,
-    { context: { adapter, operation } },
-  );
-}
 
 /** Refuses something PhysJS 0.5.0 cannot express (RFC 0010 decision 5). */
 function unsupported(adapter: string, what: string): never {
@@ -206,6 +228,68 @@ interface ColliderRecord {
   readonly physDensity: number;
 }
 
+interface JointEntry {
+  readonly id: number;
+  readonly handle: pj.JointHandle;
+  readonly type: JointDescriptor["type"];
+  readonly bodyIdA: number;
+  readonly bodyIdB: number;
+  alive: boolean;
+}
+
+/** Snapshot envelope: "F4PJ" little-endian, then format, meta length, PhysJS length. */
+const SNAPSHOT_MAGIC = 0x4a503446;
+const SNAPSHOT_FORMAT_VERSION = 1;
+const SNAPSHOT_HEADER_BYTES = 16;
+
+interface SnapshotMeta {
+  adapter: string;
+  version: string;
+  nextBodyId: number;
+  nextColliderId: number;
+  nextJointId: number;
+  /** [id, handle, type, bodyIdA, bodyIdB] in ascending id order. */
+  joints: [number, number, string, number, number][];
+  bodies: SnapshotBody[];
+  /** [id, handle, bodyId, density, physDensity] in ascending id order. */
+  colliders: [number, number, number, number, number][];
+  /** Touching pairs as collider ids. */
+  pairs: [number, number][];
+}
+
+interface SnapshotBody {
+  id: number;
+  handle: number;
+  type: BodyType;
+  mass: number | null;
+  /** `null` entries are Infinity (JSON has no Infinity). */
+  inertia: (number | null)[] | null;
+  force: number[];
+  torque: number[];
+  sleeping: boolean;
+  ccd: CCDMode;
+  target: number[] | null;
+}
+
+const FNV_OFFSET = 2166136261;
+const FNV_PRIME = 16777619;
+
+function fnv1a(bytes: Uint8Array): string {
+  let hash = FNV_OFFSET;
+  for (const byte of bytes) {
+    hash = Math.imul(hash ^ byte, FNV_PRIME) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
+
+function finiteOrNull(value: number): number | null {
+  return Number.isFinite(value) ? value : null;
+}
+
+function nullToInfinity(value: number | null): number {
+  return value ?? Infinity;
+}
+
 interface PairRecord {
   readonly a: ColliderRecord;
   readonly b: ColliderRecord;
@@ -217,11 +301,17 @@ interface PairRecord {
  * deciding the vector widths (2-D is XY with z = 0 and rotation about +Z).
  */
 abstract class PhysJSAdapterBase
-  implements PhysicsWorldAdapter, SolverBodyAccess, SolverBodyTuningAccess
+  implements
+    PhysicsWorldAdapter,
+    SolverBodyAccess,
+    SolverBodyTuningAccess,
+    SolverJointAccess
 {
   abstract readonly name: string;
   readonly version: string = PHYSJS_VERSION;
   readonly capabilities: PhysicsCapabilities = PHYSJS_CAPABILITIES;
+  /** PhysJS exposes no joint reaction impulse; breakable joints are refused by the world. */
+  readonly reportsJointReactions = false;
 
   readonly #dims: 2 | 3;
   readonly #dimension: PhysicsDimension;
@@ -237,6 +327,8 @@ abstract class PhysJSAdapterBase
   readonly #colliders = new Map<number, ColliderRecord>();
   readonly #collidersByHandle = new Map<pj.ColliderHandle, ColliderRecord>();
   readonly #activePairs = new Map<number, PairRecord>();
+  #nextJointId = 1;
+  #joints = new Map<number, JointEntry>();
   #pendingEvents: PhysicsEvent[] = [];
 
   constructor(dimension: PhysicsDimension) {
@@ -306,6 +398,10 @@ abstract class PhysJSAdapterBase
     for (const record of this.#colliders.values()) {
       record.alive = false;
     }
+    for (const entry of this.#joints.values()) {
+      entry.alive = false;
+    }
+    this.#joints.clear();
     this.#bodies.clear();
     this.#colliders.clear();
     this.#collidersByHandle.clear();
@@ -382,6 +478,12 @@ abstract class PhysJSAdapterBase
       const collider = this.#colliders.get(id);
       if (collider !== undefined) {
         this.#forgetCollider(collider);
+      }
+    }
+    for (const entry of [...this.#joints.values()]) {
+      if (entry.bodyIdA === record.id || entry.bodyIdB === record.id) {
+        entry.alive = false;
+        this.#joints.delete(entry.id);
       }
     }
     pj.removeBody(world, record.handle);
@@ -462,31 +564,321 @@ abstract class PhysJSAdapterBase
     }
   }
 
-  // --- joints, queries, snapshots (W9.3) -------------------------------------
+  // --- joints (SolverJointAccess) --------------------------------------------
 
-  createJoint(_desc?: JointDescriptor): PhysicsJointHandle {
-    return notImplemented(this.name, "createJoint");
+  createJoint(desc: JointDescriptor): PhysicsJointHandle {
+    const world = this.#requireWorld();
+    validateJointDescriptor(desc, this.#dimension);
+    if (desc.type === "prismatic" || desc.type === "rope") {
+      unsupported(this.name, `${desc.type} joints (no such PhysJS joint type)`);
+    }
+    if (
+      (desc.type === "revolute" || desc.type === "spherical") &&
+      desc.limits !== undefined
+    ) {
+      unsupported(this.name, "joint limits");
+    }
+    if (desc.type === "revolute" && desc.motor !== undefined) {
+      unsupported(this.name, "joint motors");
+    }
+    const bodyA = this.#requireBody(desc.bodyA);
+    const bodyB = this.#requireBody(desc.bodyB);
+    const base = {
+      bodyA: bodyA.handle,
+      bodyB: bodyB.handle,
+      anchorA: this.#anchorToWorld(bodyA, desc.anchorA),
+      anchorB: this.#anchorToWorld(bodyB, desc.anchorB),
+      collideConnected: desc.collisionEnabled ?? false,
+    };
+    let descriptor: pj.JointDescriptor;
+    if (desc.type === "fixed") {
+      descriptor = { ...base, type: "fixed" };
+    } else if (desc.type === "spherical") {
+      descriptor = { ...base, type: "spherical" };
+    } else if (desc.type === "revolute") {
+      descriptor =
+        this.#dims === 2
+          ? { ...base, type: "spherical" }
+          : {
+              ...base,
+              type: "hinge",
+              axis: this.#axisToWorld(bodyA, desc.axis),
+            };
+    } else {
+      descriptor = {
+        ...base,
+        type: "spring",
+        stiffness: desc.stiffness,
+        damping: desc.damping ?? 0,
+        restLength: desc.restLength,
+      };
+    }
+    const handle = pj.addJoint(world, descriptor);
+    const entry: JointEntry = {
+      id: this.#nextJointId,
+      handle,
+      type: desc.type,
+      bodyIdA: bodyA.id,
+      bodyIdB: bodyB.id,
+      alive: true,
+    };
+    this.#nextJointId += 1;
+    this.#joints.set(entry.id, entry);
+    return entry as unknown as PhysicsJointHandle;
   }
-  destroyJoint(_handle?: PhysicsJointHandle): void {
-    notImplemented(this.name, "destroyJoint");
+
+  destroyJoint(handle: PhysicsJointHandle): void {
+    const world = this.#requireWorld();
+    const entry = this.#requireJoint(handle);
+    pj.removeJoint(world, entry.handle);
+    entry.alive = false;
+    this.#joints.delete(entry.id);
   }
-  raycast(_query?: RaycastQuery): RaycastHit[] {
-    return notImplemented(this.name, "raycast");
+
+  getJointReaction(
+    _handle: PhysicsJointHandle,
+    _outLinear: Vector3,
+    _outAngular: Vector3,
+  ): void {
+    unsupported(this.name, "joint reactions (reportsJointReactions is false)");
   }
-  shapeCast(_query?: ShapeCastQuery): ShapeCastHit[] {
-    return notImplemented(this.name, "shapeCast");
+
+  setJointLimits(
+    _handle: PhysicsJointHandle,
+    _min: number,
+    _max: number,
+  ): void {
+    unsupported(this.name, "joint limits");
   }
-  overlap(_query?: OverlapQuery): OverlapHit[] {
-    return notImplemented(this.name, "overlap");
+
+  setJointMotor(_handle: PhysicsJointHandle, _motor: SolverJointMotor): void {
+    unsupported(this.name, "joint motors");
   }
-  pointQuery(_query?: PointQuery): PointHit[] {
-    return notImplemented(this.name, "pointQuery");
+
+  setJointCollisionEnabled(handle: PhysicsJointHandle, enabled: boolean): void {
+    const stored = this.#storedJoint(handle);
+    // JointRecord is plain data and jointExcludes reads the flag each step.
+    (stored as { collideConnected: boolean }).collideConnected = enabled;
   }
+
+  setJointAnchors(
+    handle: PhysicsJointHandle,
+    anchorA: Vector3,
+    anchorB: Vector3,
+  ): void {
+    const stored = this.#storedJoint(handle) as unknown as {
+      localAnchorA: [number, number, number];
+      localAnchorB: [number, number, number];
+    };
+    this.#vector3("anchorA", anchorA);
+    this.#vector3("anchorB", anchorB);
+    stored.localAnchorA = [anchorA.x, anchorA.y, anchorA.z];
+    stored.localAnchorB = [anchorB.x, anchorB.y, anchorB.z];
+  }
+
+  getJointId(handle: PhysicsJointHandle): number {
+    return this.#requireJoint(handle).id;
+  }
+
+  forEachJoint(visit: (handle: PhysicsJointHandle, id: number) => void): void {
+    this.#requireWorld();
+    for (const entry of this.#joints.values()) {
+      visit(entry as unknown as PhysicsJointHandle, entry.id);
+    }
+  }
+
+  // --- queries ---------------------------------------------------------------
+
+  /**
+   * Casts a ray (§30). PhysJS returns only the nearest hit, so more than one
+   * hit (or a filter rejecting the nearest) is gathered on a scratch world
+   * restored from a snapshot: the live world is never written.
+   */
+  raycast(query: RaycastQuery): RaycastHit[] {
+    const world = this.#requireWorld();
+    const options = resolveQueryOptions(query);
+    const origin = this.#toVector("origin", query.origin);
+    const direction = this.#toVector("direction", query.direction);
+    if (direction.every((c) => c === 0)) {
+      throw new FourError(
+        ADAPTER_ERROR_CODE,
+        "raycast direction must have non-zero length (§30, §85).",
+        { context: { adapter: this.name } },
+      );
+    }
+    const maxDistance = query.maxDistance ?? Infinity;
+    let hit = pj.raycast(world, origin, direction, maxDistance);
+    if (hit === undefined) {
+      return [];
+    }
+    if (options.maxHits === 1 && this.#passes(hit.collider, options)) {
+      return [this.#rayHit(hit)];
+    }
+    const scratch = pj.createWorld({ dims: this.#dims });
+    pj.restore(scratch, pj.snapshot(world));
+    const hits: RaycastHit[] = [];
+    while (hit !== undefined && hits.length < options.maxHits) {
+      if (this.#passes(hit.collider, options)) {
+        hits.push(this.#rayHit(hit));
+      }
+      pj.removeCollider(scratch, hit.collider);
+      hit = pj.raycast(scratch, origin, direction, maxDistance);
+    }
+    return hits;
+  }
+
+  shapeCast(_query: ShapeCastQuery): ShapeCastHit[] {
+    return unsupported(this.name, "shapeCast (capabilities.queries.shapeCast)");
+  }
+
+  overlap(query: OverlapQuery): OverlapHit[] {
+    const world = this.#requireWorld();
+    const options = resolveQueryOptions(query);
+    validateQueryShape(query.shape, this.#dimension);
+    const handles = pj.overlap(
+      world,
+      this.#toShape(query.shape),
+      this.#toVector("position", query.position),
+      query.rotation === undefined
+        ? undefined
+        : this.#toRotation(query.rotation),
+    );
+    const hits: OverlapHit[] = [];
+    for (const handle of handles) {
+      if (hits.length >= options.maxHits) {
+        break;
+      }
+      if (this.#passes(handle, options)) {
+        hits.push(this.#queryHit(handle));
+      }
+    }
+    return hits;
+  }
+
+  pointQuery(query: PointQuery): PointHit[] {
+    const world = this.#requireWorld();
+    const options = resolveQueryOptions(query);
+    const point = this.#vector3("point", query.point);
+    const hits: PointHit[] = [];
+    for (const handle of pj.pointQuery(world, this.#toVector("point", point))) {
+      if (hits.length >= options.maxHits) {
+        break;
+      }
+      if (this.#passes(handle, options)) {
+        // A containing collider: the closest surface point is the query point.
+        hits.push({
+          ...this.#queryHit(handle),
+          point: point.clone(),
+          distance: 0,
+        });
+      }
+    }
+    return hits;
+  }
+
+  // --- snapshots (§34) ---------------------------------------------------------
+
+  /**
+   * Envelope: u32 magic "F4PJ", u32 format, u32 meta bytes, u32 PhysJS bytes,
+   * UTF-8 JSON meta, then PhysJS's own float64-exact snapshot, verbatim.
+   */
   createSnapshot(): ArrayBuffer {
-    return notImplemented(this.name, "createSnapshot");
+    const world = this.#requireWorld();
+    const physBytes = new Uint8Array(pj.snapshot(world));
+    const metaBytes = new TextEncoder().encode(
+      JSON.stringify(this.#snapshotMeta()),
+    );
+    const buffer = new ArrayBuffer(
+      SNAPSHOT_HEADER_BYTES + metaBytes.byteLength + physBytes.byteLength,
+    );
+    const header = new DataView(buffer);
+    header.setUint32(0, SNAPSHOT_MAGIC, true);
+    header.setUint32(4, SNAPSHOT_FORMAT_VERSION, true);
+    header.setUint32(8, metaBytes.byteLength, true);
+    header.setUint32(12, physBytes.byteLength, true);
+    const bytes = new Uint8Array(buffer);
+    bytes.set(metaBytes, SNAPSHOT_HEADER_BYTES);
+    bytes.set(physBytes, SNAPSHOT_HEADER_BYTES + metaBytes.byteLength);
+    return buffer;
   }
-  restoreSnapshot(_snapshot?: ArrayBuffer): void {
-    notImplemented(this.name, "restoreSnapshot");
+
+  restoreSnapshot(snapshot: ArrayBuffer): void {
+    const world = this.#requireWorld();
+    const reject = (
+      message: string,
+      code: FourErrorCode = "UNTRUSTED_INPUT_REJECTED",
+    ): never => {
+      throw new FourError(code, `${message} (§34, §96).`, {
+        context: { adapter: this.name },
+      });
+    };
+    if (snapshot.byteLength < SNAPSHOT_HEADER_BYTES) {
+      reject(`Snapshot is too small to be a ${this.name} envelope`);
+    }
+    const header = new DataView(snapshot);
+    if (header.getUint32(0, true) !== SNAPSHOT_MAGIC) {
+      reject(
+        `Snapshot was not produced by a PhysJS adapter; a snapshot is valid only for the adapter that wrote it`,
+        ADAPTER_ERROR_CODE,
+      );
+    }
+    if (header.getUint32(4, true) !== SNAPSHOT_FORMAT_VERSION) {
+      reject(
+        `Snapshot envelope version ${String(header.getUint32(4, true))} is not ${String(SNAPSHOT_FORMAT_VERSION)}`,
+        "SERIALIZATION_VERSION_MISMATCH",
+      );
+    }
+    const metaLength = header.getUint32(8, true);
+    const physLength = header.getUint32(12, true);
+    if (SNAPSHOT_HEADER_BYTES + metaLength + physLength > snapshot.byteLength) {
+      reject("Snapshot envelope declares more bytes than it carries");
+    }
+    const bytes = new Uint8Array(snapshot);
+    let meta: SnapshotMeta | undefined;
+    try {
+      meta = JSON.parse(
+        new TextDecoder().decode(
+          bytes.subarray(
+            SNAPSHOT_HEADER_BYTES,
+            SNAPSHOT_HEADER_BYTES + metaLength,
+          ),
+        ),
+      ) as SnapshotMeta;
+    } catch {
+      meta = undefined;
+    }
+    if (meta === undefined || !Array.isArray(meta.bodies)) {
+      return reject("Snapshot metadata does not parse");
+    }
+    if (meta.adapter !== this.name || meta.version !== this.version) {
+      reject(
+        `Snapshot was written by ${JSON.stringify(meta.adapter)} ${JSON.stringify(meta.version)} and this adapter is ${JSON.stringify(this.name)} ${JSON.stringify(this.version)}`,
+        ADAPTER_ERROR_CODE,
+      );
+    }
+    try {
+      pj.restore(
+        world,
+        bytes.slice(
+          SNAPSHOT_HEADER_BYTES + metaLength,
+          SNAPSHOT_HEADER_BYTES + metaLength + physLength,
+        ),
+      );
+    } catch {
+      reject("PhysJS refused the snapshot bytes");
+    }
+    this.#rebuildRegistry(meta);
+  }
+
+  /**
+   * 32-bit FNV-1a (8 hex digits) over PhysJS's own FNV-1a checksum and the
+   * adapter's registry (ids, handles, force sums) in ascending id order. Equal
+   * worlds with equal id histories give equal checksums; reads never change it.
+   */
+  checksum(): string {
+    const world = this.#requireWorld();
+    const text = `${pj.checksum(world)}|${JSON.stringify(this.#snapshotMeta())}`;
+    return fnv1a(new TextEncoder().encode(text));
   }
 
   // --- step and events -------------------------------------------------------
@@ -914,6 +1306,292 @@ abstract class PhysJSAdapterBase
   }
 
   // --- internals -------------------------------------------------------------
+
+  #requireJoint(handle: PhysicsJointHandle): JointEntry {
+    this.#requireWorld();
+    const entry = handle as unknown as JointEntry;
+    if (!entry.alive || this.#joints.get(entry.id) !== entry) {
+      rejectStalePhysicsHandle(
+        "joint",
+        String(entry.id),
+        `Joint handle is not valid for this ${this.name}: it was destroyed, or it was minted by another adapter (§37).`,
+        ADAPTER_ERROR_CODE,
+        { adapter: this.name },
+      );
+    }
+    return entry;
+  }
+
+  #storedJoint(handle: PhysicsJointHandle): pj.JointRecord {
+    const world = this.#requireWorld();
+    return pj.getJoint(
+      world,
+      this.#requireJoint(handle).handle,
+    ) as pj.JointRecord;
+  }
+
+  /** Rotates `v` by the body's current orientation. */
+  #bodyFrame(record: BodyRecord): { position: Vector3; rotation: Quaternion } {
+    const position = new Vector3();
+    const rotation = new Quaternion();
+    this.getBodyTransform(
+      record as unknown as PhysicsBodyHandle,
+      position,
+      rotation,
+    );
+    return { position, rotation };
+  }
+
+  #rotate(q: Quaternion, v: Vector3): Vector3 {
+    const tx = 2 * (q.y * v.z - q.z * v.y);
+    const ty = 2 * (q.z * v.x - q.x * v.z);
+    const tz = 2 * (q.x * v.y - q.y * v.x);
+    return new Vector3(
+      v.x + q.w * tx + (q.y * tz - q.z * ty),
+      v.y + q.w * ty + (q.z * tx - q.x * tz),
+      v.z + q.w * tz + (q.x * ty - q.y * tx),
+    );
+  }
+
+  /** A body-local anchor as a world-frame PhysJS vector. */
+  #anchorToWorld(
+    record: BodyRecord,
+    anchor: Vector3Input | undefined,
+  ): number[] {
+    const local =
+      anchor === undefined ? new Vector3() : this.#vector3("anchor", anchor);
+    const frame = this.#bodyFrame(record);
+    const r = this.#rotate(frame.rotation, local);
+    const x = frame.position.x + r.x;
+    const y = frame.position.y + r.y;
+    return this.#dims === 2 ? [x, y] : [x, y, frame.position.z + r.z];
+  }
+
+  /** The bodyA-local hinge axis as a world-frame vector. */
+  #axisToWorld(record: BodyRecord, axis: Vector3Input | undefined): number[] {
+    const local = this.#vector3("axis", axis ?? new Vector3(0, 0, 1));
+    const r = this.#rotate(this.#bodyFrame(record).rotation, local);
+    return [r.x, r.y, r.z];
+  }
+
+  #candidate(record: ColliderRecord): QueryCandidate {
+    return {
+      collider: record as unknown as PhysicsColliderHandle,
+      body: this.#bodies.get(record.bodyId) as unknown as PhysicsBodyHandle,
+      collisionGroups: ALL_COLLISION_GROUPS,
+      collisionMask: ALL_COLLISION_GROUPS,
+      sensor: false,
+    };
+  }
+
+  #passes(
+    handle: pj.ColliderHandle,
+    options: ReturnType<typeof resolveQueryOptions>,
+  ): boolean {
+    const record = this.#collidersByHandle.get(handle) as ColliderRecord;
+    return passesQueryFilter(this.#candidate(record), options);
+  }
+
+  #queryHit(handle: pj.ColliderHandle): {
+    collider: PhysicsColliderHandle;
+    body: PhysicsBodyHandle;
+  } {
+    const candidate = this.#candidate(
+      this.#collidersByHandle.get(handle) as ColliderRecord,
+    );
+    return { collider: candidate.collider, body: candidate.body };
+  }
+
+  #rayHit(hit: pj.RayHit): RaycastHit {
+    return {
+      ...this.#queryHit(hit.collider),
+      point: new Vector3(hit.point[0], hit.point[1], hit.point[2]),
+      normal: new Vector3(hit.normal[0], hit.normal[1], hit.normal[2]),
+      distance: hit.distance,
+    };
+  }
+
+  #snapshotMeta(): SnapshotMeta {
+    return {
+      adapter: this.name,
+      version: this.version,
+      nextBodyId: this.#nextBodyId,
+      nextColliderId: this.#nextColliderId,
+      nextJointId: this.#nextJointId,
+      joints: [...this.#joints.values()].map((j) => [
+        j.id,
+        j.handle,
+        j.type,
+        j.bodyIdA,
+        j.bodyIdB,
+      ]),
+      bodies: [...this.#bodies.values()].map((b) => ({
+        id: b.id,
+        handle: b.handle,
+        type: b.type,
+        mass: b.authoredMass ?? null,
+        inertia: b.authoredInertia?.map(finiteOrNull) ?? null,
+        force: [...b.force],
+        torque: [...b.torque],
+        sleeping: b.sleeping,
+        ccd: b.ccdMode,
+        target:
+          b.target === undefined
+            ? null
+            : [
+                b.target.position.x,
+                b.target.position.y,
+                b.target.position.z,
+                b.target.rotation.x,
+                b.target.rotation.y,
+                b.target.rotation.z,
+                b.target.rotation.w,
+              ],
+      })),
+      colliders: [...this.#colliders.values()].map((c) => [
+        c.id,
+        c.handle,
+        c.bodyId,
+        c.density,
+        c.physDensity,
+      ]),
+      pairs: [...this.#activePairs.values()].map((p) => [p.a.id, p.b.id]),
+    };
+  }
+
+  /**
+   * Rebuilds the registries from the envelope, reusing the record objects whose
+   * id and PhysJS handle survive (so handles minted before the snapshot keep
+   * working) and killing the rest.
+   */
+  #rebuildRegistry(meta: SnapshotMeta): void {
+    const bodies = new Map<number, BodyRecord>();
+    for (const e of meta.bodies) {
+      const old = this.#bodies.get(e.id);
+      const record: BodyRecord =
+        old !== undefined && (old.handle as number) === e.handle
+          ? old
+          : {
+              id: e.id,
+              handle: e.handle as pj.BodyHandle,
+              slot: e.handle % pj.MAX_BODIES,
+              type: e.type,
+              alive: true,
+              colliderIds: [],
+              authoredMass: undefined,
+              authoredInertia: undefined,
+              force: [0, 0, 0],
+              torque: [0, 0, 0],
+              sleeping: false,
+              ccdMode: e.ccd,
+              target: undefined,
+            };
+      record.type = e.type;
+      record.authoredMass = e.mass ?? undefined;
+      record.authoredInertia =
+        e.inertia === null
+          ? undefined
+          : [
+              nullToInfinity(e.inertia[0]),
+              nullToInfinity(e.inertia[1]),
+              nullToInfinity(e.inertia[2]),
+            ];
+      record.force[0] = e.force[0];
+      record.force[1] = e.force[1];
+      record.force[2] = e.force[2];
+      record.torque[0] = e.torque[0];
+      record.torque[1] = e.torque[1];
+      record.torque[2] = e.torque[2];
+      record.sleeping = e.sleeping;
+      record.ccdMode = e.ccd;
+      record.colliderIds.length = 0;
+      record.target =
+        e.target === null
+          ? undefined
+          : {
+              position: new Vector3(e.target[0], e.target[1], e.target[2]),
+              rotation: new Quaternion(
+                e.target[3],
+                e.target[4],
+                e.target[5],
+                e.target[6],
+              ),
+            };
+      bodies.set(e.id, record);
+    }
+    const colliders = new Map<number, ColliderRecord>();
+    const byHandle = new Map<pj.ColliderHandle, ColliderRecord>();
+    for (const [id, handle, bodyId, density, physDensity] of meta.colliders) {
+      const old = this.#colliders.get(id);
+      const record: ColliderRecord =
+        old !== undefined &&
+        old.handle === handle &&
+        old.bodyId === bodyId &&
+        old.physDensity === physDensity
+          ? old
+          : {
+              id,
+              handle: handle as pj.ColliderHandle,
+              bodyId,
+              alive: true,
+              density,
+              physDensity,
+            };
+      record.density = density;
+      colliders.set(id, record);
+      byHandle.set(handle as pj.ColliderHandle, record);
+      (bodies.get(bodyId) as BodyRecord).colliderIds.push(id);
+    }
+    const joints = new Map<number, JointEntry>();
+    for (const [id, handle, type, bodyIdA, bodyIdB] of meta.joints) {
+      const old = this.#joints.get(id);
+      joints.set(
+        id,
+        old !== undefined && old.handle === handle
+          ? old
+          : {
+              id,
+              handle: handle as pj.JointHandle,
+              type: type as JointEntry["type"],
+              bodyIdA,
+              bodyIdB,
+              alive: true,
+            },
+      );
+    }
+    for (const old of this.#bodies.values()) {
+      old.alive = bodies.get(old.id) === old;
+    }
+    for (const old of this.#colliders.values()) {
+      old.alive = colliders.get(old.id) === old;
+    }
+    for (const old of this.#joints.values()) {
+      old.alive = joints.get(old.id) === old;
+    }
+    this.#bodies.clear();
+    for (const [id, record] of bodies) {
+      this.#bodies.set(id, record);
+    }
+    this.#colliders.clear();
+    for (const [id, record] of colliders) {
+      this.#colliders.set(id, record);
+    }
+    this.#collidersByHandle.clear();
+    for (const [handle, record] of byHandle) {
+      this.#collidersByHandle.set(handle, record);
+    }
+    this.#joints = joints;
+    this.#activePairs.clear();
+    for (const [a, b] of meta.pairs) {
+      const first = colliders.get(a) as ColliderRecord;
+      const second = colliders.get(b) as ColliderRecord;
+      this.#activePairs.set(pairKey(first, second), { a: first, b: second });
+    }
+    this.#pendingEvents = [];
+    this.#nextBodyId = meta.nextBodyId;
+    this.#nextColliderId = meta.nextColliderId;
+    this.#nextJointId = meta.nextJointId;
+  }
 
   #assertNotDisposed(): void {
     if (this.#disposed) {

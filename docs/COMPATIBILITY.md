@@ -292,9 +292,9 @@ same seam. The table below is generated from the adapters' own
 | `tuning.rollingFriction` (§25)  | no                                         | no                                         | no                                                 | no                                                              |
 | `tuning.spinningFriction` (§25) | no                                         | no                                         | no                                                 | no                                                              |
 | `tuning.sleepThresholds` (§32)  | no                                         | no                                         | no                                                 | no                                                              |
-| `reportsJointReactions` (§28)   | —                                          | —                                          | no                                                 | no                                                              |
+| `reportsJointReactions` (§28)   | no                                         | no                                         | no                                                 | no                                                              |
 | `SolverBodyAccess` implemented  | yes                                        | yes                                        | yes                                                | yes                                                             |
-| `SolverJointAccess` implemented | no                                         | no                                         | yes                                                | yes                                                             |
+| `SolverJointAccess` implemented | yes                                        | yes                                        | yes                                                | yes                                                             |
 
 Solver packages that declare no adapter:
 

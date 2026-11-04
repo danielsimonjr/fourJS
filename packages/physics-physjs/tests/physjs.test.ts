@@ -3,7 +3,6 @@ import {
   SolverRegistry,
   registeredSolvers,
   clearRegisteredSolvers,
-  type PhysicsJointHandle,
   type PhysicsWorldAdapter,
 } from "@fourjs/physics";
 import { afterEach, describe, expect, it } from "vitest";
@@ -134,18 +133,9 @@ describe("capability record (RFC 0010 decision 4)", () => {
   });
 });
 
-describe("the W9.3 surface still refuses with NOT_IMPLEMENTED", () => {
-  const joint = {} as PhysicsJointHandle;
-
+describe("shapeCast is refused with NOT_IMPLEMENTED", () => {
   const calls: Record<string, (a: PhysicsWorldAdapter) => unknown> = {
-    createJoint: (a) => a.createJoint({} as never),
-    destroyJoint: (a) => a.destroyJoint(joint),
-    raycast: (a) => a.raycast({} as never),
     shapeCast: (a) => a.shapeCast({} as never),
-    overlap: (a) => a.overlap({} as never),
-    pointQuery: (a) => a.pointQuery({} as never),
-    createSnapshot: (a) => a.createSnapshot?.(),
-    restoreSnapshot: (a) => a.restoreSnapshot?.(new ArrayBuffer(0)),
   };
 
   for (const Adapter of [PhysJSAdapter2D, PhysJSAdapter3D]) {
