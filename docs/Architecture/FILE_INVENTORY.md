@@ -10,37 +10,37 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 
 **Excluded by design (not source):** `node_modules/`, `dist/`, `*.d.ts` ambient declarations, and dot-directories (`.git/`, `.remember/`, `.changeset/`, …). The walk set equals the git-tracked `.ts` files, so there is no silent allowlist — every tracked `.ts` appears below with an explicit disposition.
 
-**Total files**: 922
+**Total files**: 930
 
 ## Disposition counts
 
 | Disposition   |   Count | Meaning                                                                                                      |
 | ------------- | ------: | ------------------------------------------------------------------------------------------------------------ |
-| `reachable`   |     304 | A `src/` file in the module graph, reachable from a root.                                                    |
+| `reachable`   |     306 | A `src/` file in the module graph, reachable from a root.                                                    |
 | `build-entry` |      48 | A detected build/subpath/`bin`/worker/`tsup.config` root (index, internal, cli, render-file, run-worker, …). |
 | `test-only`   |       4 | A `src/` file not reachable from src roots but imported by a test.                                           |
 | `orphan`      |       0 | A `src/` file reachable from nothing — a delete/wire candidate (hard-fails the gate).                        |
-| `test`        |     532 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
+| `test`        |     536 | A test source file (under a `tests/` dir, or a `*.test.ts`/`*.spec.ts`).                                     |
 | `tool`        |       1 | A file under `tools/` — agent-only meta-tooling (CDG/QDG/benchmarks).                                        |
-| `config`      |      18 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).                                |
-| `example`     |      15 | An `examples/` or `docs/` reference/illustration source.                                                     |
-| **Total**     | **922** |                                                                                                              |
+| `config`      |      19 | A build/test config source (`*.config.ts`: vitest/tsup, per-package or root).                                |
+| `example`     |      16 | An `examples/` or `docs/` reference/illustration source.                                                     |
+| **Total**     | **930** |                                                                                                              |
 
 ## Per-area counts
 
 | Area       | Files |
 | ---------- | ----: |
-| `config`   |    18 |
-| `examples` |    15 |
-| `src`      |   356 |
-| `tests`    |   532 |
+| `config`   |    19 |
+| `examples` |    16 |
+| `src`      |   358 |
+| `tests`    |   536 |
 | `tools`    |     1 |
 
 ## Per-package counts
 
 | Package                  | Files |
 | ------------------------ | ----: |
-| `(root)`                 |   245 |
+| `(root)`                 |   248 |
 | `@fourjs/animation`      |    33 |
 | `@fourjs/assets`         |    36 |
 | `@fourjs/core`           |    26 |
@@ -54,7 +54,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `@fourjs/physics`        |    59 |
 | `@fourjs/physics-box2d`  |     2 |
 | `@fourjs/physics-rapier` |    23 |
-| `@fourjs/physics-soft`   |     2 |
+| `@fourjs/physics-soft`   |     7 |
 | `@fourjs/render`         |    72 |
 | `@fourjs/render-canvas`  |     7 |
 | `@fourjs/render-svg`     |     5 |
@@ -98,6 +98,8 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `examples/particles-demo/vite.config.ts`                          | (root)                 | config   | config      |
 | `examples/physics-playground/main.ts`                             | (root)                 | examples | example     |
 | `examples/physics-playground/vite.config.ts`                      | (root)                 | config   | config      |
+| `examples/soft-body/main.ts`                                      | (root)                 | examples | example     |
+| `examples/soft-body/vite.config.ts`                               | (root)                 | config   | config      |
 | `examples/ui-demo/main.ts`                                        | (root)                 | examples | example     |
 | `examples/ui-demo/vite.config.ts`                                 | (root)                 | config   | config      |
 | `packages/animation/src/animation-system.ts`                      | @fourjs/animation      | src      | reachable   |
@@ -453,7 +455,12 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `packages/physics-rapier/tests/sleeping-cache.test.ts`            | @fourjs/physics-rapier | tests    | test        |
 | `packages/physics-rapier/tests/smoke.test.ts`                     | @fourjs/physics-rapier | tests    | test        |
 | `packages/physics-soft/src/index.ts`                              | @fourjs/physics-soft   | src      | build-entry |
+| `packages/physics-soft/src/pbd.ts`                                | @fourjs/physics-soft   | src      | reachable   |
+| `packages/physics-soft/src/soft-body.ts`                          | @fourjs/physics-soft   | src      | reachable   |
+| `packages/physics-soft/tests/pressure-coupling.test.ts`           | @fourjs/physics-soft   | tests    | test        |
 | `packages/physics-soft/tests/smoke.test.ts`                       | @fourjs/physics-soft   | tests    | test        |
+| `packages/physics-soft/tests/soft-body.test.ts`                   | @fourjs/physics-soft   | tests    | test        |
+| `packages/physics-soft/tests/soft-solver.test.ts`                 | @fourjs/physics-soft   | tests    | test        |
 | `packages/physics/src/adapter.ts`                                 | @fourjs/physics        | src      | reachable   |
 | `packages/physics/src/body-access.ts`                             | @fourjs/physics        | src      | reachable   |
 | `packages/physics/src/capabilities.ts`                            | @fourjs/physics        | src      | reachable   |
@@ -838,6 +845,7 @@ Every tracked `.ts` file in the repo — package `src/` and `tests/`, the repo-r
 | `tests/browser/shape-paint.spec.ts`                               | (root)                 | tests    | test        |
 | `tests/browser/skinning.spec.ts`                                  | (root)                 | tests    | test        |
 | `tests/browser/smoothness.spec.ts`                                | (root)                 | tests    | test        |
+| `tests/browser/soft-body.spec.ts`                                 | (root)                 | tests    | test        |
 | `tests/browser/standard-material-maps.spec.ts`                    | (root)                 | tests    | test        |
 | `tests/browser/stencil.spec.ts`                                   | (root)                 | tests    | test        |
 | `tests/browser/text.spec.ts`                                      | (root)                 | tests    | test        |

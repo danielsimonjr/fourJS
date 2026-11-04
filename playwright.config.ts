@@ -308,6 +308,15 @@ const GLTF_MODEL_PORT = 4183;
  */
 const CANVAS_BACKEND_PORT = 4184;
 
+/**
+ * Preview port for `examples/soft-body` - the PBD cloth and rope (W10.2).
+ *
+ * A thirteenth entry, for {@link PLAYGROUND_PORT}'s reason. 4185 is the next
+ * free port above the Canvas 2D backend's and is restated verbatim in
+ * `tests/browser/soft-body.spec.ts`.
+ */
+const SOFT_BODY_PORT = 4185;
+
 export default defineConfig({
   testDir: "tests/browser",
   // Failure artifacts (traces, error context) live inside the already-ignored
@@ -514,6 +523,13 @@ export default defineConfig({
     {
       command: `npx vite preview examples/canvas-backend --port ${String(CANVAS_BACKEND_PORT)} --strictPort`,
       url: `http://localhost:${String(CANVAS_BACKEND_PORT)}`,
+      reuseExistingServer: false,
+      stdout: "ignore",
+      stderr: "pipe",
+    },
+    {
+      command: `npx vite preview examples/soft-body --port ${String(SOFT_BODY_PORT)} --strictPort`,
+      url: `http://localhost:${String(SOFT_BODY_PORT)}`,
       reuseExistingServer: false,
       stdout: "ignore",
       stderr: "pipe",

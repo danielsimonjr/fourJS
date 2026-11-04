@@ -116,6 +116,11 @@ scattered mentions in the performance guide:
     opt-in), and the difference between a measurement _window_ and an
     allocator.
 
+A nineteenth covers the §35 soft-body package that shipped with RFC 0011:
+
+19. **[Soft bodies](soft-bodies.md)** — attaching a `SoftBody`, registering
+    `SoftBodySystem`, one-way coupling to a `PhysicsWorld`, and snapshots.
+
 ## Guide coverage, counted
 
 Cycles 8 and 9 both rediscovered the same thing: some shipped surfaces have no guide. Both

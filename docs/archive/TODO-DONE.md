@@ -2549,3 +2549,15 @@ with the entry.
       refusing a feedback `CanvasTexture` sampling the surface being rendered is
       that packet's named obligation); ~~a docs/guides page carrying the browser adapter~~ (done 2026-08-29:
       `docs/guides/raster-painting.md`, listed as guide 15).
+
+- [x] **DONE 2026-11-04** (RFC 0011; §35a/§113b; rope/cloth/pressure/coupling/snapshots shipped; browser gate) **`@fourjs/physics-soft` is a reserved stub — 1 export, no soft bodies.**
+      **Reserved for:** §35 soft-body and deformable simulation — cloth, rope, pressure/volume
+      models. It is **not** a solver adapter (ERRATA E-3); the §102 solver packages are
+      `physics-rapier` and `physics-box2d`.
+      **Today a consumer gets:** `PACKAGE_NAME` and nothing else.
+      **Symptom on selection:** there is nothing to select. `fourJS/physics-soft` imports cleanly
+      and exposes no cloth, rope or pressure API at all.
+      **Workaround:** none. Writing a §37 adapter would not fill this package, because §35 is a
+      different seam; rigid-body simulation through `physics-rapier` is the nearest shipped thing.
+      **Closes when:** §35 gets a scheduled implementation phase and that phase lands. No phase is
+      scheduled today.

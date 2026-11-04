@@ -1245,7 +1245,12 @@
       "toRapierVector2",
       "toRapierVector3"
     ],
-    "packages/physics-soft": ["PACKAGE_NAME"],
+    "packages/physics-soft": [
+      "PACKAGE_NAME",
+      "PRIORITY_SOFT_BODY",
+      "SoftBody",
+      "SoftBodySystem"
+    ],
     "packages/render": [
       "AddPassOptions",
       "AmbientLightSource",
