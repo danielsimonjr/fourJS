@@ -97,6 +97,9 @@ import {
   PunctualLightUniforms,
   RenderTargetCache,
   SHADOW_GLSL,
+  SHADOW_ATLAS_MARKER,
+  SHADOW_ATLAS_BRANCH_MARKER,
+  resolveShadowAtlasGlsl,
   SHADOW_TEXTURE_UNIT,
   ShadowProgram,
   SpriteProgram,
@@ -125,6 +128,10 @@ import {
   registerPickingPipeline,
   registerNodeMaterialPipeline,
   registerShadowPipeline,
+  registerGlShadowAtlas,
+  registerGlMorphTargets,
+  clearRegisteredShadowAtlas,
+  clearRegisteredMorphTargets,
   registerSkinningPipeline,
   registerStandardPipeline,
   resolveEffectPipelineFactory,
@@ -1485,9 +1492,15 @@ beforeEach(() => {
   registerEffectPipeline();
   registerParticlePipeline();
   registerStandardPipeline();
+  // W11.5: the optional shader families behind seams are registered by default
+  // too; the unregistered-fallback suites clear their slot in their own setup.
+  registerGlShadowAtlas();
+  registerGlMorphTargets();
 });
 
 afterEach(() => {
+  clearRegisteredShadowAtlas();
+  clearRegisteredMorphTargets();
   clearRegisteredShadowPipeline();
   clearRegisteredEffectPipeline();
   clearRegisteredParticlePipeline();
@@ -1548,6 +1561,84 @@ describe("WebglRenderer — one-target GPU morph (§54)", () => {
     renderer.render(root, [createView(camera)]);
     expect(gl.countOf("drawArrays")).toBe(0);
     renderer.dispose();
+  });
+});
+
+describe("WebglRenderer — unregistered optional shader families (W11.5)", () => {
+  beforeEach(() => {
+    resetDevWarnings();
+    clearRegisteredShadowAtlas();
+    clearRegisteredMorphTargets();
+  });
+
+  it("compiles a single-map receiver and degrades cascades with one warning naming registerGlShadowAtlas", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { renderer, gl } = await initialized();
+    const camera = new TestCamera() as TestCamera & {
+      near: number;
+      far: number;
+    };
+    camera.near = 0.5;
+    camera.far = 50;
+    camera.projectionMatrix.elements[0] = 1;
+    camera.projectionMatrix.elements[5] = 1;
+    camera.projectionMatrix.elements[11] = -1;
+    camera.viewMatrix.identity();
+    const sources = gl.callsOf("shaderSource").map((c) => String(c.args[1]));
+    const fragment = sources.find((src) => src.includes("shadowFactor("));
+    expect(fragment).toBeDefined();
+    expect(fragment).not.toContain("directionalShadowAtlas");
+    expect(fragment).not.toContain("shadowExtended");
+    expect(fragment).toContain("punctualShadowFactor");
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    const light = new TestShadowLight(8);
+    Object.assign(light.shadow, { cascades: 3, cascadeDistance: 40 });
+    root.add(light, litRenderable());
+    gl.reset();
+    renderer.render(root, [createView(camera)]);
+    renderer.render(root, [createView(camera)]);
+    // One 8-texel tile, no atlas uniforms, one warning.
+    expect(gl.callsOf("viewport")[0].args).toEqual([0, 0, 8, 8]);
+    expect(
+      warn.mock.calls.filter((c) =>
+        String(c[0]).includes("registerGlShadowAtlas"),
+      ),
+    ).toHaveLength(1);
+    renderer.dispose();
+    warn.mockRestore();
+  });
+
+  it("morphs only the first target with one warning naming registerGlMorphTargets", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { gl, renderer, camera } = await initialized();
+    const geometry = triangleGeometry();
+    geometry.positions1 = new Float32Array([0, 1, 0, 1, 1, 0, 0, 2, 0]);
+    geometry.normals1 = new Float32Array(9);
+    geometry.extraMorphTargets = [{ positions: new Float32Array(9).fill(2) }];
+    const root = createRoot();
+    root.add(renderable(geometry));
+    renderer.render(root, [createView(camera)]);
+    renderer.render(root, [createView(camera)]);
+    const names = gl.callsOf("getUniformLocation").map((c) => c.args[1]);
+    expect(names).toContain("morphWeight0");
+    expect(names).not.toContain("morphWeights");
+    expect(
+      warn.mock.calls.filter((c) =>
+        String(c[0]).includes("registerGlMorphTargets"),
+      ),
+    ).toHaveLength(1);
+    renderer.dispose();
+    warn.mockRestore();
+  });
+
+  it("refuses a direct 2..4-target program compile when unregistered", () => {
+    const gl = createFakeGl();
+    expect(() => UnlitProgram.createMorph(gl, 2)).toThrow(
+      /registerGlMorphTargets/,
+    );
+    expect(() => LitProgram.createMorph(gl, 3)).toThrow(
+      /registerGlMorphTargets/,
+    );
   });
 });
 
@@ -9819,7 +9910,18 @@ describe("ShadowUniforms — the receiver half (§69, R-18)", () => {
     const standardFragment = String(gl.callsOf("shaderSource")[1].args[1]);
 
     for (const source of [litFragment, standardFragment]) {
-      expect(source).toContain(SHADOW_GLSL);
+      // The markers resolve at compile time (W11.5): every literal part of the
+      // chunk is spliced in whole, around the registered atlas GLSL.
+      const atlas = resolveShadowAtlasGlsl();
+      expect(atlas).not.toBeNull();
+      const parts = SHADOW_GLSL.split(SHADOW_ATLAS_MARKER).flatMap((part) =>
+        part.split(SHADOW_ATLAS_BRANCH_MARKER),
+      );
+      for (const part of parts) {
+        expect(source).toContain(part);
+      }
+      expect(source).toContain(atlas?.chunk);
+      expect(source).not.toContain(SHADOW_ATLAS_MARKER);
       // Outside the volume is lit, not shadowed.
       expect(source).toContain("return 1.0;");
     }
@@ -15081,11 +15183,6 @@ describe("WebglRenderer — cascades and punctual shadows (W6.3)", () => {
   });
 
   it("splices the atlas sampling into both shaded fragment stages", () => {
-    expect(SHADOW_GLSL).toContain("punctualShadowFactor");
-    expect(SHADOW_GLSL).toContain("directionalShadowAtlas");
-    expect(SHADOW_GLSL).toContain(
-      "SHADOW_FACE_FORWARD[6] = vec3[6](vec3(1.0, 0.0, 0.0)",
-    );
     const gl = createFakeGl();
     LitProgram.create(gl);
     StandardProgram.create(gl);
@@ -15094,6 +15191,12 @@ describe("WebglRenderer — cascades and punctual shadows (W6.3)", () => {
       s.includes("punctualShadowFactor(i"),
     );
     expect(fragments).toHaveLength(2);
+    for (const fragment of fragments) {
+      expect(fragment).toContain("directionalShadowAtlas");
+      expect(fragment).toContain(
+        "SHADOW_FACE_FORWARD[6] = vec3[6](vec3(1.0, 0.0, 0.0)",
+      );
+    }
   });
 });
 

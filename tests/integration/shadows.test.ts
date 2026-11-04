@@ -51,6 +51,7 @@ import {
 import {
   WebglRenderer,
   registerShadowPipeline,
+  registerGlShadowAtlas,
   registerStandardPipeline,
 } from "@fourjs/render-webgl";
 import {
@@ -86,6 +87,7 @@ import {
 // renderer compiles it on the first shadowed frame. Registered for the file,
 // as an application registers once at setup.
 registerShadowPipeline();
+registerGlShadowAtlas();
 // …and §59's standard surface, which the receiver scenes below draw.
 registerStandardPipeline();
 

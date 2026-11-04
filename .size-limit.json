@@ -6,17 +6,17 @@
   },
   {
     "path": "examples/first-3d-scene/dist/assets/*.js",
-    "limit": "51 kB",
+    "limit": "50.7 kB",
     "gzip": true
   },
   {
     "path": "examples/particles-demo/dist/assets/*.js",
-    "limit": "53 kB",
+    "limit": "52.7 kB",
     "gzip": true
   },
   {
     "path": "examples/ui-demo/dist/assets/*.js",
-    "limit": "61 kB",
+    "limit": "60.7 kB",
     "gzip": true
   },
   {
@@ -41,7 +41,7 @@
   },
   {
     "path": "examples/soft-body/dist/assets/*.js",
-    "limit": "50 kB",
+    "limit": "49.5 kB",
     "gzip": true
   }
 ]

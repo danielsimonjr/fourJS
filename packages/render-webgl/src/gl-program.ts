@@ -50,11 +50,13 @@
 
 import { FourError, type Disposable } from "@fourjs/core";
 import { Matrix3, type Matrix4, type Vector3 } from "@fourjs/math";
+import { MAX_LIGHT_SLOTS, type SceneLights } from "@fourjs/render";
+
 import {
-  MAX_LIGHT_SLOTS,
-  SHADOW_CUBE_FACES,
-  type SceneLights,
-} from "@fourjs/render";
+  resolveMorphSources,
+  type MorphVertexSources,
+} from "./gl-morph-registry.js";
+import { resolveShadowAtlasGlsl } from "./gl-shadow-atlas-registry.js";
 
 /**
  * The WebGL 2 / OpenGL ES 3.0 enumerants this package uses, by their normative
@@ -853,73 +855,22 @@ export function morphNormalLocation(k: number): number {
   return morphPositionLocation(k) + 1;
 }
 
-/** Σ wᵢ(pᵢ − p) expression, weights in `morphWeights.{x,y,z,w}`. */
-function morphSum(name: string, base: string, count: number): string {
-  const lanes = "xyzw";
-  let expr = base;
-  for (let k = 1; k <= count; k += 1) {
-    expr += ` + morphWeights.${lanes[k - 1]} * (${name}${String(k)} - ${base})`;
+/**
+ * The registered 2..4-target morph vertex sources; throws the §89
+ * `SHADER_COMPILATION_FAILED` an unregistered call would otherwise hide
+ * (`WebglRenderer` checks the slot first and falls back to one target, so this
+ * is the direct-caller guard).
+ */
+function requireMorphSources(): MorphVertexSources {
+  const sources = resolveMorphSources();
+  if (sources === null) {
+    throw new FourError(
+      "SHADER_COMPILATION_FAILED",
+      "The 2..4-target morph programs are not registered; call " +
+        "registerGlMorphTargets() from @fourjs/render-webgl first.",
+    );
   }
-  return expr;
-}
-
-/** N-target (2..4) unlit morph vertex shader; one target uses the mix source. */
-function morphVertexSource(count: number): string {
-  let attrs = "";
-  for (let k = 1; k <= count; k += 1) {
-    attrs += `layout(location = ${String(morphPositionLocation(k))}) in vec3 position${String(k)};\n`;
-  }
-  return `#version 300 es
-layout(location = 0) in vec3 position;
-layout(location = 2) in vec2 uv;
-layout(location = 3) in vec4 vertexColor;
-${attrs}
-uniform mat4 viewProjection;
-uniform mat4 model;
-uniform vec4 morphWeights;
-
-out vec2 vUv;
-out vec4 vColor;
-
-void main() {
-  vUv = uv;
-  vColor = vertexColor;
-  vec3 p = ${morphSum("position", "position", count)};
-  gl_Position = viewProjection * model * vec4(p, 1.0);
-}
-`;
-}
-
-/** N-target (2..4) lit morph vertex shader. */
-function morphLitVertexSource(count: number): string {
-  let attrs = "";
-  for (let k = 1; k <= count; k += 1) {
-    attrs += `layout(location = ${String(morphPositionLocation(k))}) in vec3 position${String(k)};\n`;
-    attrs += `layout(location = ${String(morphNormalLocation(k))}) in vec3 normal${String(k)};\n`;
-  }
-  return `#version 300 es
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 normal;
-layout(location = 2) in vec2 uv;
-${attrs}
-uniform mat4 viewProjection;
-uniform mat4 model;
-uniform mat3 normalMatrix;
-uniform vec4 morphWeights;
-
-out vec3 vNormal;
-out vec3 vWorldPosition;
-out vec2 vUv;
-
-void main() {
-  vec3 p = ${morphSum("position", "position", count)};
-  vec3 n = ${morphSum("normal", "normal", count)};
-  vNormal = normalMatrix * n;
-  vWorldPosition = (model * vec4(p, 1.0)).xyz;
-  vUv = uv;
-  gl_Position = viewProjection * model * vec4(p, 1.0);
-}
-`;
+  return sources;
 }
 
 /** Uploads `morphWeights` (vec4) through a four-float mirror; returns whether it wrote. */
@@ -1379,6 +1330,18 @@ export class PunctualLightUniforms {
 }
 
 /**
+ * The marker lines {@link SHADOW_GLSL} carries where the optional shadow-atlas
+ * GLSL (cascades, point/spot tiles; `gl-shadow-atlas.ts`) splices in.
+ * `createLinkedProgram` resolves them at compile time: with
+ * `registerGlShadowAtlas()` the registered chunk, without it a one-line stub
+ * (`punctualShadowFactor` returns 1.0) and no extended branch, so the
+ * single-map path is the whole shader.
+ */
+export const SHADOW_ATLAS_MARKER = "//@shadow-atlas-chunk";
+/** The extended-branch marker inside `shadowFactor`; see {@link SHADOW_ATLAS_MARKER}. */
+export const SHADOW_ATLAS_BRANCH_MARKER = "//@shadow-atlas-branch";
+
+/**
  * The receiver chunk both shaded fragment stages splice in (§69; R-18,
  * 2026-08-09) — the shared half of shadowing, exactly as
  * {@link PUNCTUAL_LIGHT_GLSL} is the shared half of the light set.
@@ -1430,133 +1393,15 @@ export class PunctualLightUniforms {
  * arrives as `shadowTexelSize = 1 / mapSize`, computed once per frame on the
  * CPU rather than once per fragment here.
  */
-/** A `vec3` literal list of one face axis per cube face, for the shaders. */
-function faceTable(axis: "forward" | "up" | "right"): string {
-  return SHADOW_CUBE_FACES.map(
-    (face) => `vec3(${face[axis].map((v) => v.toFixed(1)).join(", ")})`,
-  ).join(", ");
-}
-
 export const SHADOW_GLSL = `uniform bool useShadow;
 uniform sampler2D shadowMap;
 uniform mat4 shadowMatrix;
 uniform float shadowBias;
 uniform float shadowNormalBias;
 uniform float shadowTexelSize;
-uniform bool shadowExtended;
-uniform int shadowCascadeCount;
-uniform mat4 shadowCascadeMatrix[4];
-uniform vec4 shadowCascadeSplits;
-uniform vec4 shadowViewDepth;
-uniform vec4 shadowAtlas;
-uniform vec4 shadowPunctualSlot[3];
-uniform vec4 shadowPunctualParams[4];
-uniform vec4 shadowPunctualRange[4];
-uniform mat4 shadowSpotMatrix[4];
-
-const vec3 SHADOW_FACE_FORWARD[6] = vec3[6](${faceTable("forward")});
-const vec3 SHADOW_FACE_UP[6] = vec3[6](${faceTable("up")});
-const vec3 SHADOW_FACE_RIGHT[6] = vec3[6](${faceTable("right")});
-
-float shadowTileTaps(float tile, vec2 uv, float receiver) {
-  float row = floor((tile + 0.5) / shadowAtlas.x);
-  float col = tile - row * shadowAtlas.x;
-  vec2 grid = shadowAtlas.xy;
-  vec2 origin = vec2(col, row) / grid;
-  vec2 texel = shadowAtlas.zw;
-  vec2 lo = origin + 0.5 * texel;
-  vec2 hi = origin + 1.0 / grid - 0.5 * texel;
-  vec2 base = origin + uv / grid;
-  float lit = 0.0;
-  for (int y = -1; y <= 1; y += 1) {
-    for (int x = -1; x <= 1; x += 1) {
-      vec2 tap = clamp(base + vec2(x, y) * texel, lo, hi);
-      float occluder = texture(shadowMap, tap).r;
-      lit += receiver <= occluder ? 1.0 : 0.0;
-    }
-  }
-  return lit / 9.0;
-}
-
-float shadowReceiverDepth(float z, float near, float far, float bias) {
-  float zb = max(z - bias * (far - near), near);
-  return far * (zb - near) / ((far - near) * zb);
-}
-
-float directionalShadowAtlas(vec3 worldPosition, vec3 n) {
-  if (shadowCascadeCount < 1) {
-    return 1.0;
-  }
-  int cascade = 0;
-  if (shadowCascadeCount > 1) {
-    float depth = dot(shadowViewDepth.xyz, worldPosition) + shadowViewDepth.w;
-    cascade = -1;
-    for (int i = 0; i < 4; i += 1) {
-      if (cascade < 0 && i < shadowCascadeCount && depth <= shadowCascadeSplits[i]) {
-        cascade = i;
-      }
-    }
-    if (cascade < 0) {
-      return 1.0;
-    }
-  }
-  vec4 lightSpace = shadowCascadeMatrix[cascade] * vec4(worldPosition + n * shadowNormalBias, 1.0);
-  vec3 c = (lightSpace.xyz / lightSpace.w) * 0.5 + 0.5;
-  if (any(lessThan(c, vec3(0.0))) || any(greaterThan(c, vec3(1.0)))) {
-    return 1.0;
-  }
-  return shadowTileTaps(float(cascade), c.xy, c.z - shadowBias);
-}
-
-float punctualShadowFactor(int i, vec3 worldPosition, vec3 n) {
-  if (!shadowExtended) {
-    return 1.0;
-  }
-  float entry = shadowPunctualSlot[i / 4][i - (i / 4) * 4];
-  if (entry < 0.5) {
-    return 1.0;
-  }
-  int k = int(entry) - 1;
-  vec4 params = shadowPunctualParams[k];
-  vec4 range = shadowPunctualRange[k];
-  vec3 p = worldPosition + n * params.z;
-  if (params.w < 1.5) {
-    vec4 lightSpace = shadowSpotMatrix[k] * vec4(p, 1.0);
-    if (lightSpace.w <= 0.0) {
-      return 1.0;
-    }
-    vec3 c = (lightSpace.xyz / lightSpace.w) * 0.5 + 0.5;
-    if (any(lessThan(c, vec3(0.0))) || any(greaterThan(c, vec3(1.0)))) {
-      return 1.0;
-    }
-    return shadowTileTaps(
-      params.x, c.xy,
-      shadowReceiverDepth(lightSpace.w, range.x, range.y, params.y));
-  }
-  vec3 d = p - punctualPosition[i];
-  vec3 a = abs(d);
-  int f;
-  if (a.x >= a.y && a.x >= a.z) {
-    f = d.x >= 0.0 ? 0 : 1;
-  } else if (a.y >= a.z) {
-    f = d.y >= 0.0 ? 2 : 3;
-  } else {
-    f = d.z >= 0.0 ? 4 : 5;
-  }
-  float vz = dot(d, SHADOW_FACE_FORWARD[f]);
-  if (vz <= range.x || vz >= range.y) {
-    return 1.0;
-  }
-  vec2 uv = vec2(dot(d, SHADOW_FACE_RIGHT[f]), dot(d, SHADOW_FACE_UP[f])) / vz * 0.5 + 0.5;
-  return shadowTileTaps(
-    params.x + float(f), uv,
-    shadowReceiverDepth(vz, range.x, range.y, params.y));
-}
-
+${SHADOW_ATLAS_MARKER}
 float shadowFactor(vec3 worldPosition, vec3 n) {
-  if (shadowExtended) {
-    return directionalShadowAtlas(worldPosition, n);
-  }
+  ${SHADOW_ATLAS_BRANCH_MARKER}
   vec4 lightSpace = shadowMatrix * vec4(worldPosition + n * shadowNormalBias, 1.0);
   vec3 c = (lightSpace.xyz / lightSpace.w) * 0.5 + 0.5;
   if (any(lessThan(c, vec3(0.0))) || any(greaterThan(c, vec3(1.0)))) {
@@ -1588,6 +1433,13 @@ const SHADOW_UNIFORM_NAMES = [
   "shadowBias",
   "shadowNormalBias",
   "shadowTexelSize",
+] as const;
+
+/**
+ * The atlas-only uniform names, in the order `ShadowUniforms` indexes them —
+ * present only in programs compiled after `registerGlShadowAtlas()`.
+ */
+const SHADOW_ATLAS_UNIFORM_NAMES = [
   "shadowExtended",
   "shadowCascadeCount",
   "shadowCascadeMatrix",
@@ -1644,6 +1496,13 @@ export class ShadowUniforms {
 
   readonly #locations: readonly GlUniformLocation[];
 
+  /**
+   * The atlas uniform locations, or `null` for a program compiled without
+   * `registerGlShadowAtlas()` — such a program is a single-map receiver and
+   * ignores `lights.shadowExtended`.
+   */
+  readonly #atlas: readonly GlUniformLocation[] | null;
+
   /** CPU mirror of `useShadow`, seeded at GL's initial value. */
   #receiving = false;
 
@@ -1656,9 +1515,11 @@ export class ShadowUniforms {
   private constructor(
     gl: WebglContext,
     locations: readonly GlUniformLocation[],
+    atlas: readonly GlUniformLocation[] | null,
   ) {
     this.#gl = gl;
     this.#locations = locations;
+    this.#atlas = atlas;
   }
 
   /**
@@ -1672,12 +1533,23 @@ export class ShadowUniforms {
     program: GlProgramHandle,
     label: string,
   ): ShadowUniforms {
-    return new ShadowUniforms(
-      gl,
-      SHADOW_UNIFORM_NAMES.map((name) =>
-        requireUniform(gl, program, name, label),
-      ),
+    const base = SHADOW_UNIFORM_NAMES.map((name) =>
+      requireUniform(gl, program, name, label),
     );
+    // The atlas names exist only when the program was compiled with the
+    // registered chunk; `shadowExtended` (looked up first, in the order the
+    // names always had) stands for the whole group.
+    const first = gl.getUniformLocation(program, SHADOW_ATLAS_UNIFORM_NAMES[0]);
+    if (first === null) {
+      return new ShadowUniforms(gl, base, null);
+    }
+    const atlas = [first];
+    for (let i = 1; i < SHADOW_ATLAS_UNIFORM_NAMES.length; i += 1) {
+      atlas.push(
+        requireUniform(gl, program, SHADOW_ATLAS_UNIFORM_NAMES[i], label),
+      );
+    }
+    return new ShadowUniforms(gl, base, atlas);
   }
 
   /**
@@ -1710,34 +1582,31 @@ export class ShadowUniforms {
     // W6.3: the atlas path. A frame with one cascade and no punctual shadow
     // uploads none of this (and mirrors `shadowExtended` at GL's initial
     // `false`), so it emits the pre-W6.3 sequence call for call.
-    if (!lights.shadowExtended) {
-      if (this.#extended) {
-        gl.uniform1i(this.#locations[6], 0);
+    const atlas = this.#atlas;
+    if (atlas === null || !lights.shadowExtended) {
+      if (this.#extended && atlas !== null) {
+        gl.uniform1i(atlas[0], 0);
         this.#extended = false;
       }
       return;
     }
     if (!this.#extended) {
-      gl.uniform1i(this.#locations[6], 1);
+      gl.uniform1i(atlas[0], 1);
       this.#extended = true;
     }
-    gl.uniform1i(this.#locations[7], lights.shadowCascadeCount);
-    gl.uniformMatrix4fv(
-      this.#locations[8],
-      false,
-      lights.shadowCascadeMatrices,
-    );
-    gl.uniform4fv(this.#locations[9], lights.shadowCascadeSplits);
-    gl.uniform4fv(this.#locations[10], lights.shadowViewDepth);
+    gl.uniform1i(atlas[1], lights.shadowCascadeCount);
+    gl.uniformMatrix4fv(atlas[2], false, lights.shadowCascadeMatrices);
+    gl.uniform4fv(atlas[3], lights.shadowCascadeSplits);
+    gl.uniform4fv(atlas[4], lights.shadowViewDepth);
     atlasScratch[0] = lights.shadowAtlasColumns;
     atlasScratch[1] = lights.shadowAtlasRows;
     atlasScratch[2] = 1 / lights.shadowAtlasWidth;
     atlasScratch[3] = 1 / lights.shadowAtlasHeight;
-    gl.uniform4fv(this.#locations[11], atlasScratch);
-    gl.uniform4fv(this.#locations[12], lights.shadowPunctualSlot);
-    gl.uniform4fv(this.#locations[13], lights.shadowPunctualParams);
-    gl.uniform4fv(this.#locations[14], lights.shadowPunctualRange);
-    gl.uniformMatrix4fv(this.#locations[15], false, lights.shadowSpotMatrices);
+    gl.uniform4fv(atlas[5], atlasScratch);
+    gl.uniform4fv(atlas[6], lights.shadowPunctualSlot);
+    gl.uniform4fv(atlas[7], lights.shadowPunctualParams);
+    gl.uniform4fv(atlas[8], lights.shadowPunctualRange);
+    gl.uniformMatrix4fv(atlas[9], false, lights.shadowSpotMatrices);
   }
 
   /**
@@ -2026,6 +1895,23 @@ function compileStage(
 }
 
 /**
+ * Resolves the {@link SHADOW_ATLAS_MARKER} lines of a shaded fragment source:
+ * the registered atlas GLSL, or the stub that keeps the unregistered program
+ * a single-map receiver. Evaluated per compile, so registration order is
+ * "before the renderer initializes".
+ */
+export function withShadowAtlas(source: string): string {
+  const atlas = resolveShadowAtlasGlsl();
+  const chunk =
+    atlas?.chunk ??
+    "float punctualShadowFactor(int i, vec3 worldPosition, vec3 n) { return 1.0; }";
+  const branch = atlas?.branch ?? "";
+  return source
+    .replace(SHADOW_ATLAS_MARKER, () => chunk)
+    .replace(SHADOW_ATLAS_BRANCH_MARKER, () => branch);
+}
+
+/**
  * Compiles both stages and links them into a program, or throws — the half of
  * every pipeline's `create` ({@link UnlitProgram}, {@link SpriteProgram},
  * {@link LitProgram}, and `gl-particles.ts`'s `ParticleProgram`) that is
@@ -2049,6 +1935,9 @@ export function createLinkedProgram(
   vertexSource: string,
   fragmentSource: string,
 ): GlProgramHandle {
+  if (fragmentSource.includes(SHADOW_ATLAS_MARKER)) {
+    fragmentSource = withShadowAtlas(fragmentSource);
+  }
   const vertexShader = compileStage(
     gl,
     GL.VERTEX_SHADER,
@@ -2279,7 +2168,9 @@ export class UnlitProgram implements Disposable {
     const program = createLinkedProgram(
       gl,
       "unlit-morph",
-      count === 1 ? MORPH_VERTEX_SHADER_SOURCE : morphVertexSource(count),
+      count === 1
+        ? MORPH_VERTEX_SHADER_SOURCE
+        : requireMorphSources().unlit(count),
       FRAGMENT_SHADER_SOURCE,
     );
     try {
@@ -2828,7 +2719,7 @@ export class LitProgram implements Disposable {
       "lit-morph",
       count === 1
         ? MORPH_LIT_VERTEX_SHADER_SOURCE
-        : morphLitVertexSource(count),
+        : requireMorphSources().lit(count),
       LIT_FRAGMENT_SHADER_SOURCE,
     );
     try {

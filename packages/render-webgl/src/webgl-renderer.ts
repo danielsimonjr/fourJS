@@ -70,6 +70,7 @@ import {
   type Renderer,
   type RendererCapabilities,
   type ScissorRect,
+  type SceneLights,
   type RendererEventMap,
   type RendererOptions,
   type ScreenEffectRenderer,
@@ -135,6 +136,8 @@ import {
   type NodeMaterialPrograms,
 } from "./node-pipeline-registry.js";
 import { NORMAL_TEXTURE_UNIT, OCCLUSION_TEXTURE_UNIT } from "./gl-standard.js";
+import { resolveMorphSources } from "./gl-morph-registry.js";
+import { resolveShadowAtlasGlsl } from "./gl-shadow-atlas-registry.js";
 import {
   resolveShadowPipelineFactory,
   type ShadowCasterPipeline,
@@ -1241,6 +1244,53 @@ function applyItemScissor(
 }
 
 /**
+ * The pre-W6.3 picture for a frame whose lights need the shadow atlas when
+ * `registerGlShadowAtlas()` was not called before the renderer initialized:
+ * the first cascade's single map, no point/spot shadows, one development
+ * warning naming the fix.
+ */
+function degradeToSingleShadowMap(lights: SceneLights): void {
+  if (DEV) {
+    devWarnOnce(
+      "webgl-shadow-atlas-unregistered",
+      "§69: this frame's lights need the shadow atlas (cascades or " +
+        "point/spot shadows) but it is not registered; the first cascade's " +
+        "single map is used and point/spot lights are unshadowed. Call " +
+        'registerGlShadowAtlas() from "@fourjs/render-webgl" before the ' +
+        "renderer initializes.",
+    );
+  }
+  lights.shadowExtended = false;
+  lights.shadowCascadeCount = 1;
+  lights.shadowPunctualCount = 0;
+  lights.shadowTileCount = 1;
+  lights.shadowAtlasColumns = 1;
+  lights.shadowAtlasRows = 1;
+  lights.shadowAtlasWidth = lights.shadowMapSize;
+  lights.shadowAtlasHeight = lights.shadowMapSize;
+}
+
+/**
+ * The morph target count a draw can use: extra targets (`count > 1`) need
+ * `registerGlMorphTargets()`; without it the draw falls back to the
+ * one-target morph with one development warning.
+ */
+function effectiveMorphCount(count: number): number {
+  if (count > 1 && resolveMorphSources() === null) {
+    if (DEV) {
+      devWarnOnce(
+        "webgl-morph-targets-unregistered",
+        "§54: a geometry carries extraMorphTargets but the 2..4-target morph " +
+          "programs are not registered; only its first target morphs. Call " +
+          'registerGlMorphTargets() from "@fourjs/render-webgl" at setup.',
+      );
+    }
+    return 1;
+  }
+  return count;
+}
+
+/**
  * Draws fourJS scenes with WebGL 2 (§61, §62, §120).
  *
  * ```ts
@@ -1565,6 +1615,14 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
    */
   #skinnedProgramsFailed = false;
 
+  /**
+   * Whether the shaded programs of this context were compiled with the
+   * registered shadow-atlas GLSL (`registerGlShadowAtlas()`), latched where
+   * they are created so a late registration cannot desynchronize the lights
+   * from the shaders.
+   */
+  #shadowAtlasCompiled = false;
+
   #morphUnlit: UnlitProgram | null = null;
   #morphLit: LitProgram | null = null;
   #morphProgramsFailed = false;
@@ -1773,6 +1831,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     // claimed to be ready would fail on the next draw instead, with no clue.
     this.#program = UnlitProgram.create(gl);
     this.#spriteProgram = SpriteProgram.create(gl);
+    this.#shadowAtlasCompiled = resolveShadowAtlasGlsl() !== null;
     this.#litProgram = LitProgram.create(gl);
     this.#geometries = new GeometryCache(gl);
     this.#textures = new TextureCache(gl);
@@ -2140,6 +2199,9 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           unionViewLayerMask(views),
           views[0]?.camera ?? null,
         );
+        if (sceneLights.shadowExtended && !this.#shadowAtlasCompiled) {
+          degradeToSingleShadowMap(sceneLights);
+        }
       }
 
       // §69's shadow map (R-18), rendered **before** the view loop: §63's own
@@ -2872,8 +2934,9 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             item.geometry.positions1 !== undefined &&
             (item.kind === "unlit" || isLitItem(item))
           ) {
-            const morphCount =
-              1 + (item.geometry.extraMorphTargets?.length ?? 0);
+            const morphCount = effectiveMorphCount(
+              1 + (item.geometry.extraMorphTargets?.length ?? 0),
+            );
             const morph = this.#acquireMorphPrograms(gl, morphCount);
             if (morph === null) {
               continue;
@@ -4077,6 +4140,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       throw error;
     }
     let litProgram: LitProgram;
+    this.#shadowAtlasCompiled = resolveShadowAtlasGlsl() !== null;
     try {
       litProgram = LitProgram.create(gl);
     } catch (error: unknown) {

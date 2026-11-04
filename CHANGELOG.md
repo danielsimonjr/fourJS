@@ -10,6 +10,10 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **WebGL shader-family seams (2026-11-04, W11.5)**: the shadow atlas and the 2–4 morph target
+  programs are opt-in registrations (`registerGlShadowAtlas()`, `registerGlMorphTargets()`), like
+  skinning and batching already were; an unregistered family degrades to the single-map shadow or
+  the one-target morph with one development warning. Example budgets lowered to measured + 1.5 kB.
 - **Wave 6 GPU residues (2026-11-04)**: bone-texture skin palette (`skinningMode: "texture"`,
   `rgba32float` texel format, up to 65535 joints, uniform-palette fallback); §27 GPU field
   stack (8 records, CPU formulas) and §36 depth-texture collide-and-kill on WebGPU; §63
