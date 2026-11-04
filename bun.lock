@@ -187,7 +187,11 @@
       "name": "@fourjs/physics-soft",
       "version": "0.1.0",
       "dependencies": {
-        "@fourjs/physics": "workspace:*",
+        "@fourjs/core": "workspace:*",
+        "@fourjs/geometry": "workspace:*",
+        "@fourjs/math": "workspace:*",
+        "@fourjs/motion": "workspace:*",
+        "@fourjs/scene": "workspace:*",
       },
     },
     "packages/render": {

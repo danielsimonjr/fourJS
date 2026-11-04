@@ -16,6 +16,7 @@ const errors = [];
 // 1. Section headings: 1..120 each exactly once, in order; only the known
 //    lettered insertions allowed. § numbering is frozen (revision 1.1 rule).
 const ALLOWED_LETTERED = new Set([
+  "35a",
   "6a",
   "6b",
   "7a",
@@ -25,6 +26,7 @@ const ALLOWED_LETTERED = new Set([
   "97a",
   "106a",
   "113a",
+  "113b",
 ]);
 const headings = [];
 lines.forEach((line, i) => {

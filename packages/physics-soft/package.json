@@ -18,6 +18,10 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@fourjs/physics": "workspace:*"
+    "@fourjs/core": "workspace:*",
+    "@fourjs/geometry": "workspace:*",
+    "@fourjs/math": "workspace:*",
+    "@fourjs/motion": "workspace:*",
+    "@fourjs/scene": "workspace:*"
   }
 }

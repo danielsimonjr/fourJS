@@ -5,5 +5,5 @@
     "outDir": "dist"
   },
   "include": ["src"],
-  "references": [{ "path": "../physics/tsconfig.build.json" }]
+  "references": []
 }

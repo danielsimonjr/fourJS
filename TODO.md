@@ -251,26 +251,6 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 
 ## Now
 
-### One of the 24 packages is a reserved stub, and it is its own open item
-
-**This one (originally four; `render-canvas`, `render-svg` and `physics-box2d` shipped 2026-11-04) is a deliberate
-§102 decision, not a defect — the defect was that the fact lived only inside a dogfooding write-up, where it read as
-history and nobody actioned it.** Measured from a consumer seat on 2026-09-19 (dogfood cycle 9) against installed
-tarballs, in Node and in Chrome: **one source line, exporting only `PACKAGE_NAME` — 1 export**. It imports cleanly and
-provides nothing.
-
-- [ ] **`@fourjs/physics-soft` is a reserved stub — 1 export, no soft bodies.**
-      **Reserved for:** §35 soft-body and deformable simulation — cloth, rope, pressure/volume
-      models. It is **not** a solver adapter (ERRATA E-3); the §102 solver packages are
-      `physics-rapier` and `physics-box2d`.
-      **Today a consumer gets:** `PACKAGE_NAME` and nothing else.
-      **Symptom on selection:** there is nothing to select. `fourJS/physics-soft` imports cleanly
-      and exposes no cloth, rope or pressure API at all.
-      **Workaround:** none. Writing a §37 adapter would not fill this package, because §35 is a
-      different seam; rigid-body simulation through `physics-rapier` is the nearest shipped thing.
-      **Closes when:** §35 gets a scheduled implementation phase and that phase lands. No phase is
-      scheduled today.
-
 - [x] **No job in any of the five workflows had `timeout-minutes`, so a wedged run could hold a
       runner to the 6-hour ceiling.** **FIXED 2026-09-16.** Planned work, not discovered — it was
       assigned directly, and it is recorded ticked because it was already complete when filed.

@@ -38,5 +38,10 @@
     "path": "examples/canvas-backend/dist/assets/*.js",
     "limit": "15.5 kB",
     "gzip": true
+  },
+  {
+    "path": "examples/soft-body/dist/assets/*.js",
+    "limit": "41.5 kB",
+    "gzip": true
   }
 ]
