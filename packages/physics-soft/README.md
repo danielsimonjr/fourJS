@@ -1,12 +1,10 @@
 # @fourjs/physics-soft
 
-Soft bodies and deformables — **a reserved stub. This package contains no implementation today.** Part of [fourJS](../../README.md).
+Soft bodies and deformables (§35/§35a, [RFC 0011](../../docs/rfcs/0011-soft-bodies.md)) — **design skeleton: the API is defined, the simulation is not implemented yet.** Part of [fourJS](../../README.md).
 
-What a consumer gets by installing it: **one export, `PACKAGE_NAME`, and nothing else** — measured from a consumer seat on 2026-09-19 (dogfood cycle 9) against installed tarballs, in Node and in Chrome. `fourJS/physics-soft` imports cleanly and provides no cloth, rope or pressure model. **There is no shipped soft-body capability anywhere else in fourJS**: §35 has no implementation phase scheduled, and rigid-body simulation through [`@fourjs/physics-rapier`](../physics-rapier/README.md) is the nearest thing that exists. This package is not a solver adapter either (ERRATA E-3), so writing a §37 adapter would not fill it.
+What ships today: the `SoftBody` component (rope, cloth and pressure descriptors, validated; a dynamic `BufferGeometry` via `.geometry`; one per node like `RigidBody`) and `SoftBodySystem` (`PRIORITY_SOFT_BODY` = `PRIORITY_PHYSICS_SOLVE + 10`), whose `fixedUpdate` throws `FourError("NOT_IMPLEMENTED")` until packet W10.2 (PBD solver) lands. There is no cloth, rope or pressure simulation yet.
 
-Reserved for soft-body and deformable simulation (cloth, rope, pressure/volume models) per §35 in [`docs/SPECIFICATION.md`](../../docs/SPECIFICATION.md). It is not a solver adapter — see ERRATA E-3; the §102 solver packages are `physics-rapier` and `physics-box2d`.
-
-The package exists in the workspace so the §98 monorepo tree stays accurate. The barrel currently exports only `PACKAGE_NAME`, and `tests/` holds a single smoke test. No implementation phase has been scheduled for §35 yet.
+Model (RFC 0011): position-based dynamics with distance, bending and volume constraints; `substeps` x `iterations` per fixed step; the `"physics"` owner holds vertex positions (§42); rigid coupling only through §37 queries; `same-runtime` determinism. Out of scope: FEM, GPU, tearing. This is not a solver adapter (ERRATA E-3).
 
 Unit tests are colocated in `tests/` per §92.
 

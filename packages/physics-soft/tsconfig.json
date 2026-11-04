@@ -6,5 +6,25 @@
     "declarationMap": false,
     "noEmit": true
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests"],
+  "references": [
+    {
+      "path": "../core/tsconfig.build.json"
+    },
+    {
+      "path": "../geometry/tsconfig.build.json"
+    },
+    {
+      "path": "../math/tsconfig.build.json"
+    },
+    {
+      "path": "../motion/tsconfig.build.json"
+    },
+    {
+      "path": "../physics/tsconfig.build.json"
+    },
+    {
+      "path": "../scene/tsconfig.build.json"
+    }
+  ]
 }
