@@ -1,5 +1,11 @@
 # @fourjs/render-svg
 
+## Unreleased
+
+### Minor Changes
+
+- Ship the SVG backend (T-364): `SvgRenderer` (retained-mode `<polygon>` per unlit triangle plus a background `<rect>`), the structural `SvgSurface` seam, `registerSvgRenderer`, and `isSvgSupported`. Replaces the reserved stub.
+
 ## 0.1.0
 
 ### Patch Changes
