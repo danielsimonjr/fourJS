@@ -8,8 +8,8 @@ colocated in each package (`packages/<name>/tests/`); performance measurements l
 
 | directory                      | runner                                      | what is committed                        |
 | ------------------------------ | ------------------------------------------- | ---------------------------------------- |
-| [`determinism/`](determinism/) | `bun run test:suites`                       | **28** suites + **24** committed goldens |
-| [`integration/`](integration/) | `bun run test:suites`                       | **72** suites                            |
+| [`determinism/`](determinism/) | `bun run test:suites`                       | **29** suites + **24** committed goldens |
+| [`integration/`](integration/) | `bun run test:suites`                       | **73** suites                            |
 | [`browser/`](browser/)         | `bun run test:browser` (project `chromium`) | **40** Playwright specs                  |
 | [`visual/`](visual/)           | `bun run test:browser` (project `visual`)   | **2** specs, **3** committed PNG goldens |
 
@@ -40,6 +40,7 @@ camera rigs, glTF, …) against their own goldens under `determinism/golden/`:
 | `phase7-blending.test.ts`          | `phase7`  | §19 animation-physics blending         |
 | `phase9-particles.test.ts`         | `phase9`  | §36 seeded particle simulation         |
 | `phase10-replay.test.ts`           | `phase10` | §34 snapshot/replay stability          |
+| `solver-determinism.test.ts`       | (none)    | per-adapter in-process determinism     |
 
 The tier is §33's `same-runtime`, not `cross-platform`: a suite replays its scenario more
 than once — in-process, and in a freshly spawned `node` process with no test environment —
@@ -56,6 +57,7 @@ in `integration/helpers/`.
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `physics-rapier.test.ts`             | `@fourjs/physics` ↔ the Rapier adapter, both dimensions                                                                                  |
 | `box2d-conformance.test.ts`          | `@fourjs/physics` ↔ the Box2D adapter (2D): rest, restitution, friction `sqrt`, motor hard cap, sensors, sleep, snapshot from quiescence |
+| `physics-solvers.test.ts`            | solver conformance: the same invariant scenarios on every adapter (`rapier`, `physjs`), skipping what a capability record rules out      |
 | `physics-joints.test.ts`             | joints and motors across scene + physics                                                                                                 |
 | `physics-blending.test.ts`           | §19 animation → kinematic → physics → interpolated render                                                                                |
 | `physics-replay.test.ts`             | §34 snapshot, restore and replay across packages                                                                                         |

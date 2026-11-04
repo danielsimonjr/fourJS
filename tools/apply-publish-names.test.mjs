@@ -46,6 +46,10 @@ test("publishName maps the umbrella and the scoped packages, and only those", ()
     publishName("@fourjs/physics-rapier"),
     "@danielsimonjr/fourjs-physics-rapier",
   );
+  assert.equal(
+    publishName("@fourjs/physics-physjs"),
+    "@danielsimonjr/fourjs-physics-physjs",
+  );
   assert.equal(publishName("@dimforge/rapier2d-compat"), null);
   assert.equal(publishName("vite"), null);
   assert.equal(publishName("fourjs"), null); // lowercase is NOT the umbrella name
@@ -165,7 +169,7 @@ const versions = new Map(
 
 test("every publishable workspace package maps to a published name and checks clean", () => {
   assert.ok(
-    packages.length >= 24,
+    packages.length >= 25,
     `found only ${packages.length} workspace packages`,
   );
   for (const pkg of packages) {
@@ -218,6 +222,7 @@ test("the umbrella's subpath exports survive the rewrite intact (§91 tree-shaki
     ".",
     "./scene",
     "./physics-rapier",
+    "./physics-physjs",
     "./render-webgl",
     "./application",
     "./text/harfbuzz",

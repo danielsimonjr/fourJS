@@ -28,6 +28,7 @@
     { "path": "../ui/tsconfig.build.json" },
     { "path": "../physics-rapier/tsconfig.build.json" },
     { "path": "../physics-box2d/tsconfig.build.json" },
-    { "path": "../physics-soft/tsconfig.build.json" }
+    { "path": "../physics-soft/tsconfig.build.json" },
+    { "path": "../physics-physjs/tsconfig.build.json" }
   ]
 }

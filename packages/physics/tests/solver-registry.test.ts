@@ -160,6 +160,16 @@ describe('resolve("auto") — §37 capability-driven selection', () => {
     expect(built.has("box2d")).toBe(false);
   });
 
+  it('accepts "physjs" (RFC 0010) and keeps it last when registered last', () => {
+    const { registry, built } = withSolvers([
+      { name: "rapier", dimensions: ["2d"] },
+      { name: "physjs" },
+    ]);
+    expect(registry.solvers).toEqual(["rapier", "physjs"]);
+    expect(registry.resolve("auto", options3d)).toBe(built.get("physjs"));
+    expect(registry.resolve("physjs", options3d)).toBe(built.get("physjs"));
+  });
+
   it("skips a solver that cannot run here at all", () => {
     const { registry, built } = withSolvers([
       { name: "rapier", supported: false },

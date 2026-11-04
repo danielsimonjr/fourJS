@@ -97,6 +97,10 @@
       "types": "./dist/physics-box2d.d.ts",
       "import": "./dist/physics-box2d.js"
     },
+    "./physics-physjs": {
+      "types": "./dist/physics-physjs.d.ts",
+      "import": "./dist/physics-physjs.js"
+    },
     "./physics-soft": {
       "types": "./dist/physics-soft.d.ts",
       "import": "./dist/physics-soft.js"
@@ -140,6 +144,7 @@
     "@fourjs/ui": "workspace:*",
     "@fourjs/physics-rapier": "workspace:*",
     "@fourjs/physics-box2d": "workspace:*",
-    "@fourjs/physics-soft": "workspace:*"
+    "@fourjs/physics-soft": "workspace:*",
+    "@fourjs/physics-physjs": "workspace:*"
   }
 }

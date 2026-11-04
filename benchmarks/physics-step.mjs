@@ -98,6 +98,7 @@
 import { Vector2, Vector3 } from "@fourjs/math";
 import { Collider, PhysicsWorld, RigidBody } from "@fourjs/physics";
 import { Box2dAdapter } from "@fourjs/physics-box2d";
+import { PhysJSAdapter3D } from "@fourjs/physics-physjs";
 import { Rapier3dAdapter } from "@fourjs/physics-rapier";
 import { Group } from "@fourjs/scene";
 
@@ -121,8 +122,30 @@ const FIXED_DELTA_TIME = 1 / 60;
 /** The budget one fixed step has at 60 Hz, in milliseconds. */
 const FIXED_STEP_BUDGET_MS = FIXED_DELTA_TIME * 1000;
 
-/** Body counts measured, ending on §86's stated baseline. */
-const BODY_COUNTS = [500, 1000, 2500, 5000];
+/**
+ * Solver under test: `PHYSICS_SOLVER=physjs` runs the PhysJS adapter (RFC 0010,
+ * wave 9); the default is Rapier. A non-default solver writes
+ * `physics-step-<solver>` so the Rapier record is never overwritten.
+ */
+const SOLVER = BOX2D
+  ? "box2d"
+  : process.env.PHYSICS_SOLVER === "physjs"
+    ? "physjs"
+    : "rapier";
+
+/** Builds a fresh adapter for the selected solver (Box2D is the 2D variant). */
+function createAdapter() {
+  if (BOX2D) return new Box2dAdapter();
+  return SOLVER === "physjs" ? new PhysJSAdapter3D() : new Rapier3dAdapter();
+}
+
+/**
+ * Body counts measured, ending on §86's stated baseline.
+ * `PHYSICS_BODY_COUNTS=500,1000` overrides it (PhysJS is far slower at 5 000).
+ */
+const BODY_COUNTS = (process.env.PHYSICS_BODY_COUNTS ?? "500,1000,2500,5000")
+  .split(",")
+  .map(Number);
 
 /** Measured fixed steps per scenario (2 s of simulation at 60 Hz). */
 const MEASURED_STEPS = 120;
@@ -163,7 +186,7 @@ const FLOOR_HALF = new Vector3(120, 0.5, 120);
 async function buildWorld(bodyCount, withFloor) {
   const world = new PhysicsWorld({
     dimension: BOX2D ? "2d" : "3d",
-    adapter: BOX2D ? new Box2dAdapter() : new Rapier3dAdapter(),
+    adapter: createAdapter(),
     // §32 sleeping off: §86's row says *active* bodies. See the header.
     sleeping: { enabled: false },
   });
@@ -337,7 +360,8 @@ for (const bodyCount of BODY_COUNTS) {
   rows.push(await runScenario(bodyCount));
 }
 
-const baselineRow = rows.find((row) => row.bodies === 5000);
+const baselineRow =
+  rows.find((row) => row.bodies === 5000) ?? rows[rows.length - 1];
 
 // --- the record --------------------------------------------------------------
 
@@ -350,7 +374,9 @@ const record = {
   recordedAt: new Date().toISOString(),
   solver: BOX2D
     ? "box2d (@fourjs/physics-box2d Box2dAdapter, @box2d/core 0.11.0) through @fourjs/physics"
-    : "rapier3d (@fourjs/physics-rapier Rapier3dAdapter) through @fourjs/physics",
+    : SOLVER === "physjs"
+      ? "physjs3d (@fourjs/physics-physjs PhysJSAdapter3D) through @fourjs/physics"
+      : "rapier3d (@fourjs/physics-rapier Rapier3dAdapter) through @fourjs/physics",
   dimension: BOX2D ? "2d" : "3d",
   fixedDeltaTimeSeconds: round(FIXED_DELTA_TIME, 9),
   fixedStepBudgetMs: round(FIXED_STEP_BUDGET_MS, 4),
@@ -371,12 +397,15 @@ const record = {
     "CI container, no GPU, shared host; run-to-run spread is large. §86's 'suitable modern desktop hardware' is NOT this machine, so a row over budget here is not a failed §86 and a row under it is not a passed one. Recorded, never gated — nothing in CI asserts on these timings.",
 };
 
-const path = writeResult(BOX2D ? "physics-step-box2d" : "physics-step", record);
+const path = writeResult(
+  SOLVER === "rapier" ? "physics-step" : `physics-step-${SOLVER}`,
+  record,
+);
 
 // --- the report --------------------------------------------------------------
 
 printReport([
-  `fourJS — ${BOX2D ? "Box2D 2D" : "Rapier 3D"} fixed-step cost vs §86's 5 000-active-body row (§20–32, §37, §92)`,
+  `fourJS — ${BOX2D ? "Box2D 2D" : SOLVER === "physjs" ? "PhysJS 3D" : "Rapier 3D"} fixed-step cost vs §86's 5 000-active-body row (§20–32, §37, §92)`,
   "  scenario                static floor + N dynamic boxes on a lattice, §32 sleeping DISABLED (all N awake)",
   `  steps                   ${MEASURED_STEPS} measured, ${WARMUP_STEPS} warm-up (the pile landing), per variant`,
   `  60 Hz budget            ${round(FIXED_STEP_BUDGET_MS, 3)} ms/step`,

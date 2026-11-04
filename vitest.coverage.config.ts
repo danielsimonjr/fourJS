@@ -17,7 +17,7 @@ import { defineConfig } from "vitest/config";
 // test ever imports in the denominator, so a package cannot pass by shipping
 // untested modules.
 //
-// Two gates, stacked (measured 2026-09-06 against all 24 packages):
+// Two gates, stacked (measured 2026-09-06 against all 24 packages; 25 since 2026-11-04, physics-physjs):
 //
 // 1. Package aggregate ≥ 95% lines / statements / functions / branches — the
 //    existing CI threshold. Do not raise this; a strong file may still lift a

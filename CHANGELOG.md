@@ -10,6 +10,16 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **`@fourjs/physics-physjs` — a third solver adapter (2026-11-04, wave 9, RFC 0010)**:
+  `PhysJSAdapter2D` / `PhysJSAdapter3D` over `@danielsimonjr/physjs` 0.5.0 and
+  `registerPhysJSSolver()`; `SolverName` (and `SolverRegistry`) widened to include `"physjs"`,
+  last in the `"auto"` order. Refuses (does not emulate) sensors, collider offsets, shape casts,
+  swept CCD, prismatic/rope joints, joint limits/motors. Cross-solver conformance
+  (`tests/integration/physics-solvers.test.ts`, `tests/determinism/solver-determinism.test.ts`),
+  a `PHYSICS_SOLVER=physjs` mode in `benchmarks/physics-step.mjs`, and
+  `docs/benchmarks/physjs-vs-rapier.md`.
+  Reachable from the umbrella only via the `fourjs/physics-physjs` subpath (no root namespace
+  export: PhysJS's math stack bundles a Web Worker that every `"fourjs"` importer would otherwise ship).
 - **`@fourjs/physics-box2d` is a real 2D solver adapter (2026-11-04, wave 8)**: `Box2dAdapter` over
   `@box2d/core` 0.11.0 (bodies, colliders incl. capsule-as-three-fixtures, five joint types with a hard
   motor effort cap, the four queries, float64 snapshots) and `registerBox2dSolver()`. Friction combines by

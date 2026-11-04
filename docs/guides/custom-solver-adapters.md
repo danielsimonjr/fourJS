@@ -3,7 +3,12 @@
 The stable `@fourjs/physics` API never talks to a physics engine directly: it
 talks to an **adapter** (§37). `physics-rapier` ships two of them
 (`Rapier2dAdapter`, `Rapier3dAdapter`); `physics-box2d` ships a third (`Box2dAdapter`, 2D only,
-`@box2d/core` 0.11.0). This guide describes the contract a new adapter signs, the
+`@box2d/core` 0.11.0). A fourth, `physics-physjs` (`PhysJSAdapter2D` / `PhysJSAdapter3D`,
+pure TypeScript, RFC 0010), is the worked example of an adapter whose engine
+lacks features: it declares a smaller capability record and refuses what it
+cannot express with `NOT_IMPLEMENTED` rather than emulating it; the
+cross-solver conformance suites (`tests/integration/physics-solvers.test.ts`)
+skip, with a visible reason, any scenario its record rules out. This guide describes the contract a new adapter signs, the
 seams the shipped ones actually implement, and the honest lessons from
 adapting Rapier.
 
