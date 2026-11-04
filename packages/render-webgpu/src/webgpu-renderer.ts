@@ -126,6 +126,7 @@ import {
   intersectScissor,
   validateReadbackRegion,
   type EffectRenderPass,
+  type InstancedRun,
   type RenderBatch,
   type PickingService,
   type RenderInterpolation,
@@ -1894,6 +1895,22 @@ export class WebgpuRenderer implements Renderer {
           block += 1;
           continue;
         }
+        // R-22: a run of >= 2 identical lit/standard items draws as one
+        // instanced call from the first item's arm below; its other members
+        // are consumed here (every skip in the arm skips them all too, since
+        // geometry, material, clip and flags are shared by construction).
+        let instRun: InstancedRun | null = null;
+        if (
+          batching?.nextInstanced !== undefined &&
+          batching.bindInstances !== undefined &&
+          (item.kind === "lit" || item.kind === "standard") &&
+          !maskPass
+        ) {
+          instRun = batching.nextInstanced(viewItems, index);
+          if (instRun !== null) {
+            index += instRun.items - 1;
+          }
+        }
         // A shaded draw asks the cache for the normal stream too (WP-R1.5);
         // a mask does not — coverage, not shading — and every other kind
         // passes the default `false`, i.e. exactly the call it always made.
@@ -2167,6 +2184,7 @@ export class WebgpuRenderer implements Renderer {
           request.shadow = receiving;
           request.metalRoughness = useMetalRoughness;
           request.gpuInstances = false;
+          request.instanced = instRun !== null;
           request.normalMap = useNormalMap;
           request.occlusionMap = useOcclusionMap;
           request.emissiveMap = useEmissiveMap;
@@ -2263,6 +2281,10 @@ export class WebgpuRenderer implements Renderer {
           if (morph !== undefined) {
             slot = setMorphVertexBuffers(pass, slot + 1, record, morph);
           }
+          const instances = instRun === null ? 1 : instRun.items;
+          if (instRun !== null) {
+            batching?.bindInstances?.(device, pass, slot + 1, instRun);
+          }
           if (mapBindGroup !== null) {
             pass.setBindGroup(SHADED_MAP_BIND_GROUP_INDEX, mapBindGroup);
           }
@@ -2283,12 +2305,18 @@ export class WebgpuRenderer implements Renderer {
           }
           if (record.indexBuffer !== null && record.indexFormat !== null) {
             pass.setIndexBuffer(record.indexBuffer, record.indexFormat);
-            pass.drawIndexed(record.count);
-          } else {
+            if (instRun === null) {
+              pass.drawIndexed(record.count);
+            } else {
+              pass.drawIndexed(record.count, instances);
+            }
+          } else if (instRun === null) {
             pass.draw(record.count);
+          } else {
+            pass.draw(record.count, instances);
           }
           if (statistics !== null) {
-            countDraw(statistics, record.topology, record.count, 1);
+            countDraw(statistics, record.topology, record.count, instances);
           }
           block += 1;
           continue;
@@ -2350,6 +2378,7 @@ export class WebgpuRenderer implements Renderer {
         request.shadow = false;
         request.metalRoughness = false;
         request.gpuInstances = false;
+        request.instanced = false;
         const morph = morphVariantOf(record, false);
         request.morph = morph;
         request.normalMap = false;
@@ -3545,6 +3574,7 @@ export class WebgpuRenderer implements Renderer {
     request.shadow = false;
     request.metalRoughness = false;
     request.gpuInstances = false;
+    request.instanced = false;
     request.morph = undefined;
     request.normalMap = false;
     request.occlusionMap = false;
@@ -3660,6 +3690,7 @@ export class WebgpuRenderer implements Renderer {
     request.shadow = false;
     request.metalRoughness = false;
     request.gpuInstances = simulation !== null;
+    request.instanced = false;
     request.morph = undefined;
     request.normalMap = false;
     request.occlusionMap = false;

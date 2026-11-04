@@ -321,6 +321,15 @@ export interface WgpuPipelineDescriptor {
   readonly gpuInstances?: boolean;
 
   /**
+   * R-22: a `lit` or `standard` variant whose model and normal matrices come
+   * from a per-instance vertex stream (`INSTANCE_BUFFER_LAYOUT`, locations
+   * 8..14) instead of the group-0 block. Module and layout identity; appended
+   * to the key **only when `true`**, so every non-instanced key and label is
+   * byte-identical. Never combined with `morph`.
+   */
+  readonly instanced?: boolean;
+
+  /**
    * Whether a `kind: "standard"` variant samples §59's packed
    * metallic-roughness map (`wgpu-standard.ts`) — GL's per-draw
    * `useMetalRoughnessMap` as pipeline identity. Appended to the key
@@ -416,6 +425,9 @@ export function pipelineKey(descriptor: WgpuPipelineDescriptor): string {
   }
   if (descriptor.morph !== undefined) {
     key += `|mo:${descriptor.morph}`;
+  }
+  if (descriptor.instanced === true) {
+    key += "|ins:y";
   }
   if (descriptor.normalMap === true) {
     key += "|nm:y";
@@ -963,6 +975,7 @@ export class WgpuPipelineCache {
     metalRoughness: boolean,
     morph: WgpuMorph | undefined,
     surface: SurfaceMaps,
+    instanced: boolean,
   ): GpuShaderModule {
     const key =
       kind === "clear"
@@ -976,7 +989,7 @@ export class WgpuPipelineCache {
               : kind === "effect"
                 ? `effect|${effect ?? "copy"}`
                 : kind === "lit" || kind === "standard"
-                  ? `${kind}${normals ? "|n" : ""}${map ? "|map" : ""}${kind === "standard" && metalRoughness ? "|mr" : ""}${shadow ? "|sh" : ""}${morph !== undefined ? `|mo:${morph}` : ""}${kind === "standard" ? `${surface.normal ? "|nm" : ""}${surface.occlusion ? "|oc" : ""}${surface.emissive ? "|em" : ""}` : ""}`
+                  ? `${kind}${normals ? "|n" : ""}${map ? "|map" : ""}${kind === "standard" && metalRoughness ? "|mr" : ""}${shadow ? "|sh" : ""}${morph !== undefined ? `|mo:${morph}` : ""}${kind === "standard" ? `${surface.normal ? "|nm" : ""}${surface.occlusion ? "|oc" : ""}${surface.emissive ? "|em" : ""}` : ""}${instanced ? "|ins" : ""}`
                   : `unlit${vertexColors ? "|vc" : ""}${map ? "|map" : ""}${morph === undefined ? "" : `|mo:${morph}`}`;
     const existing = this.#modules.get(key);
     if (existing !== undefined) {
@@ -996,7 +1009,7 @@ export class WgpuPipelineCache {
                 : kind === "effect"
                   ? effectShaderSource(effect ?? "copy")
                   : kind === "lit"
-                    ? litShaderSource(normals, map, shadow, morph)
+                    ? litShaderSource(normals, map, shadow, morph, instanced)
                     : kind === "standard"
                       ? standardShaderSource(
                           normals,
@@ -1005,6 +1018,7 @@ export class WgpuPipelineCache {
                           metalRoughness,
                           surface,
                           morph,
+                          instanced,
                         )
                       : unlitShaderSource(vertexColors, map, morph),
     });
@@ -1056,6 +1070,7 @@ export class WgpuPipelineCache {
               descriptor.occlusionMap === true ||
               descriptor.emissiveMap === true)),
         descriptor.morph,
+        descriptor.instanced === true,
       );
     }
     const batch = descriptor.batch ?? null;
@@ -1101,6 +1116,8 @@ export class WgpuPipelineCache {
             emissive: descriptor.emissiveMap === true,
           }
         : NO_SURFACE_MAPS,
+      (descriptor.kind === "lit" || descriptor.kind === "standard") &&
+        descriptor.instanced === true,
     );
     const blend = blendStateFor(descriptor.blend);
     return this.#device.createRenderPipeline({

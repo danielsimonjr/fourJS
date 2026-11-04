@@ -323,6 +323,7 @@ export function standardShaderSource(
   metalRoughness = false,
   surface: SurfaceMaps = NO_SURFACE_MAPS,
   morph?: WgpuMorph,
+  instanced = false,
 ): string {
   const detail = surface.normal || surface.occlusion || surface.emissive;
   const surfaceGroup = map
@@ -352,7 +353,7 @@ ${surfaceBindingWgsl(surfaceGroup, surface, false)}`
         : ""
   }
 
-${shadedVertexStageWgsl(normals, map || metalRoughness || detail, morph)}
+${shadedVertexStageWgsl(normals, map || metalRoughness || detail, morph, instanced)}
 
 ${PUNCTUAL_LIGHT_WGSL}
 

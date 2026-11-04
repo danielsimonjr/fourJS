@@ -70,6 +70,8 @@ export interface WgpuPipelineRequest {
   readonly shadow: boolean;
   readonly metalRoughness: boolean;
   readonly gpuInstances: boolean;
+  /** R-22 instanced shaded variant. */
+  readonly instanced: boolean;
   /** One-target GPU morph variant (RFC 0003), or `undefined` for none. */
   readonly morph: WgpuMorph | undefined;
   /** Standard-family surface-detail maps (WP-W4.2). */
@@ -104,6 +106,7 @@ export class WgpuPipelineMemo {
   #shadow = false;
   #metalRoughness = false;
   #gpuInstances = false;
+  #instanced = false;
   #morph: WgpuMorph | undefined = undefined;
   #normalMap = false;
   #occlusionMap = false;
@@ -166,6 +169,7 @@ export class WgpuPipelineMemo {
       this.#shadow === request.shadow &&
       this.#metalRoughness === request.metalRoughness &&
       this.#gpuInstances === request.gpuInstances &&
+      this.#instanced === request.instanced &&
       this.#morph === request.morph &&
       this.#normalMap === request.normalMap &&
       this.#occlusionMap === request.occlusionMap &&
@@ -202,6 +206,7 @@ export class WgpuPipelineMemo {
       ...(request.shadow ? { shadow: true } : {}),
       ...(request.metalRoughness ? { metalRoughness: true } : {}),
       ...(request.gpuInstances ? { gpuInstances: true } : {}),
+      ...(request.instanced ? { instanced: true } : {}),
       ...(request.morph === undefined ? {} : { morph: request.morph }),
       ...(request.normalMap ? { normalMap: true } : {}),
       ...(request.occlusionMap ? { occlusionMap: true } : {}),
@@ -225,6 +230,7 @@ export class WgpuPipelineMemo {
     this.#shadow = request.shadow;
     this.#metalRoughness = request.metalRoughness;
     this.#gpuInstances = request.gpuInstances;
+    this.#instanced = request.instanced;
     this.#morph = request.morph;
     this.#normalMap = request.normalMap;
     this.#occlusionMap = request.occlusionMap;
@@ -262,6 +268,7 @@ export interface MutableWgpuPipelineRequest {
   shadow: boolean;
   metalRoughness: boolean;
   gpuInstances: boolean;
+  instanced: boolean;
   morph: WgpuMorph | undefined;
   normalMap: boolean;
   occlusionMap: boolean;
@@ -286,6 +293,7 @@ export function createPipelineRequest(): MutableWgpuPipelineRequest {
     shadow: false,
     metalRoughness: false,
     gpuInstances: false,
+    instanced: false,
     morph: undefined,
     normalMap: false,
     occlusionMap: false,
