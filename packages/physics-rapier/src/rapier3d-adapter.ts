@@ -873,8 +873,8 @@ export class Rapier3dAdapter
   /** Reverse index for event handling: Rapier collider handle → record. */
   readonly #collidersByRapierHandle = new Map<number, ColliderRecord>();
 
-  /** Pairs currently touching, keyed by `"idA|idB"` with `idA < idB`. */
-  readonly #activePairs = new Map<string, PairRecord>();
+  /** Pairs currently touching, keyed by `#pairKey` (ascending ids). */
+  readonly #activePairs = new Map<number, PairRecord>();
 
   /** Events collected during the last `step`, handed over by `drainEvents`. */
   #pendingEvents: PhysicsEvent[] = [];
@@ -886,7 +886,7 @@ export class Rapier3dAdapter
   readonly #stoppedPairs: ColliderRecord[] = [];
 
   /** Keys of the pairs that stopped this step, so `stay` can skip them. */
-  readonly #stoppedKeys = new Set<string>();
+  readonly #stoppedKeys = new Set<number>();
 
   /**
    * Whether `collisionstay` events are synthesised for touching pairs (see
@@ -2901,11 +2901,16 @@ export class Rapier3dAdapter
     };
   }
 
-  /** The §33-stable key of a collider pair: ascending monotonic ids. */
-  #pairKey(a: ColliderRecord, b: ColliderRecord): string {
-    return a.id < b.id
-      ? `${String(a.id)}|${String(b.id)}`
-      : `${String(b.id)}|${String(a.id)}`;
+  /**
+   * The §33-stable key of a collider pair: `lo * 2^32 + hi` over the ascending
+   * monotonic ids. Collision-free and an exact integer while `hi < 2^32` and
+   * `lo < 2^21` (so the key stays below 2^53): up to ~2 M colliders created
+   * over one adapter lifetime. Numeric keys avoid a per-pair string allocation.
+   */
+  #pairKey(a: ColliderRecord, b: ColliderRecord): number {
+    const lo = a.id < b.id ? a.id : b.id;
+    const hi = a.id < b.id ? b.id : a.id;
+    return lo * 0x100000000 + hi;
   }
 
   /**

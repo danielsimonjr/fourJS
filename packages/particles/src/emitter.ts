@@ -190,6 +190,7 @@ import {
 import type {
   ParticleBurst,
   ParticleCollisionMode,
+  MutableParticleColor,
   ParticleColor,
   ParticleForceField,
   ParticleGpuIntegrateExtras,
@@ -202,7 +203,7 @@ import type {
   ParticleTexture,
 } from "./types.js";
 import {
-  evaluateLifetimeRampColor,
+  evaluateLifetimeRampColorInto,
   evaluateLifetimeRampNumber,
 } from "./types.js";
 
@@ -490,6 +491,21 @@ export class ParticleEmitter {
   readonly #sampleForce = new Vector3();
   readonly #evaluateColorStart = new Vector4();
   readonly #evaluateColorEnd = new Vector4();
+  /** Ramp scratch for `evaluateColor` / `evaluateSize` stop paths (§7b). */
+  readonly #colorRampScratch: {
+    start: MutableParticleColor;
+    end: MutableParticleColor;
+    stops?: readonly ParticleLifetimeStop<ParticleColor>[];
+  } = {
+    start: { r: 0, g: 0, b: 0, a: 0 },
+    end: { r: 0, g: 0, b: 0, a: 0 },
+  };
+  readonly #colorOut: MutableParticleColor = { r: 0, g: 0, b: 0, a: 0 };
+  readonly #sizeRampScratch: {
+    start: number;
+    end: number;
+    stops?: readonly ParticleLifetimeStop<number>[];
+  } = { start: 0, end: 0 };
 
   #elapsedTime = 0;
   #emissionAccumulator = 0;
@@ -810,7 +826,8 @@ export class ParticleEmitter {
 
   /**
    * Current size of live particle `index`, including multi-stop ramps when
-   * configured. Endpoints come from the pool slot (spawn values).
+   * configured. Endpoints come from the pool slot (spawn values). Allocates
+   * nothing (§7b).
    */
   evaluateSize(index: number): number {
     const pool = this.pool;
@@ -821,40 +838,45 @@ export class ParticleEmitter {
     if (stops === undefined || stops.length === 0) {
       return start + (end - start) * t;
     }
-    return evaluateLifetimeRampNumber({ start, end, stops }, t);
+    const scratch = this.#sizeRampScratch;
+    scratch.start = start;
+    scratch.end = end;
+    scratch.stops = stops;
+    return evaluateLifetimeRampNumber(scratch, t);
   }
 
   /**
    * Current colour of live particle `index`, including multi-stop ramps when
    * configured. Writes straight RGBA into `out`; endpoints come from the pool.
+   * Allocates nothing (§7b).
    */
   evaluateColor(index: number, out: Vector4): Vector4 {
     const pool = this.pool;
     const t = pool.getNormalizedAge(index);
     pool.getStartColor(index, this.#evaluateColorStart);
     pool.getEndColor(index, this.#evaluateColorEnd);
-    const start = {
-      r: this.#evaluateColorStart.x,
-      g: this.#evaluateColorStart.y,
-      b: this.#evaluateColorStart.z,
-      a: this.#evaluateColorStart.w,
-    };
-    const end = {
-      r: this.#evaluateColorEnd.x,
-      g: this.#evaluateColorEnd.y,
-      b: this.#evaluateColorEnd.z,
-      a: this.#evaluateColorEnd.w,
-    };
+    const s = this.#evaluateColorStart;
+    const e = this.#evaluateColorEnd;
     const stops = this.#colorRamp.stops;
-    const color =
-      stops === undefined || stops.length === 0
-        ? {
-            r: start.r + (end.r - start.r) * t,
-            g: start.g + (end.g - start.g) * t,
-            b: start.b + (end.b - start.b) * t,
-            a: start.a + (end.a - start.a) * t,
-          }
-        : evaluateLifetimeRampColor({ start, end, stops }, t);
+    if (stops === undefined || stops.length === 0) {
+      return out.set(
+        s.x + (e.x - s.x) * t,
+        s.y + (e.y - s.y) * t,
+        s.z + (e.z - s.z) * t,
+        s.w + (e.w - s.w) * t,
+      );
+    }
+    const scratch = this.#colorRampScratch;
+    scratch.start.r = s.x;
+    scratch.start.g = s.y;
+    scratch.start.b = s.z;
+    scratch.start.a = s.w;
+    scratch.end.r = e.x;
+    scratch.end.g = e.y;
+    scratch.end.b = e.z;
+    scratch.end.a = e.w;
+    scratch.stops = stops;
+    const color = evaluateLifetimeRampColorInto(scratch, t, this.#colorOut);
     return out.set(color.r, color.g, color.b, color.a);
   }
 

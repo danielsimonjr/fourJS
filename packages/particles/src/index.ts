@@ -75,6 +75,7 @@ export type {
   ParticleGpuIntegrateExtras,
   ParticleGpuRadialField,
   ParticleGpuSimulation,
+  MutableParticleColor,
   ParticleLifetimeRamp,
   ParticleLifetimeStop,
   ParticleRange,
@@ -83,5 +84,6 @@ export type {
 } from "./types.js";
 export {
   evaluateLifetimeRampColor,
+  evaluateLifetimeRampColorInto,
   evaluateLifetimeRampNumber,
 } from "./types.js";

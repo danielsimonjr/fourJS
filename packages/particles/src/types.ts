@@ -410,20 +410,32 @@ export function evaluateLifetimeRampNumber(
 
 /**
  * Component-wise {@link evaluateLifetimeRampNumber} for straight RGBA colours.
+ * Allocates the returned object; hot paths use
+ * {@link evaluateLifetimeRampColorInto}.
  */
 export function evaluateLifetimeRampColor(
   ramp: ParticleLifetimeRamp<ParticleColor>,
   t: number,
 ): ParticleColor {
+  return evaluateLifetimeRampColorInto(ramp, t, { r: 0, g: 0, b: 0, a: 0 });
+}
+
+/**
+ * {@link evaluateLifetimeRampColor} writing into a caller-owned `out` (§7b:
+ * allocates nothing). Bit-identical to the allocating form. `out` must not
+ * alias a ramp stop or endpoint.
+ *
+ * @returns `out`.
+ */
+export function evaluateLifetimeRampColorInto(
+  ramp: ParticleLifetimeRamp<ParticleColor>,
+  t: number,
+  out: MutableParticleColor,
+): MutableParticleColor {
   const clamped = t < 0 ? 0 : t > 1 ? 1 : t;
   const stops = ramp.stops;
   if (stops === undefined || stops.length === 0) {
-    return {
-      r: ramp.start.r + (ramp.end.r - ramp.start.r) * clamped,
-      g: ramp.start.g + (ramp.end.g - ramp.start.g) * clamped,
-      b: ramp.start.b + (ramp.end.b - ramp.start.b) * clamped,
-      a: ramp.start.a + (ramp.end.a - ramp.start.a) * clamped,
-    };
+    return lerpColorInto(ramp.start, ramp.end, clamped, out);
   }
 
   let previousT = 0;
@@ -433,10 +445,10 @@ export function evaluateLifetimeRampColor(
     if (clamped <= stop.t) {
       const span = stop.t - previousT;
       if (span <= 0) {
-        return { ...stop.value };
+        return copyColorInto(stop.value, out);
       }
       const local = (clamped - previousT) / span;
-      return lerpColor(previous, stop.value, local);
+      return lerpColorInto(previous, stop.value, local, out);
     }
     previousT = stop.t;
     previous = stop.value;
@@ -444,23 +456,42 @@ export function evaluateLifetimeRampColor(
 
   const span = 1 - previousT;
   if (span <= 0) {
-    return { ...ramp.end };
+    return copyColorInto(ramp.end, out);
   }
   const local = (clamped - previousT) / span;
-  return lerpColor(previous, ramp.end, local);
+  return lerpColorInto(previous, ramp.end, local, out);
 }
 
-function lerpColor(
+function copyColorInto(
+  src: ParticleColor,
+  out: MutableParticleColor,
+): MutableParticleColor {
+  out.r = src.r;
+  out.g = src.g;
+  out.b = src.b;
+  out.a = src.a;
+  return out;
+}
+
+function lerpColorInto(
   a: ParticleColor,
   b: ParticleColor,
   t: number,
-): ParticleColor {
-  return {
-    r: a.r + (b.r - a.r) * t,
-    g: a.g + (b.g - a.g) * t,
-    b: a.b + (b.b - a.b) * t,
-    a: a.a + (b.a - a.a) * t,
-  };
+  out: MutableParticleColor,
+): MutableParticleColor {
+  out.r = a.r + (b.r - a.r) * t;
+  out.g = a.g + (b.g - a.g) * t;
+  out.b = a.b + (b.b - a.b) * t;
+  out.a = a.a + (b.a - a.a) * t;
+  return out;
+}
+
+/** Mutable straight RGBA — the `out` type of {@link evaluateLifetimeRampColorInto}. */
+export interface MutableParticleColor {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
 }
 
 /** Straight RGBA, each component nominally in `[0, 1]`. Not validated or clamped. */
