@@ -27,6 +27,8 @@
 import {
   DRAW_UNIFORM_BYTES,
   LIGHT_BINDING_BYTES,
+  LIGHT_PUNCTUAL_COLOR_OFFSET,
+  LIGHT_PUNCTUAL_POSITION_OFFSET,
   STANDARD_UNIFORM_BYTES,
   litShaderSource,
   standardShaderSource,
@@ -154,10 +156,13 @@ const PAGE_PRELUDE = `
     floats[14] = 2; // eye at (0, 0, 2)
     floats[16] = options.lamps;
     if (options.lamps > 0) {
-      // punctualPosition[0] at float 20, colour at 52, params at 116.
-      floats[20] = options.lampX; floats[21] = 0; floats[22] = options.lampZ;
-      floats[52] = options.lampPower; floats[53] = options.lampPower;
-      floats[54] = options.lampPower;
+      // punctualPosition[0] / punctualColor[0] byte offsets arrive as options.
+      const position = options.positionOffset / 4;
+      const color = options.colorOffset / 4;
+      floats[position] = options.lampX; floats[position + 1] = 0;
+      floats[position + 2] = options.lampZ;
+      floats[color] = options.lampPower; floats[color + 1] = options.lampPower;
+      floats[color + 2] = options.lampPower;
     }
     return floats;
   };
@@ -400,6 +405,7 @@ const SPHERE_SCRIPT = `async (options) => {
     entries: [{ binding: 0, resource: {
       buffer: uniformBuffer(device, lightBlock({
         ambient: 0.05, sun: 0, lamps: 1, lampX: 2.5, lampZ: 0, lampPower: 4,
+        positionOffset: options.positionOffset, colorOffset: options.colorOffset,
       })),
     } }],
   });
@@ -552,6 +558,8 @@ test.describe("WebGPU shaded pipelines, on a real adapter", () => {
       shader: litShaderSource(true, false),
       lightBytes: LIGHT_BINDING_BYTES,
       drawBytes: DRAW_UNIFORM_BYTES,
+      positionOffset: LIGHT_PUNCTUAL_POSITION_OFFSET,
+      colorOffset: LIGHT_PUNCTUAL_COLOR_OFFSET,
     });
     test.skip(
       !result.adapter,

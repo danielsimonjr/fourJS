@@ -832,3 +832,42 @@ describe("WgpuGeometryCache — joints and weights (RFC 0003)", () => {
     expect(gpu.countOf("buffer.destroy")).toBe(3);
   });
 });
+
+describe("light struct layout agreement (regression: spec hand-wrote old offsets)", () => {
+  it("every WGSL member lands at the byte offset the writer constants name", () => {
+    // Every member is a vec4 or an array of vec4 (16-byte aligned, 16 bytes
+    // per element), so offsets are the running sum of member sizes.
+    const offsets = new Map<string, number>();
+    let cursor = 0;
+    for (const match of LIGHT_UNIFORM_WGSL.matchAll(
+      /^\s*(\w+)\s*:\s*(?:array<vec4<f32>,\s*(\d+)>|vec4<f32>)/gm,
+    )) {
+      offsets.set(match[1], cursor);
+      cursor += (match[2] === undefined ? 1 : Number(match[2])) * 16;
+    }
+    expect(offsets.get("ambientColor")).toBe(LIGHT_AMBIENT_OFFSET);
+    expect(offsets.get("counts")).toBe(LIGHT_COUNTS_OFFSET);
+    expect(offsets.get("punctualPosition")).toBe(
+      LIGHT_PUNCTUAL_POSITION_OFFSET,
+    );
+    expect(offsets.get("punctualColor")).toBe(LIGHT_PUNCTUAL_COLOR_OFFSET);
+    expect(offsets.get("punctualDirection")).toBe(
+      LIGHT_PUNCTUAL_DIRECTION_OFFSET,
+    );
+    expect(offsets.get("punctualParams")).toBe(LIGHT_PUNCTUAL_PARAMS_OFFSET);
+    expect(offsets.get("hemisphereSky")).toBe(HEMISPHERE_SKY_OFFSET);
+    expect(offsets.get("hemisphereGround")).toBe(HEMISPHERE_GROUND_OFFSET);
+    expect(offsets.get("hemisphereUp")).toBe(HEMISPHERE_UP_OFFSET);
+    expect(cursor).toBe(LIGHT_BINDING_BYTES);
+  });
+
+  it("a point light's colour float lands at the slot punctualColor[0] reads", () => {
+    const lights = createSceneLights();
+    lights.punctualCount = 1;
+    lights.punctualColors[0] = 4;
+    const staging = new Float32Array(LIGHT_UNIFORM_STRIDE_FLOATS);
+    writeLightUniforms(staging, 0, lights, 0, 0, 0);
+    expect(staging[LIGHT_PUNCTUAL_COLOR_OFFSET / 4]).toBe(4);
+    expect(staging[LIGHT_COUNTS_OFFSET / 4]).toBe(1);
+  });
+});
