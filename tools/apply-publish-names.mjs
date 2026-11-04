@@ -255,6 +255,48 @@ export function rewriteCode(text) {
   return { text: out, count };
 }
 
+/**
+ * Workspace-name residue in staged code, as messages (no file prefix).
+ *
+ * The same failure from two quote characters: `rewriteCode` deliberately leaves
+ * backticks alone, because almost every backticked `@fourjs/x` in a staged file
+ * is JSDoc prose *about* a package. But a template literal is also how a runtime
+ * MESSAGE is written, and one that names a workspace package tells a user to
+ * install something that does not exist for them — found 2026-09-13
+ * (`@fourjs/render-webgl`) and 2026-09-19 (`@fourjs/math`). Everything is asked
+ * of comment-stripped code: measured over the 344 shipped `.js` files of a full
+ * staging run, that found exactly one line — the real defect — and no prose
+ * false positives. The quoted-name check used to read the RAW text, so a
+ * comment that merely quoted a name (`"@fourjs/render/*"`, which the rewriter's
+ * closed-quote pattern rightly skips) failed a clean release; it now reads the
+ * stripped text like the line scan.
+ *
+ * @param {string} text Staged (already rewritten) code.
+ * @returns {string[]} One message per offence.
+ */
+export function residueProblems(text) {
+  const code = strippedOfComments(text);
+  const found = [];
+  if (/(["'])@fourjs\//.test(code)) {
+    found.push('a quoted "@fourjs/" name survives in the staged file');
+  }
+  for (const line of code.split("\n")) {
+    if (/@fourjs\//.test(line)) {
+      found.push(
+        `a workspace "@fourjs/" name survives OUTSIDE a comment — ${line.trim().slice(0, 120)}`,
+      );
+    }
+    // The umbrella's bare name, same guard. `fourJS` alone is an ordinary
+    // word, so this asks only about the three specifier positions.
+    if (BARE_SPECIFIER_RESIDUE.test(line)) {
+      found.push(
+        `a bare "fourJS" specifier survives OUTSIDE a comment — ${line.trim().slice(0, 120)}`,
+      );
+    }
+  }
+  return found;
+}
+
 /** Every file under `dir`, recursively. */
 function walkFiles(dir) {
   const found = [];
@@ -371,40 +413,9 @@ function stagePackage(root, pkg, rewritten, outDir) {
     if (count > 0) writeFileSync(file, text);
     rewrites += count;
     // Residue check on the staged bytes themselves, not on what the rewrite
-    // believed it did: a quoted workspace name left in a shipped file is the
-    // one failure mode of this tool that a consumer discovers instead of CI.
-    if (/(["'])@fourjs\//.test(text)) {
-      problems.push(
-        `${relative(outDir, file)}: a quoted "@fourjs/" name survives in the staged file`,
-      );
-    }
-    // The same failure, one quote character away. `rewriteCode` deliberately
-    // leaves backticks alone, because almost every backticked `@fourjs/x` in a
-    // staged file is JSDoc prose *about* a package and rewriting prose is not
-    // this tool's job. But a template literal is also how a runtime MESSAGE is
-    // written, and a message that names a workspace package tells a user to
-    // install something that does not exist for them — found in the wild on
-    // 2026-09-13 (`@fourjs/render-webgl`) and again on 2026-09-19
-    // (`@fourjs/math`, in `diagnostics/allocation-audit.ts`), which the check
-    // above could not see. Stripping comments first separates the two cases:
-    // measured over the 344 shipped `.js` files of a full staging run, it found
-    // exactly one line — the real defect — and no prose false positives.
-    for (const line of strippedOfComments(text).split("\n")) {
-      if (/@fourjs\//.test(line)) {
-        problems.push(
-          `${relative(outDir, file)}: a workspace "@fourjs/" name survives OUTSIDE a comment — ${line.trim().slice(0, 120)}`,
-        );
-      }
-      // The umbrella's bare name, same guard. `fourJS` alone is an ordinary
-      // word, so this asks only about the three specifier positions —
-      // quote-agnostically, which is the whole point: a specifier the rewriter
-      // could not see is exactly the one that survives to a consumer, and
-      // neither residue check looked for this one at all.
-      if (BARE_SPECIFIER_RESIDUE.test(line)) {
-        problems.push(
-          `${relative(outDir, file)}: a bare "fourJS" specifier survives OUTSIDE a comment — ${line.trim().slice(0, 120)}`,
-        );
-      }
+    // believed it did (see `residueProblems` for what it looks for).
+    for (const message of residueProblems(text)) {
+      problems.push(`${relative(outDir, file)}: ${message}`);
     }
   }
   return { problems, rewrites };
