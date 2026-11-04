@@ -54,6 +54,7 @@ import {
   type GpuBuffer,
   type GpuDevice,
 } from "./webgpu-device.js";
+import { WgpuStagingRing } from "./wgpu-staging.js";
 
 /** What this cache needs of a geometry: exactly `RenderItem["geometry"]`. */
 export type CacheableGeometry = RenderItem["geometry"];
@@ -155,8 +156,25 @@ export class WgpuGeometryCache {
 
   #disposed = false;
 
+  /** §65 staging ring for in-place rewrites of dynamic geometry. */
+  readonly #staging: WgpuStagingRing;
+
+  /** Aligned byte size each owned buffer was created with. */
+  readonly #sizes = new WeakMap<GpuBuffer, number>();
+
   constructor(device: GpuDevice) {
     this.#device = device;
+    this.#staging = new WgpuStagingRing(device);
+  }
+
+  /** Staging-ring bytes held on top of the geometry buffers (§65 accounting). */
+  get stagingBytes(): number {
+    return this.#staging.bytes;
+  }
+
+  /** Staging buffers created so far; constant once warm. */
+  get stagingAllocations(): number {
+    return this.#staging.allocations;
   }
 
   /** Number of geometries currently uploaded. Diagnostics and tests (§83). */
@@ -224,6 +242,19 @@ export class WgpuGeometryCache {
         }
         return existing;
       }
+      if (
+        geometry.drawCount !== 0 &&
+        this.#rewriteInPlace(existing, geometry)
+      ) {
+        const updated: WgpuGeometryRecord = {
+          ...existing,
+          version: geometry.version,
+          count: geometry.drawCount,
+          topology: geometry.mode === "lines" ? "line-list" : "triangle-list",
+        };
+        this.#records.set(geometry.id, updated);
+        return updated;
+      }
       this.#destroyRecord(existing);
       this.#records.delete(geometry.id);
     }
@@ -259,6 +290,55 @@ export class WgpuGeometryCache {
       this.#destroyRecord(record);
     }
     this.#records.clear();
+    this.#staging.dispose();
+  }
+
+  /**
+   * Rewrites a stale record's buffers in place when the layout is unchanged:
+   * every buffer the record owns has a source stream of the same aligned
+   * size, and no stream newly appeared or vanished. Returns `false` (touching
+   * nothing) otherwise, and the caller reallocates. No `GPUBuffer` is created
+   * or destroyed on this path; large writes go through the §65 staging ring.
+   */
+  #rewriteInPlace(
+    record: WgpuGeometryRecord,
+    geometry: CacheableGeometry,
+  ): boolean {
+    const pairs: [GpuBuffer | null, ArrayBufferView | undefined][] = [
+      [record.positionBuffer, geometry.positions],
+      [record.normalBuffer, geometry.normals],
+      [record.colorBuffer, geometry.colors],
+      [record.uvBuffer, geometry.uvs],
+      [record.jointBuffer, geometry.joints],
+      [record.weightBuffer, geometry.weights],
+      [record.position1Buffer, geometry.positions1],
+      [record.normal1Buffer, geometry.normals1],
+      [record.indexBuffer, geometry.indices],
+    ];
+    for (const [buffer, data] of pairs) {
+      if (buffer === null) {
+        continue;
+      }
+      if (
+        data === undefined ||
+        this.#sizes.get(buffer) !== alignedSize(data.byteLength)
+      ) {
+        return false;
+      }
+    }
+    if (
+      record.indexBuffer !== null &&
+      (record.indexFormat === "uint16") !==
+        geometry.indices instanceof Uint16Array
+    ) {
+      return false;
+    }
+    for (const [buffer, data] of pairs) {
+      if (buffer !== null && data !== undefined) {
+        this.#staging.write(buffer, data);
+      }
+    }
+    return true;
   }
 
   #upgradeSkinning(
@@ -436,6 +516,7 @@ export class WgpuGeometryCache {
       usage: usage | GPU_BUFFER_USAGE.COPY_DST,
     });
     this.#device.queue.writeBuffer(buffer, 0, data);
+    this.#sizes.set(buffer, alignedSize(data.byteLength));
     return buffer;
   }
 

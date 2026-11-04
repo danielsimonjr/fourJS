@@ -420,8 +420,10 @@ describe("WgpuGeometryCache", () => {
 
     (source as unknown as { version: number }).version = 1;
     const second = cache.acquire(source);
+    // §65: same layout, so the buffer is rewritten in place, not replaced.
     expect(second).not.toBe(first);
-    expect(gpu.countOf("buffer.destroy")).toBe(1);
+    expect(second!.positionBuffer).toBe(first!.positionBuffer);
+    expect(gpu.countOf("buffer.destroy")).toBe(0);
     expect(cache.size).toBe(1);
   });
 
