@@ -2549,3 +2549,22 @@ with the entry.
       refusing a feedback `CanvasTexture` sampling the surface being rendered is
       that packet's named obligation); ~~a docs/guides page carrying the browser adapter~~ (done 2026-08-29:
       `docs/guides/raster-painting.md`, listed as guide 15).
+
+## Now
+
+- [x] **DONE 2026-11-04** (wave 8: `Box2dAdapter` ships in `@fourjs/physics-box2d`, registers via `registerBox2dSolver()`, and has a `box2d` column in COMPATIBILITY's generated solver table; conformance in `tests/integration/box2d-conformance.test.ts`) **`@fourjs/physics-box2d` is a reserved stub — 1 export, no solver.**
+      **Reserved for:** the 2D solver adapter backed by Box2D, implementing §37's
+      `PhysicsSolverAdapter` plus the `SolverBodyAccess` / `SolverJointAccess` seams, with its
+      capability differences declared per §102. The recorded motivation: Box2D could honor §28's
+      motor `maxTorque` / `maxForce` as a real hard cap, which Rapier treats as a force-based gain.
+      **Today a consumer gets:** `PACKAGE_NAME` and nothing else — no `register*` function, no
+      adapter class.
+      **Symptom on selection:** `solver: "box2d"` fails with the registry's *"no physics solver is
+      registered"* message (§37) — **not** a module error, because `fourJS/physics-box2d` imports
+      fine.
+      **Workaround:** none short of writing a full §37 adapter yourself
+      (`docs/guides/custom-solver-adapters.md` is that contract). Unlike the renderer seam, cycle 9
+      proved no consumer-side shortcut here — it had nothing to test and ran its §33/§34 battery
+      against Rapier instead, explicitly as a substitution.
+      **Closes when:** a Box2D-backed `PhysicsWorldAdapter` ships, registers, and appears in
+      `docs/COMPATIBILITY.md`'s generated solver table.

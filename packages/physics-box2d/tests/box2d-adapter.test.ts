@@ -105,8 +105,8 @@ describe("registration", () => {
       "prismatic",
       "rope",
     ]);
-    expect(BOX2D_CAPABILITIES.tuning.jointMotorEffortCap).toBe(true);
-    expect(BOX2D_CAPABILITIES.tuning.rollingFriction).toBe(false);
+    expect(BOX2D_CAPABILITIES.tuning?.jointMotorEffortCap).toBe(true);
+    expect(BOX2D_CAPABILITIES.tuning?.rollingFriction).toBe(false);
     expect(BOX2D_CAPABILITIES.snapshots).toBe(true);
     expect(Object.values(BOX2D_CAPABILITIES.queries)).toEqual([
       true,

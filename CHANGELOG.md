@@ -10,6 +10,13 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **`@fourjs/physics-box2d` is a real 2D solver adapter (2026-11-04, wave 8)**: `Box2dAdapter` over
+  `@box2d/core` 0.11.0 (bodies, colliders incl. capsule-as-three-fixtures, five joint types with a hard
+  motor effort cap, the four queries, float64 snapshots) and `registerBox2dSolver()`. Friction combines by
+  `sqrt`; snapshots omit warm-start impulses, so bit-identical replay holds only from a contact-free,
+  joint-unloaded snapshot. New `box2d-conformance` / `box2d-determinism` suites, a `box2d` variant of
+  `benchmarks/physics-step.mjs`, `docs/benchmarks/box2d-vs-rapier.md`; fixes a pair end/begin same-step
+  bookkeeping bug. `physics-soft` is now the only reserved stub.
 - **`@fourjs/render-canvas` and `@fourjs/render-svg` are real backends (2026-11-04, wave 3)**:
   `Canvas2dRenderer` / `registerCanvasRenderer()` (flat CPU-projected polygons, sprites via
   `drawImage`, RFC 0004 feedback refusal) and `SvgRenderer` / `registerSvgRenderer()` (retained

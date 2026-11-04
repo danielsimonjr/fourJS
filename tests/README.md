@@ -8,8 +8,8 @@ colocated in each package (`packages/<name>/tests/`); performance measurements l
 
 | directory                      | runner                                      | what is committed                        |
 | ------------------------------ | ------------------------------------------- | ---------------------------------------- |
-| [`determinism/`](determinism/) | `bun run test:suites`                       | **27** suites + **24** committed goldens |
-| [`integration/`](integration/) | `bun run test:suites`                       | **71** suites                            |
+| [`determinism/`](determinism/) | `bun run test:suites`                       | **28** suites + **24** committed goldens |
+| [`integration/`](integration/) | `bun run test:suites`                       | **72** suites                            |
 | [`browser/`](browser/)         | `bun run test:browser` (project `chromium`) | **39** Playwright specs                  |
 | [`visual/`](visual/)           | `bun run test:browser` (project `visual`)   | **2** specs, **3** committed PNG goldens |
 
@@ -25,7 +25,7 @@ file without updating this table fails that gate.
 
 ## `determinism/` — §33, §92
 
-**27** suites. Eight of them are the original phase goldens (one per phase that
+**28** suites. Eight of them are the original phase goldens (one per phase that
 produced a determinism obligation), each pinned to a committed checksum in
 `determinism/golden/phase<N>.json`. The rest pin later packets (path, stroke,
 camera rigs, glTF, …) against their own goldens under `determinism/golden/`:
@@ -48,21 +48,22 @@ and is not claimed.
 
 ## `integration/` — §92
 
-**71** suites. Seven of them are the original scenario set plus the repository-hygiene
+**72** suites. Seven of them are the original scenario set plus the repository-hygiene
 suite; the rest landed with later packets. Scenario builders shared between them live
 in `integration/helpers/`.
 
-| suite                                | what it crosses                                                                                                                     |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `physics-rapier.test.ts`             | `@fourjs/physics` ↔ the Rapier adapter, both dimensions                                                                             |
-| `physics-joints.test.ts`             | joints and motors across scene + physics                                                                                            |
-| `physics-blending.test.ts`           | §19 animation → kinematic → physics → interpolated render                                                                           |
-| `physics-replay.test.ts`             | §34 snapshot, restore and replay across packages                                                                                    |
-| `motion-advanced.test.ts`            | §13–§14 trajectories and path following                                                                                             |
-| `scene-roundtrip.test.ts`            | §79 serialization round-trips of a populated scene                                                                                  |
-| `examples-build-coverage.test.ts`    | repository hygiene, not engine behaviour: every example `playwright.config.ts` previews must be one `bun run examples:build` builds |
-| `interpolated-skin-palettes.test.ts` | §43 palettes: two-bone `Skeleton.update(..., worldOf)` matches `buildInterpolatedRenderList`; not a lerp of `jointMatrices`         |
-| `skinned-gpu-picking.test.ts`        | WebGL §71 skinned id pass: both registration seams, `SkinnedIdProgram` + live `jointMatrices`, unskinned control unchanged          |
+| suite                                | what it crosses                                                                                                                          |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `physics-rapier.test.ts`             | `@fourjs/physics` ↔ the Rapier adapter, both dimensions                                                                                  |
+| `box2d-conformance.test.ts`          | `@fourjs/physics` ↔ the Box2D adapter (2D): rest, restitution, friction `sqrt`, motor hard cap, sensors, sleep, snapshot from quiescence |
+| `physics-joints.test.ts`             | joints and motors across scene + physics                                                                                                 |
+| `physics-blending.test.ts`           | §19 animation → kinematic → physics → interpolated render                                                                                |
+| `physics-replay.test.ts`             | §34 snapshot, restore and replay across packages                                                                                         |
+| `motion-advanced.test.ts`            | §13–§14 trajectories and path following                                                                                                  |
+| `scene-roundtrip.test.ts`            | §79 serialization round-trips of a populated scene                                                                                       |
+| `examples-build-coverage.test.ts`    | repository hygiene, not engine behaviour: every example `playwright.config.ts` previews must be one `bun run examples:build` builds      |
+| `interpolated-skin-palettes.test.ts` | §43 palettes: two-bone `Skeleton.update(..., worldOf)` matches `buildInterpolatedRenderList`; not a lerp of `jointMatrices`              |
+| `skinned-gpu-picking.test.ts`        | WebGL §71 skinned id pass: both registration seams, `SkinnedIdProgram` + live `jointMatrices`, unskinned control unchanged               |
 
 ## `browser/` — §92's browser tier
 

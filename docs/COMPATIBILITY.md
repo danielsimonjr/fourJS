@@ -28,7 +28,7 @@ releases that have not happened; the format and API versions in sections 3–4
 exist today and are the ones a document on disk has to match.
 
 **Decision 2026-09-06 — publish the reserved stubs as real 0.x packages.** The
-two reserved directories (`physics-box2d`, `physics-soft`) already exist, build, and export `PACKAGE_NAME`; the umbrella
+two reserved directories (`physics-box2d`, `physics-soft`) existed, built, and exported `PACKAGE_NAME` at the time (`physics-box2d` has since shipped a real adapter, W8.4); the umbrella
 depends on them and re-exports each as a subpath, so Changesets cannot
 `ignore` them without also skipping `four` (see `.changeset/README.md`).
 Dropping the subpaths would break §98; optional peers would push the
@@ -356,14 +356,25 @@ its source in `packages/physics-rapier/src`):
   no JS-reachable motor-force cap, so both adapters supply the value as a
   `ForceBased` gain — effort ≈ `maxEffort · (target − current)` — which is
   monotone in strength but does not clamp. `PhysicsCapabilities` has no field
-  for that distinction, so the Rapier column lives here until a capping
-  adapter arrives and earns its own column:
+  for that distinction, so the Rapier column lives here; the capping
+  Box2D adapter (W8.4) is listed beside it:
 
-  | Adapter            | `maxTorque` / `maxForce`                                       |
-  | ------------------ | -------------------------------------------------------------- |
-  | `rapier2d`         | force-based gain                                               |
-  | `rapier3d`         | force-based gain                                               |
-  | `box2d` (reserved) | — (capping adapter; column when `@fourjs/physics-box2d` ships) |
+  | Adapter    | `maxTorque` / `maxForce`                                             |
+  | ---------- | -------------------------------------------------------------------- |
+  | `rapier2d` | force-based gain                                                     |
+  | `rapier3d` | force-based gain                                                     |
+  | `box2d`    | hard cap (`maxMotorTorque` / `maxMotorForce`; `jointMotorEffortCap`) |
+
+- **Box2D snapshots do not carry warm-start impulses (W8.4).**
+  `capabilities.snapshots` is a plain boolean, so `box2d` declares `true`
+  while the real guarantee is narrower: a restore reproduces body, joint and
+  sleep state exactly, and the continuation is bit-identical to the
+  uninterrupted run only when the snapshot was taken with no touching
+  contacts and no loaded joints (`replayFromSnapshot` is not guaranteed
+  otherwise). The conformance suite proves exactly that case and no more.
+- **Box2D combines friction by `sqrt(a * b)`, not Appendix A's average**
+  (restitution by `max`, as Appendix A states). Pinned by
+  `tests/integration/box2d-conformance.test.ts`.
 
 - **`inheritVelocityFrom` is nearly a no-op on both Rapier adapters.** Rapier
   derives kinematic velocity itself from the pose it is given, so seeding

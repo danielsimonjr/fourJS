@@ -251,31 +251,13 @@ The RFC residues and the R-/PH-/A- series. Several are parked by their own RFC's
 
 ## Now
 
-### Two of the 24 packages are reserved stubs, and each is its own open item
+### One of the 24 packages is a reserved stub, and it is its own open item
 
-**These (originally four; `render-canvas` and `render-svg` shipped 2026-11-04) are deliberate §102 / RFC-0004 decisions, not defects — the defect was that the fact
-lived only inside a dogfooding write-up, where it read as history and nobody actioned it.** Each
-stub is filed below as its own `- [ ]` so one can be ticked when it ships without pretending the
-other three did. Common to all four, measured from a consumer seat on 2026-09-19 (dogfood cycle 9)
-against installed tarballs, in Node and in Chrome: **one source line each, exporting only
-`PACKAGE_NAME` — 1 export apiece**. Each imports cleanly and provides nothing.
-
-- [ ] **`@fourjs/physics-box2d` is a reserved stub — 1 export, no solver.**
-      **Reserved for:** the 2D solver adapter backed by Box2D, implementing §37's
-      `PhysicsSolverAdapter` plus the `SolverBodyAccess` / `SolverJointAccess` seams, with its
-      capability differences declared per §102. The recorded motivation: Box2D could honor §28's
-      motor `maxTorque` / `maxForce` as a real hard cap, which Rapier treats as a force-based gain.
-      **Today a consumer gets:** `PACKAGE_NAME` and nothing else — no `register*` function, no
-      adapter class.
-      **Symptom on selection:** `solver: "box2d"` fails with the registry's *"no physics solver is
-      registered"* message (§37) — **not** a module error, because `fourJS/physics-box2d` imports
-      fine.
-      **Workaround:** none short of writing a full §37 adapter yourself
-      (`docs/guides/custom-solver-adapters.md` is that contract). Unlike the renderer seam, cycle 9
-      proved no consumer-side shortcut here — it had nothing to test and ran its §33/§34 battery
-      against Rapier instead, explicitly as a substitution.
-      **Closes when:** a Box2D-backed `PhysicsWorldAdapter` ships, registers, and appears in
-      `docs/COMPATIBILITY.md`'s generated solver table.
+**This one (originally four; `render-canvas`, `render-svg` and `physics-box2d` shipped 2026-11-04) is a deliberate
+§102 decision, not a defect — the defect was that the fact lived only inside a dogfooding write-up, where it read as
+history and nobody actioned it.** Measured from a consumer seat on 2026-09-19 (dogfood cycle 9) against installed
+tarballs, in Node and in Chrome: **one source line, exporting only `PACKAGE_NAME` — 1 export**. It imports cleanly and
+provides nothing.
 
 - [ ] **`@fourjs/physics-soft` is a reserved stub — 1 export, no soft bodies.**
       **Reserved for:** §35 soft-body and deformable simulation — cloth, rope, pressure/volume

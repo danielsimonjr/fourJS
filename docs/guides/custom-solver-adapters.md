@@ -2,8 +2,8 @@
 
 The stable `@fourjs/physics` API never talks to a physics engine directly: it
 talks to an **adapter** (§37). `physics-rapier` ships two of them
-(`Rapier2dAdapter`, `Rapier3dAdapter`); `physics-box2d` is the scaffolded
-second solver. This guide describes the contract a new adapter signs, the
+(`Rapier2dAdapter`, `Rapier3dAdapter`); `physics-box2d` ships a third (`Box2dAdapter`, 2D only,
+`@box2d/core` 0.11.0). This guide describes the contract a new adapter signs, the
 seams the shipped ones actually implement, and the honest lessons from
 adapting Rapier.
 
@@ -98,11 +98,15 @@ demonstrates it across dimensions with a six-field kit.
 - **Snapshots must round-trip ids and warm-start state** (§34): a
   contact-free save replays bit-identically; an in-contact save diverges only
   through solver warm-start data, which §34 snapshots carry and §79 scene
-  documents deliberately don't.
+  documents deliberately don't. `@fourjs/physics-box2d` is the worked
+  exception: its snapshots carry float64 body/joint state but not warm-start
+  impulses, so its bit-identical-continuation guarantee holds only from a
+  contact-free, joint-unloaded state, and `snapshots: true` (a plain boolean)
+  cannot say so; it is recorded in COMPATIBILITY's prose instead.
 - **Document deviations you cannot fix.** The standing example: on Rapier a
   motor's `maxTorque` is a force-based _gain_, not §28's hard cap — recorded
-  in the stable API docs rather than papered over. A Box2D adapter could
-  honor a real cap; that difference belongs in the capability tables (§90,
+  in the stable API docs rather than papered over. The Box2D adapter
+  (`@fourjs/physics-box2d`, shipped W8.4) honors a real cap; that difference belongs in the capability tables (§90,
   §102) — published since 2026-08-07 as
   [docs/COMPATIBILITY.md](../COMPATIBILITY.md), whose solver-adapter block is
   generated from the declarations themselves. A deviation that no field of
@@ -113,13 +117,14 @@ demonstrates it across dimensions with a six-field kit.
 
 - Shipped: `Rapier2dAdapter`, `Rapier3dAdapter` (pinned `-compat@0.20.0`,
   base64 wasm), verified bit-identical across dimensions on mirrored scenes.
-- Scaffold only: `physics-box2d`, `physics-soft` (§35) — reserved stubs
-  (§102). Each package builds, publishes, and exports `PACKAGE_NAME` and
-  nothing else, so `fourJS/physics-box2d` and `fourJS/physics-soft` import
-  cleanly but register no solver: selecting `solver: "box2d"` fails with the
-  registry's "no physics solver is registered" message (§37), not with a
-  module error. Measured from a consumer seat 2026-09-19 (dogfood cycle 9):
-  **1 export each**, no `register*` function, in Node and in Chrome.
+- Shipped (W8): `Box2dAdapter` in `@fourjs/physics-box2d` (2D only; register
+  with `registerBox2dSolver()`), declaring a real motor effort cap and
+  `sqrt` friction combine; see its README for the snapshot warm-start caveat.
+- Scaffold only: `physics-soft` (§35) — a reserved stub (§102). The package
+  builds, publishes, and exports `PACKAGE_NAME` and nothing else, so
+  `fourJS/physics-soft` imports cleanly but provides no soft-body API
+  (it is not a solver adapter, ERRATA E-3). Measured from a consumer seat
+  2026-09-19 (dogfood cycle 9): **1 export**, in Node and in Chrome.
 - Known seam gaps: §32 sleep thresholds and §28 solver iterations are not
   yet exposed through the adapter interface (recorded TODOs).
 - Reference material: the transcribed Rapier type subset in
