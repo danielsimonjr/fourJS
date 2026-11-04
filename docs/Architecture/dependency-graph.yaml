@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 371
+  totalFiles: 375
   totalModules: 25
-  totalExports: 3880
+  totalExports: 3902
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -6087,6 +6087,9 @@ modules:
             - PUNCTUAL_LIGHT_GLSL
             - PunctualLightUniforms
             - SHADOW_GLSL
+            - SHADOW_ATLAS_MARKER
+            - SHADOW_ATLAS_BRANCH_MARKER
+            - withShadowAtlas
             - SHADOW_TEXTURE_UNIT
             - ShadowUniforms
             - SpriteProgram
@@ -6152,6 +6155,24 @@ modules:
           imports:
             - ShadowProgram
             - registerShadowPipeline
+          reExport: true
+        - file: ./gl-shadow-atlas-registry.js
+          imports:
+            - clearRegisteredShadowAtlas
+            - resolveShadowAtlasGlsl
+          reExport: true
+        - file: ./gl-shadow-atlas.js
+          imports:
+            - registerGlShadowAtlas
+          reExport: true
+        - file: ./gl-morph-registry.js
+          imports:
+            - clearRegisteredMorphTargets
+            - resolveMorphSources
+          reExport: true
+        - file: ./gl-morph-targets.js
+          imports:
+            - registerGlMorphTargets
           reExport: true
         - file: ./gl-standard-registry.js
           imports:
@@ -6270,6 +6291,16 @@ modules:
             - ShadowPipelineFactory
           reExport: true
           typeOnly: true
+        - file: ./gl-shadow-atlas-registry.js
+          imports:
+            - ShadowAtlasGlsl
+          reExport: true
+          typeOnly: true
+        - file: ./gl-morph-registry.js
+          imports:
+            - MorphVertexSources
+          reExport: true
+          typeOnly: true
         - file: ./gl-standard-registry.js
           imports:
             - StandardPipeline
@@ -6332,6 +6363,9 @@ modules:
         - PUNCTUAL_LIGHT_GLSL
         - PunctualLightUniforms
         - SHADOW_GLSL
+        - SHADOW_ATLAS_MARKER
+        - SHADOW_ATLAS_BRANCH_MARKER
+        - withShadowAtlas
         - SHADOW_TEXTURE_UNIT
         - ShadowUniforms
         - SpriteProgram
@@ -6367,6 +6401,12 @@ modules:
         - resolveShadowPipelineFactory
         - ShadowProgram
         - registerShadowPipeline
+        - clearRegisteredShadowAtlas
+        - resolveShadowAtlasGlsl
+        - registerGlShadowAtlas
+        - clearRegisteredMorphTargets
+        - resolveMorphSources
+        - registerGlMorphTargets
         - clearRegisteredStandardPipeline
         - resolveStandardPipelineFactory
         - StandardProgram
@@ -6418,6 +6458,8 @@ modules:
         - EmittedNodeShader
         - ShadowCasterPipeline
         - ShadowPipelineFactory
+        - ShadowAtlasGlsl
+        - MorphVertexSources
         - StandardPipeline
         - StandardPipelineFactory
         - CacheableTexture
@@ -6467,6 +6509,9 @@ modules:
         - PUNCTUAL_LIGHT_GLSL
         - PunctualLightUniforms
         - SHADOW_GLSL
+        - SHADOW_ATLAS_MARKER
+        - SHADOW_ATLAS_BRANCH_MARKER
+        - withShadowAtlas
         - SHADOW_TEXTURE_UNIT
         - ShadowUniforms
         - SpriteProgram
@@ -6502,6 +6547,12 @@ modules:
         - resolveShadowPipelineFactory
         - ShadowProgram
         - registerShadowPipeline
+        - clearRegisteredShadowAtlas
+        - resolveShadowAtlasGlsl
+        - registerGlShadowAtlas
+        - clearRegisteredMorphTargets
+        - resolveMorphSources
+        - registerGlMorphTargets
         - clearRegisteredStandardPipeline
         - resolveStandardPipelineFactory
         - StandardProgram
@@ -6552,6 +6603,8 @@ modules:
         - EmittedNodeShader
         - ShadowCasterPipeline
         - ShadowPipelineFactory
+        - ShadowAtlasGlsl
+        - MorphVertexSources
         - StandardPipeline
         - StandardPipelineFactory
         - CacheableTexture
@@ -6978,7 +7031,14 @@ modules:
       description: The WebGL 2 surface this backend uses, and the pipelines it draws with
       externalDependencies: []
       nodeDependencies: []
-      internalDependencies: []
+      internalDependencies:
+        - file: ./gl-morph-registry.js
+          imports:
+            - resolveMorphSources
+            - MorphVertexSources
+        - file: ./gl-shadow-atlas-registry.js
+          imports:
+            - resolveShadowAtlasGlsl
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -6995,7 +7055,6 @@ modules:
           directory: packages/render
           imports:
             - MAX_LIGHT_SLOTS
-            - SHADOW_CUBE_FACES
             - SceneLights
       exports:
         - GL
@@ -7016,12 +7075,15 @@ modules:
         - FRAGMENT_SHADER_SOURCE
         - PUNCTUAL_LIGHT_GLSL
         - HEMISPHERE_LIGHT_GLSL
+        - SHADOW_ATLAS_MARKER
+        - SHADOW_ATLAS_BRANCH_MARKER
         - SHADOW_GLSL
         - LIT_FRAGMENT_SHADER_SOURCE
         - matrixScratch
         - morphPositionLocation
         - morphNormalLocation
         - uploadNormalMatrix
+        - withShadowAtlas
         - createLinkedProgram
         - requireUniform
         - HemisphereLightUniforms
@@ -7043,6 +7105,7 @@ modules:
         - morphPositionLocation
         - morphNormalLocation
         - uploadNormalMatrix
+        - withShadowAtlas
         - createLinkedProgram
         - requireUniform
       constants:
@@ -7064,9 +7127,27 @@ modules:
         - FRAGMENT_SHADER_SOURCE
         - PUNCTUAL_LIGHT_GLSL
         - HEMISPHERE_LIGHT_GLSL
+        - SHADOW_ATLAS_MARKER
+        - SHADOW_ATLAS_BRANCH_MARKER
         - SHADOW_GLSL
         - LIT_FRAGMENT_SHADER_SOURCE
         - matrixScratch
+    packages/render-webgl/src/gl-shadow-atlas-registry.ts:
+      description: The shadow-atlas receiver's registration slot (§69, W6.3; wave 11, packet
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies: []
+      workspaceDependencies: []
+      exports:
+        - setShadowAtlasGlsl
+        - resolveShadowAtlasGlsl
+        - clearRegisteredShadowAtlas
+      interfaces:
+        - ShadowAtlasGlsl
+      functions:
+        - setShadowAtlasGlsl
+        - resolveShadowAtlasGlsl
+        - clearRegisteredShadowAtlas
     packages/render-webgl/src/webgl-renderer.ts:
       description: The WebGL 2 backend (§61, §62, §120) — the MVP's only renderer.
       externalDependencies: []
@@ -7136,6 +7217,12 @@ modules:
           imports:
             - NORMAL_TEXTURE_UNIT
             - OCCLUSION_TEXTURE_UNIT
+        - file: ./gl-morph-registry.js
+          imports:
+            - resolveMorphSources
+        - file: ./gl-shadow-atlas-registry.js
+          imports:
+            - resolveShadowAtlasGlsl
         - file: ./gl-shadow-registry.js
           imports:
             - resolveShadowPipelineFactory
@@ -7198,6 +7285,7 @@ modules:
             - Renderer
             - RendererCapabilities
             - ScissorRect
+            - SceneLights
             - RendererEventMap
             - RendererOptions
             - ScreenEffectRenderer
@@ -7307,6 +7395,39 @@ modules:
         - SkinnedShadowProgram
       functions:
         - registerSkinningPipeline
+    packages/render-webgl/src/gl-morph-registry.ts:
+      description: The 2..4-target morph programs' registration slot (§54, RFC 0003 WP-SK.4;
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies: []
+      workspaceDependencies: []
+      exports:
+        - setMorphSources
+        - resolveMorphSources
+        - clearRegisteredMorphTargets
+      interfaces:
+        - MorphVertexSources
+      functions:
+        - setMorphSources
+        - resolveMorphSources
+        - clearRegisteredMorphTargets
+    packages/render-webgl/src/gl-morph-targets.ts:
+      description: "Vertex shaders for 2..4-target GPU morphing (§54): `p + Σ wᵢ(pᵢ − p)` with"
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./gl-program.js
+          imports:
+            - morphNormalLocation
+            - morphPositionLocation
+        - file: ./gl-morph-registry.js
+          imports:
+            - setMorphSources
+      workspaceDependencies: []
+      exports:
+        - registerGlMorphTargets
+      functions:
+        - registerGlMorphTargets
     packages/render-webgl/src/gl-batch.ts:
       description: §65 batching for the WebGL 2 backend — the GPU half of `@fourjs/render`'s
       externalDependencies: []
@@ -7364,6 +7485,23 @@ modules:
       constants:
         - INSTANCE_MODEL_LOCATION
         - INSTANCE_NORMAL_LOCATION
+    packages/render-webgl/src/gl-shadow-atlas.ts:
+      description: "The shadow-atlas receiver GLSL (§69, W6.3): cascade selection over the"
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./gl-shadow-atlas-registry.js
+          imports:
+            - setShadowAtlasGlsl
+      workspaceDependencies:
+        - package: "@fourjs/render"
+          directory: packages/render
+          imports:
+            - SHADOW_CUBE_FACES
+      exports:
+        - registerGlShadowAtlas
+      functions:
+        - registerGlShadowAtlas
     packages/render-webgl/src/gl-texture.ts:
       description: "GPU-side textures for the WebGL 2 backend: one `WebGLTexture` per"
       externalDependencies: []
@@ -22687,10 +22825,14 @@ dependencyGraph:
         - packages/render-webgl/src/gl-particles-registry.ts
         - packages/render-webgl/src/gl-node-program.ts
         - packages/render-webgl/src/gl-program.ts
+        - packages/render-webgl/src/gl-shadow-atlas-registry.ts
         - packages/render-webgl/src/webgl-renderer.ts
         - packages/render-webgl/src/gl-skinning-registry.ts
         - packages/render-webgl/src/gl-skinning.ts
+        - packages/render-webgl/src/gl-morph-registry.ts
+        - packages/render-webgl/src/gl-morph-targets.ts
         - packages/render-webgl/src/gl-batch.ts
+        - packages/render-webgl/src/gl-shadow-atlas.ts
         - packages/render-webgl/src/gl-texture.ts
         - packages/render-webgl/src/gl-node-uniform-block.ts
         - packages/render-webgl/src/gl-effect-registry.ts
@@ -22952,18 +23094,18 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 371
+  totalTypeScriptFiles: 375
   totalModules: 25
-  totalLinesOfCode: 185595
-  totalExports: 3880
+  totalLinesOfCode: 185898
+  totalExports: 3902
   totalClasses: 232
-  totalInterfaces: 708
-  totalFunctions: 647
+  totalInterfaces: 710
+  totalFunctions: 656
   totalTypeGuards: 34
   totalEnums: 0
-  totalConstants: 603
-  totalReExports: 2417
-  totalTypeOnlyImports: 468
+  totalConstants: 605
+  totalReExports: 2428
+  totalTypeOnlyImports: 470
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10
   unusedFilesCount: 0

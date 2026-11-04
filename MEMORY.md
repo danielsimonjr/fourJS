@@ -5037,6 +5037,17 @@ positions, previous, velocities}]}` with float64 arrays; checksum is FNV-1a over
   rgba8unorm (render's `validateCompressed` rule is kept).
 - **Still open after wave 7:** glTF `KHR_texture_basisu` routing (the loader's image path is
   RGBA8-only through `TexelDecodeLike`), compressed cube/array/3D and regional updates, Draco.
+- **W11.5 outcome (2026-11-04):** `registerGlShadowAtlas()` and `registerGlMorphTargets()` are
+  process-global seams that must be called BEFORE the renderer initialises (lit programs compile at
+  initialise and latch the atlas GLSL; context restore re-latches). Unregistered: a frame with
+  `shadowExtended` is degraded to the first cascade's single map (no point/spot shadows) with one
+  warning `webgl-shadow-atlas-unregistered`; a geometry with `extraMorphTargets` draws as a one-
+  target morph with one warning `webgl-morph-targets-unregistered`; a direct `createMorph(gl, 2..4)`
+  throws `SHADER_COMPILATION_FAILED`. Texture skinning and instanced shaded were already seams
+  (`registerSkinningPipeline`, `createGlBatching`), so the earlier re-base entries overstated the
+  family cost: the measured saving is ≈ 0.8 kB gzip per example, and the remaining bulk is the
+  always-on lit/standard/one-target programs. WebGPU was not split (families interleave in the
+  draw blocks).
 
 ## 2026-11-04 — program wave 11 (final rows)
 
@@ -5062,3 +5073,8 @@ componentType (0 f32, 1 u8, 2 u16, 3 u32), byteLength}`; output = attribute stre
   float render targets), the standing dogfooding row, first npm publication (owner step), the
   lazy WebGL shader-family split (W11.5, in flight), and `"texture"`-skinned rigs over 48
   joints in the shadow caster / picking passes.
+- **Gate gotcha (2026-11-04):** CI's "Check release-name mapping and export preservation" step runs
+  `bun run publish-names:test`, which is NOT in the local mirror list used by the program's gate
+  chains; it flags any workspace `@fourjs/…` name that survives in emitted code outside a comment,
+  including one embedded mid-string in a runtime message (W11.5's morph-targets error). Keep package
+  names out of runtime strings; name the export instead. Added to the local gate list from here on.

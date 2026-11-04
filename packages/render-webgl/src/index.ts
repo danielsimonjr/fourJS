@@ -106,6 +106,9 @@ export {
   PUNCTUAL_LIGHT_GLSL,
   PunctualLightUniforms,
   SHADOW_GLSL,
+  SHADOW_ATLAS_MARKER,
+  SHADOW_ATLAS_BRANCH_MARKER,
+  withShadowAtlas,
   SHADOW_TEXTURE_UNIT,
   ShadowUniforms,
   SpriteProgram,
@@ -205,6 +208,20 @@ export {
 // §69's depth-only caster (R-18; behind a seam since 2026-09-11): importing
 // `registerShadowPipeline` is what links it — see `gl-shadow-registry.ts`.
 export { ShadowProgram, registerShadowPipeline } from "./gl-shadow.js";
+// Optional shader families behind seams (wave 11, W11.5): importing the
+// `register…` function is what links the GLSL — see the two registry modules.
+export {
+  clearRegisteredShadowAtlas,
+  resolveShadowAtlasGlsl,
+} from "./gl-shadow-atlas-registry.js";
+export type { ShadowAtlasGlsl } from "./gl-shadow-atlas-registry.js";
+export { registerGlShadowAtlas } from "./gl-shadow-atlas.js";
+export {
+  clearRegisteredMorphTargets,
+  resolveMorphSources,
+} from "./gl-morph-registry.js";
+export type { MorphVertexSources } from "./gl-morph-registry.js";
+export { registerGlMorphTargets } from "./gl-morph-targets.js";
 export type {
   StandardPipeline,
   StandardPipelineFactory,

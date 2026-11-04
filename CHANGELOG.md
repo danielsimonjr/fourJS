@@ -10,6 +10,10 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **WebGL shader-family seams (2026-11-04, W11.5)**: the shadow atlas and the 2–4 morph target
+  programs are opt-in registrations (`registerGlShadowAtlas()`, `registerGlMorphTargets()`), like
+  skinning and batching already were; an unregistered family degrades to the single-map shadow or
+  the one-target morph with one development warning. Example budgets lowered to measured + 1.5 kB.
 - **Wave 11 final rows (2026-11-04)**: glTF `weights` animation channels drive `MorphWeights`
   (`GltfInstance.morphWeights`, tracks `morphWeights.<node>.<k>`); `createBoundedDracoDecoder`
   over the raw codec ABI with `KHR_draco_mesh_compression` routing (`GltfLoaderOptions.dracoDecoder`);

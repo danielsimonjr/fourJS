@@ -25,8 +25,16 @@
 
 import { Matrix4 } from "@fourjs/math";
 import { writeSpotShadowMatrix } from "@fourjs/render";
-import { PUNCTUAL_LIGHT_GLSL, SHADOW_GLSL } from "@fourjs/render-webgl";
+import {
+  PUNCTUAL_LIGHT_GLSL,
+  SHADOW_GLSL,
+  registerGlShadowAtlas,
+  withShadowAtlas,
+} from "@fourjs/render-webgl";
 import { expect, test } from "@playwright/test";
+
+// W11.5: the atlas GLSL is opt-in; the spec compiles the registered receiver.
+registerGlShadowAtlas();
 
 /** Readback surface edge, in pixels. */
 const SIZE = 128;
@@ -258,7 +266,7 @@ test.describe("WebGL shadow atlas, on a real context (§69, W6.3)", () => {
         size: SIZE,
         tile: TILE,
         punctualGlsl: PUNCTUAL_LIGHT_GLSL,
-        shadowGlsl: SHADOW_GLSL,
+        shadowGlsl: withShadowAtlas(SHADOW_GLSL),
         spotMatrix,
       })})`,
     );
