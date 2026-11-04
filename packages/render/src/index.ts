@@ -3,6 +3,7 @@ export const PACKAGE_NAME = "@fourjs/render";
 export type {
   BatchableItem,
   BatchableMaterial,
+  BatchAtlasStatistics,
   InstanceableItem,
   InstancedRun,
   RenderBatch,
@@ -13,6 +14,19 @@ export {
   INSTANCE_FLOATS,
   RenderBatcher,
 } from "./batch.js";
+
+export type {
+  AtlasEntry,
+  TextureAtlasOptions,
+  TextureAtlasStatistics,
+} from "./texture-atlas.js";
+export {
+  ATLAS_PADDING,
+  DEFAULT_ATLAS_MAX_PAGES,
+  DEFAULT_ATLAS_PAGE_SIZE,
+  MAX_ATLAS_PAGE_SIZE,
+  TextureAtlas,
+} from "./texture-atlas.js";
 
 export type { BoundingSphere } from "./bounds.js";
 export {

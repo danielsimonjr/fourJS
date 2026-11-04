@@ -114,6 +114,16 @@ declare global {
       pixels: number[];
       drawCalls: number;
     };
+    /** W11.4: eight sprites over eight distinct textures (two samplers). */
+    fourAtlasProbe?: (
+      atlas: boolean,
+      frames: number,
+    ) => {
+      pixels: number[];
+      drawCalls: number;
+      uploads: number;
+      stats: unknown;
+    };
     /** R-22: two runs of shared-geometry shaded meshes (lit, standard). */
     fourShadedBatchingProbe?: (instanced: boolean) => {
       pixels: number[];
@@ -171,6 +181,7 @@ void renderer.initialize({ canvas }).then(() => {
   };
   document.body.dataset["batchingReady"] = "1";
   installShadedProbe(gl);
+  installAtlasProbe(gl);
 });
 
 // --- R-22: instanced shaded meshes -----------------------------------------
@@ -235,4 +246,87 @@ function installShadedProbe(gl: WebGL2RenderingContext | null): void {
     return { pixels: Array.from(pixels), drawCalls: statistics.drawCalls };
   };
   document.body.dataset["shadedBatchingReady"] = "1";
+}
+
+// --- W11.4: atlas grouping of distinct textures -----------------------------
+
+/** An 8 x 8 opaque texture with a per-seed gradient and a diagonal stripe. */
+function patterned(seed: number, filter: "nearest" | "linear"): Texture {
+  const data = new Uint8Array(8 * 8 * 4);
+  for (let y = 0; y < 8; y += 1) {
+    for (let x = 0; x < 8; x += 1) {
+      const at = (y * 8 + x) * 4;
+      const stripe = (x + y + seed) % 4 === 0;
+      data[at] = stripe ? 250 : (seed * 53 + x * 24) % 256;
+      data[at + 1] = stripe ? 250 : (seed * 97 + y * 28) % 256;
+      data[at + 2] = stripe ? 30 : (seed * 31 + 120) % 256;
+      data[at + 3] = 255;
+    }
+  }
+  return new Texture({ width: 8, height: 8, data, filter });
+}
+
+/**
+ * Two rows of four sprites, every one over its own material and texture:
+ * the top row samples `nearest`, the bottom row `linear`. The consecutive-
+ * same-material tier cannot merge any of them; the atlas tier makes one run
+ * per sampler (two page textures), so two draws instead of eight.
+ */
+function buildAtlasScene(): Scene {
+  const atlasScene = new Scene();
+  for (let row = 0; row < 2; row += 1) {
+    const filter = row === 0 ? "nearest" : "linear";
+    for (let i = 0; i < 4; i += 1) {
+      const quad = new Sprite(
+        new SpriteMaterial({ texture: patterned(row * 4 + i, filter) }),
+        { width: 1.4, height: 1.4 },
+      );
+      quad.transform.position.set(i * 1.8 - 2.7, row === 0 ? 1.2 : -1.2, 0);
+      atlasScene.add(quad);
+    }
+  }
+  resolveWorldTransforms(atlasScene);
+  return atlasScene;
+}
+
+const atlasScene = buildAtlasScene();
+const atlasBatching = createGlBatching({ atlas: { pageSize: 256 } });
+
+function installAtlasProbe(gl: WebGL2RenderingContext | null): void {
+  let uploads = 0;
+  if (gl !== null) {
+    const texImage2D = gl.texImage2D.bind(gl) as (...a: unknown[]) => void;
+    const texSubImage2D = gl.texSubImage2D.bind(gl) as (
+      ...a: unknown[]
+    ) => void;
+    (gl as unknown as Record<string, unknown>)["texImage2D"] = (
+      ...a: unknown[]
+    ) => {
+      uploads += 1;
+      texImage2D(...a);
+    };
+    (gl as unknown as Record<string, unknown>)["texSubImage2D"] = (
+      ...a: unknown[]
+    ) => {
+      uploads += 1;
+      texSubImage2D(...a);
+    };
+  }
+  window.fourAtlasProbe = (atlas: boolean, frames: number) => {
+    renderer.batching = atlas ? atlasBatching : null;
+    for (let f = 0; f < frames; f += 1) {
+      uploads = 0;
+      resetRenderStatistics(statistics);
+      renderer.render(atlasScene, views);
+    }
+    const pixels = new Uint8Array(WIDTH * HEIGHT * 4);
+    gl?.readPixels(0, 0, WIDTH, HEIGHT, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    return {
+      pixels: Array.from(pixels),
+      drawCalls: statistics.drawCalls,
+      uploads,
+      stats: atlas ? (atlasBatching.atlasStatistics?.() ?? null) : null,
+    };
+  };
+  document.body.dataset["atlasReady"] = "1";
 }

@@ -55,6 +55,12 @@ export interface Ktx2Info {
   readonly levels: readonly Ktx2Level[];
   readonly dfd: Ktx2Dfd | undefined;
   readonly keyValues: ReadonlyMap<string, Uint8Array>;
+  /**
+   * The `KTXorientation` key/value as text (`"rd"` rows top-down like PNG,
+   * `"ru"` rows bottom-up), trailing NUL removed; `undefined` when the key is
+   * absent (which readers treat as `"rd"`, the KTX2 default for 2D).
+   */
+  readonly orientation: string | undefined;
   readonly globalDataOffset: number;
   readonly globalDataLength: number;
 }
@@ -224,6 +230,18 @@ export function parseKtx2(
     cursor += Math.ceil(entry / 4) * 4;
   }
 
+  const orientationBytes = keyValues.get("KTXorientation");
+  let orientation: string | undefined;
+  if (orientationBytes !== undefined) {
+    const end = orientationBytes.indexOf(0);
+    orientation = String.fromCharCode(
+      ...orientationBytes.subarray(
+        0,
+        end === -1 ? orientationBytes.length : end,
+      ),
+    );
+  }
+
   return Object.freeze({
     vkFormat: u32(12),
     typeSize: u32(16),
@@ -237,6 +255,7 @@ export function parseKtx2(
     levels: Object.freeze(levels),
     dfd,
     keyValues,
+    orientation,
     globalDataOffset: sgdOffset,
     globalDataLength: sgdLength,
   });

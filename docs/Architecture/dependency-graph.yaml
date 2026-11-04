@@ -2,9 +2,9 @@ metadata:
   name: fourjs-monorepo
   version: 0.0.0
   lastUpdated: "2026-11-04"
-  totalFiles: 373
+  totalFiles: 371
   totalModules: 25
-  totalExports: 3874
+  totalExports: 3880
 entryPoints:
   - file: packages/particles/src/index.ts
     type: main
@@ -3888,9 +3888,18 @@ modules:
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
+        - file: ./bounded-draco.js
+          imports:
+            - DracoAttributeIds
+            - DracoDecoder
+            - DracoStreams
+          typeOnly: true
         - file: ./image-memory.js
           imports:
             - assertImageDecoderMemory
+        - file: ./ktx2.js
+          imports:
+            - parseKtx2
         - file: ./asset-manager.js
           imports:
             - DEFAULT_MAXIMUM_BYTES
@@ -3903,6 +3912,12 @@ modules:
           imports:
             - resolveGlobalTextDecoder
             - TextDecodeLike
+        - file: ./bounded-basis.js
+          imports:
+            - BasisTextureFormat
+            - BasisTextureSource
+            - BasisTranscoder
+          typeOnly: true
         - file: ./texture.js
           imports:
             - createTextureDecoder
@@ -4050,6 +4065,13 @@ modules:
             - BASIS_TARGET_CODES
             - createBoundedBasisTranscoder
           reExport: true
+        - file: ./bounded-draco.js
+          imports:
+            - DRACO_COMPONENT_CODES
+            - DRACO_INFO_BYTES
+            - DRACO_MAX_ATTRIBUTES
+            - createBoundedDracoDecoder
+          reExport: true
         - file: ./ktx2.js
           imports:
             - KTX2_HEADER_BYTES
@@ -4121,6 +4143,8 @@ modules:
           imports:
             - GltfAnimationRecord
             - GltfChannelPath
+            - GltfCompressedTexture
+            - GltfTexture
             - GltfChannelRecord
             - GltfLoaderOptions
             - GltfMaterialRecord
@@ -4175,6 +4199,14 @@ modules:
             - BoundedBasisTranscoderOptions
           reExport: true
           typeOnly: true
+        - file: ./bounded-draco.js
+          imports:
+            - BoundedDracoDecoderOptions
+            - DracoAttributeIds
+            - DracoDecoder
+            - DracoStreams
+          reExport: true
+          typeOnly: true
         - file: ./ktx2.js
           imports:
             - Ktx2BasisCodec
@@ -4222,6 +4254,10 @@ modules:
         - createBoundedAvifDecoder
         - BASIS_TARGET_CODES
         - createBoundedBasisTranscoder
+        - DRACO_COMPONENT_CODES
+        - DRACO_INFO_BYTES
+        - DRACO_MAX_ATTRIBUTES
+        - createBoundedDracoDecoder
         - KTX2_HEADER_BYTES
         - KTX2_IDENTIFIER
         - parseKtx2
@@ -4266,6 +4302,8 @@ modules:
         - TextureWrapMode
         - GltfAnimationRecord
         - GltfChannelPath
+        - GltfCompressedTexture
+        - GltfTexture
         - GltfChannelRecord
         - GltfLoaderOptions
         - GltfMaterialRecord
@@ -4290,6 +4328,10 @@ modules:
         - BasisTranscodeRequest
         - BasisTranscoder
         - BoundedBasisTranscoderOptions
+        - BoundedDracoDecoderOptions
+        - DracoAttributeIds
+        - DracoDecoder
+        - DracoStreams
         - Ktx2BasisCodec
         - Ktx2Dfd
         - Ktx2Info
@@ -4328,6 +4370,10 @@ modules:
         - createBoundedAvifDecoder
         - BASIS_TARGET_CODES
         - createBoundedBasisTranscoder
+        - DRACO_COMPONENT_CODES
+        - DRACO_INFO_BYTES
+        - DRACO_MAX_ATTRIBUTES
+        - createBoundedDracoDecoder
         - KTX2_HEADER_BYTES
         - KTX2_IDENTIFIER
         - parseKtx2
@@ -4371,6 +4417,8 @@ modules:
         - TextureWrapMode
         - GltfAnimationRecord
         - GltfChannelPath
+        - GltfCompressedTexture
+        - GltfTexture
         - GltfChannelRecord
         - GltfLoaderOptions
         - GltfMaterialRecord
@@ -4395,6 +4443,10 @@ modules:
         - BasisTranscodeRequest
         - BasisTranscoder
         - BoundedBasisTranscoderOptions
+        - BoundedDracoDecoderOptions
+        - DracoAttributeIds
+        - DracoDecoder
+        - DracoStreams
         - Ktx2BasisCodec
         - Ktx2Dfd
         - Ktx2Info
@@ -4491,6 +4543,40 @@ modules:
       constants:
         - DEFAULT_MAXIMUM_BYTES
         - DEFAULT_TIMEOUT_SECONDS
+    packages/assets/src/bounded-draco.ts:
+      description: Bounded Draco mesh decoder (§96; R-30c, the glTF `KHR_draco_mesh_compression`
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./bounded-png.js
+          imports:
+            - DEFAULT_IMAGE_WORKING_BYTES
+        - file: ./texture.js
+          imports:
+            - DEFAULT_MAXIMUM_DECODED_BYTES
+        - file: ./wasm-memory.js
+          imports:
+            - limitWasmMemory
+      workspaceDependencies:
+        - package: "@fourjs/core"
+          directory: packages/core
+          imports:
+            - FourError
+      exports:
+        - DRACO_MAX_ATTRIBUTES
+        - DRACO_INFO_BYTES
+        - DRACO_COMPONENT_CODES
+        - createBoundedDracoDecoder
+      interfaces:
+        - BoundedDracoDecoderOptions
+        - DracoAttributeIds
+        - DracoStreams
+      functions:
+        - createBoundedDracoDecoder
+      constants:
+        - DRACO_MAX_ATTRIBUTES
+        - DRACO_INFO_BYTES
+        - DRACO_COMPONENT_CODES
     packages/assets/src/loader-registry.ts:
       description: The §81 asset-format registry — a named map of {@link AssetLoader}s a
       externalDependencies: []
@@ -6001,9 +6087,6 @@ modules:
             - PUNCTUAL_LIGHT_GLSL
             - PunctualLightUniforms
             - SHADOW_GLSL
-            - SHADOW_ATLAS_MARKER
-            - SHADOW_ATLAS_BRANCH_MARKER
-            - withShadowAtlas
             - SHADOW_TEXTURE_UNIT
             - ShadowUniforms
             - SpriteProgram
@@ -6069,24 +6152,6 @@ modules:
           imports:
             - ShadowProgram
             - registerShadowPipeline
-          reExport: true
-        - file: ./gl-shadow-atlas-registry.js
-          imports:
-            - clearRegisteredShadowAtlas
-            - resolveShadowAtlasGlsl
-          reExport: true
-        - file: ./gl-shadow-atlas.js
-          imports:
-            - registerGlShadowAtlas
-          reExport: true
-        - file: ./gl-morph-registry.js
-          imports:
-            - clearRegisteredMorphTargets
-            - resolveMorphSources
-          reExport: true
-        - file: ./gl-morph-targets.js
-          imports:
-            - registerGlMorphTargets
           reExport: true
         - file: ./gl-standard-registry.js
           imports:
@@ -6205,16 +6270,6 @@ modules:
             - ShadowPipelineFactory
           reExport: true
           typeOnly: true
-        - file: ./gl-shadow-atlas-registry.js
-          imports:
-            - ShadowAtlasGlsl
-          reExport: true
-          typeOnly: true
-        - file: ./gl-morph-registry.js
-          imports:
-            - MorphVertexSources
-          reExport: true
-          typeOnly: true
         - file: ./gl-standard-registry.js
           imports:
             - StandardPipeline
@@ -6277,9 +6332,6 @@ modules:
         - PUNCTUAL_LIGHT_GLSL
         - PunctualLightUniforms
         - SHADOW_GLSL
-        - SHADOW_ATLAS_MARKER
-        - SHADOW_ATLAS_BRANCH_MARKER
-        - withShadowAtlas
         - SHADOW_TEXTURE_UNIT
         - ShadowUniforms
         - SpriteProgram
@@ -6315,12 +6367,6 @@ modules:
         - resolveShadowPipelineFactory
         - ShadowProgram
         - registerShadowPipeline
-        - clearRegisteredShadowAtlas
-        - resolveShadowAtlasGlsl
-        - registerGlShadowAtlas
-        - clearRegisteredMorphTargets
-        - resolveMorphSources
-        - registerGlMorphTargets
         - clearRegisteredStandardPipeline
         - resolveStandardPipelineFactory
         - StandardProgram
@@ -6372,8 +6418,6 @@ modules:
         - EmittedNodeShader
         - ShadowCasterPipeline
         - ShadowPipelineFactory
-        - ShadowAtlasGlsl
-        - MorphVertexSources
         - StandardPipeline
         - StandardPipelineFactory
         - CacheableTexture
@@ -6423,9 +6467,6 @@ modules:
         - PUNCTUAL_LIGHT_GLSL
         - PunctualLightUniforms
         - SHADOW_GLSL
-        - SHADOW_ATLAS_MARKER
-        - SHADOW_ATLAS_BRANCH_MARKER
-        - withShadowAtlas
         - SHADOW_TEXTURE_UNIT
         - ShadowUniforms
         - SpriteProgram
@@ -6461,12 +6502,6 @@ modules:
         - resolveShadowPipelineFactory
         - ShadowProgram
         - registerShadowPipeline
-        - clearRegisteredShadowAtlas
-        - resolveShadowAtlasGlsl
-        - registerGlShadowAtlas
-        - clearRegisteredMorphTargets
-        - resolveMorphSources
-        - registerGlMorphTargets
         - clearRegisteredStandardPipeline
         - resolveStandardPipelineFactory
         - StandardProgram
@@ -6517,8 +6552,6 @@ modules:
         - EmittedNodeShader
         - ShadowCasterPipeline
         - ShadowPipelineFactory
-        - ShadowAtlasGlsl
-        - MorphVertexSources
         - StandardPipeline
         - StandardPipelineFactory
         - CacheableTexture
@@ -6945,14 +6978,7 @@ modules:
       description: The WebGL 2 surface this backend uses, and the pipelines it draws with
       externalDependencies: []
       nodeDependencies: []
-      internalDependencies:
-        - file: ./gl-morph-registry.js
-          imports:
-            - resolveMorphSources
-            - MorphVertexSources
-        - file: ./gl-shadow-atlas-registry.js
-          imports:
-            - resolveShadowAtlasGlsl
+      internalDependencies: []
       workspaceDependencies:
         - package: "@fourjs/core"
           directory: packages/core
@@ -6969,6 +6995,7 @@ modules:
           directory: packages/render
           imports:
             - MAX_LIGHT_SLOTS
+            - SHADOW_CUBE_FACES
             - SceneLights
       exports:
         - GL
@@ -6989,15 +7016,12 @@ modules:
         - FRAGMENT_SHADER_SOURCE
         - PUNCTUAL_LIGHT_GLSL
         - HEMISPHERE_LIGHT_GLSL
-        - SHADOW_ATLAS_MARKER
-        - SHADOW_ATLAS_BRANCH_MARKER
         - SHADOW_GLSL
         - LIT_FRAGMENT_SHADER_SOURCE
         - matrixScratch
         - morphPositionLocation
         - morphNormalLocation
         - uploadNormalMatrix
-        - withShadowAtlas
         - createLinkedProgram
         - requireUniform
         - HemisphereLightUniforms
@@ -7019,7 +7043,6 @@ modules:
         - morphPositionLocation
         - morphNormalLocation
         - uploadNormalMatrix
-        - withShadowAtlas
         - createLinkedProgram
         - requireUniform
       constants:
@@ -7041,27 +7064,9 @@ modules:
         - FRAGMENT_SHADER_SOURCE
         - PUNCTUAL_LIGHT_GLSL
         - HEMISPHERE_LIGHT_GLSL
-        - SHADOW_ATLAS_MARKER
-        - SHADOW_ATLAS_BRANCH_MARKER
         - SHADOW_GLSL
         - LIT_FRAGMENT_SHADER_SOURCE
         - matrixScratch
-    packages/render-webgl/src/gl-shadow-atlas-registry.ts:
-      description: The shadow-atlas receiver's registration slot (§69, W6.3; wave 11, packet
-      externalDependencies: []
-      nodeDependencies: []
-      internalDependencies: []
-      workspaceDependencies: []
-      exports:
-        - setShadowAtlasGlsl
-        - resolveShadowAtlasGlsl
-        - clearRegisteredShadowAtlas
-      interfaces:
-        - ShadowAtlasGlsl
-      functions:
-        - setShadowAtlasGlsl
-        - resolveShadowAtlasGlsl
-        - clearRegisteredShadowAtlas
     packages/render-webgl/src/webgl-renderer.ts:
       description: The WebGL 2 backend (§61, §62, §120) — the MVP's only renderer.
       externalDependencies: []
@@ -7131,12 +7136,6 @@ modules:
           imports:
             - NORMAL_TEXTURE_UNIT
             - OCCLUSION_TEXTURE_UNIT
-        - file: ./gl-morph-registry.js
-          imports:
-            - resolveMorphSources
-        - file: ./gl-shadow-atlas-registry.js
-          imports:
-            - resolveShadowAtlasGlsl
         - file: ./gl-shadow-registry.js
           imports:
             - resolveShadowPipelineFactory
@@ -7199,7 +7198,6 @@ modules:
             - Renderer
             - RendererCapabilities
             - ScissorRect
-            - SceneLights
             - RendererEventMap
             - RendererOptions
             - ScreenEffectRenderer
@@ -7309,39 +7307,6 @@ modules:
         - SkinnedShadowProgram
       functions:
         - registerSkinningPipeline
-    packages/render-webgl/src/gl-morph-registry.ts:
-      description: The 2..4-target morph programs' registration slot (§54, RFC 0003 WP-SK.4;
-      externalDependencies: []
-      nodeDependencies: []
-      internalDependencies: []
-      workspaceDependencies: []
-      exports:
-        - setMorphSources
-        - resolveMorphSources
-        - clearRegisteredMorphTargets
-      interfaces:
-        - MorphVertexSources
-      functions:
-        - setMorphSources
-        - resolveMorphSources
-        - clearRegisteredMorphTargets
-    packages/render-webgl/src/gl-morph-targets.ts:
-      description: "Vertex shaders for 2..4-target GPU morphing (§54): `p + Σ wᵢ(pᵢ − p)` with"
-      externalDependencies: []
-      nodeDependencies: []
-      internalDependencies:
-        - file: ./gl-program.js
-          imports:
-            - morphNormalLocation
-            - morphPositionLocation
-        - file: ./gl-morph-registry.js
-          imports:
-            - setMorphSources
-      workspaceDependencies: []
-      exports:
-        - registerGlMorphTargets
-      functions:
-        - registerGlMorphTargets
     packages/render-webgl/src/gl-batch.ts:
       description: §65 batching for the WebGL 2 backend — the GPU half of `@fourjs/render`'s
       externalDependencies: []
@@ -7373,6 +7338,7 @@ modules:
           imports:
             - INSTANCE_FLOATS
             - RenderBatcher
+            - BatchAtlasStatistics
             - InstancedRun
             - RenderBatch
             - RenderBatchOptions
@@ -7398,23 +7364,6 @@ modules:
       constants:
         - INSTANCE_MODEL_LOCATION
         - INSTANCE_NORMAL_LOCATION
-    packages/render-webgl/src/gl-shadow-atlas.ts:
-      description: "The shadow-atlas receiver GLSL (§69, W6.3): cascade selection over the"
-      externalDependencies: []
-      nodeDependencies: []
-      internalDependencies:
-        - file: ./gl-shadow-atlas-registry.js
-          imports:
-            - setShadowAtlasGlsl
-      workspaceDependencies:
-        - package: "@fourjs/render"
-          directory: packages/render
-          imports:
-            - SHADOW_CUBE_FACES
-      exports:
-        - registerGlShadowAtlas
-      functions:
-        - registerGlShadowAtlas
     packages/render-webgl/src/gl-texture.ts:
       description: "GPU-side textures for the WebGL 2 backend: one `WebGLTexture` per"
       externalDependencies: []
@@ -10704,6 +10653,14 @@ modules:
             - INSTANCE_FLOATS
             - RenderBatcher
           reExport: true
+        - file: ./texture-atlas.js
+          imports:
+            - ATLAS_PADDING
+            - DEFAULT_ATLAS_MAX_PAGES
+            - DEFAULT_ATLAS_PAGE_SIZE
+            - MAX_ATLAS_PAGE_SIZE
+            - TextureAtlas
+          reExport: true
         - file: ./bounds.js
           imports:
             - computeWorldBoundingSphere
@@ -10960,10 +10917,18 @@ modules:
           imports:
             - BatchableItem
             - BatchableMaterial
+            - BatchAtlasStatistics
             - InstanceableItem
             - InstancedRun
             - RenderBatch
             - RenderBatchOptions
+          reExport: true
+          typeOnly: true
+        - file: ./texture-atlas.js
+          imports:
+            - AtlasEntry
+            - TextureAtlasOptions
+            - TextureAtlasStatistics
           reExport: true
           typeOnly: true
         - file: ./bounds.js
@@ -11275,6 +11240,11 @@ modules:
         - DEFAULT_MAX_BATCH_VERTICES
         - INSTANCE_FLOATS
         - RenderBatcher
+        - ATLAS_PADDING
+        - DEFAULT_ATLAS_MAX_PAGES
+        - DEFAULT_ATLAS_PAGE_SIZE
+        - MAX_ATLAS_PAGE_SIZE
+        - TextureAtlas
         - computeWorldBoundingSphere
         - computeWorldBoundingSphereFromBox
         - COMPUTE_WORKLOADS
@@ -11439,10 +11409,14 @@ modules:
         - PACKAGE_NAME
         - BatchableItem
         - BatchableMaterial
+        - BatchAtlasStatistics
         - InstanceableItem
         - InstancedRun
         - RenderBatch
         - RenderBatchOptions
+        - AtlasEntry
+        - TextureAtlasOptions
+        - TextureAtlasStatistics
         - BoundingSphere
         - ComputeWorkloadFactory
         - ClipScope
@@ -11609,6 +11583,11 @@ modules:
         - DEFAULT_MAX_BATCH_VERTICES
         - INSTANCE_FLOATS
         - RenderBatcher
+        - ATLAS_PADDING
+        - DEFAULT_ATLAS_MAX_PAGES
+        - DEFAULT_ATLAS_PAGE_SIZE
+        - MAX_ATLAS_PAGE_SIZE
+        - TextureAtlas
         - computeWorldBoundingSphere
         - computeWorldBoundingSphereFromBox
         - COMPUTE_WORKLOADS
@@ -11772,10 +11751,14 @@ modules:
         - VideoTexture
         - BatchableItem
         - BatchableMaterial
+        - BatchAtlasStatistics
         - InstanceableItem
         - InstancedRun
         - RenderBatch
         - RenderBatchOptions
+        - AtlasEntry
+        - TextureAtlasOptions
+        - TextureAtlasStatistics
         - BoundingSphere
         - ComputeWorkloadFactory
         - ClipScope
@@ -12549,6 +12532,12 @@ modules:
           imports:
             - scissorsEqual
             - ScissorRect
+        - file: ./texture-atlas.js
+          imports:
+            - TextureAtlas
+            - AtlasEntry
+            - TextureAtlasOptions
+            - TextureAtlasStatistics
         - file: ./render-list.js
           imports:
             - LitRenderItem
@@ -12586,6 +12575,7 @@ modules:
         - RenderBatcher
       interfaces:
         - RenderBatchOptions
+        - BatchAtlasStatistics
         - RenderBatch
         - InstancedRun
       constants:
@@ -12884,6 +12874,41 @@ modules:
         - ClipScope
       constants:
         - MAX_CLIP_PLANES
+    packages/render/src/texture-atlas.ts:
+      description: §65 atlas grouping — a deterministic shelf packer that lets distinct 2D
+      externalDependencies: []
+      nodeDependencies: []
+      internalDependencies:
+        - file: ./texture.js
+          imports:
+            - Texture
+      workspaceDependencies:
+        - package: "@fourjs/math"
+          directory: packages/math
+          imports:
+            - Rectangle2
+            - ColorSpace
+        - package: "@fourjs/materials"
+          directory: packages/materials
+          imports:
+            - MaterialTexture
+      exports:
+        - ATLAS_PADDING
+        - DEFAULT_ATLAS_PAGE_SIZE
+        - DEFAULT_ATLAS_MAX_PAGES
+        - MAX_ATLAS_PAGE_SIZE
+        - TextureAtlas
+      classes:
+        - TextureAtlas
+      interfaces:
+        - TextureAtlasOptions
+        - AtlasEntry
+        - TextureAtlasStatistics
+      constants:
+        - ATLAS_PADDING
+        - DEFAULT_ATLAS_PAGE_SIZE
+        - DEFAULT_ATLAS_MAX_PAGES
+        - MAX_ATLAS_PAGE_SIZE
     packages/render/src/resource-memory.ts:
       description: §83 resource accounting for textures and render targets — how many are live,
       externalDependencies: []
@@ -16151,6 +16176,7 @@ modules:
           imports:
             - INSTANCE_FLOATS
             - RenderBatcher
+            - BatchAtlasStatistics
             - InstancedRun
             - RenderBatch
             - RenderBatchOptions
@@ -20917,6 +20943,7 @@ modules:
           imports:
             - AnimationClip
             - AnimationTrack
+            - numberAdapter
             - quaternionAdapter
             - vector3Adapter
             - AnimationTrackLike
@@ -22612,6 +22639,7 @@ dependencyGraph:
         - packages/assets/src/index.ts
         - packages/assets/src/texture.ts
         - packages/assets/src/asset-manager.ts
+        - packages/assets/src/bounded-draco.ts
         - packages/assets/src/loader-registry.ts
         - packages/assets/src/manifest.ts
         - packages/assets/src/content-hash.ts
@@ -22659,14 +22687,10 @@ dependencyGraph:
         - packages/render-webgl/src/gl-particles-registry.ts
         - packages/render-webgl/src/gl-node-program.ts
         - packages/render-webgl/src/gl-program.ts
-        - packages/render-webgl/src/gl-shadow-atlas-registry.ts
         - packages/render-webgl/src/webgl-renderer.ts
         - packages/render-webgl/src/gl-skinning-registry.ts
         - packages/render-webgl/src/gl-skinning.ts
-        - packages/render-webgl/src/gl-morph-registry.ts
-        - packages/render-webgl/src/gl-morph-targets.ts
         - packages/render-webgl/src/gl-batch.ts
-        - packages/render-webgl/src/gl-shadow-atlas.ts
         - packages/render-webgl/src/gl-texture.ts
         - packages/render-webgl/src/gl-node-uniform-block.ts
         - packages/render-webgl/src/gl-effect-registry.ts
@@ -22747,6 +22771,7 @@ dependencyGraph:
         - packages/render/src/raster-limits.ts
         - packages/render/src/bounds.ts
         - packages/render/src/clip.ts
+        - packages/render/src/texture-atlas.ts
         - packages/render/src/resource-memory.ts
         - packages/render/src/shape.ts
         - packages/render/src/renderer-registry.ts
@@ -22927,18 +22952,18 @@ dependencyGraph:
         - packages/serialization/src/format.ts
         - packages/serialization/src/serializer.ts
 statistics:
-  totalTypeScriptFiles: 373
+  totalTypeScriptFiles: 371
   totalModules: 25
-  totalLinesOfCode: 184040
-  totalExports: 3874
-  totalClasses: 231
-  totalInterfaces: 703
-  totalFunctions: 655
+  totalLinesOfCode: 185595
+  totalExports: 3880
+  totalClasses: 232
+  totalInterfaces: 708
+  totalFunctions: 647
   totalTypeGuards: 34
   totalEnums: 0
-  totalConstants: 598
-  totalReExports: 2409
-  totalTypeOnlyImports: 466
+  totalConstants: 603
+  totalReExports: 2417
+  totalTypeOnlyImports: 468
   runtimeCircularDeps: 0
   typeOnlyCircularDeps: 10
   unusedFilesCount: 0

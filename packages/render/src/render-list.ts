@@ -477,10 +477,10 @@ interface RenderItemBase {
    * or `null` for the overwhelmingly common draw that carries none (RFC 0003,
    * 2026-08-28).
    *
-   * A **reference to the component's own array**, snapshotted like `frame` and
-   * `instances`: the item is pooled and the weights may be rewritten by the
-   * next fixed step, so a consumer reads them during the call that built the
-   * list. Both GPU backends's morph programs consume `morphWeights[0..3]` (one
+   * A **live reference to the component's own array**, not a copy (unlike
+   * `frame`'s scalars) and not interpolated at `interpolationAlpha`: the item
+   * is pooled and the weights may be rewritten by the next fixed step, so a
+   * consumer reads them during the call that built the list. Both GPU backends's morph programs consume `morphWeights[0..3]` (one
    * lane per target, up to four) when the geometry carries `positions1`
    * (RFC 0003 WP-SK.4 and its further-targets residue).
    *
@@ -1544,8 +1544,8 @@ function collect(
         item.worldBounds = null;
         item.transformVersion = node.transform.worldVersion;
         writeWorldMatrix(item, node, pool, next, poses, alpha);
-        // §54's morph weights (RFC 0003), snapshotted like every other field and
-        // written on **every** drawable for `clip`'s reason: the item is pooled,
+        // §54's morph weights (RFC 0003): a LIVE reference to the component's
+        // array (not a copy, not interpolated at alpha), written on **every** drawable for `clip`'s reason: the item is pooled,
         // and a slot that carried a morphing mesh last frame must not hand its
         // weights to whatever lands in it next. `?? undefined ?? null`-free: a
         // plain `Renderable` has no such property and reports `undefined`.

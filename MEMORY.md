@@ -5048,3 +5048,28 @@ positions, previous, velocities}]}` with float64 arrays; checksum is FNV-1a over
   family cost: the measured saving is ≈ 0.8 kB gzip per example, and the remaining bulk is the
   always-on lit/standard/one-target programs. WebGPU was not split (families interleave in the
   draw blocks).
+
+## 2026-11-04 — program wave 11 (final rows)
+
+- **Draco ABI** (same family as WebP/AVIF/Basis): `memory`/`malloc`/`free`/`decode(ptr, len, infoPtr)
+-> outPtr`; info block of u32s — vertexCount, indexCount (0 = non-indexed), attributeCount
+  (1..16), indexByteLength, indexBytes (2|4|0), then per attribute `{id, componentCount,
+componentType (0 f32, 1 u8, 2 u16, 3 u32), byteLength}`; output = attribute streams in
+  declared order then indices. u16 indices only up to 65536 vertices; every index < vertexCount;
+  all floats finite; decoded ≤ `maximumDecodedBytes` (64 MiB) and decoded + input ≤
+  `maximumWorkingBytes` (128 MiB). A required `KHR_draco_mesh_compression` without a decoder is
+  refused; optional falls back to the accessors (refused by name if they have no bufferView).
+- **Weights channels:** the loader reads a `weights` channel as SCALAR with
+  `components = values.length / times.length`; the instantiation tier binds N tracks to one
+  `Float32Array` per node that every `MorphWeights` of that node shares by reference (so a
+  track write reaches `Mesh.morphTargetWeights` without a copy). CUBICSPLINE stays refused.
+- **Basis in glTF:** `GltfAsset.textures` entries may now be compressed `TextureSource`s (no
+  `data`, no `dispose`); colour space comes from the glTF slot, filter/wrap from the sampler.
+- **Atlas batching stays opt-in** like batching itself; pages are ordinary `Texture`s so upload
+  and regional updates reuse the texture caches; a resized texture leaks its old slot until
+  `atlas.clear()` (recorded limit).
+- **Remaining after wave 11:** the post-1.0 lighting tier (area/clustered lights, transparent
+  shadow masks, contact shadows, IBL/PhysicalMaterial, §60a tone-map operator which waits on
+  float render targets), the standing dogfooding row, first npm publication (owner step), the
+  lazy WebGL shader-family split (W11.5, in flight), and `"texture"`-skinned rigs over 48
+  joints in the shadow caster / picking passes.
