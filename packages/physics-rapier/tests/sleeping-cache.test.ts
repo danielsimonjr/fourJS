@@ -99,7 +99,7 @@ describe.each(["2d", "3d"] as const)("isBodySleeping cache (%s)", (dim) => {
       () => a.applyImpulseAtPoint(h.body, v, v),
       () => a.applyAngularImpulse(h.body, v),
       () => a.resetForces(h.body),
-      () => a.setBodyType(h.body, "kinematic"),
+      () => a.setBodyType(h.body, "kinematic-position"),
       () => a.setBodyDamping(h.body, 0.1, 0.1),
       () => a.setBodyGravityScale(h.body, 1, true),
     ];
