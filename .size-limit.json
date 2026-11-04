@@ -33,5 +33,10 @@
     "path": "examples/character-controller/dist/assets/*.js",
     "limit": "1.20 MB",
     "gzip": true
+  },
+  {
+    "path": "examples/canvas-backend/dist/assets/*.js",
+    "limit": "15.5 kB",
+    "gzip": true
   }
 ]
