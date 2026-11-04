@@ -16,6 +16,11 @@ function setup() {
 }
 
 let nextId = 0;
+/** TypeScript 6 (TypeDoc) sees `version` as read-only; TS 7 does not. */
+function bump(target: object, version: number): void {
+  (target as { version: number }).version = version;
+}
+
 function geo(floats: number, version = 0) {
   return {
     id: `stg-${String(nextId++)}`,
@@ -115,7 +120,7 @@ describe("WgpuGeometryCache dynamic updates (§65)", () => {
     const first = cache.acquire(g)!;
     gpu.reset();
     for (let i = 1; i <= 5; i++) {
-      g.version = i;
+      bump(g, i);
       const next = cache.acquire(g)!;
       expect(next.positionBuffer).toBe(first.positionBuffer);
       expect(next.version).toBe(i);
@@ -132,12 +137,12 @@ describe("WgpuGeometryCache dynamic updates (§65)", () => {
     const g = geo(BIG);
     cache.acquire(g);
     for (let i = 1; i <= STAGING_RING_FRAMES; i++) {
-      g.version = i;
+      bump(g, i);
       cache.acquire(g);
     }
     gpu.reset();
     for (let i = 10; i < 20; i++) {
-      g.version = i;
+      bump(g, i);
       cache.acquire(g);
     }
     expect(gpu.countOf("device.createBuffer")).toBe(0);
@@ -155,7 +160,7 @@ describe("WgpuGeometryCache dynamic updates (§65)", () => {
     cache.acquire(g);
     (g as { positions: Float32Array }).positions = new Float32Array(18);
     (g as { drawCount: number }).drawCount = 6;
-    g.version = 1;
+    bump(g, 1);
     gpu.reset();
     cache.acquire(g);
     expect(gpu.countOf("buffer.destroy")).toBe(1);
@@ -169,7 +174,7 @@ describe("WgpuGeometryCache dynamic updates (§65)", () => {
     cache.acquire(h);
     h.indices = new Uint32Array(2);
     (h as { drawCount: number }).drawCount = 2;
-    h.version = 1;
+    bump(h, 1);
     gpu.reset();
     cache.acquire(h);
     expect(gpu.countOf("buffer.destroy")).toBe(2);
@@ -180,7 +185,7 @@ describe("WgpuGeometryCache dynamic updates (§65)", () => {
     cache.acquire(k);
     k.indices = undefined;
     (k as { drawCount: number }).drawCount = 3;
-    k.version = 1;
+    bump(k, 1);
     gpu.reset();
     cache.acquire(k);
     expect(gpu.countOf("buffer.destroy")).toBe(2);
@@ -193,7 +198,7 @@ describe("WgpuGeometryCache dynamic refresh residues (wave 5)", () => {
     const cache = new WgpuGeometryCache(device);
     const g = geo(9);
     const first = cache.acquire(g)!;
-    g.version = 1;
+    bump(g, 1);
     const second = cache.acquire(g)!;
     expect(second).toBe(first);
     expect(second.version).toBe(1);
@@ -205,12 +210,12 @@ describe("WgpuGeometryCache dynamic refresh residues (wave 5)", () => {
     const g = geo(9) as CacheableGeometry & { normals?: Float32Array };
     expect(cache.acquire(g, true)!.normalBuffer).toBeNull();
     g.normals = new Float32Array(9);
-    g.version = 1;
+    bump(g, 1);
     gpu.reset();
     const record = cache.acquire(g, true)!;
     expect(record.normalBuffer).not.toBeNull();
     expect(gpu.countOf("buffer.destroy")).toBe(0);
-    g.version = 2;
+    bump(g, 2);
     const again = cache.acquire(g, true)!;
     expect(again.normalBuffer).toBe(record.normalBuffer);
   });
@@ -225,10 +230,10 @@ describe("WgpuGeometryCache dynamic refresh residues (wave 5)", () => {
     g.positions1 = new Float32Array(9);
     expect(cache.acquire(g, false, false, true)!.extraMorphBuffers).toEqual([]);
     g.extraMorphTargets = [{ positions: new Float32Array(9) }];
-    g.version = 1;
+    bump(g, 1);
     const record = cache.acquire(g, false, false, true)!;
     expect(record.extraMorphBuffers[0]).not.toBeNull();
-    g.version = 2;
+    bump(g, 2);
     cache.acquire(g, false, false, true);
     expect(record.extraMorphBuffers[0]).not.toBeNull();
   });
@@ -239,7 +244,7 @@ describe("WgpuGeometryCache dynamic refresh residues (wave 5)", () => {
     const g = geo(9) as CacheableGeometry & { colors?: Float32Array };
     cache.acquire(g);
     g.colors = new Float32Array(9);
-    g.version = 1;
+    bump(g, 1);
     gpu.reset();
     expect(cache.acquire(g)!.colorBuffer).not.toBeNull();
     expect(gpu.countOf("buffer.destroy")).toBe(1);
@@ -272,7 +277,7 @@ describe("WgpuGeometryCache dynamic refresh residues (wave 5)", () => {
     (g as { drawCount: number }).drawCount = 3;
     cache.acquire(g);
     for (let i = 1; i <= 3; i++) {
-      g.version = i;
+      bump(g, i);
       cache.acquire(g);
     }
     expect(sizes.length).toBeGreaterThanOrEqual(5);

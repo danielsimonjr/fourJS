@@ -4892,3 +4892,12 @@ like consecutive unlit items; lit meshes do not batch yet (R-22). Evidence:
   offset 192 / standard-block offset 224 inside the 256-byte stride. glTF `weights`
   animation channels stay refused: the loader's tracks are node-indexed while `MorphWeights`
   lives on the mesh node, so wiring belongs to the instantiation tier (`fourjs/src/gltf.ts`).
+- **Size budgets re-based (+3 kB on the three tight WebGL-renderer examples: first-3d-scene and
+  particles-demo 46 → 49 kB, ui-demo 54.5 → 57.5 kB).** Wave 5 adds about 2.5 kB gzip to every
+  bundle that carries `WebglRenderer` — the four-directional-light shader branches, the morph
+  program generator for 2–4 targets and the instanced vertex-stage rewriter all live in the
+  renderer module and cannot be tree-shaken per feature. These are shipped §54/§65/§68 features,
+  not an optional mode, which is the distinction the 2026-11-04 batching decision drew (batching
+  stays opt-in because it is a mode most scenes never use). The 2026-09-13 budgets were measured
+  size plus headroom; the new ones keep roughly the same headroom over the measured
+  45.1 / 47.0 / 54.8 kB. Nothing else moved.
