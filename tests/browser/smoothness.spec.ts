@@ -837,7 +837,16 @@ test.describe("§106: moving primitives render smoothly under fixed-step simulat
     const fractions: number[] = [];
     const appFrameNumbers: number[] = [];
     const publishedAlphas: number[] = [];
-    for (let i = 0; i < INTERPOLATION_SAMPLE_COUNT; i++) {
+    let midAlphaSamples = 0;
+    // Sample until enough frames the PAGE reports as mid-step have been
+    // pixel-checked (bounded), instead of hoping a fixed 12 alias favourably.
+    for (
+      let i = 0;
+      i < INTERPOLATION_SAMPLE_COUNT * 4 &&
+      (i < INTERPOLATION_SAMPLE_COUNT ||
+        midAlphaSamples < MINIMUM_MID_STEP_FRAMES);
+      i++
+    ) {
       const startFrames = Number((await readStatusData(page))["frames"] ?? "0");
       await page.evaluate(() => {
         window.__fourPauseAfterStep = true;
@@ -874,6 +883,7 @@ test.describe("§106: moving primitives render smoothly under fixed-step simulat
       fractions.push(fraction);
       const alpha = Number(status["alpha"] ?? "NaN");
       if (alpha >= MID_STEP_LOW && alpha <= MID_STEP_HIGH) {
+        midAlphaSamples += 1;
         expect(
           fraction,
           `sample ${String(i)}: data-alpha=${alpha.toFixed(3)} is mid-step but the centroid fraction ${fraction.toFixed(3)} is not`,
@@ -905,12 +915,20 @@ test.describe("§106: moving primitives render smoothly under fixed-step simulat
         `frames=${(await status.getAttribute("data-frames")) ?? "?"}`,
     );
 
+    const pageMid = Number((await readStatusData(page))["midFrames"] ?? "0");
+    expect(
+      pageMid,
+      `the page itself rendered only ${String(pageMid)} mid-step frames (data-mid-frames)`,
+    ).toBeGreaterThanOrEqual(MINIMUM_MID_STEP_FRAMES);
+    expect(
+      midAlphaSamples,
+      `no sampled frame had a mid-step published alpha, so interpolation was never observed`,
+    ).toBeGreaterThanOrEqual(MINIMUM_MID_STEP_FRAMES);
     expect(
       midStep,
-      `every frame landed on an exact fixed-step pose — the draw is snapping to the ` +
-        `simulation instead of interpolating (§43), so motion would judder whenever ` +
-        `the display rate and the fixed step disagree`,
-    ).toBeGreaterThanOrEqual(MINIMUM_MID_STEP_FRAMES);
+      `every frame the page published as mid-step (alpha ${String(MID_STEP_LOW)}..${String(MID_STEP_HIGH)}) ` +
+        `must also be drawn mid-step (§43); the draw is snapping to the simulation`,
+    ).toBeGreaterThanOrEqual(midAlphaSamples);
     expect(errors).toEqual([]);
   });
 });

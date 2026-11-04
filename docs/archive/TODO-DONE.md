@@ -2472,3 +2472,31 @@ with the entry.
       means a truncation could only DROP members (a loud gate failure), never invent one.
       Recorded so the next pass starts from a read rather than a re-discovery.
       · **Closed 2026-11-04 — read-through of the rest of `tools/` done.** One live defect: `apply-publish-names.mjs`'s quoted-name residue check read RAW text, so a comment merely quoting a name (`"@fourjs/render/*"`, skipped by the rewriter's closed-quote pattern) would fail a clean release; it now reads comment-stripped code via the new exported `residueProblems()` (test added). Everything else is sound (JSON/markdown/`.d.ts`/barrel-import based) or, like `interfaceMembers`, unreachable on emitted `.d.ts`.
+- [x] **DONE 2026-11-04** (page now reports data-mid-frames (its own count of rendered frames with alpha 0.2..0.8); test samples until enough page-published mid-alpha frames are pixel-checked, asserts page counter and that every mid-alpha frame is drawn mid-step) **`tests/browser/smoothness.spec.ts:869` ("§106: moving primitives render mid-step") failed once
+      and passed on re-run of the SAME commit.** First CI run on `ec60e2e`: received **1** mid-step frame
+      against `MINIMUM_MID_STEP_FRAMES`, 114 other browser tests passing; re-run of the identical commit:
+      green. The commit is provably incapable of causing it - its only source changes are an error-message
+      string in `render/src/renderer-registry.ts`, a message string in `diagnostics`, and a comment in
+      `physics/src/world.ts`; nothing in the interpolation or frame-timing path is touched.
+      **Filed rather than shrugged off, because a test that passes on retry is a defect with a longer fuse:**
+      it either measures something the runner cannot guarantee, or it has a real intermittent behind it, and
+      today nothing distinguishes those two. This suite has been stabilised twice before (both DONE
+      2026-09-06: the virtual-frame parity sampler, and the flaky-gate fix), so this is a RECURRENCE of a
+      known class rather than a first sighting.
+      **To close:** make the assertion measure what the test means - frames the app actually rendered
+      between fixed steps - rather than a count that depends on the runner's scheduling, or record a
+      measured floor with the evidence for it. Do not simply lower the threshold or add a retry: that
+      converts a signal into silence, which is what the two earlier fixes were careful to avoid.
+- [x] **DONE 2026-11-04** (example counts pointerdown as data-presses; clickWorldPoint polls it and re-issues the click once only if the page saw no press, a delivered-but-ignored press still fails) **`tests/browser/blending.spec.ts:1036` ("RECOVER: a second click blends the chain back onto
+      its animation") failed once on CI and is green everywhere else — a RECURRENCE of the row closed
+      2026-09-06.** PR #129, head `0913c24` (a commit that changed only `docs/AUDIT-2026-11-OPTIMIZATION.md`):
+      the test's FIRST `clickWorldPoint` never flipped `data-mode` from `animated` to `ragdoll`, 114 other
+      browser tests passing. The sibling DROP test makes the identical click in the same run and passed;
+      the previous head `d236d53` (same packages, same examples build) was fully green on CI; locally the
+      spec passed 16/16 under `--repeat-each 4`. So the click was dropped between `page.mouse.click` and
+      `PointerInput`'s press/release pair on the loaded runner, not a pick or mode-transition defect: the
+      2026-09-06 fix addressed the sweep timing and the sample count, not a lost first click.
+      **To close:** make the first click observable the way the sweep clock was — poll `data-mode`
+      after the click and re-issue the click once if the page provably never saw a press (e.g. expose a
+      `data-presses` counter from the example), so a dropped platform event is told apart from a page
+      that ignored a delivered one. Do not add a blanket retry.

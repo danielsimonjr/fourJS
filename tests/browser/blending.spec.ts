@@ -791,6 +791,9 @@ async function cssRectOf(canvas: Locator): Promise<CssRect> {
   return box as CssRect;
 }
 
+/** How long to wait for the page to report a delivered press. */
+const PRESS_WAIT_MS = 1500;
+
 /**
  * Clicks a world point with a real Chromium mouse, as `interaction.spec.ts` does
  * it: the canvas's CSS rectangle turns a world coordinate into a viewport one,
@@ -801,10 +804,33 @@ async function clickWorldPoint(
   rect: CssRect,
   point: { x: number; y: number },
 ): Promise<void> {
-  await page.mouse.click(
-    rect.x + ((point.x - VIEW_LEFT) / (VIEW_RIGHT - VIEW_LEFT)) * rect.width,
-    rect.y + ((VIEW_TOP - point.y) / (VIEW_TOP - VIEW_BOTTOM)) * rect.height,
-  );
+  const x =
+    rect.x + ((point.x - VIEW_LEFT) / (VIEW_RIGHT - VIEW_LEFT)) * rect.width;
+  const y =
+    rect.y + ((VIEW_TOP - point.y) / (VIEW_TOP - VIEW_BOTTOM)) * rect.height;
+  const status = page.locator("#status");
+  const pressesNow = async (): Promise<number> =>
+    Number((await status.getAttribute("data-presses")) ?? "0");
+  const before = await pressesNow();
+  await page.mouse.click(x, y);
+  // The page counts every pointerdown it receives. If none arrived the
+  // platform dropped the event (re-issue once); if one arrived and the caller's
+  // mode assertion still fails, the page ignored a delivered press - a real
+  // defect that must fail, not be retried.
+  const seen = await expect
+    .poll(pressesNow, { timeout: PRESS_WAIT_MS })
+    .toBeGreaterThan(before)
+    .then(
+      () => true,
+      () => false,
+    );
+  if (!seen) {
+    await page.mouse.click(x, y);
+    await expect(
+      status,
+      "the page never received a pointerdown, even after one re-issued click",
+    ).toHaveAttribute("data-presses", String(before + 1));
+  }
 }
 
 /** Asserts the plate is showing `expected`, and names what it read if not. */
