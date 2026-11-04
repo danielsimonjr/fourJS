@@ -10,6 +10,11 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ### Added
 
+- **Wave 11 final rows (2026-11-04)**: glTF `weights` animation channels drive `MorphWeights`
+  (`GltfInstance.morphWeights`, tracks `morphWeights.<node>.<k>`); `createBoundedDracoDecoder`
+  over the raw codec ABI with `KHR_draco_mesh_compression` routing (`GltfLoaderOptions.dracoDecoder`);
+  `KHR_texture_basisu` routing (`basisTranscoder`, `supportedFormats`); opt-in texture-atlas
+  batching (`atlas: { pageSize, maxPages }`, deterministic shelf packer, 0-pixel-difference gate).
 - **Wave 7 (2026-11-04)**: RFC 0001 addendum accepted — node materials gain `storage`
   (§82 read-only storage buffers, WebGPU), `select` over compile-time `defines` (dead branch
   not emitted, programs shared by emitted source) and the `light` input family bound to the
