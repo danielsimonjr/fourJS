@@ -100,7 +100,7 @@
  * independent — the caster module is this backend's own).
  */
 
-import type { SceneLights } from "@fourjs/render";
+import { SHADOW_CUBE_FACES, type SceneLights } from "@fourjs/render";
 
 import {
   GPU_SHADER_STAGE,
@@ -111,6 +111,7 @@ import {
 import { DRAW_UNIFORM_WGSL } from "./wgpu-bindings.js";
 import {
   LIGHTS_BIND_GROUP_INDEX,
+  LIGHT_BINDING_BYTES,
   HEMISPHERE_UNIFORM_MEMBERS_WGSL,
   LIGHT_UNIFORM_BYTES,
   LIGHT_UNIFORM_MEMBERS_WGSL,
@@ -138,16 +139,47 @@ export const SHADOW_MATRIX_OFFSET = LIGHT_UNIFORM_BYTES;
 export const SHADOW_PARAMS_OFFSET = SHADOW_MATRIX_OFFSET + 64;
 
 /**
- * Size of one `ShadowLightUniforms` block in bytes — the widened binding
- * size, still inside the landed 768-byte stride, so the shadow rides
- * allocation the light buffer already made.
+ * Size of the landed `ShadowLightUniforms` block — the shadow tail (80 bytes)
+ * plus the hemisphere members that follow it (48 bytes): 912 bytes. The W6.3
+ * atlas tail begins here.
  */
+export const SHADOW_LEGACY_UNIFORM_BYTES = SHADOW_PARAMS_OFFSET + 16 + 48;
+
 /**
- * Size of one `ShadowLightUniforms` block — the shadow tail (80 bytes)
- * plus the hemisphere members that follow it (48 bytes). Still inside
- * the landed 768-byte stride.
+ * Byte offset of `cascadeMatrix : array<mat4x4<f32>, 4>` (W6.3) — the first
+ * byte after the hemisphere tail, 16-aligned as a `mat4x4` member demands.
  */
-export const SHADOW_LIGHT_UNIFORM_BYTES = SHADOW_PARAMS_OFFSET + 16 + 48;
+export const SHADOW_CASCADE_MATRIX_OFFSET = LIGHT_BINDING_BYTES;
+
+/** Byte offset of `spotMatrix : array<mat4x4<f32>, 4>` — spot view-projections by shadow index. */
+export const SHADOW_SPOT_MATRIX_OFFSET = SHADOW_CASCADE_MATRIX_OFFSET + 256;
+
+/** Byte offset of `cascadeSplits` — far view distance per cascade. */
+export const SHADOW_CASCADE_SPLITS_OFFSET = SHADOW_SPOT_MATRIX_OFFSET + 256;
+
+/** Byte offset of `viewDepth` — the fitting camera's `[fx, fy, fz, w]` depth row. */
+export const SHADOW_VIEW_DEPTH_OFFSET = SHADOW_CASCADE_SPLITS_OFFSET + 16;
+
+/** Byte offset of `atlas` — `[columns, rows, 1 / width, 1 / height]`. */
+export const SHADOW_ATLAS_OFFSET = SHADOW_VIEW_DEPTH_OFFSET + 16;
+
+/** Byte offset of `info` — `x` cascade count, `y` 1 on the atlas path, `z` punctual shadows. */
+export const SHADOW_INFO_OFFSET = SHADOW_ATLAS_OFFSET + 16;
+
+/** Byte offset of `atlasSlot` — three `vec4`s, `shadow index + 1` per light slot. */
+export const SHADOW_PUNCTUAL_SLOT_OFFSET = SHADOW_INFO_OFFSET + 16;
+
+/** Byte offset of `atlasParams` — `[baseTile, bias, normalBias, kind]` per shadow index. */
+export const SHADOW_PUNCTUAL_PARAMS_OFFSET = SHADOW_PUNCTUAL_SLOT_OFFSET + 48;
+
+/** Byte offset of `atlasRange` — `[near, far, 0, 0]` per shadow index. */
+export const SHADOW_PUNCTUAL_RANGE_OFFSET = SHADOW_PUNCTUAL_PARAMS_OFFSET + 64;
+
+/**
+ * Size of one `ShadowLightUniforms` block — the landed 912 bytes plus the
+ * 752-byte W6.3 atlas tail: 1664 bytes, inside the 2048-byte stride.
+ */
+export const SHADOW_LIGHT_UNIFORM_BYTES = SHADOW_PUNCTUAL_RANGE_OFFSET + 64;
 
 /** `@binding(1)` of the shadow-lights group — the `texture_depth_2d` map. */
 export const SHADOW_MAP_BINDING = 1;
@@ -228,6 +260,15 @@ ${LIGHT_UNIFORM_MEMBERS_WGSL}
   shadowMatrix : mat4x4<f32>,
   shadowParams : vec4<f32>,
 ${HEMISPHERE_UNIFORM_MEMBERS_WGSL}
+  cascadeMatrix : array<mat4x4<f32>, 4>,
+  spotMatrix : array<mat4x4<f32>, 4>,
+  cascadeSplits : vec4<f32>,
+  viewDepth : vec4<f32>,
+  atlas : vec4<f32>,
+  info : vec4<f32>,
+  atlasSlot : array<vec4<f32>, 3>,
+  atlasParams : array<vec4<f32>, 4>,
+  atlasRange : array<vec4<f32>, 4>,
 };
 
 @group(${String(LIGHTS_BIND_GROUP_INDEX)}) @binding(0) var<uniform> lights : ShadowLightUniforms;
@@ -239,7 +280,118 @@ ${HEMISPHERE_UNIFORM_MEMBERS_WGSL}
  * the module header walks the two deliberate differences (the `v` flip, the
  * comparison evaluated by the sampler instead of in the loop body).
  */
-export const SHADOW_FACTOR_WGSL = `fn shadowFactor(worldPosition : vec3<f32>, n : vec3<f32>) -> f32 {
+/** `vec3<f32>(…)` literals of one face axis per cube face, for the shaders. */
+function faceTable(axis: "forward" | "up" | "right"): string {
+  return SHADOW_CUBE_FACES.map(
+    (face) => `vec3<f32>(${face[axis].map((v) => v.toFixed(1)).join(", ")})`,
+  ).join(", ");
+}
+
+export const SHADOW_FACTOR_WGSL = `var<private> SHADOW_FACE_FORWARD : array<vec3<f32>, 6> = array<vec3<f32>, 6>(${faceTable("forward")});
+var<private> SHADOW_FACE_UP : array<vec3<f32>, 6> = array<vec3<f32>, 6>(${faceTable("up")});
+var<private> SHADOW_FACE_RIGHT : array<vec3<f32>, 6> = array<vec3<f32>, 6>(${faceTable("right")});
+
+fn shadowTileTaps(tile : f32, uv : vec2<f32>, receiver : f32) -> f32 {
+  let grid = lights.atlas.xy;
+  let row = floor((tile + 0.5) / grid.x);
+  let col = tile - row * grid.x;
+  let origin = vec2<f32>(col, row) / grid;
+  let texel = lights.atlas.zw;
+  let lo = origin + 0.5 * texel;
+  let hi = origin + 1.0 / grid - 0.5 * texel;
+  let base = origin + uv / grid;
+  var lit = 0.0;
+  for (var y = -1; y <= 1; y = y + 1) {
+    for (var x = -1; x <= 1; x = x + 1) {
+      let tap = clamp(base + vec2<f32>(f32(x), f32(y)) * texel, lo, hi);
+      lit = lit + textureSampleCompareLevel(shadowMap, shadowSampler, tap, receiver);
+    }
+  }
+  return lit / 9.0;
+}
+
+fn shadowReceiverDepth(z : f32, near : f32, far : f32, bias : f32) -> f32 {
+  let zb = max(z - bias * (far - near), near);
+  return far * (zb - near) / ((far - near) * zb);
+}
+
+fn directionalShadowAtlas(worldPosition : vec3<f32>, n : vec3<f32>) -> f32 {
+  let cascadeCount = i32(lights.info.x);
+  if (cascadeCount < 1) {
+    return 1.0;
+  }
+  var cascade = 0;
+  if (cascadeCount > 1) {
+    let depth = dot(lights.viewDepth.xyz, worldPosition) + lights.viewDepth.w;
+    cascade = -1;
+    for (var i = 0; i < 4; i = i + 1) {
+      if (cascade < 0 && i < cascadeCount && depth <= lights.cascadeSplits[i]) {
+        cascade = i;
+      }
+    }
+    if (cascade < 0) {
+      return 1.0;
+    }
+  }
+  let lightSpace = lights.cascadeMatrix[cascade] * vec4<f32>(worldPosition + n * lights.shadowParams.y, 1.0);
+  let ndc = lightSpace.xyz / lightSpace.w;
+  let c = vec3<f32>(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5, ndc.z * 0.5 + 0.5);
+  if (any(c < vec3<f32>(0.0)) || any(c > vec3<f32>(1.0))) {
+    return 1.0;
+  }
+  return shadowTileTaps(f32(cascade), c.xy, c.z - lights.shadowParams.x);
+}
+
+fn punctualShadowFactor(index : i32, worldPosition : vec3<f32>, n : vec3<f32>) -> f32 {
+  if (lights.info.y < 0.5) {
+    return 1.0;
+  }
+  let entry = lights.atlasSlot[index / 4][index % 4];
+  if (entry < 0.5) {
+    return 1.0;
+  }
+  let k = i32(entry) - 1;
+  let params = lights.atlasParams[k];
+  let planes = lights.atlasRange[k];
+  let p = worldPosition + n * params.z;
+  if (params.w < 1.5) {
+    let lightSpace = lights.spotMatrix[k] * vec4<f32>(p, 1.0);
+    if (lightSpace.w <= 0.0) {
+      return 1.0;
+    }
+    let ndc = lightSpace.xyz / lightSpace.w;
+    let c = vec3<f32>(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5, ndc.z * 0.5 + 0.5);
+    if (any(c < vec3<f32>(0.0)) || any(c > vec3<f32>(1.0))) {
+      return 1.0;
+    }
+    return shadowTileTaps(
+      params.x, c.xy, shadowReceiverDepth(lightSpace.w, planes.x, planes.y, params.y));
+  }
+  let d = p - lights.punctualPosition[index].xyz;
+  let a = abs(d);
+  var face = 5;
+  if (a.x >= a.y && a.x >= a.z) {
+    face = select(1, 0, d.x >= 0.0);
+  } else if (a.y >= a.z) {
+    face = select(3, 2, d.y >= 0.0);
+  } else {
+    face = select(5, 4, d.z >= 0.0);
+  }
+  let vz = dot(d, SHADOW_FACE_FORWARD[face]);
+  if (vz <= planes.x || vz >= planes.y) {
+    return 1.0;
+  }
+  let uv = vec2<f32>(
+    dot(d, SHADOW_FACE_RIGHT[face]) / vz * 0.5 + 0.5,
+    0.5 - dot(d, SHADOW_FACE_UP[face]) / vz * 0.5);
+  return shadowTileTaps(
+    params.x + f32(face), uv, shadowReceiverDepth(vz, planes.x, planes.y, params.y));
+}
+
+fn shadowFactor(worldPosition : vec3<f32>, n : vec3<f32>) -> f32 {
+  if (lights.info.y > 0.5) {
+    return directionalShadowAtlas(worldPosition, n);
+  }
   let lightSpace = lights.shadowMatrix * vec4<f32>(worldPosition + n * lights.shadowParams.y, 1.0);
   let ndc = lightSpace.xyz / lightSpace.w;
   // x and depth map [-1, 1] onto [0, 1]; v flips for the top-left map origin.
@@ -317,10 +469,14 @@ export function writeShadowUniforms(
 ): void {
   const matrix = floatBase + SHADOW_MATRIX_OFFSET / 4;
   const params = floatBase + SHADOW_PARAMS_OFFSET / 4;
+  const tail = floatBase + SHADOW_CASCADE_MATRIX_OFFSET / 4;
+  const tailFloats =
+    (SHADOW_LIGHT_UNIFORM_BYTES - SHADOW_CASCADE_MATRIX_OFFSET) / 4;
   if (!lights.hasShadow) {
     for (let index = 0; index < 20; index += 1) {
       staging[matrix + index] = 0;
     }
+    staging.fill(0, tail, tail + tailFloats);
     return;
   }
   for (let index = 0; index < 16; index += 1) {
@@ -330,6 +486,61 @@ export function writeShadowUniforms(
   staging[params + 1] = lights.shadowNormalBias;
   staging[params + 2] = 1 / lights.shadowMapSize;
   staging[params + 3] = 0;
+  writeShadowAtlasTail(staging, floatBase, lights);
+}
+
+/**
+ * The W6.3 atlas tail of one view's block (`SHADOW_CASCADE_MATRIX_OFFSET …
+ * SHADOW_LIGHT_UNIFORM_BYTES`) — the member-for-member image of the GL
+ * backend's `ShadowUniforms.uploadView` extension. A frame that is not
+ * {@link SceneLights.shadowExtended} writes zeros, so `info.y == 0` selects
+ * the landed single-map arithmetic in the shader and the tail is a function of
+ * this frame's `SceneLights` alone.
+ */
+function writeShadowAtlasTail(
+  staging: Float32Array,
+  floatBase: number,
+  lights: SceneLights,
+): void {
+  const cascades = floatBase + SHADOW_CASCADE_MATRIX_OFFSET / 4;
+  const tailFloats =
+    (SHADOW_LIGHT_UNIFORM_BYTES - SHADOW_CASCADE_MATRIX_OFFSET) / 4;
+  if (!lights.shadowExtended) {
+    staging.fill(0, cascades, cascades + tailFloats);
+    return;
+  }
+  staging.set(lights.shadowCascadeMatrices, cascades);
+  staging.set(
+    lights.shadowSpotMatrices,
+    floatBase + SHADOW_SPOT_MATRIX_OFFSET / 4,
+  );
+  staging.set(
+    lights.shadowCascadeSplits,
+    floatBase + SHADOW_CASCADE_SPLITS_OFFSET / 4,
+  );
+  staging.set(lights.shadowViewDepth, floatBase + SHADOW_VIEW_DEPTH_OFFSET / 4);
+  const atlas = floatBase + SHADOW_ATLAS_OFFSET / 4;
+  staging[atlas] = lights.shadowAtlasColumns;
+  staging[atlas + 1] = lights.shadowAtlasRows;
+  staging[atlas + 2] = 1 / lights.shadowAtlasWidth;
+  staging[atlas + 3] = 1 / lights.shadowAtlasHeight;
+  const info = floatBase + SHADOW_INFO_OFFSET / 4;
+  staging[info] = lights.shadowCascadeCount;
+  staging[info + 1] = 1;
+  staging[info + 2] = lights.shadowPunctualCount;
+  staging[info + 3] = 0;
+  staging.set(
+    lights.shadowPunctualSlot,
+    floatBase + SHADOW_PUNCTUAL_SLOT_OFFSET / 4,
+  );
+  staging.set(
+    lights.shadowPunctualParams,
+    floatBase + SHADOW_PUNCTUAL_PARAMS_OFFSET / 4,
+  );
+  staging.set(
+    lights.shadowPunctualRange,
+    floatBase + SHADOW_PUNCTUAL_RANGE_OFFSET / 4,
+  );
 }
 
 /**

@@ -91,7 +91,12 @@
  */
 
 import type { RenderTarget } from "@fourjs/render";
-import { warnDisposedInUse } from "@fourjs/render";
+import {
+  RenderTargetPool,
+  warnDisposedInUse,
+  type PassUsageRecord,
+} from "@fourjs/render";
+import { DEV, devWarnOnce } from "@fourjs/core";
 
 import {
   GL,
@@ -448,6 +453,30 @@ export class RenderTargetCache {
     }
     if (record.depthTexture !== null) {
       gl.deleteTexture(record.depthTexture);
+    }
+  }
+}
+
+/**
+ * WebGL 2's §63 transient pool (W6.1). GL has no explicit barriers, so this
+ * emits nothing; it only uses the graph's usage records to assert, in DEV,
+ * that a target is never sampled by the pass that draws into it (a feedback
+ * loop GL leaves undefined).
+ */
+export class GlTransientTargetPool extends RenderTargetPool {
+  /** Number of feedback violations seen (DEV only). */
+  feedbackViolations = 0;
+
+  beginPass(record: PassUsageRecord): void {
+    if (!DEV) {
+      return;
+    }
+    if (record.writes !== null && record.reads.includes(record.writes)) {
+      this.feedbackViolations += 1;
+      devWarnOnce(
+        `gl-transient-feedback:${record.pass}`,
+        `RenderGraph pass ${JSON.stringify(record.pass)} samples ${record.writes} while attached to it; WebGL 2 leaves that undefined (§63).`,
+      );
     }
   }
 }

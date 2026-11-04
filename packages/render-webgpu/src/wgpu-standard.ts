@@ -468,7 +468,12 @@ ${
       if (pnDotL > 0.0) {
         shaded = shaded
           + directLobe(n, v, punctual.direction, pnDotL, diffuseColor, f0, alpha2)
-          * punctual.irradiance * pnDotL;
+          * punctual.irradiance * pnDotL${
+            shadow
+              ? `
+          * punctualShadowFactor(index, input.worldPosition, n)`
+              : ""
+          };
       }
     }
   }

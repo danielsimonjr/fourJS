@@ -84,7 +84,13 @@
  */
 
 import type { RenderTarget } from "@fourjs/render";
-import { warnDisposedInUse } from "@fourjs/render";
+import {
+  RenderTargetPool,
+  warnDisposedInUse,
+  type PassUsageRecord,
+  type TransientTargetKey,
+  type TransientTargetUsage,
+} from "@fourjs/render";
 
 import {
   GPU_TEXTURE_USAGE,
@@ -380,9 +386,10 @@ export class WgpuRenderTargetCache {
       size: [width, height],
       format: RENDER_TARGET_COLOR_FORMAT,
       usage:
+        usageHints.get(target) ??
         GPU_TEXTURE_USAGE.RENDER_ATTACHMENT |
-        GPU_TEXTURE_USAGE.TEXTURE_BINDING |
-        GPU_TEXTURE_USAGE.COPY_SRC,
+          GPU_TEXTURE_USAGE.TEXTURE_BINDING |
+          GPU_TEXTURE_USAGE.COPY_SRC,
     });
 
     const depthFormat = renderTargetDepthFormat(target);
@@ -420,5 +427,67 @@ export class WgpuRenderTargetCache {
   #destroy(record: WgpuRenderTargetRecord): void {
     record.colorTexture.destroy?.();
     record.depthTexture?.destroy?.();
+  }
+}
+
+/**
+ * Colour usage masks chosen up front for pooled (transient) targets (§63,
+ * W6.1); targets without an entry keep the default
+ * `RENDER_ATTACHMENT | TEXTURE_BINDING | COPY_SRC`.
+ */
+const usageHints = new WeakMap<object, number>();
+
+/** The usage mask a pooled target will be allocated with, or `undefined`. */
+export function transientUsageOf(target: RenderTarget): number | undefined {
+  return usageHints.get(target);
+}
+
+/**
+ * WebGPU's §63 transient pool (W6.1). WebGPU orders usages implicitly per
+ * pass, so a barrier is a pass boundary — which `webgpu-renderer.ts` already
+ * makes at every `render`/`renderEffect`. What the graph's usage list buys here
+ * is choosing the texture usage up front: a slot that is only ever drawn into
+ * skips `TEXTURE_BINDING`; one that is sampled keeps it. `COPY_SRC` stays so
+ * `readPixels` works on any slot.
+ */
+export class WgpuTransientTargetPool extends RenderTargetPool {
+  /** Passes begun and usage transitions crossed (observability / tests). */
+  passCount = 0;
+
+  transitionCount = 0;
+
+  readonly #state = new Map<string, "attachment" | "texture">();
+
+  beginPass(record: PassUsageRecord): void {
+    if (record.index === 0) {
+      this.#state.clear();
+    }
+    this.passCount += 1;
+    for (const read of record.reads) {
+      if (this.#state.get(read) !== "texture") {
+        this.transitionCount += 1;
+        this.#state.set(read, "texture");
+      }
+    }
+    if (
+      record.writes !== null &&
+      this.#state.get(record.writes) !== "attachment"
+    ) {
+      this.transitionCount += 1;
+      this.#state.set(record.writes, "attachment");
+    }
+  }
+
+  protected override onAcquire(
+    target: RenderTarget,
+    _key: TransientTargetKey,
+    usage: TransientTargetUsage,
+  ): void {
+    usageHints.set(
+      target,
+      GPU_TEXTURE_USAGE.RENDER_ATTACHMENT |
+        GPU_TEXTURE_USAGE.COPY_SRC |
+        (usage.sampled ? GPU_TEXTURE_USAGE.TEXTURE_BINDING : 0),
+    );
   }
 }

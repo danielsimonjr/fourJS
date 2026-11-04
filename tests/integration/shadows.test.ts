@@ -57,6 +57,9 @@ import {
   DirectionalLight,
   DirectionalLightShadow,
   OrthographicCamera,
+  PerspectiveCamera,
+  PointLight,
+  SpotLight,
   Scene,
   createFullscreenViewport,
   resolveWorldTransforms,
@@ -333,8 +336,11 @@ describe("R-18 — a scene whose light does not cast is byte-identical (§69)", 
     // nothing. Thirteen until 2026-09-11: the caster pipeline's
     // `shadowViewProjection` no longer resolves at initialize, because the
     // caster compiles behind `registerShadowPipeline()` on the first frame
-    // that actually casts.
-    expect(handles).toHaveLength(12);
+    // that actually casts. Sixteen names each since W6.3 (2026-11-04): the
+    // atlas path adds ten (`shadowExtended` … `shadowSpotMatrix`) to each of
+    // the two pipelines, resolved at initialization and uploaded never by a
+    // frame that uses one cascade and no punctual shadow.
+    expect(handles).toHaveLength(32);
 
     test.recorder.reset();
     test.renderer.render(test.scene, test.views);
@@ -612,5 +618,72 @@ describe("R-18 — a shadowed scene survives §79", () => {
     expect([light?.shadow.near, light?.shadow.far]).toEqual([0.1, 100]);
     // The one legal field is kept.
     expect(light?.shadow.bias).toBe(0.01);
+  });
+});
+
+describe("W6.3 — cascades and punctual shadows share one atlas (§69)", () => {
+  it("renders a cascaded sun, a spot and a point light into one depth texture", async () => {
+    const recorder = createRecordingGl();
+    const renderer = new WebglRenderer();
+    await renderer.initialize({ canvas: new RecordingCanvas(recorder.gl) });
+    renderer.resize(256, 256);
+    const scene = new Scene();
+    const camera = new PerspectiveCamera({ near: 0.5, far: 60, aspect: 1 });
+    camera.transform.position.set(0, 4, 10);
+    camera.updateProjectionMatrix();
+    scene.add(camera);
+
+    const sun = new DirectionalLight({
+      intensity: 2,
+      castShadow: true,
+      shadow: { mapSize: 32, cascades: 3, cascadeDistance: 40 },
+    });
+    sun.transform.rotation.setFromAxisAngle(new Vector3(1, 0, 0), -Math.PI / 2);
+    const spot = new SpotLight({
+      castShadow: true,
+      outerConeAngle: 0.7,
+      shadow: { mapSize: 32 },
+    });
+    spot.transform.position.set(0, 5, 0);
+    spot.transform.rotation.setFromAxisAngle(
+      new Vector3(1, 0, 0),
+      -Math.PI / 2,
+    );
+    const lamp = new PointLight({ castShadow: true, shadow: { mapSize: 32 } });
+    lamp.transform.position.set(2, 3, 0);
+    scene.add(sun, spot, lamp);
+    scene.add(new Renderable(boxGeometry(), new StandardMaterial()));
+    scene.add(new Renderable(planeGeometry(), new LitMaterial()));
+    resolveWorldTransforms(scene);
+
+    renderer.render(scene, [createFullscreenViewport(camera)]);
+
+    // 3 cascades + 1 spot + 6 point faces = 10 tiles of 32 texels, a 4 x 3 grid.
+    expect(recorder.countOf("createFramebuffer")).toBe(1);
+    const depthUpload = recorder.callsOf("texImage2D")[1];
+    expect([depthUpload.args[3], depthUpload.args[4]]).toEqual([128, 96]);
+    const viewports = recorder.callsOf("viewport").map((call) => call.args);
+    expect(viewports[0]).toEqual([0, 0, 128, 96]);
+    expect(viewports.slice(1, 11)).toHaveLength(10);
+    expect(viewports[1]).toEqual([0, 0, 32, 32]);
+    expect(viewports[10]).toEqual([32, 64, 32, 32]);
+    // The renderer says what it can do.
+    expect(renderer.capabilities.maximumShadowCascades).toBe(4);
+    expect(renderer.capabilities.maximumShadowedPunctualLights).toBe(4);
+  });
+
+  it("collects slots in scene-graph order and caps the casters at four", () => {
+    const scene = new Scene();
+    const lamps = Array.from({ length: 6 }, (_, i) => {
+      const lamp = new SpotLight({ castShadow: i !== 1 });
+      scene.add(lamp);
+      return lamp;
+    });
+    const lights = collectSceneLights(scene, createSceneLights());
+    expect(lamps).toHaveLength(6);
+    expect([...lights.shadowPunctualSlot.slice(0, 6)]).toEqual([
+      1, 0, 2, 3, 4, 0,
+    ]);
+    expect(lights.shadowPunctualCount).toBe(4);
   });
 });

@@ -138,7 +138,10 @@ export type {
   CacheableRenderTarget,
   RenderTargetRecord,
 } from "./gl-render-target.js";
-export { RenderTargetCache } from "./gl-render-target.js";
+export {
+  GlTransientTargetPool,
+  RenderTargetCache,
+} from "./gl-render-target.js";
 export {
   JOINTS_ATTRIBUTE_LOCATION,
   WEIGHTS_ATTRIBUTE_LOCATION,

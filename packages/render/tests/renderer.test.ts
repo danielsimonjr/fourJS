@@ -108,12 +108,16 @@ describe("RendererCapabilities (§62)", () => {
       "compressedTextureFormats",
       "computeShaders",
       "floatRenderTargets",
+      "floatTextures",
       "indirectDraw",
       "maxAnisotropy",
       "maxBindings",
       "maxTextureSize",
       "maxUniformBufferBytes",
+      "maximumShadowCascades",
+      "maximumShadowedPunctualLights",
       "maximumSkinningJoints",
+      "maximumTextureSkinningJoints",
       "multisampling",
       "shaderPrecision",
       "storageBuffers",
@@ -130,6 +134,8 @@ describe("RendererCapabilities (§62)", () => {
     // truth here rather than conservative guesses.
     expect(capabilities.textureFormats).toEqual([]);
     expect(capabilities.compressedTextureFormats).toEqual([]);
+    expect(capabilities.maximumShadowCascades).toBe(0);
+    expect(capabilities.maximumShadowedPunctualLights).toBe(0);
     expect(capabilities.multisampling).toBe(false);
     expect(capabilities.floatRenderTargets).toBe(false);
     expect(capabilities.timestampQueries).toBe(false);

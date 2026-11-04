@@ -31,6 +31,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   MAX_SKINNING_JOINTS,
+  MAX_TEXTURE_SKINNING_JOINTS,
   Mesh,
   Renderable,
   buildRenderList,
@@ -402,5 +403,89 @@ describe("CPU mesh skinning", () => {
     expect(mesh.geometry).toBe(replacement);
     mesh.dispose();
     mesh.dispose();
+  });
+});
+
+describe('bone-texture skinning mode ("texture", decision D7)', () => {
+  const bones = (n: number): Bone[] =>
+    Array.from({ length: n }, () => new Bone());
+
+  it("accepts a rig past the 48-joint uniform tier and flags the item", () => {
+    const scene = new Scene();
+    const mesh = new Mesh(skinnedTriangle(), new UnlitMaterial());
+    mesh.skinningMode = "texture";
+    expect(mesh.skinningMode).toBe("texture");
+    const rig = bones(MAX_SKINNING_JOINTS + 10);
+    mesh.skeleton = new Skeleton(rig);
+    scene.add(mesh, ...rig);
+    resolveWorldTransforms(scene);
+    const items = buildRenderList(scene, []);
+    expect(items[0].kind).toBe("skinned-unlit");
+    expect((items[0] as { paletteTexture?: boolean }).paletteTexture).toBe(
+      true,
+    );
+    expect((items[0] as { jointCount?: number }).jointCount).toBe(58);
+  });
+
+  it("leaves the uniform item unflagged", () => {
+    const scene = new Scene();
+    const mesh = new Mesh(skinnedTriangle(), new UnlitMaterial());
+    const bone = new Bone();
+    mesh.skeleton = new Skeleton([bone]);
+    scene.add(mesh, bone);
+    resolveWorldTransforms(scene);
+    const items = buildRenderList(scene, []);
+    expect((items[0] as { paletteTexture?: boolean }).paletteTexture).toBe(
+      false,
+    );
+  });
+
+  it("refuses the uniform tier for a large texture rig, and a rig over the cap", () => {
+    const mesh = new Mesh(skinnedTriangle(), new UnlitMaterial());
+    mesh.skinningMode = "texture";
+    mesh.skeleton = new Skeleton(bones(MAX_SKINNING_JOINTS + 1));
+    expect(() => {
+      mesh.skinningMode = "gpu";
+    }).toThrow();
+    expect(mesh.skinningMode).toBe("texture");
+    mesh.skeleton = null;
+    mesh.skinningMode = "gpu";
+    expect(mesh.skinningMode).toBe("gpu");
+    expect(MAX_TEXTURE_SKINNING_JOINTS).toBe(65535);
+  });
+
+  it("refuses a skeleton over the texture cap (setter and mode switch)", () => {
+    const big = {
+      bones: { length: MAX_TEXTURE_SKINNING_JOINTS + 1 },
+      jointCount: MAX_TEXTURE_SKINNING_JOINTS + 1,
+    };
+    const mesh = new Mesh(skinnedTriangle(), new UnlitMaterial());
+    mesh.skinningMode = "texture";
+    expect(
+      codeOf(() => {
+        mesh.skeleton = big as unknown as Skeleton;
+      }),
+    ).toBe("UNSUPPORTED_GPU_FEATURE");
+    const cpu = new Mesh(skinnedTriangle(), new UnlitMaterial());
+    cpu.skinningMode = "cpu";
+    cpu.skeleton = big as unknown as Skeleton;
+    expect(
+      codeOf(() => {
+        cpu.skinningMode = "texture";
+      }),
+    ).toBe("UNSUPPORTED_GPU_FEATURE");
+  });
+
+  it("switching texture to cpu then back releases nothing it should keep", () => {
+    const mesh = new Mesh(skinnedTriangle(), new UnlitMaterial());
+    mesh.skinningMode = "texture";
+    mesh.skinningMode = "cpu";
+    mesh.skeleton = new Skeleton([new Bone()]);
+    expect(mesh.geometry).not.toBe(mesh.bindGeometry);
+    mesh.skinningMode = "texture";
+    expect(mesh.geometry).toBe(mesh.bindGeometry);
+    expect(() => {
+      mesh.skinningMode = "bogus" as "cpu";
+    }).toThrow(/gpu, cpu or texture/);
   });
 });

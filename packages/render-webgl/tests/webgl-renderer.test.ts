@@ -5220,7 +5220,7 @@ function litRenderable(
 }
 
 describe("LitProgram — compilation and linking (§61, §68, §89)", () => {
-  it("compiles both stages, links, and resolves the twenty-four uniforms", () => {
+  it("compiles both stages, links, and resolves the thirty-four uniforms", () => {
     const gl = createFakeGl();
 
     const program = LitProgram.create(gl);
@@ -5266,6 +5266,16 @@ describe("LitProgram — compilation and linking (§61, §68, §89)", () => {
       "shadowBias",
       "shadowNormalBias",
       "shadowTexelSize",
+      "shadowExtended",
+      "shadowCascadeCount",
+      "shadowCascadeMatrix",
+      "shadowCascadeSplits",
+      "shadowViewDepth",
+      "shadowAtlas",
+      "shadowPunctualSlot",
+      "shadowPunctualParams",
+      "shadowPunctualRange",
+      "shadowSpotMatrix",
     ]);
     expect(program.disposed).toBe(false);
   });
@@ -8303,7 +8313,7 @@ function standardRenderable(
 }
 
 describe("StandardProgram — compilation and linking (§59, §61, §89)", () => {
-  it("compiles both stages, links, and resolves the thirty-two uniforms", () => {
+  it("compiles both stages, links, and resolves the forty-two uniforms", () => {
     const gl = createFakeGl();
 
     const program = StandardProgram.create(gl);
@@ -8360,6 +8370,16 @@ describe("StandardProgram — compilation and linking (§59, §61, §89)", () =>
       "shadowBias",
       "shadowNormalBias",
       "shadowTexelSize",
+      "shadowExtended",
+      "shadowCascadeCount",
+      "shadowCascadeMatrix",
+      "shadowCascadeSplits",
+      "shadowViewDepth",
+      "shadowAtlas",
+      "shadowPunctualSlot",
+      "shadowPunctualParams",
+      "shadowPunctualRange",
+      "shadowSpotMatrix",
     ]);
     expect(program.disposed).toBe(false);
   });
@@ -14545,6 +14565,535 @@ describe("WebglRenderer - R-22 instanced shaded runs", () => {
     batching.dispose();
     expect(gl.countOf("deleteProgram")).toBe(1);
     expect(gl.countOf("deleteBuffer")).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bone-texture skin palette (`Mesh.skinningMode === "texture"`, decision D7).
+// ---------------------------------------------------------------------------
+
+/** A skinned drawable that asks for the bone-texture palette. */
+class TextureSkinnedNode extends SkinnedTestNode {
+  skinningMode = "texture" as const;
+}
+
+/** Initialises against a fake whose context can refill an RGBA32F texture. */
+async function initializedWithSubImage(
+  options: FakeGlOptions = {},
+): Promise<Harness & { subImage: ReturnType<typeof vi.fn> }> {
+  const gl = createFakeGl(options);
+  const subImage = vi.fn();
+  (gl as { texSubImage2D?: unknown }).texSubImage2D = (
+    ...args: unknown[]
+  ): void => {
+    subImage(...args);
+    gl.calls.push({ name: "texSubImage2D", args });
+  };
+  const canvas = new TestCanvas(gl);
+  const renderer = new WebglRenderer();
+  await renderer.initialize({ canvas });
+  return { gl, canvas, renderer, camera: new TestCamera(), subImage };
+}
+
+function textureSkinnedScene(
+  material: TestMaterial | TestLitMaterial = new TestMaterial(),
+  joints = 3,
+): { root: Renderable; node: TextureSkinnedNode; skeleton: TestSkeleton } {
+  const root = createRoot();
+  const skeleton = new TestSkeleton(joints);
+  const node = new TextureSkinnedNode(
+    skinnedGeometry().asGeometry,
+    material.asMaterial,
+  );
+  node.skeleton = skeleton;
+  root.add(node);
+  return { root, node, skeleton };
+}
+
+function jointTextureUniforms(gl: FakeGl, lit: boolean): Map<string, object> {
+  for (const perProgram of gl.uniformsByProgram.values()) {
+    if (
+      perProgram.has("jointTexture") &&
+      perProgram.has("ambientLight") === lit
+    ) {
+      return perProgram;
+    }
+  }
+  throw new Error("the bone-texture program never resolved its uniforms");
+}
+
+describe("bone-texture skinning in WebglRenderer (decision D7)", () => {
+  beforeEach(() => {
+    resetDevWarnings();
+    clearRegisteredSkinningPipeline();
+    registerSkinningPipeline();
+  });
+
+  it("reports float textures and the per-device joint limit", async () => {
+    const { renderer } = await initializedWithSubImage();
+    expect(renderer.capabilities.floatTextures).toBe(true);
+    expect(renderer.capabilities.maximumTextureSkinningJoints).toBe(65535);
+    expect(renderer.capabilities.maximumSkinningJoints).toBe(48);
+    const bare = await initialized();
+    expect(bare.renderer.capabilities.floatTextures).toBe(false);
+    expect(bare.renderer.capabilities.maximumTextureSkinningJoints).toBe(0);
+  });
+
+  it("uploads the uniform palette's bytes into an RGBA32F texture", async () => {
+    const { renderer, gl, camera, subImage } = await initializedWithSubImage();
+    const { root, skeleton } = textureSkinnedScene(new TestMaterial(), 3);
+    skeleton.jointMatrices[13] = 5;
+    skeleton.jointMatrices[40] = 7;
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    // Texture storage: width 2048, one row, RGBA32F / FLOAT.
+    const alloc = gl.callsOf("texImage2D")[0].args;
+    expect(alloc.slice(1, 8)).toEqual([
+      0,
+      0x8814,
+      2048,
+      1,
+      0,
+      GL.RGBA,
+      GL.FLOAT,
+    ]);
+    // Sampler unit 6, set once; no `jointMatrices` uniform upload at all.
+    const sampler = jointTextureUniforms(gl, false).get("jointTexture");
+    expect(
+      gl.callsOf("uniform1i").filter((c) => c.args[0] === sampler),
+    ).toHaveLength(1);
+    expect(subImage).toHaveBeenCalledTimes(1);
+    const args = subImage.mock.calls[0];
+    expect(args.slice(0, 8)).toEqual([
+      GL.TEXTURE_2D,
+      0,
+      0,
+      0,
+      // Only the texels the 3-joint rig fills (12), not the whole row.
+      skeleton.jointMatrices.length / 4,
+      1,
+      GL.RGBA,
+      GL.FLOAT,
+    ]);
+    const staged = args[8] as Float32Array;
+    expect(
+      Array.from(staged.subarray(0, skeleton.jointMatrices.length)),
+    ).toEqual(Array.from(skeleton.jointMatrices));
+    expect(staged.length).toBe(2048 * 4);
+    expect(staged[skeleton.jointMatrices.length]).toBe(0);
+    expect(gl.countOf("drawArrays")).toBe(1);
+    // The unit is left as found.
+    const units = gl.callsOf("activeTexture").map((c) => c.args[0]);
+    expect(units).toEqual([GL.TEXTURE0 + 6, GL.TEXTURE0]);
+
+    // Equality with the uniform path, byte for byte.
+    const uniform = await initialized();
+    registerSkinningPipeline();
+    const plain = skinnedScene(new TestMaterial(), skeleton);
+    uniform.gl.reset();
+    uniform.renderer.render(plain.root, [createView(uniform.camera)]);
+    const uploads = uploadsAt(
+      uniform.gl,
+      skinnedUnlitUniforms(uniform.gl).get("jointMatrices[0]"),
+    );
+    expect(Array.from(staged.subarray(0, 48))).toEqual(
+      Array.from(uploads[0] as number[]).slice(0, 48),
+    );
+  });
+
+  it("grows rows past 512 joints, reuses the texture, and never reallocates per frame", async () => {
+    const { renderer, gl, camera, subImage } = await initializedWithSubImage();
+    const { root } = textureSkinnedScene(new TestMaterial(), 513);
+    const views = [createView(camera)];
+    gl.reset();
+    renderer.render(root, views);
+    renderer.render(root, views);
+    expect(gl.callsOf("texImage2D")).toHaveLength(1);
+    expect(gl.callsOf("texImage2D")[0].args[4]).toBe(2);
+    expect(subImage).toHaveBeenCalledTimes(2);
+    expect((subImage.mock.calls[0][8] as Float32Array).length).toBe(
+      2 * 2048 * 4,
+    );
+    // Same staging array both frames: no per-frame allocation.
+    expect(subImage.mock.calls[1][8]).toBe(subImage.mock.calls[0][8]);
+  });
+
+  it("keeps distinct programs for the texture pair and compiles it lazily", async () => {
+    const { renderer, gl, camera } = await initializedWithSubImage();
+    const mixed = textureSkinnedScene(new TestMaterial(), 3);
+    const plainNode = new SkinnedTestNode(
+      skinnedGeometry().asGeometry,
+      new TestMaterial().asMaterial,
+    );
+    plainNode.skeleton = new TestSkeleton();
+    mixed.root.add(plainNode);
+    gl.reset();
+    renderer.render(mixed.root, [createView(camera)]);
+    // Two pairs: 2 + 2 programs, with distinct sources.
+    expect(gl.countOf("createProgram")).toBe(4);
+    const vertexSources = gl
+      .callsOf("shaderSource")
+      .map((c) => String(c.args[1]))
+      .filter((s) => s.includes("skinMatrix"));
+    expect(vertexSources.some((s) => s.includes("texelFetch"))).toBe(true);
+    expect(
+      vertexSources.some((s) => s.includes("uniform mat4 jointMatrices")),
+    ).toBe(true);
+    expect(new Set(vertexSources).size).toBe(vertexSources.length);
+    expect(gl.countOf("drawArrays")).toBe(2);
+    // Second frame: nothing recompiled, and switching back re-`use`s.
+    gl.reset();
+    renderer.render(mixed.root, [createView(camera)]);
+    expect(gl.countOf("createProgram")).toBe(0);
+  });
+
+  it("shades a texture-skinned lit draw through the lit texture program", async () => {
+    const { renderer, gl, camera } = await initializedWithSubImage();
+    const root = new AmbientRoot([0.2, 0.3, 0.4]);
+    const node = new TextureSkinnedNode(
+      skinnedGeometry().asGeometry,
+      new TestLitMaterial([1, 0, 0, 1]).asMaterial,
+    );
+    node.skeleton = new TestSkeleton(2);
+    root.add(node);
+    gl.reset();
+    renderer.render(root, [createView(camera)]);
+    expect(jointTextureUniforms(gl, true).has("jointTexture")).toBe(true);
+    expect(gl.countOf("drawArrays")).toBe(1);
+    // A second view re-uploads the per-view state exactly once per view.
+    gl.reset();
+    renderer.render(root, [createView(camera), createView(camera)]);
+    expect(gl.countOf("drawArrays")).toBe(2);
+  });
+
+  it("falls back to the uniform palette without float upload, with one warning", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { renderer, gl, camera } = await initialized();
+      const { root, skeleton } = textureSkinnedScene(new TestMaterial(), 3);
+      skeleton.jointMatrices[13] = 5;
+      gl.reset();
+      renderer.render(root, [createView(camera)]);
+      renderer.render(root, [createView(camera)]);
+      const palette = uploadsAt(
+        gl,
+        skinnedUnlitUniforms(gl).get("jointMatrices[0]"),
+      );
+      expect(palette).toHaveLength(2);
+      expect((palette[0] as number[])[13]).toBe(5);
+      expect(gl.countOf("texImage2D")).toBe(0);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0][0])).toContain("texture");
+
+      // A rig past 48 joints cannot fall back: skipped, not truncated.
+      const big = textureSkinnedScene(new TestMaterial(), 49);
+      gl.reset();
+      renderer.render(big.root, [createView(camera)]);
+      expect(gl.countOf("drawArrays")).toBe(0);
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("falls back when the texture pair fails to compile, and latches", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      // Programs: 3 at initialize; the texture pair is compiled first.
+      const { renderer, gl, camera } = await initializedWithSubImage({
+        failProgramAt: 4,
+      });
+      const { root } = textureSkinnedScene(new TestMaterial(), 3);
+      gl.reset();
+      renderer.render(root, [createView(camera)]);
+      expect(gl.countOf("drawArrays")).toBe(1);
+      const compiled = gl.countOf("createProgram");
+      renderer.render(root, [createView(camera)]);
+      expect(gl.countOf("createProgram")).toBe(compiled);
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("falls back to nothing when no skinning pipeline is registered", async () => {
+    clearRegisteredSkinningPipeline();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { renderer, gl, camera } = await initializedWithSubImage();
+      const { root } = textureSkinnedScene(new TestMaterial(), 3);
+      gl.reset();
+      renderer.render(root, [createView(camera)]);
+      expect(gl.countOf("drawArrays")).toBe(0);
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("skips shadow casting for a texture rig over 48 joints but casts a small one", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { renderer, gl, camera } = await initializedWithSubImage();
+      const root = new AmbientRoot([0.1, 0.1, 0.1]);
+      root.add(new TestShadowLight(8));
+      const big = new TextureSkinnedNode(
+        skinnedGeometry().asGeometry,
+        new TestLitMaterial().asMaterial,
+      );
+      big.skeleton = new TestSkeleton(60);
+      const small = new TextureSkinnedNode(
+        skinnedGeometry().asGeometry,
+        new TestLitMaterial().asMaterial,
+      );
+      small.skeleton = new TestSkeleton(3);
+      root.add(big, small);
+      gl.reset();
+      renderer.render(root, [createView(camera)]);
+      const caster = skinnedShadowUniforms(gl);
+      expect(uploadsAt(gl, caster.get("model"))).toHaveLength(1);
+      expect(
+        warn.mock.calls.some((c) => String(c[0]).includes("casts no shadow")),
+      ).toBe(true);
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("drops the texture pair on context loss and frees its textures on dispose", async () => {
+    const { renderer, gl, canvas, camera } = await initializedWithSubImage();
+    const { root } = textureSkinnedScene(new TestMaterial(), 3);
+    renderer.render(root, [createView(camera)]);
+    canvas.dispatch("webglcontextlost");
+    canvas.dispatch("webglcontextrestored");
+    gl.reset();
+    renderer.render(root, [createView(camera)]);
+    expect(gl.countOf("createProgram")).toBeGreaterThanOrEqual(2);
+    expect(gl.callsOf("texImage2D")).toHaveLength(1);
+    gl.reset();
+    renderer.dispose();
+    expect(gl.countOf("deleteTexture")).toBeGreaterThanOrEqual(1);
+  });
+
+  it("skips the draw when the palette texture cannot be allocated", async () => {
+    const { renderer, gl, camera, subImage } = await initializedWithSubImage({
+      allocateTextures: false,
+    });
+    const { root } = textureSkinnedScene(new TestMaterial(), 3);
+    gl.reset();
+    renderer.render(root, [createView(camera)]);
+    expect(subImage).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// W6.3 (2026-11-04): cascades, point/spot maps and the shadow atlas.
+// ---------------------------------------------------------------------------
+
+/**
+ * A point/spot light double that casts — the structural `PunctualLightSource`
+ * contract plus the W6.3 `castShadow`/`shadow` members.
+ */
+class TestPunctualShadowLight extends Renderable {
+  readonly isPunctualLight = true as const;
+
+  readonly color: [number, number, number] = [1, 1, 1];
+
+  readonly intensity = 1;
+
+  readonly range = 0;
+
+  castShadow = true;
+
+  shadow = { mapSize: 8, bias: 0.001, normalBias: 0.02, near: 0.1, far: 20 };
+
+  constructor(
+    readonly lightType: "point" | "spot",
+    readonly lightPosition: [number, number, number] = [0, 3, 0],
+  ) {
+    super(
+      new TestGeometry(new Float32Array(0)).asGeometry,
+      new TestMaterial().asMaterial,
+    );
+  }
+
+  readonly innerConeAngle = 0;
+
+  readonly outerConeAngle = 0.5;
+
+  getWorldPosition(out: Vector3): Vector3 {
+    return out.set(
+      this.lightPosition[0],
+      this.lightPosition[1],
+      this.lightPosition[2],
+    );
+  }
+
+  getWorldDirection(out: Vector3): Vector3 {
+    return out.set(0, -1, 0);
+  }
+}
+
+describe("WebglRenderer — cascades and punctual shadows (W6.3)", () => {
+  beforeEach(() => {
+    resetDevWarnings();
+    registerShadowPipeline();
+  });
+
+  function fitCamera(): TestCamera {
+    const camera = new TestCamera() as TestCamera & {
+      near: number;
+      far: number;
+    };
+    camera.near = 0.5;
+    camera.far = 50;
+    camera.projectionMatrix.elements[0] = 1;
+    camera.projectionMatrix.elements[5] = 1;
+    camera.projectionMatrix.elements[11] = -1;
+    camera.viewMatrix.identity();
+    return camera;
+  }
+
+  it("reports the cascade and punctual-light capabilities", async () => {
+    const { renderer } = await initialized();
+    expect(renderer.capabilities.maximumShadowCascades).toBe(4);
+    expect(renderer.capabilities.maximumShadowedPunctualLights).toBe(4);
+  });
+
+  it("renders one tile per cascade into a 2x2 atlas and switches the receiver to the atlas path", async () => {
+    const { renderer, gl } = await initialized();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    const light = new TestShadowLight(8);
+    Object.assign(light.shadow, { cascades: 3, cascadeDistance: 40 });
+    root.add(light, litRenderable());
+    const camera = fitCamera();
+    const views = [createView(camera)];
+    gl.reset();
+
+    renderer.render(root, views);
+
+    // The atlas is 2 × 2 tiles of 8 texels: opened whole, then tile by tile.
+    const viewports = gl.callsOf("viewport").map((c) => c.args);
+    expect(viewports[0]).toEqual([0, 0, 16, 16]);
+    expect(viewports.slice(1, 4)).toEqual([
+      [0, 0, 8, 8],
+      [8, 0, 8, 8],
+      [0, 8, 8, 8],
+    ]);
+    expect(
+      gl
+        .callsOf("scissor")
+        .slice(1, 4)
+        .map((c) => c.args),
+    ).toEqual([
+      [0, 0, 8, 8],
+      [8, 0, 8, 8],
+      [0, 8, 8, 8],
+    ]);
+    // One matrix upload per tile, each different.
+    const uploads = uploadsAt(
+      gl,
+      shadowUniforms(gl).get("shadowViewProjection"),
+    ) as Float32Array[];
+    expect(uploads).toHaveLength(3);
+    expect(uploads[0][0]).not.toBe(uploads[2][0]);
+    // The receiver: extended on, three cascades, atlas 2 x 2 over 16 texels.
+    const lit = litUniforms(gl);
+    expect(uploadsAt(gl, lit.get("shadowExtended"))).toEqual([1]);
+    expect(uploadsAt(gl, lit.get("shadowCascadeCount"))).toEqual([3]);
+    expect([
+      ...(uploadsAt(gl, lit.get("shadowAtlas"))[0] as Float32Array),
+    ]).toEqual([2, 2, 1 / 16, 1 / 16]);
+    const splits = uploadsAt(
+      gl,
+      lit.get("shadowCascadeSplits"),
+    )[0] as Float32Array;
+    expect(splits[2]).toBe(40);
+  });
+
+  it("keeps a single cascade on the pre-atlas call sequence", async () => {
+    const { renderer, gl, camera } = await initialized();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    root.add(new TestShadowLight(8), litRenderable());
+    const views = [createView(camera)];
+    renderer.render(root, views);
+    gl.reset();
+
+    renderer.render(root, views);
+
+    const lit = litUniforms(gl);
+    expect(uploadsAt(gl, lit.get("shadowExtended"))).toEqual([]);
+    expect(uploadsAt(gl, lit.get("shadowCascadeMatrix"))).toEqual([]);
+    expect(gl.callsOf("viewport")).toHaveLength(2);
+  });
+
+  it("renders six cube faces for a point light and one tile for a spot", async () => {
+    const { renderer, gl, camera } = await initialized();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    const point = new TestPunctualShadowLight("point");
+    const spot = new TestPunctualShadowLight("spot", [2, 3, 0]);
+    root.add(point, spot, litRenderable());
+    const views = [createView(camera)];
+    gl.reset();
+
+    renderer.render(root, views);
+
+    // 6 + 1 tiles of 8 texels in a 3 × 3 grid (24 × 24 texels).
+    expect(gl.callsOf("viewport")[0].args).toEqual([0, 0, 24, 24]);
+    expect(gl.callsOf("viewport")).toHaveLength(9);
+    expect(gl.callsOf("viewport")[7].args).toEqual([0, 16, 8, 8]);
+    expect(
+      uploadsAt(gl, shadowUniforms(gl).get("shadowViewProjection")),
+    ).toHaveLength(7);
+    const lit = litUniforms(gl);
+    expect(uploadsAt(gl, lit.get("shadowExtended"))).toEqual([1]);
+    expect(uploadsAt(gl, lit.get("shadowCascadeCount"))).toEqual([0]);
+    const slots = uploadsAt(
+      gl,
+      lit.get("shadowPunctualSlot"),
+    )[0] as Float32Array;
+    expect([slots[0], slots[1]]).toEqual([1, 2]);
+    const params = uploadsAt(
+      gl,
+      lit.get("shadowPunctualParams"),
+    )[0] as Float32Array;
+    expect([params[0], params[3], params[4], params[7]]).toEqual([0, 2, 6, 1]);
+  });
+
+  it("drops the extended flag again when a later frame is single-map", async () => {
+    const { renderer, gl, camera } = await initialized();
+    const root = new AmbientRoot([0.1, 0.1, 0.1]);
+    const point = new TestPunctualShadowLight("point");
+    const sun = new TestShadowLight(8);
+    root.add(sun, point, litRenderable());
+    const views = [createView(camera)];
+    renderer.render(root, views);
+    expect(uploadsAt(gl, litUniforms(gl).get("shadowExtended"))).toEqual([1]);
+    point.castShadow = false;
+    gl.reset();
+
+    renderer.render(root, views);
+
+    expect(uploadsAt(gl, litUniforms(gl).get("shadowExtended"))).toEqual([0]);
+  });
+
+  it("splices the atlas sampling into both shaded fragment stages", () => {
+    expect(SHADOW_GLSL).toContain("punctualShadowFactor");
+    expect(SHADOW_GLSL).toContain("directionalShadowAtlas");
+    expect(SHADOW_GLSL).toContain(
+      "SHADOW_FACE_FORWARD[6] = vec3[6](vec3(1.0, 0.0, 0.0)",
+    );
+    const gl = createFakeGl();
+    LitProgram.create(gl);
+    StandardProgram.create(gl);
+    const sources = gl.callsOf("shaderSource").map((c) => String(c.args[1]));
+    const fragments = sources.filter((s) =>
+      s.includes("punctualShadowFactor(i"),
+    );
+    expect(fragments).toHaveLength(2);
   });
 });
 

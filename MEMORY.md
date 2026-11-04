@@ -4984,6 +4984,45 @@ positions, previous, velocities}]}` with float64 arrays; checksum is FNV-1a over
 - No `geometry`-package sphere generator is used by the package; pressure tests build their own
   welded icosphere. Stub count on merge: lead reconciles with wave 8 (`physics-box2d`).
 
+## 2026-11-04 — program wave 6 (GPU residues)
+
+- **D7 taken by the lead:** `RenderTargetFormat` widened to `"rgba8" | "rgba32float"` as a _texel_
+  format only; `floatRenderTargets` stays false and no backend allocates a float render target
+  (a target that asks is still allocated as rgba8 — a guard is a follow-up). The palette texture is
+  2048 wide (the WebGL 2 `MAX_TEXTURE_SIZE` floor), so 512 joints per row.
+- **Texture-palette limits:** shadow casters and the picking id pass keep the uniform palette, so a
+  `"texture"` rig over 48 joints casts no shadow and is not pickable (one warning). Follow-up row.
+- **GPU fields:** the params block is 224 floats (896 B): 32-float header (count, time, depth bias,
+  view-projection) + 8 × 24-float records; turbulence salts travel as uint32 through a cached view.
+  A one-radial stack still sends the legacy `radial` spelling so old driver recordings hold.
+- **Depth collide:** the backbuffer's `depth24plus` cannot be sampled; the caller renders into a
+  `depthTexture: true` target and calls `bindParticleSceneDepth` + `updateViewProjection` (no
+  automatic camera hookup). Reversed-z is not handled. Kill parks at 1e37; the CPU ages the slot.
+- **Transient pooling:** `validate()` still treats a transient pass output as "screen"; feedback is
+  impossible by construction (inputs must be earlier passes). Scene-material sampling of a transient
+  is not tracked by the usage list. Barriers are bookkeeping only on both backends.
+- **Shadows:** WebGPU `LIGHT_UNIFORM_STRIDE_BYTES` 1024 → 2048 with a 752-byte atlas tail after
+  byte 912 (`LIGHT_BINDING_BYTES` unchanged); WebGL takes the extended shader only when
+  `lights.shadowExtended` is true, so `FRAME_BEFORE_R18` still passes unmodified. Cascade
+  `normalBias` is not scaled per cascade and boundaries are not blended. Transparent masks and
+  contact shadows remain the §69 residue.
+- **Accepted transcript re-baselines (review findings 1–2, wave 6):** the WebGPU particle params
+  block grew from 16 to 224 floats (a one-radial scene uploads different bytes and a larger
+  buffer; the header lanes 2/3/8–10 are now zero and the radial lives in record 0) and the light
+  uniform stride doubled to 2048 for every lit scene (dynamic offsets i×2048, larger
+  `writeBuffer` lengths; in-block offsets unchanged). Neither moves a §33 golden: GPU pools are
+  excluded from goldens and light-block _contents_ for a one-light scene are byte-identical.
+  Recorded here so a future "byte-identical compute/lights transcript" claim is read against
+  this date; pixel output is unchanged.
+- **Size budgets re-based a second time today (wave 6):** the shadow-atlas GLSL (cascade select,
+  punctual sampling), the texture-palette program pair and the transient pool add about 2.5 kB
+  gzip to every `WebglRenderer` bundle. first-3d-scene 49 → 51 kB, particles-demo 49 → 53 kB,
+  ui-demo 57.5 → 61 kB, soft-body 46 → 50 kB over measured 49.6 / 51.5 / 59.1 / 48.5 kB. Same
+  rule as wave 5 (shipped features, not optional modes). **Standing concern, now a row:** two
+  re-bases in one day means the renderer module carries every shader family unconditionally;
+  a per-family lazy module split (shadow atlas, texture skinning, morph > 1) is the honest fix and
+  is filed in TODO.md under the batching/size follow-ups rather than re-basing a third time.
+
 ## 2026-11-04 — program wave 7 (RFC 0001 addendum, compressed containers)
 
 - **D4 taken by the lead:** the RFC 0001 addendum's three gated items are accepted and shipped

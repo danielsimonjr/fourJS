@@ -34,12 +34,29 @@
  * region by the spec's threshold.
  */
 
+import { Matrix4 } from "@fourjs/math";
+import { writeSpotShadowMatrix } from "@fourjs/render";
 import {
   DRAW_UNIFORM_BYTES,
+  LIGHT_COUNTS_OFFSET,
+  LIGHT_DIRECTION_OFFSET,
+  LIGHT_PUNCTUAL_COLOR_OFFSET,
+  LIGHT_PUNCTUAL_DIRECTION_OFFSET,
+  LIGHT_PUNCTUAL_PARAMS_OFFSET,
+  LIGHT_PUNCTUAL_POSITION_OFFSET,
+  SHADOW_ATLAS_OFFSET,
+  SHADOW_CASCADE_MATRIX_OFFSET,
+  SHADOW_CASCADE_SPLITS_OFFSET,
+  SHADOW_INFO_OFFSET,
   SHADOW_LIGHT_UNIFORM_BYTES,
   SHADOW_MATRIX_OFFSET,
   SHADOW_PARAMS_OFFSET,
+  SHADOW_PUNCTUAL_PARAMS_OFFSET,
+  SHADOW_PUNCTUAL_RANGE_OFFSET,
+  SHADOW_PUNCTUAL_SLOT_OFFSET,
   SHADOW_SHADER_SOURCE,
+  SHADOW_SPOT_MATRIX_OFFSET,
+  SHADOW_VIEW_DEPTH_OFFSET,
   STANDARD_UNIFORM_BYTES,
   litShaderSource,
   standardShaderSource,
@@ -91,6 +108,21 @@ interface VariantResult {
 interface CompileResult {
   readonly adapter: boolean;
   readonly variants: VariantResult[];
+}
+
+interface Region {
+  readonly centre: number;
+  readonly edge: number;
+}
+
+interface AtlasResult {
+  readonly adapter: boolean;
+  readonly error: string | null;
+  readonly inSecond: Region;
+  readonly inFirst: Region;
+  readonly beyond: Region;
+  readonly spot: Region;
+  readonly spotOpen: Region;
 }
 
 interface ShadowResult {
@@ -594,6 +626,223 @@ const SHADOW_SCRIPT = `async (options) => {
   };
 }`;
 
+/**
+ * Program 3 (W6.3): the shadow **atlas** on a real adapter — the atlas tail of
+ * the shadowed light block, `shadowTileTaps`, `directionalShadowAtlas` and
+ * `punctualShadowFactor` compiled and run by a real WGSL front end.
+ *
+ * Two claims, each by threshold: (cascade) the receiver picks its cascade by
+ * *view depth* — the caster is drawn into tile 1 only, so a plane whose view
+ * depth falls in cascade 1 is shadowed and the same plane with the splits moved
+ * so it falls in cascade 0 (an empty tile) is lit; (spot) a perspective map in
+ * tile 0 darkens the centre of a plane lit by a spot light, and not its edge.
+ */
+const ATLAS_SCRIPT = `async (options) => {
+  const { size, tile, planeShader, casterShader, blockBytes, drawBytes, offsets, spotMatrix } = options;
+  if (navigator.gpu === undefined) return { adapter: false };
+  const adapter = await navigator.gpu.requestAdapter();
+  if (adapter === null) return { adapter: false };
+  const device = await adapter.requestDevice();
+  ${PAGE_PRELUDE}
+
+  device.pushErrorScope("validation");
+  const casterModule = device.createShaderModule({ code: casterShader });
+  const planeModule = device.createShaderModule({ code: planeShader });
+  const quad = (half, z) => new Float32Array([
+    -half, -half, z,  half, -half, z,  half, half, z,
+    -half, -half, z,  half, half, z,  -half, half, z,
+  ]);
+  const vertexBuffer = (floats) => {
+    const buffer = device.createBuffer({
+      size: floats.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(buffer, 0, floats);
+    return buffer;
+  };
+
+  // An atlas of 'columns' x 1 tiles; 'casters[i]' is drawn into tile i with
+  // 'matrices[i]' as its view-projection, or the tile is left at the far plane.
+  const atlas = (columns, matrices, casters) => {
+    const depth = device.createTexture({
+      size: [tile * columns, tile],
+      format: "depth32float",
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+    });
+    const color = device.createTexture({
+      size: [tile * columns, tile],
+      format: "rgba8unorm",
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    const draw = drawLayout(device, drawBytes);
+    const pipeline = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [draw] }),
+      vertex: {
+        module: casterModule, entryPoint: "vertexMain",
+        buffers: [{ arrayStride: 12, stepMode: "vertex",
+          attributes: [{ format: "float32x3", offset: 0, shaderLocation: 0 }] }],
+      },
+      fragment: { module: casterModule, entryPoint: "fragmentMain",
+        targets: [{ format: "rgba8unorm", writeMask: 0xf }] },
+      primitive: { topology: "triangle-list" },
+      depthStencil: { format: "depth32float", depthWriteEnabled: true, depthCompare: "less" },
+    });
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [{ view: color.createView(), loadOp: "clear", storeOp: "store",
+        clearValue: [0, 0, 0, 1] }],
+      depthStencilAttachment: { view: depth.createView(), depthLoadOp: "clear",
+        depthClearValue: 1, depthStoreOp: "store" },
+    });
+    pass.setPipeline(pipeline);
+    for (let i = 0; i < columns; i += 1) {
+      if (casters[i] === null) continue;
+      const floats = new Float32Array(drawBytes / 4);
+      floats.set(matrices[i], 0);
+      floats[16] = 1; floats[21] = 1; floats[26] = 1; floats[31] = 1;
+      floats[36] = 1; floats[41] = 1; floats[46] = 1;
+      const group = device.createBindGroup({
+        layout: draw,
+        entries: [{ binding: 0, resource: { buffer: uniformBuffer(device, floats) } }],
+      });
+      pass.setBindGroup(0, group);
+      pass.setViewport(i * tile, 0, tile, tile, 0, 1);
+      pass.setVertexBuffer(0, vertexBuffer(casters[i]));
+      pass.draw(casters[i].length / 3);
+    }
+    pass.end();
+    device.queue.submit([encoder.finish()]);
+    return depth;
+  };
+
+  const flipZ = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1]);
+  const lightsLayout = shadowLightsLayout(device, blockBytes);
+  const plane = quad(0.9, 0);
+  const normals = new Float32Array(18);
+  for (let i = 0; i < 6; i += 1) normals[i * 3 + 2] = 1;
+
+  const renderPlane = async (block, depth) => {
+    const lightsGroup = device.createBindGroup({
+      layout: lightsLayout,
+      entries: [
+        { binding: 0, resource: { buffer: uniformBuffer(device, block) } },
+        { binding: 1, resource: depth.createView() },
+        { binding: 2, resource: comparisonSampler(device) },
+      ],
+    });
+    const draw = drawLayout(device, drawBytes);
+    const drawGroup = device.createBindGroup({
+      layout: draw,
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer(device, drawBlock(false)) } }],
+    });
+    const target = device.createTexture({
+      size: [size, size], format: "rgba8unorm",
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+    });
+    const pipeline = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [draw, lightsLayout] }),
+      vertex: { module: planeModule, entryPoint: "vertexMain", buffers: [
+        { arrayStride: 12, stepMode: "vertex",
+          attributes: [{ format: "float32x3", offset: 0, shaderLocation: 0 }] },
+        { arrayStride: 12, stepMode: "vertex",
+          attributes: [{ format: "float32x3", offset: 0, shaderLocation: 3 }] },
+      ] },
+      fragment: { module: planeModule, entryPoint: "fragmentMain",
+        targets: [{ format: "rgba8unorm", writeMask: 0xf }] },
+      primitive: { topology: "triangle-list" },
+    });
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [{ view: target.createView(), loadOp: "clear", storeOp: "store",
+        clearValue: [0, 0, 0, 1] }],
+    });
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, drawGroup);
+    pass.setBindGroup(1, lightsGroup);
+    pass.setVertexBuffer(0, vertexBuffer(plane));
+    pass.setVertexBuffer(1, vertexBuffer(normals));
+    pass.draw(6);
+    pass.end();
+    device.queue.submit([encoder.finish()]);
+    const pixels = await readbackPixels(device, target, size);
+    const mean = (x0, x1, y0, y1) => {
+      let sum = 0; let count = 0;
+      for (let y = Math.floor(size * y0); y < Math.floor(size * y1); y += 1) {
+        for (let x = Math.floor(size * x0); x < Math.floor(size * x1); x += 1) {
+          const base = (y * size + x) * 4;
+          sum += (pixels[base] + pixels[base + 1] + pixels[base + 2]) / 3;
+          count += 1;
+        }
+      }
+      return sum / count;
+    };
+    return { centre: mean(0.44, 0.56, 0.44, 0.56), edge: mean(0.08, 0.16, 0.08, 0.16) };
+  };
+
+  const baseBlock = () => {
+    const floats = new Float32Array(blockBytes / 4);
+    floats[0] = 0.1; floats[1] = 0.1; floats[2] = 0.1;
+    floats[offsets.direction / 4 + 2] = -1;
+    floats[14] = 2;
+    return floats;
+  };
+  const writeAtlasHeader = (floats, columns, cascades, punctual) => {
+    const a = offsets.atlas / 4;
+    floats[a] = columns; floats[a + 1] = 1;
+    floats[a + 2] = 1 / (tile * columns); floats[a + 3] = 1 / tile;
+    const i = offsets.info / 4;
+    floats[i] = cascades; floats[i + 1] = 1; floats[i + 2] = punctual;
+  };
+
+  // --- cascade selection by view depth ---------------------------------
+  const cascadeCase = async (splits) => {
+    const block = baseBlock();
+    block[offsets.direction / 4 + 2] = -1;
+    // The sun, white; the shadow matrix path is the atlas path here.
+    block[8] = 0.9; block[9] = 0.9; block[10] = 0.9;
+    block.set(flipZ, offsets.cascadeMatrix / 4);
+    block.set(flipZ, offsets.cascadeMatrix / 4 + 16);
+    block.set(splits, offsets.cascadeSplits / 4);
+    // View depth of the plane (z = 0) is 5: depth = -z + 5.
+    block.set([0, 0, -1, 5], offsets.viewDepth / 4);
+    block[offsets.params / 4] = 0.005;
+    writeAtlasHeader(block, 2, 2, 0);
+    block.set(flipZ, offsets.matrix / 4);
+    // The caster exists in tile 1 only.
+    const depth = atlas(2, [flipZ, flipZ], [null, quad(0.4, 0.5)]);
+    return await renderPlane(block, depth);
+  };
+  const inSecond = await cascadeCase([3, 20, 0, 0]);
+  const inFirst = await cascadeCase([10, 20, 0, 0]);
+  const beyond = await cascadeCase([2, 4, 0, 0]);
+
+  // --- a spot light's perspective map -----------------------------------
+  const spotBlock = baseBlock();
+  spotBlock[offsets.counts / 4] = 1;
+  spotBlock.set([0, 0, 3, 0], offsets.position / 4);
+  spotBlock.set([9, 9, 9, 0], offsets.color / 4);
+  spotBlock.set([0, 0, -1, 0], offsets.direction2 / 4);
+  const cosOuter = Math.cos(0.6);
+  spotBlock.set([0, cosOuter, 1 / (1 - cosOuter), 1], offsets.params2 / 4);
+  spotBlock.set(spotMatrix, offsets.spotMatrix / 4);
+  spotBlock.set([1, 0, 0, 0], offsets.slot / 4);
+  spotBlock.set([0, 0.001, 0, 1], offsets.punctualParams / 4);
+  spotBlock.set([0.1, 20, 0, 0], offsets.range / 4);
+  spotBlock[offsets.params / 4] = 0.005;
+  writeAtlasHeader(spotBlock, 1, 0, 1);
+  const spotDepth = atlas(1, [new Float32Array(spotMatrix)], [quad(0.3, 1.5)]);
+  const spot = await renderPlane(spotBlock, spotDepth);
+  const openDepth = atlas(1, [new Float32Array(spotMatrix)], [null]);
+  const spotOpen = await renderPlane(spotBlock, openDepth);
+
+  const error = await device.popErrorScope();
+  return {
+    adapter: true,
+    error: error === null ? null : String(error.message),
+    inSecond, inFirst, beyond, spot, spotOpen,
+  };
+}`;
+
 /** Runs the page program with `options` — the sibling specs' wrapped-call gotcha. */
 async function inPage<T>(
   page: import("@playwright/test").Page,
@@ -675,5 +924,64 @@ test.describe("WebGPU shadows, on a real adapter (§69, WP-R1.7)", () => {
     expect(result.litMean).toBeGreaterThan(100);
     expect(result.shadowedMean).toBeLessThan(result.litMean * 0.45);
     expect(result.shadowedMean).toBeGreaterThan(5);
+  });
+
+  test("selects a cascade by view depth and shadows through a spot map in the atlas (W6.3)", async ({
+    page,
+  }) => {
+    await page.goto(`http://localhost:${String(PORT)}/`);
+    const spotMatrix = Array.from(
+      writeSpotShadowMatrix(new Matrix4(), 0, 0, 3, 0, 0, -1, 0.6, 0.1, 20)
+        .elements,
+    );
+    const result = await inPage<AtlasResult>(page, ATLAS_SCRIPT, {
+      size: SIZE,
+      tile: 64,
+      planeShader: litShaderSource(true, false, true),
+      casterShader: SHADOW_SHADER_SOURCE,
+      blockBytes: SHADOW_LIGHT_UNIFORM_BYTES,
+      drawBytes: DRAW_UNIFORM_BYTES,
+      spotMatrix,
+      offsets: {
+        matrix: SHADOW_MATRIX_OFFSET,
+        params: SHADOW_PARAMS_OFFSET,
+        direction: LIGHT_DIRECTION_OFFSET,
+        counts: LIGHT_COUNTS_OFFSET,
+        position: LIGHT_PUNCTUAL_POSITION_OFFSET,
+        color: LIGHT_PUNCTUAL_COLOR_OFFSET,
+        direction2: LIGHT_PUNCTUAL_DIRECTION_OFFSET,
+        params2: LIGHT_PUNCTUAL_PARAMS_OFFSET,
+        cascadeMatrix: SHADOW_CASCADE_MATRIX_OFFSET,
+        spotMatrix: SHADOW_SPOT_MATRIX_OFFSET,
+        cascadeSplits: SHADOW_CASCADE_SPLITS_OFFSET,
+        viewDepth: SHADOW_VIEW_DEPTH_OFFSET,
+        atlas: SHADOW_ATLAS_OFFSET,
+        info: SHADOW_INFO_OFFSET,
+        slot: SHADOW_PUNCTUAL_SLOT_OFFSET,
+        punctualParams: SHADOW_PUNCTUAL_PARAMS_OFFSET,
+        range: SHADOW_PUNCTUAL_RANGE_OFFSET,
+      },
+    });
+    test.skip(
+      !result.adapter,
+      "no WebGPU adapter — is --enable-unsafe-webgpu still set?",
+    );
+
+    expect(result.error).toBeNull();
+    // Cascade 1 holds the caster: a plane at view depth 5 inside the second
+    // split is shadowed at its centre and lit at its edge.
+    expect(result.inSecond.edge).toBeGreaterThan(100);
+    expect(result.inSecond.centre).toBeLessThan(result.inSecond.edge * 0.45);
+    // The same plane with the splits moved so depth 5 selects cascade 0 — an
+    // empty tile — is lit everywhere: selection really is by view depth.
+    expect(result.inFirst.centre).toBeGreaterThan(result.inFirst.edge * 0.9);
+    // Past the last split the receiver is lit (the outside-the-volume rule).
+    expect(result.beyond.centre).toBeGreaterThan(result.beyond.edge * 0.9);
+
+    // The spot map: open map lights the centre, the caster's umbra darkens it
+    // and leaves the edge alone.
+    expect(result.spotOpen.centre).toBeGreaterThan(60);
+    expect(result.spot.centre).toBeLessThan(result.spotOpen.centre * 0.5);
+    expect(result.spot.edge).toBeGreaterThan(result.spotOpen.edge * 0.8);
   });
 });

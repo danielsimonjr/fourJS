@@ -8,6 +8,7 @@ import {
   HemisphereLight,
   PointLight,
   PunctualLight,
+  PunctualLightShadow,
   Scene,
   SpotLight,
 } from "../src/index.js";
@@ -676,12 +677,93 @@ describe("HemisphereLight (§68)", () => {
   });
 });
 
-describe("PointLight and SpotLight carry no castShadow (§69)", () => {
-  it("is absent rather than accepted-and-ignored", () => {
-    // §69's answer for a positional light is a cube map or a per-light shadow
-    // index; neither exists at this tier, so neither class offers the field.
-    expect("castShadow" in new PointLight()).toBe(false);
-    expect("castShadow" in new SpotLight()).toBe(false);
-    expect("shadow" in new PointLight()).toBe(false);
+describe("DirectionalLightShadow cascades (§69, W6.3)", () => {
+  it("defaults to one cascade, lambda 0.5 and a 100 m distance", () => {
+    const shadow = new DirectionalLightShadow();
+    expect([
+      shadow.cascades,
+      shadow.cascadeLambda,
+      shadow.cascadeDistance,
+    ]).toEqual([1, 0.5, 100]);
+  });
+
+  it("accepts 1 to 4 cascades and refuses everything else", () => {
+    const shadow = new DirectionalLightShadow({ cascades: 4 });
+    expect(shadow.cascades).toBe(4);
+    shadow.cascades = 2;
+    expect(shadow.cascades).toBe(2);
+    for (const bad of [0, 5, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => (shadow.cascades = bad)).toThrow(RangeError);
+    }
+    expect(() => new DirectionalLightShadow({ cascades: 9 })).toThrow(
+      /cascades/,
+    );
+    expect(shadow.cascades).toBe(2);
+  });
+
+  it("validates lambda in 0…1 and a positive distance", () => {
+    const shadow = new DirectionalLightShadow({
+      cascadeLambda: 0,
+      cascadeDistance: 5,
+    });
+    shadow.cascadeLambda = 1;
+    shadow.cascadeDistance = 250;
+    expect([shadow.cascadeLambda, shadow.cascadeDistance]).toEqual([1, 250]);
+    expect(() => (shadow.cascadeLambda = -0.1)).toThrow(/0…1/);
+    expect(() => (shadow.cascadeLambda = 1.1)).toThrow(RangeError);
+    expect(() => (shadow.cascadeLambda = Number.NaN)).toThrow(RangeError);
+    expect(() => (shadow.cascadeDistance = 0)).toThrow(RangeError);
+    expect(() => new DirectionalLightShadow({ cascadeDistance: -1 })).toThrow(
+      RangeError,
+    );
+  });
+});
+
+describe("PunctualLightShadow (§69, W6.3)", () => {
+  it("is present, off and defaulted on point and spot lights", () => {
+    for (const light of [new PointLight(), new SpotLight()]) {
+      expect(light.castShadow).toBe(false);
+      expect(light.shadow).toBeInstanceOf(PunctualLightShadow);
+      expect([
+        light.shadow.mapSize,
+        light.shadow.bias,
+        light.shadow.normalBias,
+        light.shadow.near,
+        light.shadow.far,
+      ]).toEqual([1024, 0.001, 0.02, 0.1, 50]);
+    }
+  });
+
+  it("takes castShadow and shadow options", () => {
+    const spot = new SpotLight({
+      castShadow: true,
+      shadow: { mapSize: 256, bias: 0.01, normalBias: 0.1, near: 0.5, far: 9 },
+    });
+    expect(spot.castShadow).toBe(true);
+    expect([spot.shadow.mapSize, spot.shadow.far]).toEqual([256, 9]);
+  });
+
+  it("validates every field like the directional record does", () => {
+    const shadow = new PunctualLightShadow();
+    shadow.mapSize = 64;
+    shadow.bias = -0.5;
+    shadow.normalBias = 0;
+    shadow.near = 1;
+    shadow.far = 2;
+    expect([
+      shadow.mapSize,
+      shadow.bias,
+      shadow.normalBias,
+      shadow.near,
+      shadow.far,
+    ]).toEqual([64, -0.5, 0, 1, 2]);
+    expect(() => (shadow.mapSize = 0)).toThrow(RangeError);
+    expect(() => (shadow.bias = Number.NaN)).toThrow(RangeError);
+    expect(() => (shadow.normalBias = -1)).toThrow(RangeError);
+    expect(() => (shadow.near = 2)).toThrow(/less than far/);
+    expect(() => (shadow.far = 1)).toThrow(/less than far/);
+    expect(() => new PunctualLightShadow({ near: 5, far: 1 })).toThrow(
+      RangeError,
+    );
   });
 });

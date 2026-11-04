@@ -78,6 +78,19 @@ import { DEV, DEV_WARNING_PREFIX, devWarnOnce } from "@fourjs/core";
 import { Matrix4, Vector3 } from "@fourjs/math";
 import { viewLayerMask } from "./render-list.js";
 import {
+  MAX_SHADOWED_PUNCTUAL_LIGHTS,
+  MAX_SHADOW_CASCADES,
+  MAX_SHADOW_TILES,
+  SHADOW_ATLAS_MAX_EDGE,
+  SHADOW_KIND_POINT,
+  SHADOW_KIND_SPOT,
+  computeAtlasGrid,
+  fitDirectionalCascades,
+  writeCubeFaceShadowMatrix,
+  writeSpotShadowMatrix,
+  type ShadowFitCamera,
+} from "./shadow-atlas.js";
+import {
   ALL_LAYERS,
   type LayerMask,
   type Node,
@@ -166,6 +179,38 @@ export interface DirectionalShadowSource {
 
   /** Offset along the receiver's normal, in metres (§69 "normal-bias"). */
   readonly normalBias: number;
+
+  /**
+   * Cascade count `1…4` (W6.3); absent reads as `1`, the pre-W6.3 single
+   * volume, so a structural double predating cascades is unaffected.
+   */
+  readonly cascades?: number;
+
+  /** Practical-split blend `0…1` (W6.3); absent reads as `0.5`. */
+  readonly cascadeLambda?: number;
+
+  /** Farthest cascaded view distance, metres (W6.3); absent reads as `100`. */
+  readonly cascadeDistance?: number;
+
+  /** Caster reach toward the light beyond a cascade's sphere, metres (W6.3); absent reads as `100`. */
+  readonly far?: number;
+}
+
+/**
+ * The shadow numbers a backend needs for one point or spot light (§69; W6.3) —
+ * the structural half of `@fourjs/scene`'s `PunctualLightShadow`.
+ */
+export interface PunctualShadowSource {
+  /** Edge of each square map (per cube face) in texels. */
+  readonly mapSize: number;
+  /** Depth bias as a fraction of the linear `far − near` range. */
+  readonly bias: number;
+  /** Offset along the receiver's normal, in metres. */
+  readonly normalBias: number;
+  /** Near plane of the perspective maps, metres. */
+  readonly near: number;
+  /** Far plane of the perspective maps, metres. */
+  readonly far: number;
 }
 
 /**
@@ -253,6 +298,16 @@ export interface PunctualLightSourceBase {
 
   /** Writes this light's world-space position into `out` and returns it. */
   getWorldPosition(out: Vector3): Vector3;
+
+  /**
+   * Whether this light casts a shadow (§69; W6.3). Optional — absent reads
+   * `false` — for {@link DirectionalLightSource.castShadow}'s compatibility
+   * reason.
+   */
+  readonly castShadow?: boolean;
+
+  /** Resolution, bias and planes of this light's maps (§69; W6.3). */
+  readonly shadow?: PunctualShadowSource;
 }
 
 /** A {@link PunctualLightSourceBase} with no axis — §68's point light. */
@@ -436,9 +491,11 @@ export interface SceneLights {
   readonly shadowMatrix: Matrix4;
 
   /**
-   * Edge of the square shadow map in texels; `0` when nothing casts. The
-   * backend allocates its off-screen depth surface at this size and derives
-   * the PCF tap offset (`1 / shadowMapSize`) from it.
+   * Edge of one square shadow tile in texels; `0` when nothing casts. With a
+   * single map this is the map; with cascades or punctual maps it is the
+   * largest `mapSize` of any caster, and the atlas is
+   * `shadowAtlasWidth × shadowAtlasHeight`. The backend derives the PCF tap
+   * offset from the atlas size.
    */
   shadowMapSize: number;
 
@@ -447,6 +504,88 @@ export interface SceneLights {
 
   /** Normal-space bias, in metres (§69, §40); `0` when nothing casts. */
   shadowNormalBias: number;
+
+  /**
+   * How many cascades the directional light renders: `0` when it does not
+   * cast, otherwise `1…`{@link MAX_SHADOW_CASCADES} (W6.3). `1` is the
+   * pre-W6.3 single volume; the cascade matrices are the first
+   * `shadowCascadeCount` entries of {@link SceneLights.shadowTileMatrices}
+   * (tile `i` is cascade `i`), and `shadowMatrix` equals tile 0.
+   */
+  shadowCascadeCount: number;
+
+  /**
+   * Far view distance of each cascade, `[c0, c1, c2, c3]`, zero past the live
+   * ones. The receiver picks the first cascade whose split is `≥` its view
+   * depth, and a depth beyond the last split is lit.
+   */
+  readonly shadowCascadeSplits: Float32Array;
+
+  /**
+   * The fitting camera's view-depth row `[fx, fy, fz, w]`: a world point's view
+   * depth is `dot(xyz, p) + w`. Frame state — every view samples the cascades
+   * fitted to the first view's camera.
+   */
+  readonly shadowViewDepth: Float32Array;
+
+  /** The four cascade matrices as 4 × 16 floats, for one uniform upload. */
+  readonly shadowCascadeMatrices: Float32Array;
+
+  /**
+   * How many point/spot lights cast this frame, `0…`
+   * {@link MAX_SHADOWED_PUNCTUAL_LIGHTS}; the first in scene-graph order.
+   */
+  shadowPunctualCount: number;
+
+  /**
+   * Per light slot (`MAX_LIGHT_SLOTS` rounded up to 12 entries): `k + 1` when
+   * the slot's light is shadowed with shadow index `k`, else `0`.
+   */
+  readonly shadowPunctualSlot: Float32Array;
+
+  /**
+   * Per shadow index `k`, four floats: `baseTile`, `bias`, `normalBias`, and
+   * the kind ({@link SHADOW_KIND_SPOT} `1` or {@link SHADOW_KIND_POINT} `2`).
+   * A point light's six faces are tiles `baseTile … baseTile + 5`.
+   */
+  readonly shadowPunctualParams: Float32Array;
+
+  /** Per shadow index `k`, four floats: `near`, `far`, `0`, `0`. */
+  readonly shadowPunctualRange: Float32Array;
+
+  /**
+   * The spot lights' view-projections, 4 × 16 floats indexed by shadow index
+   * `k`; a point light's entry is zero (its faces are projected analytically).
+   */
+  readonly shadowSpotMatrices: Float32Array;
+
+  /** Tiles the atlas holds this frame — `0` when nothing casts. */
+  shadowTileCount: number;
+
+  /**
+   * One view-projection per atlas tile (cascades first, then each punctual
+   * light's faces), `MAX_SHADOW_TILES` allocated, the first `shadowTileCount`
+   * live. The caster pass of tile `i` uploads `shadowTileMatrices[i]`.
+   */
+  readonly shadowTileMatrices: readonly Matrix4[];
+
+  /** Atlas grid columns (`ceil(sqrt(tiles))`), `0` when nothing casts. */
+  shadowAtlasColumns: number;
+
+  /** Atlas grid rows, `0` when nothing casts. */
+  shadowAtlasRows: number;
+
+  /** Atlas width in texels (`columns × shadowMapSize`). */
+  shadowAtlasWidth: number;
+
+  /** Atlas height in texels (`rows × shadowMapSize`). */
+  shadowAtlasHeight: number;
+
+  /**
+   * Whether the receiver needs the atlas path — more than one cascade or any
+   * punctual shadow. `false` is the pre-W6.3 single-map path exactly.
+   */
+  shadowExtended: boolean;
 
   /**
    * Whether a hemisphere light was found. When `false` the three
@@ -544,6 +683,9 @@ export function isPunctualLightSource(
   );
 }
 
+/** Entries of `shadowPunctualSlot`: the light slots rounded up to a whole vec4. */
+const SHADOW_SLOT_ENTRIES = Math.ceil(MAX_LIGHT_SLOTS / 4) * 4;
+
 /**
  * Allocates a {@link SceneLights} record holding the documented no-light
  * state. Create one per consumer and reuse it every frame (plan D7).
@@ -564,6 +706,25 @@ export function createSceneLights(): SceneLights {
     shadowMapSize: 0,
     shadowBias: 0,
     shadowNormalBias: 0,
+    shadowCascadeCount: 0,
+    shadowCascadeSplits: new Float32Array(4),
+    shadowViewDepth: new Float32Array(4),
+    shadowCascadeMatrices: new Float32Array(MAX_SHADOW_CASCADES * 16),
+    shadowPunctualCount: 0,
+    shadowPunctualSlot: new Float32Array(SHADOW_SLOT_ENTRIES),
+    shadowPunctualParams: new Float32Array(MAX_SHADOWED_PUNCTUAL_LIGHTS * 4),
+    shadowPunctualRange: new Float32Array(MAX_SHADOWED_PUNCTUAL_LIGHTS * 4),
+    shadowSpotMatrices: new Float32Array(MAX_SHADOWED_PUNCTUAL_LIGHTS * 16),
+    shadowTileCount: 0,
+    shadowTileMatrices: Array.from(
+      { length: MAX_SHADOW_TILES },
+      () => new Matrix4(),
+    ),
+    shadowAtlasColumns: 0,
+    shadowAtlasRows: 0,
+    shadowAtlasWidth: 0,
+    shadowAtlasHeight: 0,
+    shadowExtended: false,
     hasHemisphereLight: false,
     hemisphereSky: [0, 0, 0],
     hemisphereGround: [0, 0, 0],
@@ -599,6 +760,24 @@ function clearSceneLights(out: SceneLights): void {
   out.shadowMapSize = 0;
   out.shadowBias = 0;
   out.shadowNormalBias = 0;
+  // W6.3: the atlas record. Arrays are uploaded whole, so they are zeroed for
+  // the same transcript-determinism reason as the light arrays above; the tile
+  // matrices are only ever read below `shadowTileCount`, so they are left.
+  out.shadowCascadeCount = 0;
+  out.shadowCascadeSplits.fill(0);
+  out.shadowViewDepth.fill(0);
+  out.shadowCascadeMatrices.fill(0);
+  out.shadowPunctualCount = 0;
+  out.shadowPunctualSlot.fill(0);
+  out.shadowPunctualParams.fill(0);
+  out.shadowPunctualRange.fill(0);
+  out.shadowSpotMatrices.fill(0);
+  out.shadowTileCount = 0;
+  out.shadowAtlasColumns = 0;
+  out.shadowAtlasRows = 0;
+  out.shadowAtlasWidth = 0;
+  out.shadowAtlasHeight = 0;
+  out.shadowExtended = false;
   out.hasHemisphereLight = false;
   out.hemisphereSky[0] = 0;
   out.hemisphereSky[1] = 0;
@@ -633,6 +812,25 @@ let walkPrimary: DirectionalLightSource | null = null;
 
 /** Extra directionals stored so far this walk (they sit at the array tail). */
 let walkExtraCount = 0;
+
+/** Punctual lights that asked to cast this walk, in scene order (W6.3). */
+const walkShadowLights: (PunctualLightSource | null)[] =
+  new Array<PunctualLightSource | null>(MAX_SHADOWED_PUNCTUAL_LIGHTS).fill(
+    null,
+  );
+
+/** The packed light slot of each entry of {@link walkShadowLights}. */
+const walkShadowSlots: number[] = new Array<number>(
+  MAX_SHADOWED_PUNCTUAL_LIGHTS,
+).fill(0);
+
+/** Entries of {@link walkShadowLights} in use. */
+let walkShadowCount = 0;
+
+/** Casting punctual lights the walk saw, counted past the cap. */
+let walkShadowFound = 0;
+
+const warnedShadowRoots = new WeakSet<object>();
 
 /** The layer mask the current walk keeps lights for. */
 let walkLayerMask: LayerMask = ALL_LAYERS;
@@ -785,11 +983,142 @@ function collectFrom(node: Node, out: SceneLights): void {
     walkPunctualFound += 1;
     if (out.punctualCount < MAX_PUNCTUAL_LIGHTS) {
       writePunctualLight(node, out);
+      if (node.castShadow === true && node.shadow !== undefined) {
+        walkShadowFound += 1;
+        if (walkShadowCount < MAX_SHADOWED_PUNCTUAL_LIGHTS) {
+          walkShadowLights[walkShadowCount] = node;
+          walkShadowSlots[walkShadowCount] = out.punctualCount - 1;
+          walkShadowCount += 1;
+        }
+      }
     }
   }
   const children = node.children;
   for (let i = 0; i < children.length; i += 1) {
     collectFrom(children[i], out);
+  }
+}
+
+/**
+ * Assigns the frame's atlas tiles (W6.3): the directional cascades already sit
+ * in tiles `0 … C-1`; each accepted punctual shadow follows, in scene-graph
+ * order, and receives its perspective matrices. Lights past
+ * {@link MAX_SHADOWED_PUNCTUAL_LIGHTS}, or past the atlas's
+ * {@link SHADOW_ATLAS_MAX_EDGE}, shade unshadowed with one warning per root.
+ */
+function allocateShadowAtlas(root: Node, out: SceneLights): void {
+  let tileSize = out.shadowMapSize;
+  for (let k = 0; k < walkShadowCount; k += 1) {
+    const mapSize = (walkShadowLights[k] as PunctualLightSource).shadow
+      ?.mapSize as number;
+    tileSize = Math.max(tileSize, mapSize);
+  }
+  if (tileSize <= 0) {
+    return;
+  }
+  const perEdge = Math.max(1, Math.floor(SHADOW_ATLAS_MAX_EDGE / tileSize));
+  const maxTiles = Math.min(MAX_SHADOW_TILES, perEdge * perEdge);
+  let tiles = out.shadowCascadeCount;
+  let accepted = 0;
+  for (let k = 0; k < walkShadowCount; k += 1) {
+    const light = walkShadowLights[k] as PunctualLightSource;
+    const shadow = light.shadow as PunctualShadowSource;
+    const kind =
+      light.lightType === "spot" ? SHADOW_KIND_SPOT : SHADOW_KIND_POINT;
+    const need = kind === SHADOW_KIND_SPOT ? 1 : 6;
+    if (tiles + need > maxTiles) {
+      warnShadowOverflow(
+        root,
+        `the shadow atlas holds at most ${String(maxTiles)} tiles of ` +
+          `${String(tileSize)} texels (${String(SHADOW_ATLAS_MAX_EDGE)} texel edge); ` +
+          "a point or spot light that does not fit is not shadowed.",
+      );
+      continue;
+    }
+    const slot = walkShadowSlots[k];
+    const vector = slot * 3;
+    const px = out.punctualPositions[vector];
+    const py = out.punctualPositions[vector + 1];
+    const pz = out.punctualPositions[vector + 2];
+    out.shadowPunctualSlot[slot] = accepted + 1;
+    const params = accepted * 4;
+    out.shadowPunctualParams[params] = tiles;
+    out.shadowPunctualParams[params + 1] = shadow.bias;
+    out.shadowPunctualParams[params + 2] = shadow.normalBias;
+    out.shadowPunctualParams[params + 3] = kind;
+    out.shadowPunctualRange[params] = shadow.near;
+    out.shadowPunctualRange[params + 1] = shadow.far;
+    if (kind === SHADOW_KIND_SPOT) {
+      const matrix = out.shadowTileMatrices[tiles];
+      writeSpotShadowMatrix(
+        matrix,
+        px,
+        py,
+        pz,
+        out.punctualDirections[vector],
+        out.punctualDirections[vector + 1],
+        out.punctualDirections[vector + 2],
+        (light as SpotLightSource).outerConeAngle,
+        shadow.near,
+        shadow.far,
+      );
+      out.shadowSpotMatrices.set(matrix.elements, accepted * 16);
+    } else {
+      for (let face = 0; face < 6; face += 1) {
+        writeCubeFaceShadowMatrix(
+          out.shadowTileMatrices[tiles + face],
+          face,
+          px,
+          py,
+          pz,
+          shadow.near,
+          shadow.far,
+        );
+      }
+    }
+    tiles += need;
+    accepted += 1;
+  }
+  if (
+    walkShadowFound > accepted &&
+    walkShadowFound > MAX_SHADOWED_PUNCTUAL_LIGHTS
+  ) {
+    warnShadowOverflow(
+      root,
+      `${String(walkShadowFound)} point and spot lights cast shadows, but a ` +
+        `frame renders at most ${String(MAX_SHADOWED_PUNCTUAL_LIGHTS)} (§69): ` +
+        "the first in scene-graph order are shadowed and the rest are not.",
+    );
+  }
+  for (let k = 0; k < walkShadowCount; k += 1) {
+    walkShadowLights[k] = null;
+  }
+  out.shadowPunctualCount = accepted;
+  for (let c = 0; c < out.shadowCascadeCount; c += 1) {
+    out.shadowCascadeMatrices.set(out.shadowTileMatrices[c].elements, c * 16);
+  }
+  out.shadowTileCount = tiles;
+  out.hasShadow = tiles > 0;
+  out.shadowExtended = out.shadowCascadeCount > 1 || accepted > 0;
+  out.shadowMapSize = tiles > 0 ? tileSize : 0;
+  const grid = gridScratch;
+  computeAtlasGrid(tiles, tileSize, grid);
+  out.shadowAtlasColumns = tiles > 0 ? grid[0] : 0;
+  out.shadowAtlasRows = tiles > 0 ? grid[1] : 0;
+  out.shadowAtlasWidth = tiles > 0 ? grid[2] : 0;
+  out.shadowAtlasHeight = tiles > 0 ? grid[3] : 0;
+}
+
+const gridScratch: number[] = [0, 0, 0, 0];
+
+/** One development warning per root for a shadow-budget overflow. */
+function warnShadowOverflow(root: Node, detail: string): void {
+  const message = `Shadow budget exceeded: ${detail} Further overflows in this scene are suppressed.`;
+  if (DEV) {
+    devWarnOnce(`shadow-overflow:${root.id}`, message);
+  } else if (!warnedShadowRoots.has(root)) {
+    warnedShadowRoots.add(root);
+    console.warn(`${DEV_WARNING_PREFIX} ${message}`);
   }
 }
 
@@ -825,6 +1154,7 @@ export function collectSceneLights(
   root: Node,
   out: SceneLights,
   layerMask: LayerMask = ALL_LAYERS,
+  shadowCamera: ShadowFitCamera | null = null,
 ): SceneLights {
   clearSceneLights(out);
 
@@ -842,6 +1172,8 @@ export function collectSceneLights(
   walkDirectionalFound = 0;
   walkExtraCount = 0;
   walkPrimary = null;
+  walkShadowCount = 0;
+  walkShadowFound = 0;
   walkLayerMask = layerMask;
   collectFrom(root, out);
   compactExtraDirectionals(out);
@@ -870,12 +1202,38 @@ export function collectSceneLights(
       typeof light.computeShadowMatrix === "function"
     ) {
       out.hasShadow = true;
-      light.computeShadowMatrix(out.shadowMatrix);
+      out.shadowCascadeCount = 1;
+      const requested = shadow.cascades ?? 1;
+      if (
+        requested > 1 &&
+        shadowCamera !== null &&
+        fitDirectionalCascades(
+          shadowCamera,
+          out.direction.x,
+          out.direction.y,
+          out.direction.z,
+          Math.min(requested, MAX_SHADOW_CASCADES),
+          shadow.cascadeLambda ?? 0.5,
+          shadow.cascadeDistance ?? 100,
+          shadow.mapSize,
+          shadow.far ?? 100,
+          out.shadowCascadeSplits,
+          out.shadowViewDepth,
+          out.shadowTileMatrices,
+        )
+      ) {
+        out.shadowCascadeCount = Math.min(requested, MAX_SHADOW_CASCADES);
+        out.shadowMatrix.copy(out.shadowTileMatrices[0]);
+      } else {
+        light.computeShadowMatrix(out.shadowMatrix);
+        out.shadowTileMatrices[0].copy(out.shadowMatrix);
+      }
       out.shadowMapSize = shadow.mapSize;
       out.shadowBias = shadow.bias;
       out.shadowNormalBias = shadow.normalBias;
     }
   }
+  allocateShadowAtlas(root, out);
 
   if (walkPunctualFound > MAX_PUNCTUAL_LIGHTS) {
     const message =

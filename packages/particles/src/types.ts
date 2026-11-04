@@ -160,9 +160,11 @@ export interface ParticleForceField {
 
   /**
    * When present, a `simulation: "gpu"` emitter may apply this field on
-   * the device. Absent on every built-in except `radialField`.
+   * the device. Present on every built-in (radial, uniform gravity, drag,
+   * wind, vortex, turbulence, and a `volumeField` over any of them);
+   * absent on hand-written fields and on nested volumes.
    */
-  readonly gpuField?: ParticleGpuRadialField;
+  readonly gpuField?: ParticleGpuField;
 }
 
 /**
@@ -213,7 +215,93 @@ export interface ParticleGpuRadialField {
   readonly originZ: number;
   readonly strength: number;
   readonly minDistance: number;
+  readonly volume?: ParticleGpuVolume;
 }
+
+/** `volumeField`'s inclusion shape, as the device evaluates it. */
+export interface ParticleGpuVolume {
+  readonly shape: "sphere" | "box";
+  readonly centerX: number;
+  readonly centerY: number;
+  readonly centerZ: number;
+  /** Sphere radius; `0` for a box. */
+  readonly radius: number;
+  /** Box half-extents; `0` for a sphere. */
+  readonly extentX: number;
+  readonly extentY: number;
+  readonly extentZ: number;
+  readonly falloff: number;
+}
+
+/** `uniformGravityField`: a constant acceleration. */
+export interface ParticleGpuUniformField {
+  readonly kind: "uniform";
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly volume?: ParticleGpuVolume;
+}
+
+/** `dragField`: `a = -coefficient * v`. */
+export interface ParticleGpuDragField {
+  readonly kind: "drag";
+  readonly coefficient: number;
+  readonly volume?: ParticleGpuVolume;
+}
+
+/** `windField`: `a = coefficient * (wind - v)`. */
+export interface ParticleGpuWindField {
+  readonly kind: "wind";
+  readonly windX: number;
+  readonly windY: number;
+  readonly windZ: number;
+  readonly coefficient: number;
+  readonly volume?: ParticleGpuVolume;
+}
+
+/** `vortexField`: tangential swirl about a unit axis. */
+export interface ParticleGpuVortexField {
+  readonly kind: "vortex";
+  readonly centerX: number;
+  readonly centerY: number;
+  readonly centerZ: number;
+  readonly axisX: number;
+  readonly axisY: number;
+  readonly axisZ: number;
+  readonly strength: number;
+  readonly minDistance: number;
+  readonly volume?: ParticleGpuVolume;
+}
+
+/** `turbulenceField`: curl of three salted value-noise potentials. */
+export interface ParticleGpuTurbulenceField {
+  readonly kind: "turbulence";
+  /** The three uint32 hash salts the CPU field drew from its seed. */
+  readonly saltX: number;
+  readonly saltY: number;
+  readonly saltZ: number;
+  readonly frequency: number;
+  readonly amplitude: number;
+  readonly scrollX: number;
+  readonly scrollY: number;
+  readonly scrollZ: number;
+  readonly volume?: ParticleGpuVolume;
+}
+
+/** Every §27 field the GPU integrator evaluates (a bounded uniform stack). */
+export type ParticleGpuField =
+  | ParticleGpuRadialField
+  | ParticleGpuUniformField
+  | ParticleGpuDragField
+  | ParticleGpuWindField
+  | ParticleGpuVortexField
+  | ParticleGpuTurbulenceField;
+
+/**
+ * Largest field stack a `simulation: "gpu"` emitter accepts (the device
+ * uniform array is this long). More fields are refused at construction.
+ */
+export const MAX_GPU_FIELDS = 8;
 
 /**
  * Optional extras a `simulation: "gpu"` integrate may carry — radial field
@@ -222,6 +310,14 @@ export interface ParticleGpuRadialField {
  */
 export interface ParticleGpuIntegrateExtras {
   readonly radial?: ParticleGpuRadialField;
+  /**
+   * The full ordered field stack (declaration order = CPU summation order),
+   * at most {@link MAX_GPU_FIELDS}. Sent instead of `radial` unless the
+   * stack is exactly one radial field.
+   */
+  readonly fields?: readonly ParticleGpuField[];
+  /** Simulation time in seconds (turbulence scroll). */
+  readonly time?: number;
   readonly collisionGroundY?: number;
   readonly collisions?: ParticleCollisionMode;
 }

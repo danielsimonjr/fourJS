@@ -33,8 +33,23 @@
  * convention.
  */
 
+import { Vector3 } from "@fourjs/math";
+import {
+  dragField,
+  radialField,
+  turbulenceField,
+  uniformGravityField,
+  volumeField,
+  vortexField,
+  windField,
+  type ParticleForceField,
+  type ParticleGpuField,
+} from "@fourjs/particles";
 import {
   COMPUTE_ENTRY_POINT,
+  PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE,
+  PARTICLE_SIMULATION_PARAMS_FLOATS,
+  writeParticleSimulationParams,
   PARTICLE_GPU_VERTEX_BUFFER_LAYOUTS,
   PARTICLE_INTEGRATOR_SHADER_SOURCE,
   PARTICLE_SHADER_SOURCE,
@@ -74,7 +89,7 @@ interface GpuParticleResult {
  * spawn point of particle 0 lies 0.5 NDC from its quad — far outside it.
  */
 const PAGE_SCRIPT = `async (options) => {
-  const { size, integrator, entryPoint, billboard, uniformBytes, layouts, workgroups } = options;
+  const { size, integrator, entryPoint, billboard, uniformBytes, layouts, workgroups, paramsFloats } = options;
   if (navigator.gpu === undefined) return { adapter: false };
   const adapter = await navigator.gpu.requestAdapter();
   if (adapter === null) return { adapter: false };
@@ -102,7 +117,7 @@ const PAGE_SCRIPT = `async (options) => {
   // dt 0.25, count 2, pads, gravity (0, -4, 0, 0) — the params layout
   // writeParticleSimulationParams packs.
   const params = storage(
-    new Float32Array([0.25, 2, 0, 0, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    new Float32Array([0.25, 2, 0, 0, 0, -4, 0, 0, ...new Array(paramsFloats - 8).fill(0)]),
   );
 
   // Integrate one step — the backend's "rww" compute layout.
@@ -238,6 +253,122 @@ const PAGE_SCRIPT = `async (options) => {
   };
 }`;
 
+/** Page program: one integrator dispatch over arbitrary params, read back. */
+const FIELD_PAGE_SCRIPT = `async (options) => {
+  const { integrator, entryPoint, params, positions, velocities, workgroups } = options;
+  if (navigator.gpu === undefined) return { adapter: false };
+  const adapter = await navigator.gpu.requestAdapter();
+  if (adapter === null) return { adapter: false };
+  const device = await adapter.requestDevice();
+  device.pushErrorScope("validation");
+  const usage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC;
+  const make = (data) => {
+    const buffer = device.createBuffer({ size: data.byteLength, usage });
+    device.queue.writeBuffer(buffer, 0, data);
+    return buffer;
+  };
+  const paramsBuffer = make(new Uint32Array(params));
+  const positionBuffer = make(new Float32Array(positions));
+  const velocityBuffer = make(new Float32Array(velocities));
+  const layout = device.createBindGroupLayout({ entries: [
+    { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+    { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+    { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+  ] });
+  const pipeline = device.createComputePipeline({
+    layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
+    compute: { module: device.createShaderModule({ code: integrator }), entryPoint },
+  });
+  const group = device.createBindGroup({ layout, entries: [
+    { binding: 0, resource: { buffer: paramsBuffer } },
+    { binding: 1, resource: { buffer: positionBuffer } },
+    { binding: 2, resource: { buffer: velocityBuffer } },
+  ] });
+  const read = (buffer, bytes) => {
+    const staging = device.createBuffer({ size: bytes, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    return { staging, bytes, buffer };
+  };
+  const readP = read(positionBuffer, positions.length * 4);
+  const readV = read(velocityBuffer, velocities.length * 4);
+  const encoder = device.createCommandEncoder();
+  const pass = encoder.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, group);
+  pass.dispatchWorkgroups(workgroups[0], workgroups[1], workgroups[2]);
+  pass.end();
+  for (const r of [readP, readV]) encoder.copyBufferToBuffer(r.buffer, 0, r.staging, 0, r.bytes);
+  device.queue.submit([encoder.finish()]);
+  const error = await device.popErrorScope();
+  await readP.staging.mapAsync(GPUMapMode.READ);
+  const outP = Array.from(new Float32Array(readP.staging.getMappedRange().slice(0)));
+  await readV.staging.mapAsync(GPUMapMode.READ);
+  const outV = Array.from(new Float32Array(readV.staging.getMappedRange().slice(0)));
+  return { adapter: true, error: error === null ? null : String(error.message), positions: outP, velocities: outV };
+}`;
+
+/** Page program: render a constant depth, run the depth-collide kernel, read back. */
+const DEPTH_PAGE_SCRIPT = `async (options) => {
+  const { shader, entryPoint, params, positions, depth } = options;
+  if (navigator.gpu === undefined) return { adapter: false };
+  const adapter = await navigator.gpu.requestAdapter();
+  if (adapter === null) return { adapter: false };
+  const device = await adapter.requestDevice();
+  device.pushErrorScope("validation");
+  const usage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC;
+  const make = (data) => {
+    const buffer = device.createBuffer({ size: data.byteLength, usage });
+    device.queue.writeBuffer(buffer, 0, data);
+    return buffer;
+  };
+  const paramsBuffer = make(new Float32Array(params));
+  const positionBuffer = make(new Float32Array(positions));
+  const velocityBuffer = make(new Float32Array(positions.length));
+  const depthTexture = device.createTexture({
+    size: { width: 8, height: 8 },
+    format: "depth32float",
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+  });
+  const layout = device.createBindGroupLayout({ entries: [
+    { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+    { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+    { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+    { binding: 3, visibility: GPUShaderStage.COMPUTE, texture: { sampleType: "depth", viewDimension: "2d" } },
+  ] });
+  const pipeline = device.createComputePipeline({
+    layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
+    compute: { module: device.createShaderModule({ code: shader }), entryPoint },
+  });
+  const group = device.createBindGroup({ layout, entries: [
+    { binding: 0, resource: { buffer: paramsBuffer } },
+    { binding: 1, resource: { buffer: positionBuffer } },
+    { binding: 2, resource: { buffer: velocityBuffer } },
+    { binding: 3, resource: depthTexture.createView() },
+  ] });
+  const staging = device.createBuffer({ size: positions.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+  const encoder = device.createCommandEncoder();
+  // A pass with no draws just clears the depth attachment to the "surface".
+  encoder.beginRenderPass({
+    colorAttachments: [],
+    depthStencilAttachment: {
+      view: depthTexture.createView(),
+      depthClearValue: depth,
+      depthLoadOp: "clear",
+      depthStoreOp: "store",
+    },
+  }).end();
+  const pass = encoder.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, group);
+  pass.dispatchWorkgroups(1, 1, 1);
+  pass.end();
+  encoder.copyBufferToBuffer(positionBuffer, 0, staging, 0, positions.length * 4);
+  device.queue.submit([encoder.finish()]);
+  const error = await device.popErrorScope();
+  await staging.mapAsync(GPUMapMode.READ);
+  const out = Array.from(new Float32Array(staging.getMappedRange().slice(0)));
+  return { adapter: true, error: error === null ? null : String(error.message), positions: out };
+}`;
+
 /** Runs the page program with `options` — the sibling specs' wrapped-call gotcha. */
 async function inPage<T>(
   page: import("@playwright/test").Page,
@@ -260,6 +391,7 @@ test.describe("GPU-resident particles, on a real adapter (§36, R-31)", () => {
       uniformBytes: PARTICLE_UNIFORM_BYTES,
       layouts: PARTICLE_GPU_VERTEX_BUFFER_LAYOUTS,
       workgroups: particleIntegratorWorkgroups(COUNT),
+      paramsFloats: PARTICLE_SIMULATION_PARAMS_FLOATS,
     });
     test.skip(
       !result.adapter,
@@ -280,5 +412,131 @@ test.describe("GPU-resident particles, on a real adapter (§36, R-31)", () => {
     // And the spawn position was left behind: the stale position lanes in
     // the interleaved stream were NOT what the draw read.
     expect(result.left).toEqual([0, 0, 0, 255]);
+  });
+
+  test("evaluates the whole §27 field stack like the CPU path (float32 tolerance)", async ({
+    page,
+  }) => {
+    await page.goto(`http://localhost:${String(PORT)}/`);
+    const dt = 0.1;
+    const time = 1.25;
+    const fields: ParticleForceField[] = [
+      uniformGravityField(new Vector3(0, -3, 0.5)),
+      dragField(0.4),
+      windField(new Vector3(2, 0, -1), 0.8),
+      vortexField(new Vector3(0, 0, 0), new Vector3(0, 1, 0), 6),
+      radialField(new Vector3(1, 1, 1), -3, { minDistance: 0.25 }),
+      turbulenceField(1337, {
+        frequency: 0.7,
+        amplitude: 2,
+        scroll: new Vector3(0.3, 0, 0.1),
+      }),
+      volumeField(dragField(1.5), {
+        shape: "sphere",
+        center: new Vector3(0, 0, 0),
+        radius: 4,
+        falloff: 1.5,
+      }),
+    ];
+    const stack = fields.map((f) => f.gpuField as ParticleGpuField);
+    const p0 = [0.3, 1.7, -0.9, 2.2, -0.4, 1.1, -3.1, 0.6, 2.4];
+    const v0 = [1, 0.5, -0.25, 0, 2, 0.75, -1.5, 0.25, 0];
+    const count = p0.length / 3;
+    const params = writeParticleSimulationParams(
+      new Float32Array(PARTICLE_SIMULATION_PARAMS_FLOATS),
+      dt,
+      count,
+      0,
+      0,
+      0,
+      { fields: stack, time },
+    );
+    const bits = Array.from(new Uint32Array(params.buffer));
+    const result = await inPage<{
+      adapter: boolean;
+      error: string | null;
+      positions: number[];
+      velocities: number[];
+    }>(page, FIELD_PAGE_SCRIPT, {
+      integrator: PARTICLE_INTEGRATOR_SHADER_SOURCE,
+      entryPoint: COMPUTE_ENTRY_POINT,
+      params: bits,
+      positions: p0,
+      velocities: v0,
+      workgroups: particleIntegratorWorkgroups(count),
+    });
+    test.skip(!result.adapter, "no WebGPU adapter");
+    expect(result.error).toBeNull();
+
+    // The CPU reference: the emitter's own step — sum every field's sample
+    // in declaration order from the step-start state, then semi-implicit Euler.
+    const position = new Vector3();
+    const velocity = new Vector3();
+    const out = new Vector3();
+    for (let i = 0; i < count; i += 1) {
+      position.set(p0[i * 3], p0[i * 3 + 1], p0[i * 3 + 2]);
+      velocity.set(v0[i * 3], v0[i * 3 + 1], v0[i * 3 + 2]);
+      let ax = 0;
+      let ay = 0;
+      let az = 0;
+      for (const field of fields) {
+        const sampled = field.sample(position, velocity, time, out);
+        ax += sampled.x;
+        ay += sampled.y;
+        az += sampled.z;
+      }
+      const vx = v0[i * 3] + ax * dt;
+      const vy = v0[i * 3 + 1] + ay * dt;
+      const vz = v0[i * 3 + 2] + az * dt;
+      const expectedV = [vx, vy, vz];
+      const expectedP = [
+        p0[i * 3] + vx * dt,
+        p0[i * 3 + 1] + vy * dt,
+        p0[i * 3 + 2] + vz * dt,
+      ];
+      for (let k = 0; k < 3; k += 1) {
+        expect(result.velocities[i * 3 + k]).toBeCloseTo(expectedV[k], 3);
+        expect(result.positions[i * 3 + k]).toBeCloseTo(expectedP[k], 3);
+      }
+    }
+  });
+
+  test("kills particles behind the scene depth texture (collisions: depth-buffer)", async ({
+    page,
+  }) => {
+    await page.goto(`http://localhost:${String(PORT)}/`);
+    const params = writeParticleSimulationParams(
+      new Float32Array(PARTICLE_SIMULATION_PARAMS_FLOATS),
+      0.1,
+      3,
+      0,
+      0,
+      0,
+      {
+        collisionMode: 2,
+        depthBias: 0.0005,
+        viewProjection: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+      },
+    );
+    const result = await inPage<{
+      adapter: boolean;
+      error: string | null;
+      positions: number[];
+    }>(page, DEPTH_PAGE_SCRIPT, {
+      shader: PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE,
+      entryPoint: COMPUTE_ENTRY_POINT,
+      params: Array.from(params),
+      // NDC z: in front (0.25), behind (0.75), and outside the view (x = 2).
+      positions: [0, 0, 0.25, 0.1, 0.1, 0.75, 2, 0, 0.75],
+      depth: 0.5,
+    });
+    test.skip(!result.adapter, "no WebGPU adapter");
+    expect(result.error).toBeNull();
+    expect(result.positions.slice(0, 3)).toEqual([0, 0, 0.25]);
+    expect(result.positions[3]).toBeGreaterThan(1e30);
+    expect(result.positions[4]).toBeGreaterThan(1e30);
+    expect(result.positions[5]).toBeGreaterThan(1e30);
+    // Outside the view volume: untouched (no surface to compare against).
+    expect(result.positions.slice(6, 9)).toEqual([2, 0, 0.75]);
   });
 });

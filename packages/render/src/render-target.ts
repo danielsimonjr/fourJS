@@ -118,12 +118,17 @@ import {
 /**
  * The texel format of a target's colour attachment (§62 "texture formats").
  *
- * One member, on purpose: `"rgba8"` is what this tier allocates, and a union of
- * exactly the supported values makes an unsupported request a *type* error
- * rather than a silent downgrade at allocation time. §62's floating-point and
- * compressed tiers widen it.
+ * Two members: `"rgba8"` is what every backend allocates for a colour attachment;
+ * `"rgba32float"` (decision D7, wave 6) is the 32-bit-float RGBA format the
+ * bone-texture skin palette is uploaded in (`Mesh.skinningMode === "texture"`,
+ * {@link SKIN_PALETTE_TEXTURE_FORMAT}). It is a *texel format*: the backends
+ * upload and vertex-fetch it, but a backend does not render into it
+ * (`floatRenderTargets` stays `false`) and skips a target that asks. A union of
+ * exactly the named values makes an unsupported request a *type* error rather
+ * than a silent downgrade at allocation time. §62's compressed tier widens it
+ * further.
  */
-export type RenderTargetFormat = "rgba8";
+export type RenderTargetFormat = "rgba8" | "rgba32float";
 
 /**
  * What a {@link RenderTarget} is asked for (§61's `RenderTargetOptions`).
@@ -341,10 +346,10 @@ function validateSize(width: number, height: number): void {
 
 /** Runs the §85 check for the format. Throws on an unsupported value. */
 function validateFormat(format: RenderTargetFormat): void {
-  if (format !== "rgba8") {
+  if (format !== "rgba8" && format !== "rgba32float") {
     throw new RangeError(
       `RenderTarget format ${JSON.stringify(format)} is not supported by this ` +
-        'tier; the only value is "rgba8" (§62, §85).',
+        'tier; the values are "rgba8" and "rgba32float" (§62, §85).',
     );
   }
 }

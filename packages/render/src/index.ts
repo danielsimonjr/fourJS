@@ -81,6 +81,7 @@ export {
 export type {
   AmbientLightSource,
   DirectionalLightSource,
+  PunctualShadowSource,
   DirectionalShadowSource,
   HemisphereLightSource,
   PointLightSource,
@@ -101,6 +102,22 @@ export {
   isHemisphereLightSource,
   isPunctualLightSource,
 } from "./lights.js";
+export type { ShadowCubeFace, ShadowFitCamera } from "./shadow-atlas.js";
+export {
+  MAX_SHADOWED_PUNCTUAL_LIGHTS,
+  MAX_SHADOW_CASCADES,
+  MAX_SHADOW_TILES,
+  MAX_SPOT_SHADOW_FOV,
+  SHADOW_ATLAS_MAX_EDGE,
+  SHADOW_CUBE_FACES,
+  SHADOW_KIND_POINT,
+  SHADOW_KIND_SPOT,
+  computeAtlasGrid,
+  computeCascadeSplits,
+  fitDirectionalCascades,
+  writeCubeFaceShadowMatrix,
+  writeSpotShadowMatrix,
+} from "./shadow-atlas.js";
 export type { ParticleDrawable } from "./particles.js";
 export {
   PARTICLE_COLOR_OFFSET,
@@ -195,6 +212,23 @@ export type {
   SceneRenderPass,
 } from "./render-graph.js";
 export { RenderGraph } from "./render-graph.js";
+export type { TransientPlan } from "./render-graph.js";
+export type {
+  PassUsageRecord,
+  TransientRequest,
+  TransientSlot,
+  TransientTargetKey,
+  TransientTargetPool,
+  TransientTargetSpec,
+  TransientTargetUsage,
+  UsageTransition,
+} from "./transient-pool.js";
+export {
+  RenderTargetPool,
+  planTransientSlots,
+  resolveTransientSpec,
+  transientKeyString,
+} from "./transient-pool.js";
 // §77a raster painting (RFC 0004). Nothing on the render path references this
 // module — a backend meets a `CanvasTexture` only through `MaterialTexture`,
 // which is what keeps the tier at 0 B in every bundle that never paints.
@@ -236,6 +270,16 @@ export {
 export type { RenderableOptions, SurfaceMaterial } from "./renderable.js";
 export { Renderable } from "./renderable.js";
 export { MAX_SKINNING_JOINTS, Mesh, restoreMeshSkeleton } from "./mesh.js";
+export {
+  MAX_TEXTURE_SKINNING_JOINTS,
+  SKIN_PALETTE_FLOATS_PER_ROW,
+  SKIN_PALETTE_JOINTS_PER_ROW,
+  SKIN_PALETTE_TEXELS_PER_JOINT,
+  SKIN_PALETTE_TEXTURE_FORMAT,
+  SKIN_PALETTE_TEXTURE_WIDTH,
+  skinPaletteRows,
+  stageSkinPalette,
+} from "./skin-palette.js";
 export type {
   RendererCapabilityDeclaration,
   RendererCapabilityName,

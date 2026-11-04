@@ -30,14 +30,14 @@
  *   cast. A rectangular area light still needs the linearly-transformed-
  *   cosine machinery §68's "where supported" already hedges on, and stays
  *   absent rather than accepted-and-ignored;
- * - **shadows** (`castShadow` in §68's own example) ship for the *directional*
- *   light only, at §69's directional-shadow-map tier (R-18, 2026-08-09):
- *   {@link DirectionalLight.castShadow} and {@link DirectionalLightShadow}.
- *   A {@link PointLight} and a {@link SpotLight} carry no `castShadow` at all
- *   — absent rather than accepted-and-ignored — because §69's answer for them
- *   is a cube map and a per-light shadow index that the single-map tier has
- *   nowhere to put. See {@link DirectionalLightShadow} for the whole staged
- *   list (cascades, point and spot shadows, atlas, contact shadows);
+ * - **shadows** (`castShadow` in §68's own example) ship at §69's
+ *   shadow-map tier (R-18, 2026-08-09): {@link DirectionalLight.castShadow} and
+ *   {@link DirectionalLightShadow}, which since W6.3 (2026-11-04) can be
+ *   **cascaded** ({@link DirectionalLightShadow.cascades}); and
+ *   {@link PunctualLight.castShadow} / {@link PunctualLightShadow} for a point
+ *   light (six cube faces) and a spot light (one perspective map), all packed
+ *   into one **shadow atlas** per frame. See {@link DirectionalLightShadow} for
+ *   the staged remainder (transparent masks, contact shadows);
  * - §68's **CSS color strings** denote sRGB values (§60a). A light option
  *   now accepts either a linear {@link ColorRGB} tuple or a CSS string
  *   (`#rgb`/`#rrggbb`, `rgb()`/`rgba()`); a string is parsed and decoded to
@@ -158,23 +158,24 @@ export type { ColorRGB } from "@fourjs/math";
  * silently resizes makes shadow texel density frame-dependent, which is the
  * shimmer §33's determinism language exists to keep out of a recorded run.
  *
- * ## Staged, with the date (2026-08-09, R-18)
+ * ## Cascades (W6.3, 2026-11-04)
  *
- * §69 lists ten features; this settings object is sized for the one tier that
- * ships. Named here rather than sketched, because each is public shape:
+ * {@link DirectionalLightShadow.cascades} `> 1` replaces the single authored
+ * volume with `cascades` camera-fitted ones: the view range
+ * `[camera.near, min(camera.far, cascadeDistance)]` is split by the
+ * *practical split scheme* (a {@link DirectionalLightShadow.cascadeLambda}
+ * blend of logarithmic and uniform splits), each slice gets a rotation-stable
+ * bounding-sphere orthographic volume (texel-snapped, so a moving camera does
+ * not shimmer), and each is rendered into its own tile of the frame's atlas
+ * at `mapSize` texels. `extent` and `near` are then unused; `far` is how far
+ * *toward the light* casters are collected beyond a slice's sphere. The
+ * default `cascades = 1` is byte-for-byte the pre-W6.3 single volume.
  *
- * - **cascaded shadow maps** — one map, one volume. Cascades need a split
- *   scheme, a map per split, and a per-fragment cascade selection, and they
- *   are what make a *large* outdoor volume workable; `extent` is the honest
- *   single-cascade knob until then.
- * - **point-light cubemap shadows** and **spot-light shadows** — neither
- *   {@link PointLight} nor {@link SpotLight} carries `castShadow` at all (see
- *   the module header). A cube map needs six passes and a `samplerCube`; a
- *   spot needs a perspective shadow matrix and a *second* map slot, which is
- *   the shadow-atlas item below.
- * - **shadow atlas management** — one map, one caster light. An atlas is what
- *   turns "a per-light shadow index" into something a bounded uniform set can
- *   address.
+ * ## Staged, with the date (2026-08-09, R-18; revised W6.3)
+ *
+ * §69 lists ten features. Named here rather than sketched, because each is
+ * public shape:
+ *
  * - **transparent shadow masks** — the depth-only pass writes geometry, not
  *   alpha, so a sprite or a cut-out texture casts nothing here (§55 quads are
  *   skipped by the caster pass entirely rather than casting a hard rectangle).
@@ -194,6 +195,12 @@ export class DirectionalLightShadow {
 
   #far: number;
 
+  #cascades: number;
+
+  #cascadeLambda: number;
+
+  #cascadeDistance: number;
+
   constructor(options: DirectionalLightShadowOptions = {}) {
     this.#mapSize = requireMapSize(options.mapSize ?? DEFAULT_SHADOW_MAP_SIZE);
     this.#bias = requireFinite("shadow bias", options.bias ?? DEFAULT_BIAS);
@@ -208,6 +215,60 @@ export class DirectionalLightShadow {
     this.#near = requirePositive("shadow near", options.near ?? DEFAULT_NEAR);
     this.#far = requirePositive("shadow far", options.far ?? DEFAULT_FAR);
     requireOrderedPlanes(this.#near, this.#far);
+    this.#cascades = requireCascades(options.cascades ?? 1);
+    this.#cascadeLambda = requireUnit(
+      "shadow cascadeLambda",
+      options.cascadeLambda ?? DEFAULT_CASCADE_LAMBDA,
+    );
+    this.#cascadeDistance = requirePositive(
+      "shadow cascadeDistance",
+      options.cascadeDistance ?? DEFAULT_CASCADE_DISTANCE,
+    );
+  }
+
+  /**
+   * Number of cascaded shadow maps, an integer in `1…4` (§69 "cascaded shadow
+   * maps"; W6.3). Defaults to `1` — the single authored volume, unchanged.
+   *
+   * With `cascades > 1` the volume is fitted to the *first view's camera* of
+   * each frame (§33: authored view order decides) and split by
+   * {@link DirectionalLightShadow.cascadeLambda}; see the class header. A
+   * frame handed no camera falls back to one cascade.
+   */
+  get cascades(): number {
+    return this.#cascades;
+  }
+
+  set cascades(value: number) {
+    this.#cascades = requireCascades(value);
+  }
+
+  /**
+   * Blend of the two split schemes in `0…1` (W6.3): `0` is uniform splits,
+   * `1` is logarithmic, and the *practical* scheme is their lerp —
+   * `split(i) = λ · near · (far/near)^(i/N) + (1 − λ) · (near + (far − near) · i/N)`.
+   * Defaults to `0.5`.
+   */
+  get cascadeLambda(): number {
+    return this.#cascadeLambda;
+  }
+
+  set cascadeLambda(value: number) {
+    this.#cascadeLambda = requireUnit("shadow cascadeLambda", value);
+  }
+
+  /**
+   * The farthest view distance, in metres, that gets a cascade (W6.3).
+   * Defaults to `100`. The effective range is clamped to the camera's own
+   * `far`; a receiver beyond the last split is lit (the "outside the volume"
+   * rule). Must be finite and positive.
+   */
+  get cascadeDistance(): number {
+    return this.#cascadeDistance;
+  }
+
+  set cascadeDistance(value: number) {
+    this.#cascadeDistance = requirePositive("shadow cascadeDistance", value);
   }
 
   /**
@@ -338,6 +399,42 @@ export interface DirectionalLightShadowOptions {
   near?: number;
   /** Initial {@link DirectionalLightShadow.far}. Defaults to `100`. */
   far?: number;
+  /** Initial {@link DirectionalLightShadow.cascades}. Defaults to `1`. */
+  cascades?: number;
+  /** Initial {@link DirectionalLightShadow.cascadeLambda}. Defaults to `0.5`. */
+  cascadeLambda?: number;
+  /** Initial {@link DirectionalLightShadow.cascadeDistance}. Defaults to `100`. */
+  cascadeDistance?: number;
+}
+
+/** The most cascades one directional light may use (W6.3). */
+const MAX_SHADOW_CASCADES = 4;
+
+/** Default {@link DirectionalLightShadow.cascadeLambda}. */
+const DEFAULT_CASCADE_LAMBDA = 0.5;
+
+/** Default {@link DirectionalLightShadow.cascadeDistance}, in metres. */
+const DEFAULT_CASCADE_DISTANCE = 100;
+
+/** Rejects a cascade count outside the integers `1…4` (§85). */
+function requireCascades(value: number): number {
+  if (!Number.isInteger(value) || value < 1 || value > MAX_SHADOW_CASCADES) {
+    throw new RangeError(
+      `Light shadow cascades must be an integer in 1…${String(MAX_SHADOW_CASCADES)}; ` +
+        `got ${String(value)} (§69, §85).`,
+    );
+  }
+  return value;
+}
+
+/** Rejects a value outside `0…1` (§85). */
+function requireUnit(name: string, value: number): number {
+  if (requireFinite(name, value) < 0 || value > 1) {
+    throw new RangeError(
+      `Light ${name} must be in 0…1; got ${String(value)} (§85).`,
+    );
+  }
+  return value;
 }
 
 /**
@@ -750,7 +847,141 @@ export interface PunctualLightOptions {
    * which means **unbounded**.
    */
   range?: number;
+  /**
+   * Initial {@link PunctualLight.castShadow} (§69; W6.3). Defaults to `false`.
+   */
+  castShadow?: boolean;
+  /**
+   * Initial {@link PunctualLight.shadow} settings. Omitted fields take
+   * {@link PunctualLightShadow}'s defaults.
+   */
+  shadow?: PunctualLightShadowOptions;
 }
+
+/** Construction arguments of {@link PunctualLightShadow} (§69; W6.3). */
+export interface PunctualLightShadowOptions {
+  /** Initial {@link PunctualLightShadow.mapSize}. Defaults to `1024`. */
+  mapSize?: number;
+  /** Initial {@link PunctualLightShadow.bias}. Defaults to `0.001`. */
+  bias?: number;
+  /** Initial {@link PunctualLightShadow.normalBias}. Defaults to `0.02`. */
+  normalBias?: number;
+  /** Initial {@link PunctualLightShadow.near}. Defaults to `0.1`. */
+  near?: number;
+  /** Initial {@link PunctualLightShadow.far}. Defaults to `50`. */
+  far?: number;
+}
+
+/**
+ * How a {@link PointLight} or {@link SpotLight} casts (§69; W6.3,
+ * 2026-11-04) — the perspective-shadow counterpart of
+ * {@link DirectionalLightShadow}.
+ *
+ * ```ts
+ * const lamp = new PointLight({ intensity: 6, castShadow: true });
+ * lamp.shadow.far = 30;
+ * ```
+ *
+ * A spot light renders **one** perspective map along its cone axis (field of
+ * view `2 × outerConeAngle`, clamped to 160°); a point light renders **six**
+ * 90° cube faces, so it costs six tiles of the frame's shadow atlas. All maps
+ * share one atlas texture per frame, tiled at the largest `mapSize` of any
+ * caster. At most `MAX_SHADOWED_PUNCTUAL_LIGHTS` (`@fourjs/render`, 4) punctual lights cast per
+ * frame — the first in scene-graph order (§33) — and the rest shade unshadowed
+ * with one development warning.
+ *
+ * `bias` is a fraction of the `near…far` range *measured in linear depth*
+ * (so, as with the directional light, a clip-space-depth-like 0…1 number whose
+ * metric size is `bias × (far − near)`); `normalBias` is in metres.
+ * Every property is a validated accessor, the F14 policy.
+ */
+export class PunctualLightShadow {
+  #mapSize: number;
+
+  #bias: number;
+
+  #normalBias: number;
+
+  #near: number;
+
+  #far: number;
+
+  constructor(options: PunctualLightShadowOptions = {}) {
+    this.#mapSize = requireMapSize(options.mapSize ?? DEFAULT_SHADOW_MAP_SIZE);
+    this.#bias = requireFinite(
+      "shadow bias",
+      options.bias ?? DEFAULT_PUNCTUAL_BIAS,
+    );
+    this.#normalBias = requireNonNegative(
+      "shadow normalBias",
+      options.normalBias ?? DEFAULT_PUNCTUAL_NORMAL_BIAS,
+    );
+    this.#near = requirePositive("shadow near", options.near ?? DEFAULT_NEAR);
+    this.#far = requirePositive(
+      "shadow far",
+      options.far ?? DEFAULT_PUNCTUAL_FAR,
+    );
+    requireOrderedPlanes(this.#near, this.#far);
+  }
+
+  /** Edge of each square map (per cube face) in texels; a positive integer. */
+  get mapSize(): number {
+    return this.#mapSize;
+  }
+
+  set mapSize(value: number) {
+    this.#mapSize = requireMapSize(value);
+  }
+
+  /** Depth bias as a fraction of `far − near` (linear depth); any finite number. */
+  get bias(): number {
+    return this.#bias;
+  }
+
+  set bias(value: number) {
+    this.#bias = requireFinite("shadow bias", value);
+  }
+
+  /** Receiver offset along its normal, in metres; finite and non-negative. */
+  get normalBias(): number {
+    return this.#normalBias;
+  }
+
+  set normalBias(value: number) {
+    this.#normalBias = requireNonNegative("shadow normalBias", value);
+  }
+
+  /** Near plane of the perspective map(s), metres; positive and below `far`. */
+  get near(): number {
+    return this.#near;
+  }
+
+  set near(value: number) {
+    const near = requirePositive("shadow near", value);
+    requireOrderedPlanes(near, this.#far);
+    this.#near = near;
+  }
+
+  /** Far plane of the perspective map(s), metres; positive and above `near`. */
+  get far(): number {
+    return this.#far;
+  }
+
+  set far(value: number) {
+    const far = requirePositive("shadow far", value);
+    requireOrderedPlanes(this.#near, far);
+    this.#far = far;
+  }
+}
+
+/** Default punctual constant bias (fraction of the linear depth range). */
+const DEFAULT_PUNCTUAL_BIAS = 0.001;
+
+/** Default punctual normal bias, in metres. */
+const DEFAULT_PUNCTUAL_NORMAL_BIAS = 0.02;
+
+/** Default punctual far plane, in metres. */
+const DEFAULT_PUNCTUAL_FAR = 50;
 
 /**
  * The shared half of §68's two *positional* light types — a light that has a
@@ -817,11 +1048,25 @@ export abstract class PunctualLight extends Node {
    */
   range: number;
 
+  /**
+   * Whether this light casts a shadow (§69; W6.3). **Defaults to `false`** for
+   * the reason {@link DirectionalLight.castShadow} gives: a map is a whole
+   * extra pass per face. A spot costs one map and a point light six, in the
+   * frame's shared atlas; at most `MAX_SHADOWED_PUNCTUAL_LIGHTS` (`@fourjs/render`, 4) cast per
+   * frame, the first in scene-graph order.
+   */
+  castShadow: boolean;
+
+  /** Resolution, bias, and planes of this light's shadow maps (§69). */
+  readonly shadow: PunctualLightShadow;
+
   constructor(options: PunctualLightOptions = {}) {
     super();
     this.color = resolveLightColor(options.color);
     this.intensity = requireFinite("intensity", options.intensity ?? 1);
     this.range = requireNonNegative("range", options.range ?? 0);
+    this.castShadow = options.castShadow ?? false;
+    this.shadow = new PunctualLightShadow(options.shadow);
   }
 
   /**

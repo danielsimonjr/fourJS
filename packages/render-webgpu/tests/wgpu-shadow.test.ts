@@ -20,7 +20,17 @@ import {
   LIGHT_UNIFORM_WGSL,
   PUNCTUAL_LIGHT_WGSL,
   SHADOW_FACTOR_WGSL,
+  SHADOW_ATLAS_OFFSET,
+  SHADOW_CASCADE_MATRIX_OFFSET,
+  SHADOW_CASCADE_SPLITS_OFFSET,
+  SHADOW_INFO_OFFSET,
+  SHADOW_LEGACY_UNIFORM_BYTES,
   SHADOW_LIGHT_UNIFORM_BYTES,
+  SHADOW_PUNCTUAL_PARAMS_OFFSET,
+  SHADOW_PUNCTUAL_RANGE_OFFSET,
+  SHADOW_PUNCTUAL_SLOT_OFFSET,
+  SHADOW_SPOT_MATRIX_OFFSET,
+  SHADOW_VIEW_DEPTH_OFFSET,
   SHADOW_LIGHT_UNIFORM_WGSL,
   SHADOW_MAP_BINDING,
   SHADOW_MATRIX_OFFSET,
@@ -60,7 +70,10 @@ describe("the widened shadow-light layout (wgpu-shadow.ts)", () => {
     expect(SHADOW_MATRIX_OFFSET).toBe(LIGHT_UNIFORM_BYTES);
     expect(SHADOW_MATRIX_OFFSET % 16).toBe(0);
     expect(SHADOW_PARAMS_OFFSET - SHADOW_MATRIX_OFFSET).toBe(64);
-    expect(SHADOW_LIGHT_UNIFORM_BYTES).toBe(SHADOW_PARAMS_OFFSET + 16 + 48);
+    expect(SHADOW_LEGACY_UNIFORM_BYTES).toBe(SHADOW_PARAMS_OFFSET + 16 + 48);
+    // W6.3: the atlas tail begins at the landed end and is 752 bytes.
+    expect(SHADOW_CASCADE_MATRIX_OFFSET).toBe(SHADOW_LEGACY_UNIFORM_BYTES);
+    expect(SHADOW_LIGHT_UNIFORM_BYTES).toBe(SHADOW_LEGACY_UNIFORM_BYTES + 752);
     expect(SHADOW_UNIFORM_SPARE_BYTES).toBe(
       LIGHT_UNIFORM_STRIDE_BYTES - SHADOW_LIGHT_UNIFORM_BYTES,
     );
@@ -393,5 +406,141 @@ describe("pipelineKey and the cache — the shadow axis", () => {
     expect(cache.acquire({ ...LIT, shadow: true })).toBeNull();
     // The plain variant is untouched by the missing provider.
     expect(cache.acquire(LIT)).not.toBeNull();
+  });
+});
+
+/**
+ * Lays out a WGSL uniform struct the way the spec does — `vec4<f32>` 16/16,
+ * `mat4x4<f32>` 16/64, `array<T, N>` element-strided — and returns each
+ * member's byte offset, so the constants the packer writes through are pinned
+ * to the text the GPU reads (W6.3).
+ */
+function wgslOffsets(struct: string): Map<string, number> {
+  const sizeOf = (type: string): number => {
+    const array = /^array<(.+), (\d+)>$/.exec(type);
+    if (array !== null) {
+      return sizeOf(array[1]) * Number(array[2]);
+    }
+    if (type === "vec4<f32>") return 16;
+    if (type === "mat4x4<f32>") return 64;
+    throw new Error(`unhandled WGSL type ${type}`);
+  };
+  const offsets = new Map<string, number>();
+  let offset = 0;
+  const body = struct.slice(struct.indexOf("{") + 1, struct.indexOf("};"));
+  for (const line of body.split("\n")) {
+    const match = /^\s*(\w+) : (.+),$/.exec(line);
+    if (match === null) continue;
+    offsets.set(match[1], offset);
+    offset += sizeOf(match[2]);
+  }
+  offsets.set("__end", offset);
+  return offsets;
+}
+
+describe("the W6.3 atlas tail of the shadow block", () => {
+  it("pins every WGSL member offset to the constants the packer writes through", () => {
+    const offsets = wgslOffsets(SHADOW_LIGHT_UNIFORM_WGSL);
+    expect(offsets.get("shadowMatrix")).toBe(SHADOW_MATRIX_OFFSET);
+    expect(offsets.get("shadowParams")).toBe(SHADOW_PARAMS_OFFSET);
+    expect(offsets.get("hemisphereSky")).toBe(SHADOW_LEGACY_UNIFORM_BYTES - 48);
+    expect(offsets.get("cascadeMatrix")).toBe(SHADOW_CASCADE_MATRIX_OFFSET);
+    expect(offsets.get("spotMatrix")).toBe(SHADOW_SPOT_MATRIX_OFFSET);
+    expect(offsets.get("cascadeSplits")).toBe(SHADOW_CASCADE_SPLITS_OFFSET);
+    expect(offsets.get("viewDepth")).toBe(SHADOW_VIEW_DEPTH_OFFSET);
+    expect(offsets.get("atlas")).toBe(SHADOW_ATLAS_OFFSET);
+    expect(offsets.get("info")).toBe(SHADOW_INFO_OFFSET);
+    expect(offsets.get("atlasSlot")).toBe(SHADOW_PUNCTUAL_SLOT_OFFSET);
+    expect(offsets.get("atlasParams")).toBe(SHADOW_PUNCTUAL_PARAMS_OFFSET);
+    expect(offsets.get("atlasRange")).toBe(SHADOW_PUNCTUAL_RANGE_OFFSET);
+    expect(offsets.get("__end")).toBe(SHADOW_LIGHT_UNIFORM_BYTES);
+    expect(SHADOW_LIGHT_UNIFORM_BYTES).toBeLessThanOrEqual(
+      LIGHT_UNIFORM_STRIDE_BYTES,
+    );
+    // The landed prefix did not move.
+    expect(offsets.get("punctualParams") ?? 0).toBeGreaterThan(0);
+  });
+
+  it("writes the tail member for member on the atlas path", () => {
+    const lights = createSceneLights();
+    lights.hasShadow = true;
+    lights.shadowExtended = true;
+    lights.shadowMapSize = 64;
+    lights.shadowCascadeCount = 3;
+    lights.shadowCascadeMatrices.fill(1);
+    lights.shadowSpotMatrices.fill(2);
+    lights.shadowCascadeSplits.set([1, 2, 3, 0]);
+    lights.shadowViewDepth.set([0, 0, -1, 5]);
+    lights.shadowAtlasColumns = 2;
+    lights.shadowAtlasRows = 2;
+    lights.shadowAtlasWidth = 128;
+    lights.shadowAtlasHeight = 256;
+    lights.shadowPunctualCount = 1;
+    lights.shadowPunctualSlot.fill(0);
+    lights.shadowPunctualSlot[1] = 1;
+    lights.shadowPunctualParams.set([3, 0.5, 0.25, 2]);
+    lights.shadowPunctualRange.set([0.1, 9, 0, 0]);
+    const staging = new Float32Array(LIGHT_UNIFORM_STRIDE_FLOATS).fill(-1);
+
+    writeShadowUniforms(staging, 0, lights);
+
+    const f = (offset: number, count = 4): number[] =>
+      Array.from(staging.slice(offset / 4, offset / 4 + count));
+    expect(f(SHADOW_CASCADE_MATRIX_OFFSET, 16)).toEqual(Array(16).fill(1));
+    expect(f(SHADOW_SPOT_MATRIX_OFFSET, 16)).toEqual(Array(16).fill(2));
+    expect(f(SHADOW_CASCADE_SPLITS_OFFSET)).toEqual([1, 2, 3, 0]);
+    expect(f(SHADOW_VIEW_DEPTH_OFFSET)).toEqual([0, 0, -1, 5]);
+    expect(f(SHADOW_ATLAS_OFFSET)).toEqual(
+      [2, 2, 1 / 128, 1 / 256].map(Math.fround),
+    );
+    expect(f(SHADOW_INFO_OFFSET)).toEqual([3, 1, 1, 0]);
+    expect(f(SHADOW_PUNCTUAL_SLOT_OFFSET)).toEqual([0, 1, 0, 0]);
+    expect(f(SHADOW_PUNCTUAL_PARAMS_OFFSET)).toEqual([3, 0.5, 0.25, 2]);
+    expect(f(SHADOW_PUNCTUAL_RANGE_OFFSET)).toEqual(
+      [0.1, 9, 0, 0].map(Math.fround),
+    );
+    // Past the block nothing was touched.
+    expect(staging[SHADOW_LIGHT_UNIFORM_BYTES / 4]).toBe(-1);
+  });
+
+  it("zeroes the tail on the single-map path and when nothing casts", () => {
+    const lights = createSceneLights();
+    lights.hasShadow = true;
+    lights.shadowMapSize = 64;
+    const staging = new Float32Array(LIGHT_UNIFORM_STRIDE_FLOATS).fill(9);
+    writeShadowUniforms(staging, 0, lights);
+    const tail = SHADOW_CASCADE_MATRIX_OFFSET / 4;
+    const end = SHADOW_LIGHT_UNIFORM_BYTES / 4;
+    expect(Array.from(staging.slice(tail, end)).every((v) => v === 0)).toBe(
+      true,
+    );
+    staging.fill(9);
+    writeShadowUniforms(staging, 0, createSceneLights());
+    expect(Array.from(staging.slice(tail, end)).every((v) => v === 0)).toBe(
+      true,
+    );
+    expect(staging[end]).toBe(9);
+  });
+
+  it("splices the punctual factor into the shadowed variants only", () => {
+    expect(SHADOW_FACTOR_WGSL).toContain("fn punctualShadowFactor(");
+    expect(SHADOW_FACTOR_WGSL).toContain("fn directionalShadowAtlas(");
+    expect(SHADOW_FACTOR_WGSL).toContain(
+      "SHADOW_FACE_FORWARD : array<vec3<f32>, 6> = array<vec3<f32>, 6>(vec3<f32>(1.0, 0.0, 0.0)",
+    );
+    for (const source of [
+      litShaderSource(true, false, true),
+      standardShaderSource(true, false, true),
+    ]) {
+      expect(source).toContain(
+        "punctualShadowFactor(index, input.worldPosition, n)",
+      );
+    }
+    for (const source of [
+      litShaderSource(true, false),
+      standardShaderSource(true, false),
+    ]) {
+      expect(source).not.toContain("punctualShadowFactor");
+    }
   });
 });

@@ -66,6 +66,7 @@ export type {
   LightColorInput,
   DirectionalLightShadowOptions,
   PunctualLightOptions,
+  PunctualLightShadowOptions,
   SpotLightOptions,
 } from "./light.js";
 export {
@@ -74,6 +75,7 @@ export {
   HemisphereLight,
   PointLight,
   PunctualLight,
+  PunctualLightShadow,
   SpotLight,
 } from "./light.js";
 export type {

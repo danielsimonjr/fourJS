@@ -65,8 +65,13 @@ import {
   PARTICLE_UNIFORM_BYTES,
   PARTICLE_VIEW_OFFSET,
   POSITION_BUFFER_LAYOUT,
+  SHADOW_ATLAS_OFFSET,
+  SHADOW_CASCADE_SPLITS_OFFSET,
+  SHADOW_INFO_OFFSET,
   SHADOW_LIGHT_UNIFORM_BYTES,
   SHADOW_MATRIX_OFFSET,
+  SHADOW_PUNCTUAL_PARAMS_OFFSET,
+  SHADOW_PUNCTUAL_SLOT_OFFSET,
   SHADOW_PARAMS_OFFSET,
   SPRITE_TINT_OFFSET,
   STANDARD_EMISSIVE_OFFSET,
@@ -652,6 +657,10 @@ describe("WebgpuRenderer.initialize", () => {
       maxUniformBufferBytes: 0,
       maxBindings: 0,
       maximumSkinningJoints: 48,
+      floatTextures: false,
+      maximumTextureSkinningJoints: 0,
+      maximumShadowCascades: 0,
+      maximumShadowedPunctualLights: 0,
     });
   });
 
@@ -3971,6 +3980,30 @@ describe("WebgpuRenderer GPU particle simulations (§36, R-31)", () => {
     throw new Error("expected the call to throw a FourError");
   }
 
+  it("binds a depthTexture target's depth for collisions and refuses others", () => {
+    const simulation = harness.renderer.createParticleSimulation({
+      systemId: "depth-sim",
+      capacity: 4,
+    });
+    const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    const good = new RenderTarget({ width: 4, height: 4, depthTexture: true });
+    harness.renderer.bindParticleSceneDepth(simulation, good, identity);
+    expect(simulation.hasSceneDepth).toBe(true);
+    const plain = new RenderTarget({ width: 4, height: 4 });
+    expect(
+      caught(() =>
+        harness.renderer.bindParticleSceneDepth(simulation, plain, identity),
+      ).code,
+    ).toBe("INVALID_APPLICATION_STATE");
+    good.dispose();
+    expect(
+      caught(() =>
+        harness.renderer.bindParticleSceneDepth(simulation, good, identity),
+      ).code,
+    ).toBe("INVALID_APPLICATION_STATE");
+    expect(harness.renderer.capabilities.particleDepthCollision).toBe(true);
+  });
+
   it("registers under the system id and refuses a duplicate", () => {
     const particles = new TestParticles(8);
     const simulation = harness.renderer.createParticleSimulation({
@@ -5119,5 +5152,403 @@ describe("WebgpuRenderer instanced shaded runs (R-22)", () => {
     expect(
       harness.gpu.callsOf("pass.draw").map((c) => c.args.slice(0, 2)),
     ).toContainEqual([3, 2]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bone-texture skin palette (`Mesh.skinningMode === "texture"`, decision D7).
+// ---------------------------------------------------------------------------
+
+function withTextureSkeleton(
+  node: Renderable,
+  joints: number,
+  fill = 0,
+): Float32Array {
+  const palette = new Float32Array(joints * 16);
+  for (let i = 0; i < palette.length; i += 1) {
+    palette[i] = fill + (i % 16);
+  }
+  (node as unknown as { skeleton: unknown; skinningMode: string }).skeleton = {
+    update: (): void => undefined,
+    jointMatrices: palette,
+    bones: new Array<null>(joints).fill(null),
+  };
+  (node as unknown as { skinningMode: string }).skinningMode = "texture";
+  return palette;
+}
+
+function textureUploads(
+  gpu: RecordingGpu,
+): { data: number[]; size: unknown }[] {
+  return gpu
+    .callsOf("queue.writeTexture")
+    .filter(
+      (call) =>
+        (call.args[2] as { bytesPerRow: number }).bytesPerRow === 2048 * 16,
+    )
+    .map((call) => ({
+      data: call.args[1] as number[],
+      size: call.args[3],
+    }));
+}
+
+describe("bone-texture skinning in WebgpuRenderer (decision D7)", () => {
+  beforeEach(() => {
+    resetDevWarnings();
+    clearRegisteredSkinningPipeline();
+    registerSkinningPipeline();
+  });
+
+  afterEach(() => {
+    clearRegisteredSkinningPipeline();
+    resetDevWarnings();
+  });
+
+  it("reports float textures and the per-device joint limit", async () => {
+    const { renderer } = await initialized();
+    expect(renderer.capabilities.floatTextures).toBe(true);
+    // 8192 rows * 512 joints per row, capped by the uint16 joint index.
+    expect(renderer.capabilities.maximumTextureSkinningJoints).toBe(65535);
+    const small = await initialized({
+      limits: { maxTextureDimension2D: 2048 },
+    });
+    expect(small.renderer.capabilities.maximumTextureSkinningJoints).toBe(
+      65535,
+    );
+    const none = await initialized({ limits: {}, features: [] });
+    expect(none.renderer.capabilities.floatTextures).toBe(false);
+    expect(none.renderer.capabilities.maximumTextureSkinningJoints).toBe(0);
+  });
+
+  it("uploads the uniform palette's bytes as rgba32float rows, fetched with textureLoad", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const node = renderable(skinnedTriangle());
+    const palette = withTextureSkeleton(node, 60);
+    root.add(node);
+
+    harness.renderer.render(root, [createView()]);
+
+    const created = harness.gpu
+      .callsOf("device.createTexture")
+      .map(
+        (c) => c.args[0] as { format: string; size: number[]; label?: string },
+      )
+      .filter((d) => d.label === "fourJS:joint-palette-texture");
+    expect(created).toHaveLength(1);
+    expect(created[0].format).toBe("rgba32float");
+    expect(created[0].size).toEqual([2048, 1]);
+    const uploads = textureUploads(harness.gpu);
+    expect(uploads).toHaveLength(1);
+    expect(uploads[0].size).toEqual([2048, 1]);
+    expect(uploads[0].data.slice(0, palette.length)).toEqual(
+      Array.from(palette),
+    );
+    expect(uploads[0].data[palette.length]).toBe(0);
+    // The shader module fetches with textureLoad, not the uniform array.
+    const modules = harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((c) => (c.args[0] as { code: string }).code)
+      .filter((code) => code.includes("jointTexture"));
+    expect(modules).toHaveLength(1);
+    expect(modules[0]).toContain("textureLoad(jointTexture");
+    expect(modules[0]).not.toContain("array<mat4x4<f32>");
+    // No uniform palette buffer was needed for this frame.
+    expect(paletteUploads(harness.gpu)).toHaveLength(0);
+    expect(bindGroupOffsets(harness.gpu, 1)).toContainEqual([0]);
+  });
+
+  it("grows the info buffer without recreating the palette texture", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const a = renderable(skinnedTriangle());
+    withTextureSkeleton(a, 3);
+    root.add(a);
+    harness.renderer.render(root, [createView()]);
+    const countOf = (kind: "createTexture" | "createBuffer"): number =>
+      harness.gpu
+        .callsOf(`device.${kind}`)
+        .filter((c) =>
+          ((c.args[0] as { label?: string }).label ?? "").startsWith(
+            "fourJS:joint-palette-texture",
+          ),
+        ).length;
+    expect(countOf("createTexture")).toBe(1);
+    expect(countOf("createBuffer")).toBe(1);
+    const b = renderable(skinnedTriangle());
+    withTextureSkeleton(b, 3, 7);
+    root.add(b);
+    harness.renderer.render(root, [createView()]);
+    // More draws, same rows: the info buffer grew, the texture stayed.
+    expect(countOf("createBuffer")).toBe(2);
+    expect(countOf("createTexture")).toBe(1);
+  });
+
+  it("packs several draws end to end with distinct base rows and distinct pipelines", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const a = renderable(skinnedTriangle());
+    const b = renderable(skinnedTriangle());
+    const plain = renderable(skinnedTriangle());
+    withTextureSkeleton(a, 513, 1);
+    withTextureSkeleton(b, 3, 100);
+    withSkeleton(plain);
+    root.add(a, b, plain);
+
+    harness.renderer.render(root, [createView()]);
+
+    const uploads = textureUploads(harness.gpu);
+    expect(uploads).toHaveLength(1);
+    // Contiguous by texel: 2052 + 12 texels span 2 rows, not 3.
+    expect(uploads[0].size).toEqual([2048, 2]);
+    const infoWrite = harness.gpu
+      .callsOf("queue.writeBuffer")
+      .find((c) => c.args[4] === 128);
+    const info = infoWrite?.args[2] as number[];
+    expect(info[0]).toBe(0);
+    expect(info[64]).toBe(2052);
+    expect(uploads[0].data[2052 * 4]).toBe(100);
+    // The texture and uniform variants are distinct pipelines.
+    const labels = pipelineLabels(harness.gpu).filter((l) =>
+      l.startsWith("fourJS:skinned-unlit|"),
+    );
+    expect(labels).toHaveLength(2);
+    expect(labels.some((l) => l.endsWith("|pt"))).toBe(true);
+    expect(labels.some((l) => l.endsWith("|pu"))).toBe(true);
+    expect(bindGroupOffsets(harness.gpu, 1)).toEqual(
+      expect.arrayContaining([[0], [256]]),
+    );
+
+    // Second frame: nothing recreated, same staging, no pipeline churn.
+    harness.gpu.reset();
+    harness.renderer.render(root, [createView()]);
+    expect(harness.gpu.countOf("device.createRenderPipeline")).toBe(0);
+    expect(
+      harness.gpu
+        .callsOf("device.createTexture")
+        .filter(
+          (c) =>
+            (c.args[0] as { label?: string }).label ===
+            "fourJS:joint-palette-texture",
+        ),
+    ).toHaveLength(0);
+  });
+
+  it("shades a texture-skinned lit draw", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const node = new Renderable(
+      skinnedTriangle(litTriangle()).asGeometry,
+      new TestLitMaterial().asMaterial,
+    );
+    withTextureSkeleton(node, 4);
+    root.add(node);
+    harness.renderer.render(root, [createView()]);
+    expect(
+      pipelineLabels(harness.gpu).some(
+        (l) => l.startsWith("fourJS:skinned-lit|") && l.endsWith("|pt"),
+      ),
+    ).toBe(true);
+    expect(textureUploads(harness.gpu)).toHaveLength(1);
+  });
+
+  it("falls back to the uniform palette on a device with no 2048-texel texture, skipping past 48 joints", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const harness = await initialized({ limits: {}, features: [] });
+      const root = createRoot();
+      const small = renderable(skinnedTriangle());
+      const palette = withTextureSkeleton(small, 3, 5);
+      root.add(small);
+      harness.renderer.render(root, [createView()]);
+      expect(textureUploads(harness.gpu)).toHaveLength(0);
+      expect(paletteUploads(harness.gpu)).toHaveLength(1);
+      expect(paletteUploads(harness.gpu)[0]?.[0]).toBe(palette[0]);
+      expect(warn).toHaveBeenCalledTimes(1);
+
+      const big = renderable(skinnedTriangle());
+      withTextureSkeleton(big, 49);
+      const bigRoot = createRoot();
+      bigRoot.add(big);
+      harness.gpu.reset();
+      harness.renderer.render(bigRoot, [createView()]);
+      expect(harness.gpu.countOf("pass.draw")).toBe(1); // clear only
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("skips a draw the shared texture has no room for, and never truncates", async () => {
+    const harness = await initialized({
+      limits: { maxTextureDimension2D: 2048 },
+    });
+    const root = createRoot();
+    // 2048 rows of room for one view; three rigs of 1000 rows each.
+    const nodes = [0, 1, 2].map(() => {
+      const n = renderable(skinnedTriangle());
+      withTextureSkeleton(n, 1000 * 512);
+      return n;
+    });
+    root.add(...nodes);
+    // Past the uint16 cap rigs are refused at setup; here the doubles bypass it.
+    harness.renderer.render(root, [createView()]);
+    const draws = harness.gpu.countOf("pass.draw");
+    expect(draws).toBeLessThan(4);
+  });
+
+  it("casts no shadow for a texture rig over 48 joints but casts a small one", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const harness = await initialized();
+      const { root } = shadowedScene();
+      const big = new Renderable(
+        skinnedTriangle(litTriangle()).asGeometry,
+        new TestLitMaterial().asMaterial,
+      );
+      withTextureSkeleton(big, 60);
+      const small = new Renderable(
+        skinnedTriangle(litTriangle()).asGeometry,
+        new TestLitMaterial().asMaterial,
+      );
+      withTextureSkeleton(small, 3);
+      root.add(big, small);
+      harness.renderer.render(root, [createView()]);
+      const names = harness.gpu.calls.map((call) => call.name);
+      const shadowStart = names.indexOf("encoder.beginRenderPass");
+      const viewsStart = names.indexOf(
+        "encoder.beginRenderPass",
+        shadowStart + 1,
+      );
+      const casterDraws = names
+        .slice(shadowStart, viewsStart)
+        .filter((name) => name === "pass.draw" || name === "pass.drawIndexed");
+      // The unskinned caster from shadowedScene plus the small skinned rig.
+      expect(casterDraws).toHaveLength(2);
+      expect(
+        warn.mock.calls.some((c) => String(c[0]).includes("casts no shadow")),
+      ).toBe(true);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("drops and destroys the palette texture on dispose", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const node = renderable(skinnedTriangle());
+    withTextureSkeleton(node, 3);
+    root.add(node);
+    harness.renderer.render(root, [createView()]);
+    harness.gpu.reset();
+    harness.renderer.dispose();
+    expect(harness.gpu.countOf("texture.destroy")).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// W6.3 (2026-11-04): cascades, point/spot maps and the shadow atlas.
+// ---------------------------------------------------------------------------
+
+/** A point/spot light that casts — the W6.3 `castShadow`/`shadow` members. */
+class CastingPunctualNode extends SpotLightNode {
+  castShadow = true;
+
+  shadow = { mapSize: 64, bias: 0.001, normalBias: 0.02, near: 0.1, far: 20 };
+
+  constructor(
+    kind: "point" | "spot",
+    position: [number, number, number] = [0, 3, 0],
+  ) {
+    super(position);
+    (this as { lightType: "point" | "spot" }).lightType = kind;
+    this.axis = [0, -1, 0];
+  }
+}
+
+function fitView(): RenderView {
+  const camera = new TestCamera() as TestCamera & {
+    near: number;
+    far: number;
+  };
+  camera.near = 0.5;
+  camera.far = 50;
+  camera.projectionMatrix.elements[0] = 1;
+  camera.projectionMatrix.elements[5] = 1;
+  camera.projectionMatrix.elements[11] = -1;
+  camera.viewMatrix.identity();
+  return createView({ camera: camera.asCamera });
+}
+
+describe("WebgpuRenderer atlas shadows (W6.3)", () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await initialized();
+  });
+
+  it("reports the cascade and punctual capabilities", () => {
+    expect(harness.renderer.capabilities.maximumShadowCascades).toBe(4);
+    expect(harness.renderer.capabilities.maximumShadowedPunctualLights).toBe(4);
+  });
+
+  it("keeps one cascade on the pre-atlas pass: no viewport, no atlas flag", () => {
+    const { root } = shadowedScene();
+    harness.renderer.render(root, [createView()]);
+
+    // The shadow pass sets no viewport of its own; the views pass sets one.
+    expect(harness.gpu.countOf("pass.setViewport")).toBe(1);
+    const { floats } = lightsUpload(harness.gpu);
+    expect(lightSlot(floats, 0, SHADOW_INFO_OFFSET)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("draws every caster once per cascade tile into a 2x2 atlas", () => {
+    const { root, light } = shadowedScene();
+    Object.assign(light.shadow, { cascades: 3, cascadeDistance: 40 });
+    harness.renderer.render(root, [fitView()]);
+
+    // Three tile viewports in the shadow pass (+1 for the views pass), each
+    // 256 texels in a 512 x 512 atlas, top-left origin.
+    const viewports = harness.gpu
+      .callsOf("pass.setViewport")
+      .map((call) => call.args.slice(0, 4));
+    expect(viewports.slice(0, 3)).toEqual([
+      [0, 0, 256, 256],
+      [256, 0, 256, 256],
+      [0, 256, 256, 256],
+    ]);
+    expect(
+      harness.gpu.countOf("pass.drawIndexed") +
+        harness.gpu.countOf("pass.draw"),
+    ).toBe(3 + 2);
+    const { floats } = lightsUpload(harness.gpu);
+    expect(lightSlot(floats, 0, SHADOW_INFO_OFFSET)).toEqual([3, 1, 0, 0]);
+    expect(lightSlot(floats, 0, SHADOW_ATLAS_OFFSET)).toEqual(
+      [2, 2, 1 / 512, 1 / 512].map(Math.fround),
+    );
+    expect(lightSlot(floats, 0, SHADOW_CASCADE_SPLITS_OFFSET)[2]).toBe(40);
+  });
+
+  it("renders six faces for a point light and one tile for a spot", () => {
+    const { root } = shadowedScene();
+    root.add(new CastingPunctualNode("point"));
+    root.add(new CastingPunctualNode("spot", [2, 3, 0]));
+    harness.renderer.render(root, [createView()]);
+
+    // 1 sun tile + 6 + 1 = 8 tiles of 256 (sun) in a 3 x 3 grid.
+    const viewports = harness.gpu
+      .callsOf("pass.setViewport")
+      .map((call) => call.args.slice(0, 4));
+    expect(viewports.slice(0, 8)).toHaveLength(8);
+    expect(viewports[7]).toEqual([256, 512, 256, 256]);
+    const { floats } = lightsUpload(harness.gpu);
+    expect(lightSlot(floats, 0, SHADOW_INFO_OFFSET)).toEqual([1, 1, 2, 0]);
+    expect(lightSlot(floats, 0, SHADOW_PUNCTUAL_SLOT_OFFSET)[0]).toBe(1);
+    expect(lightSlot(floats, 0, SHADOW_PUNCTUAL_SLOT_OFFSET)[1]).toBe(2);
+    expect(lightSlot(floats, 0, SHADOW_PUNCTUAL_PARAMS_OFFSET)).toEqual([
+      1,
+      Math.fround(0.001),
+      Math.fround(0.02),
+      2,
+    ]);
   });
 });

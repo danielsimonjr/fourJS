@@ -71,6 +71,7 @@ import { DEV, FourError, devWarnOnce } from "@fourjs/core";
 import { Frustum, Matrix4 } from "@fourjs/math";
 import {
   RenderTarget,
+  MAX_SKINNING_JOINTS,
   assertEncodableCandidateCount,
   buildRenderList,
   buildViewRenderList,
@@ -1327,7 +1328,12 @@ export class WebglPickingService implements PickingService {
         }
 
         if (isSkinnedItem) {
-          if (skinnedProgram === null) {
+          // The id pass uses the uniform palette: a bone-texture rig past 48
+          // joints is skipped (unpickable) rather than overflowing it.
+          if (
+            skinnedProgram === null ||
+            item.jointCount > MAX_SKINNING_JOINTS
+          ) {
             continue;
           }
           if (activeKind !== "skinned") {

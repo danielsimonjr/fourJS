@@ -15,6 +15,13 @@ specification; until then, entries are grouped by date under **Unreleased**.
   over the raw codec ABI with `KHR_draco_mesh_compression` routing (`GltfLoaderOptions.dracoDecoder`);
   `KHR_texture_basisu` routing (`basisTranscoder`, `supportedFormats`); opt-in texture-atlas
   batching (`atlas: { pageSize, maxPages }`, deterministic shelf packer, 0-pixel-difference gate).
+- **Wave 6 GPU residues (2026-11-04)**: bone-texture skin palette (`skinningMode: "texture"`,
+  `rgba32float` texel format, up to 65535 joints, uniform-palette fallback); §27 GPU field
+  stack (8 records, CPU formulas) and §36 depth-texture collide-and-kill on WebGPU; §63
+  transient render-graph targets with deterministic slot aliasing and usage transitions on
+  both backends; §69 cascaded directional shadows (1–4) and spot/point shadow maps in one
+  atlas (≤ 4 shadowed punctual lights). Single-map, uniform-palette, radial-only and
+  transient-free paths are unchanged.
 - **Wave 7 (2026-11-04)**: RFC 0001 addendum accepted — node materials gain `storage`
   (§82 read-only storage buffers, WebGPU), `select` over compile-time `defines` (dead branch
   not emitted, programs shared by emitted source) and the `light` input family bound to the
