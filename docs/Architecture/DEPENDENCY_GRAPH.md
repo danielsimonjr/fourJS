@@ -53,14 +53,14 @@ This document provides a comprehensive dependency graph of all files, components
 The codebase is organized into the following modules:
 
 - **packages/particles**: 9 files
-- **packages/materials**: 17 files
+- **packages/materials**: 18 files
 - **packages/ui**: 16 files
 - **packages/text**: 6 files
 - **packages/math**: 11 files
 - **packages/render-svg**: 3 files
 - **packages/physics-box2d**: 4 files
 - **packages/scene**: 17 files
-- **packages/assets**: 18 files
+- **packages/assets**: 20 files
 - **packages/physics-soft**: 4 files
 - **packages/physics-rapier**: 8 files
 - **packages/render-webgl**: 25 files
@@ -87,14 +87,14 @@ The codebase is organized into the following modules:
 | Package                                               | Depends On                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Files (Active) | Files (Dormant) |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | --------------- |
 | `@fourjs/particles` (`packages/particles/`)           | `@fourjs/math`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 9              | 0               |
-| `@fourjs/materials` (`packages/materials/`)           | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 17             | 0               |
+| `@fourjs/materials` (`packages/materials/`)           | `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 18             | 0               |
 | `@fourjs/ui` (`packages/ui/`)                         | `@fourjs/text`, `@fourjs/math`, `@fourjs/input`, `@fourjs/scene`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                | 16             | 0               |
 | `@fourjs/text` (`packages/text/`)                     | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 6              | 3               |
 | `@fourjs/math` (`packages/math/`)                     | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 11             | 0               |
 | `@fourjs/render-svg` (`packages/render-svg/`)         | `@fourjs/core`, `@fourjs/math`, `@fourjs/render`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 3              | 0               |
 | `@fourjs/physics-box2d` (`packages/physics-box2d/`)   | `@fourjs/core`, `@fourjs/math`, `@fourjs/physics`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 4              | 0               |
 | `@fourjs/scene` (`packages/scene/`)                   | `@fourjs/math`, `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 17             | 0               |
-| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 18             | 0               |
+| `@fourjs/assets` (`packages/assets/`)                 | `@fourjs/core`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 20             | 0               |
 | `@fourjs/physics-soft` (`packages/physics-soft/`)     | `@fourjs/core`, `@fourjs/geometry`, `@fourjs/math`, `@fourjs/scene`, `@fourjs/motion`                                                                                                                                                                                                                                                                                                                                                                                                                           | 4              | 0               |
 | `@fourjs/physics-rapier` (`packages/physics-rapier/`) | `@fourjs/physics`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 8              | 0               |
 | `@fourjs/render-webgl` (`packages/render-webgl/`)     | `@fourjs/render`, `@fourjs/core`, `@fourjs/math`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 25             | 0               |
@@ -449,41 +449,42 @@ graph LR
 
 **Internal Dependencies:**
 
-| File                         | Imports                                                                                                                                                                                                             | Type                  |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `./capabilities.js`          | `SHADER_OPERATORS`                                                                                                                                                                                                  | Re-export             |
-| `./shader-operators.js`      | `ShaderOperatorRegistry`                                                                                                                                                                                            | Re-export             |
-| `./lit-material.js`          | `LitMaterial`                                                                                                                                                                                                       | Re-export             |
-| `./material.js`              | `Material`                                                                                                                                                                                                          | Re-export             |
-| `./node-material.js`         | `NodeMaterial`                                                                                                                                                                                                      | Re-export             |
-| `./node-material-builder.js` | `NodeMaterialBuilder, ShaderExpression, ShaderGraphBuilder, ShaderGraphOutput`                                                                                                                                      | Re-export             |
-| `./shader-graph.js`          | `MAX_SHADER_GRAPH_NODES, MAX_SHADER_GRAPH_TEXTURES, SHADER_ATTRIBUTE_TYPES, SHADER_VALUE_COMPONENTS, analyzeShaderGraph, forEachShaderNodeReference, freezeShaderGraph`                                             | Re-export             |
-| `./sprite-material.js`       | `SpriteMaterial`                                                                                                                                                                                                    | Re-export             |
-| `./stencil-state.js`         | `MAX_STENCIL_VALUE, StencilState`                                                                                                                                                                                   | Re-export             |
-| `./standard-material.js`     | `StandardMaterial`                                                                                                                                                                                                  | Re-export             |
-| `./unlit-material.js`        | `UnlitMaterial`                                                                                                                                                                                                     | Re-export             |
-| `./resource-memory.js`       | `liveMaterialCount`                                                                                                                                                                                                 | Re-export             |
-| `./shader-function.js`       | `ShaderFunction`                                                                                                                                                                                                    | Re-export             |
-| `./shader-variants.js`       | `ShaderVariantSet`                                                                                                                                                                                                  | Re-export             |
-| `./shader-source-map.js`     | `createShaderSourceMap`                                                                                                                                                                                             | Re-export             |
-| `./shader-operators.js`      | `ShaderOperatorFactory`                                                                                                                                                                                             | Re-export (type-only) |
-| `./lit-material.js`          | `LitMaterialOptions`                                                                                                                                                                                                | Re-export (type-only) |
-| `./material.js`              | `BlendMode, MaterialOptions`                                                                                                                                                                                        | Re-export (type-only) |
-| `./node-material.js`         | `NodeMaterialOptions`                                                                                                                                                                                               | Re-export (type-only) |
-| `./node-material-builder.js` | `ShaderOperand`                                                                                                                                                                                                     | Re-export (type-only) |
-| `./shader-graph.js`          | `ShaderAttributeName, ShaderBinaryOp, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderNodeId, ShaderReflection, ShaderTextureReflection, ShaderUnaryOp, ShaderUniformReflection, ShaderValueType` | Re-export (type-only) |
-| `./sprite-material.js`       | `SpriteMaterialOptions, SpriteTexture`                                                                                                                                                                              | Re-export (type-only) |
-| `./stencil-state.js`         | `StencilFunc, StencilOp, StencilStateOptions`                                                                                                                                                                       | Re-export (type-only) |
-| `./standard-material.js`     | `ColorRGB, StandardMaterialOptions`                                                                                                                                                                                 | Re-export (type-only) |
-| `./texture.js`               | `MaterialTexture, MaterialTextureFilter, MaterialTextureMinFilter, MaterialTextureWrap`                                                                                                                             | Re-export (type-only) |
-| `./unlit-material.js`        | `ColorRGBA, UnlitMaterialOptions`                                                                                                                                                                                   | Re-export (type-only) |
-| `./shader-function.js`       | `ShaderFunctionDefinition`                                                                                                                                                                                          | Re-export (type-only) |
-| `./shader-source-map.js`     | `ShaderSourceLocation, ShaderSourceMap`                                                                                                                                                                             | Re-export (type-only) |
+| File                         | Imports                                                                                                                                                                                                                                                                                                                                                                                     | Type                  |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `./capabilities.js`          | `SHADER_OPERATORS`                                                                                                                                                                                                                                                                                                                                                                          | Re-export             |
+| `./shader-operators.js`      | `ShaderOperatorRegistry`                                                                                                                                                                                                                                                                                                                                                                    | Re-export             |
+| `./lit-material.js`          | `LitMaterial`                                                                                                                                                                                                                                                                                                                                                                               | Re-export             |
+| `./material.js`              | `Material`                                                                                                                                                                                                                                                                                                                                                                                  | Re-export             |
+| `./node-material.js`         | `NodeMaterial`                                                                                                                                                                                                                                                                                                                                                                              | Re-export             |
+| `./node-material-builder.js` | `NodeMaterialBuilder, ShaderExpression, ShaderGraphBuilder, ShaderGraphOutput`                                                                                                                                                                                                                                                                                                              | Re-export             |
+| `./shader-graph.js`          | `MAX_SHADER_GRAPH_NODES, MAX_SHADER_GRAPH_DEFINES, MAX_SHADER_GRAPH_STORAGE, MAX_SHADER_GRAPH_TEXTURES, MAX_SHADER_STORAGE_COUNT, SHADER_ATTRIBUTE_TYPES, SHADER_LIGHT_ARRAY_TYPES, SHADER_LIGHT_SCALAR_TYPES, SHADER_LIGHT_SLOTS, SHADER_VALUE_COMPONENTS, analyzeShaderGraph, forEachShaderNodeReference, freezeShaderGraph, resolveShaderSelect, shaderDefineKey, specializeShaderGraph` | Re-export             |
+| `./shader-storage.js`        | `ShaderStorageBuffer`                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
+| `./sprite-material.js`       | `SpriteMaterial`                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./stencil-state.js`         | `MAX_STENCIL_VALUE, StencilState`                                                                                                                                                                                                                                                                                                                                                           | Re-export             |
+| `./standard-material.js`     | `StandardMaterial`                                                                                                                                                                                                                                                                                                                                                                          | Re-export             |
+| `./unlit-material.js`        | `UnlitMaterial`                                                                                                                                                                                                                                                                                                                                                                             | Re-export             |
+| `./resource-memory.js`       | `liveMaterialCount`                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
+| `./shader-function.js`       | `ShaderFunction`                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./shader-variants.js`       | `ShaderVariantSet`                                                                                                                                                                                                                                                                                                                                                                          | Re-export             |
+| `./shader-source-map.js`     | `createShaderSourceMap`                                                                                                                                                                                                                                                                                                                                                                     | Re-export             |
+| `./shader-operators.js`      | `ShaderOperatorFactory`                                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./lit-material.js`          | `LitMaterialOptions`                                                                                                                                                                                                                                                                                                                                                                        | Re-export (type-only) |
+| `./material.js`              | `BlendMode, MaterialOptions`                                                                                                                                                                                                                                                                                                                                                                | Re-export (type-only) |
+| `./node-material.js`         | `NodeMaterialOptions`                                                                                                                                                                                                                                                                                                                                                                       | Re-export (type-only) |
+| `./node-material-builder.js` | `ShaderOperand`                                                                                                                                                                                                                                                                                                                                                                             | Re-export (type-only) |
+| `./shader-graph.js`          | `ShaderAttributeName, ShaderBinaryOp, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderNodeId, ShaderLightArrayMember, ShaderLightMember, ShaderLightScalarMember, ShaderReflection, ShaderStorageElementType, ShaderStorageReflection, ShaderTextureReflection, ShaderUnaryOp, ShaderUniformReflection, ShaderValueType`                                                  | Re-export (type-only) |
+| `./sprite-material.js`       | `SpriteMaterialOptions, SpriteTexture`                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
+| `./stencil-state.js`         | `StencilFunc, StencilOp, StencilStateOptions`                                                                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
+| `./standard-material.js`     | `ColorRGB, StandardMaterialOptions`                                                                                                                                                                                                                                                                                                                                                         | Re-export (type-only) |
+| `./texture.js`               | `MaterialTexture, MaterialTextureFilter, MaterialTextureMinFilter, MaterialTextureWrap`                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
+| `./unlit-material.js`        | `ColorRGBA, UnlitMaterialOptions`                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./shader-function.js`       | `ShaderFunctionDefinition`                                                                                                                                                                                                                                                                                                                                                                  | Re-export (type-only) |
+| `./shader-source-map.js`     | `ShaderSourceLocation, ShaderSourceMap`                                                                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `SHADER_OPERATORS`, `ShaderOperatorRegistry`, `LitMaterial`, `Material`, `NodeMaterial`, `NodeMaterialBuilder`, `ShaderExpression`, `ShaderGraphBuilder`, `ShaderGraphOutput`, `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_TEXTURES`, `SHADER_ATTRIBUTE_TYPES`, `SHADER_VALUE_COMPONENTS`, `analyzeShaderGraph`, `forEachShaderNodeReference`, `freezeShaderGraph`, `SpriteMaterial`, `MAX_STENCIL_VALUE`, `StencilState`, `StandardMaterial`, `UnlitMaterial`, `liveMaterialCount`, `ShaderFunction`, `ShaderVariantSet`, `createShaderSourceMap`, `ShaderOperatorFactory`, `LitMaterialOptions`, `BlendMode`, `MaterialOptions`, `NodeMaterialOptions`, `ShaderOperand`, `ShaderAttributeName`, `ShaderBinaryOp`, `ShaderDomain`, `ShaderGraph`, `ShaderGraphAnalysis`, `ShaderNode`, `ShaderNodeId`, `ShaderReflection`, `ShaderTextureReflection`, `ShaderUnaryOp`, `ShaderUniformReflection`, `ShaderValueType`, `SpriteMaterialOptions`, `SpriteTexture`, `StencilFunc`, `StencilOp`, `StencilStateOptions`, `ColorRGB`, `StandardMaterialOptions`, `MaterialTexture`, `MaterialTextureFilter`, `MaterialTextureMinFilter`, `MaterialTextureWrap`, `ColorRGBA`, `UnlitMaterialOptions`, `ShaderFunctionDefinition`, `ShaderSourceLocation`, `ShaderSourceMap`
+- Re-exports: `SHADER_OPERATORS`, `ShaderOperatorRegistry`, `LitMaterial`, `Material`, `NodeMaterial`, `NodeMaterialBuilder`, `ShaderExpression`, `ShaderGraphBuilder`, `ShaderGraphOutput`, `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_DEFINES`, `MAX_SHADER_GRAPH_STORAGE`, `MAX_SHADER_GRAPH_TEXTURES`, `MAX_SHADER_STORAGE_COUNT`, `SHADER_ATTRIBUTE_TYPES`, `SHADER_LIGHT_ARRAY_TYPES`, `SHADER_LIGHT_SCALAR_TYPES`, `SHADER_LIGHT_SLOTS`, `SHADER_VALUE_COMPONENTS`, `analyzeShaderGraph`, `forEachShaderNodeReference`, `freezeShaderGraph`, `resolveShaderSelect`, `shaderDefineKey`, `specializeShaderGraph`, `ShaderStorageBuffer`, `SpriteMaterial`, `MAX_STENCIL_VALUE`, `StencilState`, `StandardMaterial`, `UnlitMaterial`, `liveMaterialCount`, `ShaderFunction`, `ShaderVariantSet`, `createShaderSourceMap`, `ShaderOperatorFactory`, `LitMaterialOptions`, `BlendMode`, `MaterialOptions`, `NodeMaterialOptions`, `ShaderOperand`, `ShaderAttributeName`, `ShaderBinaryOp`, `ShaderDomain`, `ShaderGraph`, `ShaderGraphAnalysis`, `ShaderNode`, `ShaderNodeId`, `ShaderLightArrayMember`, `ShaderLightMember`, `ShaderLightScalarMember`, `ShaderReflection`, `ShaderStorageElementType`, `ShaderStorageReflection`, `ShaderTextureReflection`, `ShaderUnaryOp`, `ShaderUniformReflection`, `ShaderValueType`, `SpriteMaterialOptions`, `SpriteTexture`, `StencilFunc`, `StencilOp`, `StencilStateOptions`, `ColorRGB`, `StandardMaterialOptions`, `MaterialTexture`, `MaterialTextureFilter`, `MaterialTextureMinFilter`, `MaterialTextureWrap`, `ColorRGBA`, `UnlitMaterialOptions`, `ShaderFunctionDefinition`, `ShaderSourceLocation`, `ShaderSourceMap`
 
 ---
 
@@ -629,11 +630,11 @@ graph LR
 
 **Internal Dependencies:**
 
-| File                 | Imports                                                                                                                                                               | Type               |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./shader-graph.js`  | `analyzeShaderGraph, analyzeShaderNodeType, ShaderAttributeName, ShaderBinaryOp, ShaderDomain, ShaderGraph, ShaderNode, ShaderNodeId, ShaderUnaryOp, ShaderValueType` | Import             |
-| `./node-material.js` | `NodeMaterial, NodeMaterialOptions`                                                                                                                                   | Import             |
-| `./texture.js`       | `MaterialTexture`                                                                                                                                                     | Import (type-only) |
+| File                 | Imports                                                                                                                                                                                                            | Type               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `./shader-graph.js`  | `analyzeShaderGraph, analyzeShaderNodeType, ShaderAttributeName, ShaderBinaryOp, ShaderDomain, ShaderGraph, ShaderLightMember, ShaderNode, ShaderNodeId, ShaderStorageElementType, ShaderUnaryOp, ShaderValueType` | Import             |
+| `./node-material.js` | `NodeMaterial, NodeMaterialOptions`                                                                                                                                                                                | Import             |
+| `./texture.js`       | `MaterialTexture`                                                                                                                                                                                                  | Import (type-only) |
 
 **Exports:**
 
@@ -646,11 +647,12 @@ graph LR
 
 **Internal Dependencies:**
 
-| File                | Imports                                                                                                          | Type               |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./material.js`     | `Material, MaterialOptions`                                                                                      | Import             |
-| `./shader-graph.js` | `SHADER_VALUE_COMPONENTS, analyzeShaderGraph, freezeShaderGraph, ShaderGraph, ShaderReflection, ShaderValueType` | Import             |
-| `./texture.js`      | `MaterialTexture`                                                                                                | Import (type-only) |
+| File                  | Imports                                                                                                          | Type               |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `./material.js`       | `Material, MaterialOptions`                                                                                      | Import             |
+| `./shader-graph.js`   | `SHADER_VALUE_COMPONENTS, analyzeShaderGraph, freezeShaderGraph, ShaderGraph, ShaderReflection, ShaderValueType` | Import             |
+| `./shader-storage.js` | `ShaderStorageBuffer`                                                                                            | Import (type-only) |
+| `./texture.js`        | `MaterialTexture`                                                                                                | Import (type-only) |
 
 **Exports:**
 
@@ -679,10 +681,10 @@ graph LR
 
 **Exports:**
 
-- Interfaces: `ShaderGraph`, `ShaderUniformReflection`, `ShaderTextureReflection`, `ShaderReflection`, `ShaderGraphAnalysis`
-- Types: `ShaderNodeId`, `ShaderValueType`, `ShaderDomain`, `ShaderAttributeName`, `ShaderUnaryOp`, `ShaderBinaryOp`, `ShaderNode`
-- Functions: `forEachShaderNodeReference`, `analyzeShaderGraph`, `analyzeShaderNodeType`, `freezeShaderGraph`
-- Constants: `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_TEXTURES`, `SHADER_VALUE_COMPONENTS`, `SHADER_ATTRIBUTE_TYPES`
+- Interfaces: `ShaderGraph`, `ShaderUniformReflection`, `ShaderTextureReflection`, `ShaderReflection`, `ShaderStorageReflection`, `ShaderGraphAnalysis`
+- Types: `ShaderNodeId`, `ShaderValueType`, `ShaderDomain`, `ShaderAttributeName`, `ShaderUnaryOp`, `ShaderBinaryOp`, `ShaderNode`, `ShaderStorageElementType`, `ShaderLightScalarMember`, `ShaderLightArrayMember`, `ShaderLightMember`
+- Functions: `forEachShaderNodeReference`, `analyzeShaderGraph`, `analyzeShaderNodeType`, `resolveShaderSelect`, `shaderDefineKey`, `specializeShaderGraph`, `freezeShaderGraph`
+- Constants: `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_TEXTURES`, `MAX_SHADER_GRAPH_STORAGE`, `MAX_SHADER_STORAGE_COUNT`, `MAX_SHADER_GRAPH_DEFINES`, `SHADER_LIGHT_SLOTS`, `SHADER_LIGHT_SCALAR_TYPES`, `SHADER_LIGHT_ARRAY_TYPES`, `SHADER_VALUE_COMPONENTS`, `SHADER_ATTRIBUTE_TYPES`
 
 ---
 
@@ -719,6 +721,20 @@ graph LR
 **Exports:**
 
 - Functions: `noteMaterial`, `liveMaterialCount`, `trackMaterialDisposable`, `releaseMaterialDisposable`
+
+---
+
+### `packages/materials/src/shader-storage.ts` - CPU-side data for a read-only storage buffer a node-material graph reads
+
+**Internal Dependencies:**
+
+| File                | Imports                                                                       | Type   |
+| ------------------- | ----------------------------------------------------------------------------- | ------ |
+| `./shader-graph.js` | `MAX_SHADER_STORAGE_COUNT, SHADER_VALUE_COMPONENTS, ShaderStorageElementType` | Import |
+
+**Exports:**
+
+- Classes: `ShaderStorageBuffer`
 
 ---
 
@@ -1977,6 +1993,8 @@ graph LR
 | `./bounded-jpeg.js`    | `createBoundedJpegDecoder`                                                                                                                                                                                                                                                                                            | Re-export             |
 | `./bounded-webp.js`    | `createBoundedWebpDecoder`                                                                                                                                                                                                                                                                                            | Re-export             |
 | `./bounded-avif.js`    | `createBoundedAvifDecoder`                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./bounded-basis.js`   | `BASIS_TARGET_CODES, createBoundedBasisTranscoder`                                                                                                                                                                                                                                                                    | Re-export             |
+| `./ktx2.js`            | `KTX2_HEADER_BYTES, KTX2_IDENTIFIER, parseKtx2`                                                                                                                                                                                                                                                                       | Re-export             |
 | `./image-probe.js`     | `probeAvif, probeImage, probeJpeg, probePng, probeWebp`                                                                                                                                                                                                                                                               | Re-export             |
 | `./loader-registry.js` | `RegisteredAssetLoader`                                                                                                                                                                                                                                                                                               | Re-export (type-only) |
 | `./asset-manager.js`   | `AbortHandle, AbortSignalLike, AssetGraph, AssetGraphLoadOptions, AssetLoadOptions, AssetLoadContext, AssetLoader, AssetManagerOptions, AssetProgressEvent, AssetWatchLike, AssetWithDependencies, ByteReaderLike, FetchInit, FetchLike, FetchResponse, ReadableBodyLike, ResponseHeadersLike, TimerLike, WorkerLike` | Re-export (type-only) |
@@ -1990,12 +2008,14 @@ graph LR
 | `./bounded-jpeg.js`    | `BoundedJpegDecoderOptions`                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
 | `./bounded-webp.js`    | `BoundedWebpDecoderOptions`                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
 | `./bounded-avif.js`    | `BoundedAvifDecoderOptions`                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
+| `./bounded-basis.js`   | `BasisTextureFormat, BasisTextureSource, BasisTranscodeRequest, BasisTranscoder, BoundedBasisTranscoderOptions`                                                                                                                                                                                                       | Re-export (type-only) |
+| `./ktx2.js`            | `Ktx2BasisCodec, Ktx2Dfd, Ktx2Info, Ktx2Level, Ktx2ParseOptions, Ktx2Supercompression`                                                                                                                                                                                                                                | Re-export (type-only) |
 | `./image-probe.js`     | `ImageDimensions`                                                                                                                                                                                                                                                                                                     | Re-export (type-only) |
 
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `ASSET_LOADERS`, `AssetLoaderRegistry`, `AssetManager`, `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`, `CONTENT_HASH_ALGORITHM`, `loadFromManifest`, `manifestLoader`, `manifestUrl`, `parseAssetManifest`, `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`, `TextureAsset`, `createTextureDecoder`, `createTextureLoader`, `GltfAsset`, `createGltfLoader`, `ImageAsset`, `binaryLoader`, `createImageLoader`, `jsonLoader`, `textLoader`, `createGzipLoader`, `createBoundedPngDecoder`, `DEFAULT_IMAGE_WORKING_BYTES`, `createBoundedJpegDecoder`, `createBoundedWebpDecoder`, `createBoundedAvifDecoder`, `probeAvif`, `probeImage`, `probeJpeg`, `probePng`, `probeWebp`, `RegisteredAssetLoader`, `AbortHandle`, `AbortSignalLike`, `AssetGraph`, `AssetGraphLoadOptions`, `AssetLoadOptions`, `AssetLoadContext`, `AssetLoader`, `AssetManagerOptions`, `AssetProgressEvent`, `AssetWatchLike`, `AssetWithDependencies`, `ByteReaderLike`, `FetchInit`, `FetchLike`, `FetchResponse`, `ReadableBodyLike`, `ResponseHeadersLike`, `TimerLike`, `WorkerLike`, `DigestLike`, `TextDecodeLike`, `AssetManifest`, `AssetManifestEntry`, `ManifestLoadOptions`, `ManifestParseOptions`, `DecodedTexels`, `TexelDecodeLike`, `TexelProbeLike`, `TextureColorSpace`, `TextureFilterMode`, `TextureLoaderOptions`, `TextureWrapMode`, `GltfAnimationRecord`, `GltfChannelPath`, `GltfChannelRecord`, `GltfLoaderOptions`, `GltfMaterialRecord`, `GltfMeshRecord`, `GltfNodeRecord`, `GltfPrimitiveMode`, `GltfPrimitiveRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `ImageBitmapLike`, `ImageDecodeLike`, `ImageLoaderOptions`, `GzipDecodeLike`, `GzipLoaderOptions`, `GzipReader`, `BoundedPngDecoderOptions`, `BoundedJpegDecoderOptions`, `BoundedWebpDecoderOptions`, `BoundedAvifDecoderOptions`, `ImageDimensions`
+- Re-exports: `ASSET_LOADERS`, `AssetLoaderRegistry`, `AssetManager`, `DEFAULT_MAXIMUM_BYTES`, `DEFAULT_TIMEOUT_SECONDS`, `CONTENT_HASH_ALGORITHM`, `loadFromManifest`, `manifestLoader`, `manifestUrl`, `parseAssetManifest`, `DEFAULT_MAXIMUM_DECODED_BYTES`, `DEFAULT_MAXIMUM_EXPANSION_RATIO`, `TextureAsset`, `createTextureDecoder`, `createTextureLoader`, `GltfAsset`, `createGltfLoader`, `ImageAsset`, `binaryLoader`, `createImageLoader`, `jsonLoader`, `textLoader`, `createGzipLoader`, `createBoundedPngDecoder`, `DEFAULT_IMAGE_WORKING_BYTES`, `createBoundedJpegDecoder`, `createBoundedWebpDecoder`, `createBoundedAvifDecoder`, `BASIS_TARGET_CODES`, `createBoundedBasisTranscoder`, `KTX2_HEADER_BYTES`, `KTX2_IDENTIFIER`, `parseKtx2`, `probeAvif`, `probeImage`, `probeJpeg`, `probePng`, `probeWebp`, `RegisteredAssetLoader`, `AbortHandle`, `AbortSignalLike`, `AssetGraph`, `AssetGraphLoadOptions`, `AssetLoadOptions`, `AssetLoadContext`, `AssetLoader`, `AssetManagerOptions`, `AssetProgressEvent`, `AssetWatchLike`, `AssetWithDependencies`, `ByteReaderLike`, `FetchInit`, `FetchLike`, `FetchResponse`, `ReadableBodyLike`, `ResponseHeadersLike`, `TimerLike`, `WorkerLike`, `DigestLike`, `TextDecodeLike`, `AssetManifest`, `AssetManifestEntry`, `ManifestLoadOptions`, `ManifestParseOptions`, `DecodedTexels`, `TexelDecodeLike`, `TexelProbeLike`, `TextureColorSpace`, `TextureFilterMode`, `TextureLoaderOptions`, `TextureWrapMode`, `GltfAnimationRecord`, `GltfChannelPath`, `GltfChannelRecord`, `GltfLoaderOptions`, `GltfMaterialRecord`, `GltfMeshRecord`, `GltfNodeRecord`, `GltfPrimitiveMode`, `GltfPrimitiveRecord`, `GltfSceneRecord`, `GltfSkinRecord`, `ImageBitmapLike`, `ImageDecodeLike`, `ImageLoaderOptions`, `GzipDecodeLike`, `GzipLoaderOptions`, `GzipReader`, `BoundedPngDecoderOptions`, `BoundedJpegDecoderOptions`, `BoundedWebpDecoderOptions`, `BoundedAvifDecoderOptions`, `BasisTextureFormat`, `BasisTextureSource`, `BasisTranscodeRequest`, `BasisTranscoder`, `BoundedBasisTranscoderOptions`, `Ktx2BasisCodec`, `Ktx2Dfd`, `Ktx2Info`, `Ktx2Level`, `Ktx2ParseOptions`, `Ktx2Supercompression`, `ImageDimensions`
 
 ---
 
@@ -2150,6 +2170,29 @@ graph LR
 
 ---
 
+### `packages/assets/src/ktx2.ts` - Bounded KTX2 container parser (§77, §96; R-30c). Reads the header, level
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File               | Imports                       | Type   |
+| ------------------ | ----------------------------- | ------ |
+| `./bounded-png.js` | `DEFAULT_IMAGE_WORKING_BYTES` | Import |
+
+**Exports:**
+
+- Interfaces: `Ktx2Level`, `Ktx2Dfd`, `Ktx2Info`, `Ktx2ParseOptions`
+- Types: `Ktx2Supercompression`, `Ktx2BasisCodec`
+- Functions: `parseKtx2`
+- Constants: `KTX2_IDENTIFIER`, `KTX2_HEADER_BYTES`
+
+---
+
 ### `packages/assets/src/bounded-raw-codec.ts` - Raw C-style ABI required of the pinned binary (no JS glue, no imports):
 
 **Workspace Dependencies:**
@@ -2190,6 +2233,35 @@ graph LR
 
 - Types: `BoundedWebpDecoderOptions`
 - Functions: `createBoundedWebpDecoder`
+- Re-exports: `DEFAULT_IMAGE_WORKING_BYTES`
+
+---
+
+### `packages/assets/src/bounded-basis.ts` - Bounded Basis Universal transcoder (§77, §96; R-30c). Mirrors the wave-4
+
+**Workspace Dependencies:**
+
+| Package        | Import      |
+| -------------- | ----------- |
+| `@fourjs/core` | `FourError` |
+
+**Internal Dependencies:**
+
+| File                | Imports                         | Type      |
+| ------------------- | ------------------------------- | --------- |
+| `./bounded-png.js`  | `DEFAULT_IMAGE_WORKING_BYTES`   | Import    |
+| `./image-memory.js` | `registerBoundedImageDecoder`   | Import    |
+| `./ktx2.js`         | `parseKtx2`                     | Import    |
+| `./texture.js`      | `DEFAULT_MAXIMUM_DECODED_BYTES` | Import    |
+| `./wasm-memory.js`  | `limitWasmMemory`               | Import    |
+| `./bounded-png.js`  | `DEFAULT_IMAGE_WORKING_BYTES`   | Re-export |
+
+**Exports:**
+
+- Interfaces: `BoundedBasisTranscoderOptions`, `BasisTranscodeRequest`, `BasisTextureSource`
+- Types: `BasisTextureFormat`, `BasisTranscoder`
+- Functions: `createBoundedBasisTranscoder`
+- Constants: `BASIS_TARGET_CODES`
 - Re-exports: `DEFAULT_IMAGE_WORKING_BYTES`
 
 ---
@@ -2839,10 +2911,10 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                        |
-| ---------------- | ----------------------------- |
-| `@fourjs/math`   | `Matrix4`                     |
-| `@fourjs/render` | `NodeRenderItem, ShaderGraph` |
+| Package          | Import                                     |
+| ---------------- | ------------------------------------------ |
+| `@fourjs/math`   | `Matrix4`                                  |
+| `@fourjs/render` | `NodeRenderItem, SceneLights, ShaderGraph` |
 
 **Internal Dependencies:**
 
@@ -2930,11 +3002,11 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                                                                                                                                                  |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEV, FourError, devWarnOnce, Disposable`                                                                                                                                               |
-| `@fourjs/math`   | `Matrix4`                                                                                                                                                                               |
-| `@fourjs/render` | `analyzeShaderGraph, createShaderSourceMap, ShaderSourceMap, ShaderAttributeName, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderUniformReflection, ShaderValueType` |
+| Package          | Import                                                                                                                                                                                                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@fourjs/core`   | `DEV, FourError, devWarnOnce, Disposable`                                                                                                                                                                                                                                                  |
+| `@fourjs/math`   | `Matrix4`                                                                                                                                                                                                                                                                                  |
+| `@fourjs/render` | `analyzeShaderGraph, resolveShaderSelect, SHADER_LIGHT_ARRAY_TYPES, SHADER_LIGHT_SLOTS, SceneLights, ShaderLightMember, createShaderSourceMap, ShaderSourceMap, ShaderAttributeName, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderUniformReflection, ShaderValueType` |
 
 **Internal Dependencies:**
 
@@ -3000,7 +3072,7 @@ graph LR
 | `./gl-standard.js`            | `NORMAL_TEXTURE_UNIT, OCCLUSION_TEXTURE_UNIT`                                                                                                        | Import             |
 | `./gl-shadow-registry.js`     | `resolveShadowPipelineFactory, ShadowCasterPipeline`                                                                                                 | Import             |
 | `./gl-standard-registry.js`   | `resolveStandardPipelineFactory, StandardPipeline`                                                                                                   | Import             |
-| `./gl-texture.js`             | `TextureCache, CacheableTexture`                                                                                                                     | Import             |
+| `./gl-texture.js`             | `TextureCache, queryCompressedFormats, CacheableTexture`                                                                                             | Import             |
 
 **Exports:**
 
@@ -3085,11 +3157,11 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import              |
-| ---------------- | ------------------- |
-| `@fourjs/core`   | `FourError`         |
-| `@fourjs/render` | `SpriteRenderItem`  |
-| `@fourjs/render` | `warnDisposedInUse` |
+| Package          | Import                        |
+| ---------------- | ----------------------------- |
+| `@fourjs/core`   | `DEV, FourError, devWarnOnce` |
+| `@fourjs/render` | `SpriteRenderItem`            |
+| `@fourjs/render` | `warnDisposedInUse`           |
 
 **Internal Dependencies:**
 
@@ -3102,6 +3174,7 @@ graph LR
 - Classes: `TextureCache`
 - Interfaces: `TextureRecord`
 - Types: `CacheableTexture`
+- Functions: `queryCompressedFormats`
 
 ---
 
@@ -4216,12 +4289,13 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package             | Import                                                                                                                                                                                                              |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/materials` | `MAX_SHADER_GRAPH_NODES, MAX_SHADER_GRAPH_TEXTURES, SHADER_ATTRIBUTE_TYPES, SHADER_VALUE_COMPONENTS, analyzeShaderGraph, forEachShaderNodeReference`                                                                |
-| `@fourjs/materials` | `createShaderSourceMap`                                                                                                                                                                                             |
-| `@fourjs/materials` | `ShaderAttributeName, ShaderBinaryOp, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderNodeId, ShaderReflection, ShaderTextureReflection, ShaderUnaryOp, ShaderUniformReflection, ShaderValueType` |
-| `@fourjs/materials` | `ShaderSourceLocation, ShaderSourceMap`                                                                                                                                                                             |
+| Package             | Import                                                                                                                                                                                                                                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@fourjs/materials` | `MAX_SHADER_GRAPH_NODES, MAX_SHADER_GRAPH_STORAGE, MAX_SHADER_GRAPH_TEXTURES, SHADER_ATTRIBUTE_TYPES, SHADER_LIGHT_ARRAY_TYPES, SHADER_LIGHT_SLOTS, SHADER_VALUE_COMPONENTS, analyzeShaderGraph, forEachShaderNodeReference, resolveShaderSelect`                                                                                          |
+| `@fourjs/materials` | `createShaderSourceMap`                                                                                                                                                                                                                                                                                                                    |
+| `@fourjs/materials` | `ShaderAttributeName, ShaderBinaryOp, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderLightArrayMember, ShaderLightMember, ShaderLightScalarMember, ShaderNodeId, ShaderReflection, ShaderStorageElementType, ShaderStorageReflection, ShaderTextureReflection, ShaderUnaryOp, ShaderUniformReflection, ShaderValueType` |
+| `@fourjs/materials` | `ShaderStorageBuffer`                                                                                                                                                                                                                                                                                                                      |
+| `@fourjs/materials` | `ShaderSourceLocation, ShaderSourceMap`                                                                                                                                                                                                                                                                                                    |
 
 **Internal Dependencies:**
 
@@ -4254,7 +4328,7 @@ graph LR
 | `./shape.js`               | `Arc, Circle, clearRegisteredShapePaints, Ellipse, Line, PathShape, Polygon, Polyline, Rectangle, RegularPolygon, resolveShapePaintSupport, Ring, Sector, setShapePaintSupport, Shape2D, Star`                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
 | `./shape-paint.js`         | `registerShapePaints`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Re-export             |
 | `./sprite.js`              | `Sprite, groupSpritesByTexture`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export             |
-| `./texture.js`             | `Texture`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Re-export             |
+| `./texture.js`             | `COMPRESSED_BLOCK_BYTES, COMPRESSED_TEXTURE_FORMATS, Texture, compressedLevelBytes`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Re-export             |
 | `./view-list.js`           | `buildViewRenderList, sortRenderListByDepth`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Re-export             |
 | `./gpu-readback.js`        | `GpuReadbackSource, isGpuReadbackSource`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Re-export             |
 | `./raster-limits.js`       | `DEFAULT_RASTER_MAXIMUM_BYTES`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Re-export             |
@@ -4282,6 +4356,7 @@ graph LR
 | `./shape.js`               | `ArcOptions, CircleOptions, EllipseOptions, ConicGradientPaint, GradientStop, LinearGradientPaint, LineOptions, ObjectPaint, Paint, PathShapeOptions, PatternPaint, PolygonOptions, PolylineOptions, RadialGradientPaint, RectangleOptions, RegularPolygonOptions, RingOptions, SectorOptions, ResolvedConicGradientPaint, ResolvedGradientStop, ResolvedLinearGradientPaint, ResolvedObjectPaint, ResolvedPaint, ResolvedPatternPaint, ResolvedRadialGradientPaint, ResolvedShapeFill, ResolvedSolidPaint, ResolvedStrokeStyle, Shape2DOptions, ShapeFill, ShapePaintPlan, ShapePaintSupport, SolidPaint, StarOptions, StrokeStyle` | Re-export (type-only) |
 | `./sprite.js`              | `SpriteFrame, SpriteOptions, SpriteTextureCarrier, SpriteTextureRun`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Re-export (type-only) |
 | `./texture.js`             | `TextureDimension, TextureFilter, TextureMapRole, TextureMinFilter, TextureSource, TextureWrap`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
+| `./texture.js`             | `TextureFormat`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Re-export (type-only) |
 | `./view-list.js`           | `ViewRenderListOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Re-export (type-only) |
 | `./gpu-readback.js`        | `GpuReadbackSourceOptions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
 | `./host-texture.js`        | `ImageReadSurface, HostTextureOptions, VideoTextureSource`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Re-export (type-only) |
@@ -4289,7 +4364,7 @@ graph LR
 **Exports:**
 
 - Constants: `PACKAGE_NAME`
-- Re-exports: `DEFAULT_MAX_BATCH_VERTICES`, `INSTANCE_FLOATS`, `RenderBatcher`, `computeWorldBoundingSphere`, `computeWorldBoundingSphereFromBox`, `COMPUTE_WORKLOADS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `ComputeWorkloadRegistry`, `ClipPlaneAllocator`, `MAX_CLIP_PLANES`, `intersectScissor`, `scissorsEqual`, `COMPUTE_ENTRY_POINT`, `supportsCompute`, `COLOR_GRADE_DEFAULTS`, `COPY_EFFECT`, `OUTPUT_TRANSFORM_EFFECT`, `supportsScreenEffects`, `validateEffectRenderPass`, `EXTRA_DIRECTIONAL_FLAG`, `MAX_DIRECTIONAL_LIGHTS`, `MAX_LIGHT_SLOTS`, `MAX_PUNCTUAL_LIGHTS`, `collectSceneLights`, `unionViewLayerMask`, `createSceneLights`, `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `PARTICLE_COLOR_OFFSET`, `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_POSITION_OFFSET`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SIZE_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `TRAIL_COLOR_OFFSET`, `TRAIL_POSITION_OFFSET`, `TRAIL_VERTEX_FLOATS`, `isParticleDrawable`, `particleQuadGeometry`, `buildInterpolatedRenderList`, `buildRenderList`, `compareRenderItems`, `groupRenderListByPipeline`, `isLitItem`, `isNodeItem`, `isParticlesItem`, `isSkinnedLitItem`, `isSkinnedUnlitItem`, `isSpriteItem`, `isStandardItem`, `isUnlitItem`, `viewLayerMask`, `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_TEXTURES`, `SHADER_ATTRIBUTE_TYPES`, `SHADER_VALUE_COMPONENTS`, `analyzeShaderGraph`, `forEachShaderNodeReference`, `RenderGraph`, `CanvasTexture`, `supportsReadPixels`, `validateReadbackRegion`, `MAX_PICK_CANDIDATES`, `assertEncodableCandidateCount`, `collectPickCandidates`, `decodePickId`, `encodePickId`, `supportsPicking`, `RenderTarget`, `isRenderTargetTexture`, `RENDER_TARGET_COLOR_BYTES`, `RENDER_TARGET_DEPTH_RENDERBUFFER_BYTES`, `RENDER_TARGET_DEPTH_STENCIL_BYTES`, `RENDER_TARGET_DEPTH_TEXTURE_BYTES`, `RENDER_TARGET_RGBA16F_BYTES`, `RENDER_TARGET_RGBA32F_BYTES`, `RENDER_TARGET_RGBA8_BYTES`, `colorAttachmentBytesPerTexel`, `depthAttachmentBytesPerTexel`, `renderTargetByteLength`, `Renderable`, `MAX_SKINNING_JOINTS`, `Mesh`, `restoreMeshSkeleton`, `AUTO_RENDERER_ORDER`, `RENDERER_CAPABILITY_NAMES`, `RendererRegistry`, `clearRegisteredRenderers`, `missingCapabilities`, `registerRenderer`, `registeredRenderers`, `resolveRenderer`, `validateCapabilityDeclaration`, `NullRenderer`, `liveRenderTargetCount`, `liveTextureCount`, `textureMemoryBytes`, `warnDisposedInUse`, `createRenderStatistics`, `resetRenderStatistics`, `supportsRenderStatistics`, `Arc`, `Circle`, `clearRegisteredShapePaints`, `Ellipse`, `Line`, `PathShape`, `Polygon`, `Polyline`, `Rectangle`, `RegularPolygon`, `resolveShapePaintSupport`, `Ring`, `Sector`, `setShapePaintSupport`, `Shape2D`, `Star`, `registerShapePaints`, `Sprite`, `groupSpritesByTexture`, `Texture`, `buildViewRenderList`, `sortRenderListByDepth`, `GpuReadbackSource`, `isGpuReadbackSource`, `DEFAULT_RASTER_MAXIMUM_BYTES`, `createShaderSourceMap`, `ImageBitmapTexture`, `VideoTexture`, `BatchableItem`, `BatchableMaterial`, `InstanceableItem`, `InstancedRun`, `RenderBatch`, `RenderBatchOptions`, `BoundingSphere`, `ComputeWorkloadFactory`, `ClipScope`, `RenderItemClip`, `RenderItemStencil`, `ScissorRect`, `ComputeBinding`, `ComputeBindingAccess`, `ComputeBuffer`, `ComputeDispatcher`, `ComputePassDescriptor`, `ColorGradeEffect`, `CopyEffect`, `EffectDestinationRect`, `EffectRenderPass`, `GraphEffect`, `OutputTransformEffect`, `ScreenEffect`, `ScreenEffectKind`, `ScreenEffectRenderer`, `AmbientLightSource`, `DirectionalLightSource`, `DirectionalShadowSource`, `HemisphereLightSource`, `PointLightSource`, `PunctualLightSource`, `PunctualLightSourceBase`, `SceneLights`, `SpotLightSource`, `ParticleDrawable`, `LitRenderItem`, `NodeRenderItem`, `ParticleRenderItem`, `RenderItem`, `RenderItemKind`, `SkinnedLitRenderItem`, `SkinnedUnlitRenderItem`, `SpriteRenderItem`, `StandardRenderItem`, `UnlitRenderItem`, `ShaderAttributeName`, `ShaderBinaryOp`, `ShaderDomain`, `ShaderGraph`, `ShaderGraphAnalysis`, `ShaderNode`, `ShaderNodeId`, `ShaderReflection`, `ShaderTextureReflection`, `ShaderUnaryOp`, `ShaderUniformReflection`, `ShaderValueType`, `AddPassOptions`, `CustomRenderPass`, `RenderGraphIssue`, `RenderGraphIssueCode`, `RenderGraphIssueSeverity`, `RenderGraphPass`, `RenderPass`, `RenderPassContext`, `SceneRenderPass`, `CanvasTextureOptions`, `RasterOrigin`, `RasterSource`, `PixelReader`, `PickRequest`, `PickResult`, `PickingService`, `RenderTargetFormat`, `RenderTargetOptions`, `RenderTargetTexture`, `RenderableOptions`, `SurfaceMaterial`, `RendererCapabilityDeclaration`, `RendererCapabilityName`, `RendererCapabilityShortfall`, `RendererFallbackReason`, `RendererFallbackReport`, `RendererRegistration`, `RendererResolveOptions`, `RendererSelection`, `RenderInterpolation`, `Renderer`, `RendererBackend`, `RendererCapabilities`, `RendererEventMap`, `RendererOptions`, `ResizeRecord`, `DisposedResourceKind`, `RenderStatistics`, `RenderStatisticsReporter`, `ArcOptions`, `CircleOptions`, `EllipseOptions`, `ConicGradientPaint`, `GradientStop`, `LinearGradientPaint`, `LineOptions`, `ObjectPaint`, `Paint`, `PathShapeOptions`, `PatternPaint`, `PolygonOptions`, `PolylineOptions`, `RadialGradientPaint`, `RectangleOptions`, `RegularPolygonOptions`, `RingOptions`, `SectorOptions`, `ResolvedConicGradientPaint`, `ResolvedGradientStop`, `ResolvedLinearGradientPaint`, `ResolvedObjectPaint`, `ResolvedPaint`, `ResolvedPatternPaint`, `ResolvedRadialGradientPaint`, `ResolvedShapeFill`, `ResolvedSolidPaint`, `ResolvedStrokeStyle`, `Shape2DOptions`, `ShapeFill`, `ShapePaintPlan`, `ShapePaintSupport`, `SolidPaint`, `StarOptions`, `StrokeStyle`, `SpriteFrame`, `SpriteOptions`, `SpriteTextureCarrier`, `SpriteTextureRun`, `TextureDimension`, `TextureFilter`, `TextureMapRole`, `TextureMinFilter`, `TextureSource`, `TextureWrap`, `ViewRenderListOptions`, `GpuReadbackSourceOptions`, `ShaderSourceLocation`, `ShaderSourceMap`, `ImageReadSurface`, `HostTextureOptions`, `VideoTextureSource`
+- Re-exports: `DEFAULT_MAX_BATCH_VERTICES`, `INSTANCE_FLOATS`, `RenderBatcher`, `computeWorldBoundingSphere`, `computeWorldBoundingSphereFromBox`, `COMPUTE_WORKLOADS`, `RENDERER_REGISTRY`, `RENDER_GRAPH`, `ComputeWorkloadRegistry`, `ClipPlaneAllocator`, `MAX_CLIP_PLANES`, `intersectScissor`, `scissorsEqual`, `COMPUTE_ENTRY_POINT`, `supportsCompute`, `COLOR_GRADE_DEFAULTS`, `COPY_EFFECT`, `OUTPUT_TRANSFORM_EFFECT`, `supportsScreenEffects`, `validateEffectRenderPass`, `EXTRA_DIRECTIONAL_FLAG`, `MAX_DIRECTIONAL_LIGHTS`, `MAX_LIGHT_SLOTS`, `MAX_PUNCTUAL_LIGHTS`, `collectSceneLights`, `unionViewLayerMask`, `createSceneLights`, `isDirectionalLightSource`, `isHemisphereLightSource`, `isPunctualLightSource`, `PARTICLE_COLOR_OFFSET`, `PARTICLE_INSTANCE_FLOATS`, `PARTICLE_POSITION_OFFSET`, `PARTICLE_ROTATION_OFFSET`, `PARTICLE_SIZE_OFFSET`, `PARTICLE_SOFTNESS_OFFSET`, `PARTICLE_WIDE_INSTANCE_FLOATS`, `TRAIL_COLOR_OFFSET`, `TRAIL_POSITION_OFFSET`, `TRAIL_VERTEX_FLOATS`, `isParticleDrawable`, `particleQuadGeometry`, `buildInterpolatedRenderList`, `buildRenderList`, `compareRenderItems`, `groupRenderListByPipeline`, `isLitItem`, `isNodeItem`, `isParticlesItem`, `isSkinnedLitItem`, `isSkinnedUnlitItem`, `isSpriteItem`, `isStandardItem`, `isUnlitItem`, `viewLayerMask`, `MAX_SHADER_GRAPH_NODES`, `MAX_SHADER_GRAPH_STORAGE`, `MAX_SHADER_GRAPH_TEXTURES`, `SHADER_ATTRIBUTE_TYPES`, `SHADER_LIGHT_ARRAY_TYPES`, `SHADER_LIGHT_SLOTS`, `SHADER_VALUE_COMPONENTS`, `analyzeShaderGraph`, `forEachShaderNodeReference`, `resolveShaderSelect`, `RenderGraph`, `CanvasTexture`, `supportsReadPixels`, `validateReadbackRegion`, `MAX_PICK_CANDIDATES`, `assertEncodableCandidateCount`, `collectPickCandidates`, `decodePickId`, `encodePickId`, `supportsPicking`, `RenderTarget`, `isRenderTargetTexture`, `RENDER_TARGET_COLOR_BYTES`, `RENDER_TARGET_DEPTH_RENDERBUFFER_BYTES`, `RENDER_TARGET_DEPTH_STENCIL_BYTES`, `RENDER_TARGET_DEPTH_TEXTURE_BYTES`, `RENDER_TARGET_RGBA16F_BYTES`, `RENDER_TARGET_RGBA32F_BYTES`, `RENDER_TARGET_RGBA8_BYTES`, `colorAttachmentBytesPerTexel`, `depthAttachmentBytesPerTexel`, `renderTargetByteLength`, `Renderable`, `MAX_SKINNING_JOINTS`, `Mesh`, `restoreMeshSkeleton`, `AUTO_RENDERER_ORDER`, `RENDERER_CAPABILITY_NAMES`, `RendererRegistry`, `clearRegisteredRenderers`, `missingCapabilities`, `registerRenderer`, `registeredRenderers`, `resolveRenderer`, `validateCapabilityDeclaration`, `NullRenderer`, `liveRenderTargetCount`, `liveTextureCount`, `textureMemoryBytes`, `warnDisposedInUse`, `createRenderStatistics`, `resetRenderStatistics`, `supportsRenderStatistics`, `Arc`, `Circle`, `clearRegisteredShapePaints`, `Ellipse`, `Line`, `PathShape`, `Polygon`, `Polyline`, `Rectangle`, `RegularPolygon`, `resolveShapePaintSupport`, `Ring`, `Sector`, `setShapePaintSupport`, `Shape2D`, `Star`, `registerShapePaints`, `Sprite`, `groupSpritesByTexture`, `COMPRESSED_BLOCK_BYTES`, `COMPRESSED_TEXTURE_FORMATS`, `Texture`, `compressedLevelBytes`, `buildViewRenderList`, `sortRenderListByDepth`, `GpuReadbackSource`, `isGpuReadbackSource`, `DEFAULT_RASTER_MAXIMUM_BYTES`, `createShaderSourceMap`, `ImageBitmapTexture`, `VideoTexture`, `BatchableItem`, `BatchableMaterial`, `InstanceableItem`, `InstancedRun`, `RenderBatch`, `RenderBatchOptions`, `BoundingSphere`, `ComputeWorkloadFactory`, `ClipScope`, `RenderItemClip`, `RenderItemStencil`, `ScissorRect`, `ComputeBinding`, `ComputeBindingAccess`, `ComputeBuffer`, `ComputeDispatcher`, `ComputePassDescriptor`, `ColorGradeEffect`, `CopyEffect`, `EffectDestinationRect`, `EffectRenderPass`, `GraphEffect`, `OutputTransformEffect`, `ScreenEffect`, `ScreenEffectKind`, `ScreenEffectRenderer`, `AmbientLightSource`, `DirectionalLightSource`, `DirectionalShadowSource`, `HemisphereLightSource`, `PointLightSource`, `PunctualLightSource`, `PunctualLightSourceBase`, `SceneLights`, `SpotLightSource`, `ParticleDrawable`, `LitRenderItem`, `NodeRenderItem`, `ParticleRenderItem`, `RenderItem`, `RenderItemKind`, `SkinnedLitRenderItem`, `SkinnedUnlitRenderItem`, `SpriteRenderItem`, `StandardRenderItem`, `UnlitRenderItem`, `ShaderAttributeName`, `ShaderBinaryOp`, `ShaderDomain`, `ShaderGraph`, `ShaderGraphAnalysis`, `ShaderNode`, `ShaderLightArrayMember`, `ShaderLightMember`, `ShaderLightScalarMember`, `ShaderNodeId`, `ShaderReflection`, `ShaderStorageElementType`, `ShaderStorageReflection`, `ShaderTextureReflection`, `ShaderUnaryOp`, `ShaderUniformReflection`, `ShaderValueType`, `ShaderStorageBuffer`, `AddPassOptions`, `CustomRenderPass`, `RenderGraphIssue`, `RenderGraphIssueCode`, `RenderGraphIssueSeverity`, `RenderGraphPass`, `RenderPass`, `RenderPassContext`, `SceneRenderPass`, `CanvasTextureOptions`, `RasterOrigin`, `RasterSource`, `PixelReader`, `PickRequest`, `PickResult`, `PickingService`, `RenderTargetFormat`, `RenderTargetOptions`, `RenderTargetTexture`, `RenderableOptions`, `SurfaceMaterial`, `RendererCapabilityDeclaration`, `RendererCapabilityName`, `RendererCapabilityShortfall`, `RendererFallbackReason`, `RendererFallbackReport`, `RendererRegistration`, `RendererResolveOptions`, `RendererSelection`, `RenderInterpolation`, `Renderer`, `RendererBackend`, `RendererCapabilities`, `RendererEventMap`, `RendererOptions`, `ResizeRecord`, `DisposedResourceKind`, `RenderStatistics`, `RenderStatisticsReporter`, `ArcOptions`, `CircleOptions`, `EllipseOptions`, `ConicGradientPaint`, `GradientStop`, `LinearGradientPaint`, `LineOptions`, `ObjectPaint`, `Paint`, `PathShapeOptions`, `PatternPaint`, `PolygonOptions`, `PolylineOptions`, `RadialGradientPaint`, `RectangleOptions`, `RegularPolygonOptions`, `RingOptions`, `SectorOptions`, `ResolvedConicGradientPaint`, `ResolvedGradientStop`, `ResolvedLinearGradientPaint`, `ResolvedObjectPaint`, `ResolvedPaint`, `ResolvedPatternPaint`, `ResolvedRadialGradientPaint`, `ResolvedShapeFill`, `ResolvedSolidPaint`, `ResolvedStrokeStyle`, `Shape2DOptions`, `ShapeFill`, `ShapePaintPlan`, `ShapePaintSupport`, `SolidPaint`, `StarOptions`, `StrokeStyle`, `SpriteFrame`, `SpriteOptions`, `SpriteTextureCarrier`, `SpriteTextureRun`, `TextureDimension`, `TextureFilter`, `TextureMapRole`, `TextureMinFilter`, `TextureSource`, `TextureWrap`, `TextureFormat`, `ViewRenderListOptions`, `GpuReadbackSourceOptions`, `ShaderSourceLocation`, `ShaderSourceMap`, `ImageReadSurface`, `HostTextureOptions`, `VideoTextureSource`
 
 ---
 
@@ -4336,8 +4411,9 @@ graph LR
 
 - Classes: `Texture`
 - Interfaces: `TextureSource`
-- Types: `TextureFilter`, `TextureMinFilter`, `TextureWrap`, `TextureDimension`, `TextureMapRole`
-- Functions: `textureChainBytes`, `validateTextureSource`
+- Types: `TextureFilter`, `TextureMinFilter`, `TextureWrap`, `TextureDimension`, `TextureMapRole`, `TextureFormat`
+- Functions: `compressedLevelBytes`, `textureChainBytes`, `validateTextureSource`
+- Constants: `COMPRESSED_TEXTURE_FORMATS`, `COMPRESSED_BLOCK_BYTES`
 
 ---
 
@@ -5242,10 +5318,10 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                                                                                                                                                                                                                                                             |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@fourjs/core`   | `DEV, FourError, devWarnOnce, Disposable`                                                                                                                                                                                                                                                          |
-| `@fourjs/render` | `SHADER_VALUE_COMPONENTS, analyzeShaderGraph, createShaderSourceMap, ShaderSourceMap, isRenderTargetTexture, GraphEffect, NodeRenderItem, RenderItem, RenderStatistics, ShaderAttributeName, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderUniformReflection, ShaderValueType` |
+| Package          | Import                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fourjs/core`   | `DEV, FourError, devWarnOnce, Disposable`                                                                                                                                                                                                                                                                                                                                                                        |
+| `@fourjs/render` | `SHADER_VALUE_COMPONENTS, analyzeShaderGraph, createShaderSourceMap, resolveShaderSelect, SHADER_LIGHT_ARRAY_TYPES, MAX_LIGHT_SLOTS, ShaderStorageReflection, ShaderStorageBuffer, ShaderSourceMap, isRenderTargetTexture, GraphEffect, NodeRenderItem, RenderItem, RenderStatistics, ShaderAttributeName, ShaderDomain, ShaderGraph, ShaderGraphAnalysis, ShaderNode, ShaderUniformReflection, ShaderValueType` |
 
 **Internal Dependencies:**
 
@@ -5257,6 +5333,7 @@ graph LR
 | `./wgpu-pipeline-cache.js` | `blendStateFor, stencilStateFor, WgpuStencilDescriptor`                                                                                                                                                                  | Import             |
 | `./wgpu-node-registry.js`  | `setWebgpuNodeMaterialPipelineFactory, WgpuNodeFrameState, WgpuNodeItemMaterial, WgpuNodeMaterialPipelines, WgpuNodePipelineHost`                                                                                        | Import             |
 | `./wgpu-render-target.js`  | `WgpuCacheableRenderTarget, WgpuRenderTargetCache`                                                                                                                                                                       | Import (type-only) |
+| `./wgpu-lights.js`         | `LIGHT_UNIFORM_BYTES, LIGHT_UNIFORM_FLOATS, LIGHT_UNIFORM_MEMBERS_WGSL, LIGHT_UNIFORM_STRIDE_FLOATS, writeLightUniforms`                                                                                                 | Import             |
 | `./wgpu-stencil.js`        | `applyStencilReference, stencilDescriptor`                                                                                                                                                                               | Import             |
 | `./wgpu-unlit.js`          | `COLOR_BUFFER_LAYOUT, FRAGMENT_ENTRY_POINT, POSITION_BUFFER_LAYOUT, UV_BUFFER_LAYOUT, VERTEX_ENTRY_POINT`                                                                                                                | Import             |
 
@@ -5369,11 +5446,11 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import              |
-| ---------------- | ------------------- |
-| `@fourjs/core`   | `FourError`         |
-| `@fourjs/render` | `RenderItem`        |
-| `@fourjs/render` | `warnDisposedInUse` |
+| Package          | Import                        |
+| ---------------- | ----------------------------- |
+| `@fourjs/core`   | `DEV, FourError, devWarnOnce` |
+| `@fourjs/render` | `RenderItem`                  |
+| `@fourjs/render` | `warnDisposedInUse`           |
 
 **Internal Dependencies:**
 
@@ -5388,8 +5465,8 @@ graph LR
 - Classes: `WgpuTextureCache`
 - Interfaces: `ResolvedSamplerState`, `WgpuTextureRecord`
 - Types: `WgpuCacheableTexture`
-- Functions: `mipLevelCount`, `textureByteLength`, `downsampleVolume`, `samplerKey`
-- Constants: `MIPMAP_SHADER_SOURCE`
+- Functions: `supportedCompressedFormats`, `mipLevelCount`, `textureByteLength`, `downsampleVolume`, `samplerKey`
+- Constants: `COMPRESSED_FORMAT_FEATURES`, `MIPMAP_SHADER_SOURCE`
 
 ---
 
@@ -5652,10 +5729,10 @@ graph LR
 
 **Workspace Dependencies:**
 
-| Package          | Import                                                      |
-| ---------------- | ----------------------------------------------------------- |
-| `@fourjs/math`   | `Matrix4`                                                   |
-| `@fourjs/render` | `GraphEffect, NodeRenderItem, RenderItem, RenderStatistics` |
+| Package          | Import                                                                   |
+| ---------------- | ------------------------------------------------------------------------ |
+| `@fourjs/math`   | `Matrix4`                                                                |
+| `@fourjs/render` | `GraphEffect, NodeRenderItem, RenderItem, RenderStatistics, SceneLights` |
 
 **Internal Dependencies:**
 
@@ -5842,7 +5919,7 @@ graph LR
 | `./wgpu-sprite.js`              | `SPRITE_UNIFORM_BYTES, createSpriteBindGroupLayout`                                                                                                                                                                                                          | Import             |
 | `./wgpu-shadow.js`              | `SHADOW_LIGHT_UNIFORM_BYTES, SHADOW_MAP_BINDING, SHADOW_SAMPLER_BINDING, createShadowLightsBindGroupLayout, createShadowSampler, writeShadowUniforms`                                                                                                        | Import             |
 | `./wgpu-stencil.js`             | `CLEAR_STENCIL, applyStencilReference, frameWantsStencil, stencilDescriptor`                                                                                                                                                                                 | Import             |
-| `./wgpu-texture.js`             | `WgpuTextureCache, WgpuCacheableTexture`                                                                                                                                                                                                                     | Import             |
+| `./wgpu-texture.js`             | `WgpuTextureCache, supportedCompressedFormats, WgpuCacheableTexture`                                                                                                                                                                                         | Import             |
 | `./wgpu-node-registry.js`       | `resolveWebgpuNodeMaterialPipelineFactory, WgpuNodeFrameState, WgpuNodeMaterialPipelines`                                                                                                                                                                    | Import             |
 | `./wgpu-picking-registry.js`    | `resolvePickingServiceFactory, PickingRendererHost`                                                                                                                                                                                                          | Import             |
 | `./wgpu-skinning-registry.js`   | `resolveSkinningPipelineFactory, SkinnedPrograms, SkinningPipelineHost, WgpuSkinnedDrawDescriptor`                                                                                                                                                           | Import             |
@@ -8022,37 +8099,37 @@ graph LR
 | `packages/render-webgl/src/index`                | 21 files     | 0 files    |
 | `packages/render-webgl/src/gl-program`           | 0 files      | 21 files   |
 | `packages/physics/src/world`                     | 15 files     | 6 files    |
+| `packages/materials/src/index`                   | 17 files     | 0 files    |
 | `packages/render-webgl/src/webgl-renderer`       | 15 files     | 2 files    |
 | `packages/render-webgpu/src/wgpu-unlit`          | 2 files      | 15 files   |
-| `packages/materials/src/index`                   | 16 files     | 0 files    |
 | `packages/scene/src/index`                       | 16 files     | 0 files    |
+| `packages/assets/src/index`                      | 16 files     | 0 files    |
 | `packages/physics/src/types`                     | 0 files      | 16 files   |
 | `packages/render-webgpu/src/wgpu-pipeline-cache` | 9 files      | 7 files    |
 | `packages/ui/src/index`                          | 14 files     | 0 files    |
-| `packages/assets/src/index`                      | 14 files     | 0 files    |
 | `packages/physics/src/descriptors`               | 4 files      | 10 files   |
 | `packages/scene/src/node`                        | 4 files      | 9 files    |
 | `packages/render-webgpu/src/wgpu-bindings`       | 1 file       | 12 files   |
 | `packages/animation/src/index`                   | 13 files     | 0 files    |
 | `packages/core/src/index`                        | 13 files     | 0 files    |
+| `packages/assets/src/texture`                    | 2 files      | 10 files   |
 | `packages/animation/src/controller`              | 9 files      | 3 files    |
-| `packages/assets/src/texture`                    | 2 files      | 9 files    |
 | `packages/physics/src/rigid-body`                | 4 files      | 7 files    |
 | `packages/physics/src/collider`                  | 8 files      | 3 files    |
 | `packages/render/src/render-list`                | 6 files      | 5 files    |
 | `packages/render/src/render-target`              | 2 files      | 9 files    |
 | `packages/diagnostics/src/index`                 | 11 files     | 0 files    |
 | `packages/math/src/index`                        | 10 files     | 0 files    |
+| `packages/assets/src/bounded-png`                | 3 files      | 7 files    |
 | `packages/geometry/src/index`                    | 10 files     | 0 files    |
 | `packages/render/src/renderer`                   | 5 files      | 5 files    |
+| `packages/render-webgpu/src/wgpu-node-program`   | 9 files      | 1 file     |
 | `packages/render-webgpu/src/wgpu-shadow`         | 4 files      | 6 files    |
 | `packages/render-webgpu/src/wgpu-standard`       | 6 files      | 4 files    |
 | `packages/ui/src/widget`                         | 0 files      | 9 files    |
 | `packages/math/src/alloc-counter`                | 0 files      | 9 files    |
 | `packages/physics/src/serializers`               | 8 files      | 1 file     |
 | `packages/physics/src/shapes`                    | 1 file       | 8 files    |
-| `packages/render/src/raster`                     | 6 files      | 3 files    |
-| `packages/render-webgpu/src/wgpu-skinning`       | 8 files      | 1 file     |
 
 ---
 
@@ -8111,7 +8188,7 @@ graph TD
         N16[standard-material]
         N17[shader-operators]
         N18[unlit-material]
-        N19[...7 more]
+        N19[...8 more]
     end
 
     subgraph Packages/ui
@@ -8189,7 +8266,7 @@ graph TD
         N73[loader-registry]
         N74[manifest]
         N75[content-hash]
-        N76[...8 more]
+        N76[...10 more]
     end
 
     subgraph Packages/physics-soft
@@ -8468,17 +8545,17 @@ graph TD
 
 | Category                | Count  |
 | ----------------------- | ------ |
-| Total TypeScript Files  | 363    |
+| Total TypeScript Files  | 366    |
 | Total Modules           | 25     |
-| Total Lines of Code     | 177457 |
-| Total Exports           | 3662   |
-| Total Re-exports        | 2284   |
-| Total Classes           | 225    |
-| Total Interfaces        | 673    |
-| Total Functions         | 626    |
+| Total Lines of Code     | 179438 |
+| Total Exports           | 3729   |
+| Total Re-exports        | 2330   |
+| Total Classes           | 226    |
+| Total Interfaces        | 681    |
+| Total Functions         | 634    |
 | Total Type Guards       | 34     |
 | Total Enums             | 0      |
-| Type-only Imports       | 456    |
+| Type-only Imports       | 460    |
 | Runtime Circular Deps   | 0      |
 | Type-only Circular Deps | 10     |
 
