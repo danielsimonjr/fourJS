@@ -299,6 +299,15 @@ const CHARACTER_PORT = 4182;
  */
 const GLTF_MODEL_PORT = 4183;
 
+/**
+ * Preview port for `examples/canvas-backend` — the Canvas 2D backend (W3.1).
+ *
+ * A twelfth entry, for {@link PLAYGROUND_PORT}'s reason. 4184 is the next free
+ * port above the glTF demo's and is restated verbatim in
+ * `tests/browser/backends-canvas.spec.ts`.
+ */
+const CANVAS_BACKEND_PORT = 4184;
+
 export default defineConfig({
   testDir: "tests/browser",
   // Failure artifacts (traces, error context) live inside the already-ignored
@@ -498,6 +507,13 @@ export default defineConfig({
     {
       command: `npx vite preview examples/gltf-model --port ${String(GLTF_MODEL_PORT)} --strictPort`,
       url: `http://localhost:${String(GLTF_MODEL_PORT)}`,
+      reuseExistingServer: false,
+      stdout: "ignore",
+      stderr: "pipe",
+    },
+    {
+      command: `npx vite preview examples/canvas-backend --port ${String(CANVAS_BACKEND_PORT)} --strictPort`,
+      url: `http://localhost:${String(CANVAS_BACKEND_PORT)}`,
       reuseExistingServer: false,
       stdout: "ignore",
       stderr: "pipe",

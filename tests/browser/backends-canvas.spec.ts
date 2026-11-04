@@ -19,8 +19,8 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { build } from "vite";
 
-/** Restates `PORT` in `playwright.config.ts` - the site whose origin is borrowed. */
-const PORT = 4173;
+/** Restates `CANVAS_BACKEND_PORT` in `playwright.config.ts` - the preview of `examples/canvas-backend`. */
+const PORT = 4184;
 
 interface Probe {
   readonly dataUrl: string;

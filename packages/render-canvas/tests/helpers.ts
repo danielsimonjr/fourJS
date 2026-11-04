@@ -130,7 +130,7 @@ export class FakeSurface implements Canvas2dSurface {
     this.context = context;
   }
 
-  getContext(): unknown {
+  getContext(_contextId: "2d", _attributes?: object): unknown {
     this.contextRequests += 1;
     return this.context;
   }
@@ -220,7 +220,7 @@ export function triangle(
   );
 }
 
-export function root(...children: Renderable[]): Renderable {
+export function root(...children: Array<Renderable | Sprite>): Renderable {
   const node = new Renderable(
     new TestGeometry(new Float32Array(0)).asGeometry,
     new TestMaterial().asMaterial,

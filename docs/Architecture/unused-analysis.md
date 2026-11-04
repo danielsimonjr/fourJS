@@ -48,6 +48,7 @@ directly. Not dead; not shipped. No action needed.
 
 These files are not imported by any other file in the codebase:
 
+
 ## Unreferenced Anywhere (deletion candidates)
 
 Not imported by any other file AND not referenced within their own module — the true dead-code candidates. Verify each isn't consumed by a mechanism the
@@ -57,6 +58,7 @@ parser can't see (dynamic access, docs examples, published-API contract) before 
 
 - `JOINTS1_ATTRIBUTE_LOCATION` (constant)
 - `WEIGHTS1_ATTRIBUTE_LOCATION` (constant)
+
 
 ## Referenced In-Module (type contracts / helpers backing live exports)
 
@@ -88,3 +90,4 @@ interfaces typing live guards and per-package API completeness, not rot.
 ### `packages/fourjs/src/scene-serializers.ts`
 
 - `CANVAS_VIEW_NODE_TYPE` (constant) — 2 in-file refs
+
