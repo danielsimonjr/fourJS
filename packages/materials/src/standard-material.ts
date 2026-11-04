@@ -34,7 +34,8 @@
  * Normal and occlusion textures use linear data, and the geometry's first UV
  * set. Degenerate UVs preserve the geometric normal. Occlusion affects only
  * indirect diffuse lighting; direct lights and emission remain unoccluded.
- * These two maps and emissive textures currently sample on WebGL only.
+ * The normal, occlusion and emissive textures sample on both WebGL 2 and
+ * WebGPU (the latter through a widened surface bind group).
  *
  * §59's seven physical extensions are `PhysicalMaterial`'s (§57's family puts it
  * above this class) and are not sketched here.

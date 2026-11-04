@@ -46,7 +46,11 @@
  * a given application typically compiles one or two.
  */
 
-import { DRAW_UNIFORM_WGSL, MAP_BINDING_WGSL } from "./wgpu-bindings.js";
+import {
+  DRAW_NORMAL_OFFSET,
+  DRAW_UNIFORM_WGSL,
+  MAP_BINDING_WGSL,
+} from "./wgpu-bindings.js";
 import type { GpuVertexBufferLayout } from "./webgpu-device.js";
 
 /** `@location(0)` — object-space position, the one required stream (§53). */
@@ -105,6 +109,66 @@ export const UV_BUFFER_LAYOUT: GpuVertexBufferLayout = Object.freeze({
   ]),
 });
 
+/** `@location(6)` — the first morph target's position stream (RFC 0003). */
+export const POSITION1_SHADER_LOCATION = 6;
+
+/** `@location(7)` — the first morph target's normal stream (RFC 0003). */
+export const NORMAL1_SHADER_LOCATION = 7;
+
+/** Vertex layout for `positions1`: one tightly packed `vec3<f32>`. */
+export const POSITION1_BUFFER_LAYOUT: GpuVertexBufferLayout = Object.freeze({
+  arrayStride: 12,
+  stepMode: "vertex",
+  attributes: Object.freeze([
+    Object.freeze({
+      format: "float32x3",
+      offset: 0,
+      shaderLocation: POSITION1_SHADER_LOCATION,
+    }),
+  ]),
+});
+
+/** Vertex layout for `normals1`: one tightly packed `vec3<f32>`. */
+export const NORMAL1_BUFFER_LAYOUT: GpuVertexBufferLayout = Object.freeze({
+  arrayStride: 12,
+  stepMode: "vertex",
+  attributes: Object.freeze([
+    Object.freeze({
+      format: "float32x3",
+      offset: 0,
+      shaderLocation: NORMAL1_SHADER_LOCATION,
+    }),
+  ]),
+});
+
+/**
+ * Which morph streams a one-target GPU morph variant reads (RFC 0003 WP-SK.4):
+ * `"p"` positions only, `"pn"` positions and normals. Lit geometry that carries
+ * `normals1` selects `"pn"`; everything else `"p"`.
+ */
+export type WgpuMorph = "p" | "pn";
+
+/**
+ * Byte offset of the one-target morph weight inside `DrawUniforms`: the
+ * padding word of `normalMatrix`'s first column (a `mat3x3` column is a
+ * `vec3` padded to 16 bytes). The block stays 192 bytes; morph variants
+ * declare the matrix as three `vec4` columns ({@link MORPH_DRAW_UNIFORM_WGSL})
+ * so the word becomes addressable as `normalColumn0.w`.
+ */
+export const DRAW_MORPH_WEIGHT_OFFSET = DRAW_NORMAL_OFFSET + 12;
+
+/**
+ * {@link DRAW_UNIFORM_WGSL} with `normalMatrix` spelled as its three padded
+ * columns — byte-identical layout, but the padding words are nameable.
+ */
+export const MORPH_DRAW_UNIFORM_WGSL = DRAW_UNIFORM_WGSL.replace(
+  "normalMatrix : mat3x3<f32>,",
+  "normalColumn0 : vec4<f32>,\n  normalColumn1 : vec4<f32>,\n  normalColumn2 : vec4<f32>,",
+);
+
+/** The WGSL expression for the morph weight in a morph variant. */
+export const MORPH_WEIGHT_WGSL = "draw.normalColumn0.w";
+
 /**
  * Vertex layouts for an unlit pipeline, **in slot order**: position always,
  * then colours if the variant reads them, then uvs if it samples a texture.
@@ -124,6 +188,7 @@ export const UV_BUFFER_LAYOUT: GpuVertexBufferLayout = Object.freeze({
 export function unlitVertexBufferLayouts(
   vertexColors: boolean,
   map = false,
+  morph?: WgpuMorph,
 ): readonly GpuVertexBufferLayout[] {
   const layouts: GpuVertexBufferLayout[] = [POSITION_BUFFER_LAYOUT];
   if (vertexColors) {
@@ -131,6 +196,9 @@ export function unlitVertexBufferLayouts(
   }
   if (map) {
     layouts.push(UV_BUFFER_LAYOUT);
+  }
+  if (morph !== undefined) {
+    layouts.push(POSITION1_BUFFER_LAYOUT);
   }
   return layouts;
 }
@@ -151,7 +219,11 @@ export const FRAGMENT_ENTRY_POINT = "fragmentMain";
  * descriptor instead of on the string (§33's determinism rule, applied to a
  * cache).
  */
-export function unlitShaderSource(vertexColors: boolean, map = false): string {
+export function unlitShaderSource(
+  vertexColors: boolean,
+  map = false,
+  morph?: WgpuMorph,
+): string {
   let input = `  @location(${String(POSITION_SHADER_LOCATION)}) position : vec3<f32>,`;
   if (vertexColors) {
     input += `
@@ -161,11 +233,15 @@ export function unlitShaderSource(vertexColors: boolean, map = false): string {
     input += `
   @location(${String(UV_SHADER_LOCATION)}) uv : vec2<f32>,`;
   }
+  if (morph !== undefined) {
+    input += `
+  @location(${String(POSITION1_SHADER_LOCATION)}) position1 : vec3<f32>,`;
+  }
   const color = vertexColors ? "draw.color * vertexColor" : "draw.color";
   // `map` multiplies the interpolated colour, so the tint and the per-vertex
   // colour both survive — the same expression `gl-program.ts`'s unlit fragment
   // stage writes (`result *= texture(map, vUv)`), and the same order.
-  return `${DRAW_UNIFORM_WGSL}${map ? `\n\n${MAP_BINDING_WGSL}` : ""}
+  return `${morph === undefined ? DRAW_UNIFORM_WGSL : MORPH_DRAW_UNIFORM_WGSL}${map ? `\n\n${MAP_BINDING_WGSL}` : ""}
 
 struct VertexOutput {
   @builtin(position) position : vec4<f32>,
@@ -182,7 +258,13 @@ fn ${VERTEX_ENTRY_POINT}(
 ${input}
 ) -> VertexOutput {
   var output : VertexOutput;
-  let clip = draw.viewProjection * draw.model * vec4<f32>(position, 1.0);
+${
+  morph === undefined
+    ? ""
+    : `  // One-target GPU morph (RFC 0003): GLSL's mix(position, position1, w).
+  let morphed = mix(position, position1, ${MORPH_WEIGHT_WGSL});
+`
+}  let clip = draw.viewProjection * draw.model * vec4<f32>(${morph === undefined ? "position" : "morphed"}, 1.0);
   // WebGL clip depth [-w, w] onto WebGPU's [0, w]; see the module header.
   output.position = vec4<f32>(clip.x, clip.y, (clip.z + clip.w) * 0.5, clip.w);
   output.color = ${color};${
