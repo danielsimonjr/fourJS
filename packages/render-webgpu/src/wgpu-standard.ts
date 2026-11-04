@@ -132,7 +132,11 @@ import {
   SHADOW_FACTOR_WGSL,
   SHADOW_LIGHT_UNIFORM_WGSL,
 } from "./wgpu-shadow.js";
-import { FRAGMENT_ENTRY_POINT, type WgpuMorph } from "./wgpu-unlit.js";
+import {
+  FRAGMENT_ENTRY_POINT,
+  morphTargetCount,
+  type WgpuMorph,
+} from "./wgpu-unlit.js";
 
 /** Which of the three surface-detail maps a standard variant samples. */
 export interface SurfaceMaps {
@@ -282,6 +286,20 @@ export const MORPH_STANDARD_UNIFORM_WGSL = STANDARD_UNIFORM_WGSL.replace(
 );
 
 /**
+ * {@link MORPH_STANDARD_UNIFORM_WGSL} plus the trailing `morphWeights` vec4
+ * the 2..4-target variants read (byte offset
+ * {@link STANDARD_MORPH_WEIGHTS_OFFSET}, within the 256-byte stride).
+ */
+export const MORPH_N_STANDARD_UNIFORM_WGSL =
+  MORPH_STANDARD_UNIFORM_WGSL.replace(
+    "\n};",
+    "\n  morphWeights : vec4<f32>,\n};",
+  );
+
+/** Byte offset of `morphWeights` in {@link MORPH_N_STANDARD_UNIFORM_WGSL}. */
+export const STANDARD_MORPH_WEIGHTS_OFFSET = 224;
+
+/**
  * The standard WGSL module for one variant quadruple — the lit family's
  * (`normals`, `map`, WP-R1.7's `shadow`) plus §59's packed metallic-roughness
  * map. `metalRoughness` defaults false so every landed scalar-only module is
@@ -310,7 +328,7 @@ export function standardShaderSource(
   const surfaceGroup = map
     ? SHADED_MR_BIND_GROUP_INDEX
     : SHADED_MAP_BIND_GROUP_INDEX;
-  return `${morph === undefined ? STANDARD_UNIFORM_WGSL : MORPH_STANDARD_UNIFORM_WGSL}
+  return `${morph === undefined ? STANDARD_UNIFORM_WGSL : morphTargetCount(morph) === 1 ? MORPH_STANDARD_UNIFORM_WGSL : MORPH_N_STANDARD_UNIFORM_WGSL}
 
 ${shadow ? SHADOW_LIGHT_UNIFORM_WGSL : LIGHT_UNIFORM_WGSL}${
     map

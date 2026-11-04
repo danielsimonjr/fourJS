@@ -926,7 +926,9 @@ describe("WebgpuRenderer.render", () => {
 
     geometry.markDirty();
     harness.renderer.render(root, [createView()]);
-    expect(harness.gpu.countOf("device.createBuffer")).toBe(2);
+    // §65: a dirty geometry of unchanged layout rewrites its buffer in place.
+    expect(harness.gpu.countOf("device.createBuffer")).toBe(1);
+    expect(harness.gpu.countOf("queue.writeBuffer")).toBeGreaterThanOrEqual(2);
   });
 
   it("compiles one pipeline per distinct descriptor, and no more", () => {

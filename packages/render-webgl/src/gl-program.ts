@@ -834,6 +834,116 @@ void main() {
 }
 `;
 
+/**
+ * Attribute location of morph target `k` (1-based, `k <= MAX_MORPH_TARGETS`):
+ * `6 / 7` for target 1, then `10 / 11`, `12 / 13`, `14 / 15` (spec 1.19+).
+ * `JOINTS_1`/`WEIGHTS_1` keep `8 / 9`. Sixteen attributes is the WebGL 2
+ * guaranteed `MAX_VERTEX_ATTRIBS` minimum, so locations 0..15 always exist.
+ */
+export function morphPositionLocation(k: number): number {
+  return k === 1 ? POSITION1_ATTRIBUTE_LOCATION : 10 + 2 * (k - 2);
+}
+
+/** Normal-stream location of morph target `k`; see {@link morphPositionLocation}. */
+export function morphNormalLocation(k: number): number {
+  return morphPositionLocation(k) + 1;
+}
+
+/** Σ wᵢ(pᵢ − p) expression, weights in `morphWeights.{x,y,z,w}`. */
+function morphSum(name: string, base: string, count: number): string {
+  const lanes = "xyzw";
+  let expr = base;
+  for (let k = 1; k <= count; k += 1) {
+    expr += ` + morphWeights.${lanes[k - 1]} * (${name}${String(k)} - ${base})`;
+  }
+  return expr;
+}
+
+/** N-target (2..4) unlit morph vertex shader; one target uses the mix source. */
+function morphVertexSource(count: number): string {
+  let attrs = "";
+  for (let k = 1; k <= count; k += 1) {
+    attrs += `layout(location = ${String(morphPositionLocation(k))}) in vec3 position${String(k)};\n`;
+  }
+  return `#version 300 es
+layout(location = 0) in vec3 position;
+layout(location = 2) in vec2 uv;
+layout(location = 3) in vec4 vertexColor;
+${attrs}
+uniform mat4 viewProjection;
+uniform mat4 model;
+uniform vec4 morphWeights;
+
+out vec2 vUv;
+out vec4 vColor;
+
+void main() {
+  vUv = uv;
+  vColor = vertexColor;
+  vec3 p = ${morphSum("position", "position", count)};
+  gl_Position = viewProjection * model * vec4(p, 1.0);
+}
+`;
+}
+
+/** N-target (2..4) lit morph vertex shader. */
+function morphLitVertexSource(count: number): string {
+  let attrs = "";
+  for (let k = 1; k <= count; k += 1) {
+    attrs += `layout(location = ${String(morphPositionLocation(k))}) in vec3 position${String(k)};\n`;
+    attrs += `layout(location = ${String(morphNormalLocation(k))}) in vec3 normal${String(k)};\n`;
+  }
+  return `#version 300 es
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 uv;
+${attrs}
+uniform mat4 viewProjection;
+uniform mat4 model;
+uniform mat3 normalMatrix;
+uniform vec4 morphWeights;
+
+out vec3 vNormal;
+out vec3 vWorldPosition;
+out vec2 vUv;
+
+void main() {
+  vec3 p = ${morphSum("position", "position", count)};
+  vec3 n = ${morphSum("normal", "normal", count)};
+  vNormal = normalMatrix * n;
+  vWorldPosition = (model * vec4(p, 1.0)).xyz;
+  vUv = uv;
+  gl_Position = viewProjection * model * vec4(p, 1.0);
+}
+`;
+}
+
+/** Uploads `morphWeights` (vec4) through a four-float mirror; returns whether it wrote. */
+function uploadMorphWeights4(
+  gl: WebglContext,
+  location: GlUniformLocation,
+  mirror: Float32Array,
+  weights: Float32Array | null,
+): void {
+  const a = weights?.[0] ?? 0;
+  const b = weights?.[1] ?? 0;
+  const c = weights?.[2] ?? 0;
+  const d = weights?.[3] ?? 0;
+  if (
+    mirror[0] === a &&
+    mirror[1] === b &&
+    mirror[2] === c &&
+    mirror[3] === d
+  ) {
+    return;
+  }
+  mirror[0] = a;
+  mirror[1] = b;
+  mirror[2] = c;
+  mirror[3] = d;
+  gl.uniform4fv(location, mirror);
+}
+
 const MORPH_VERTEX_SHADER_SOURCE = `#version 300 es
 layout(location = 0) in vec3 position;
 layout(location = 2) in vec2 uv;
@@ -1876,6 +1986,11 @@ export class UnlitProgram implements Disposable {
 
   #morphWeight = 0;
 
+  /** Four-float mirror of `morphWeights` on 2..4-target programs (NaN = unset). */
+  readonly #morphMirror = new Float32Array(4).fill(Number.NaN);
+
+  #morphMulti = false;
+
   /**
    * CPU mirror of the two feature uniforms, seeded with GL's own initial value
    * for an `int`/`bool` uniform — `0`, i.e. both off. Because the mirror starts
@@ -1927,6 +2042,7 @@ export class UnlitProgram implements Disposable {
     useMapLocation: GlUniformLocation,
     useVertexColorsLocation: GlUniformLocation,
     morphWeightLocation: GlUniformLocation | null = null,
+    morphMulti = false,
   ) {
     this.#gl = gl;
     this.#program = program;
@@ -1937,6 +2053,7 @@ export class UnlitProgram implements Disposable {
     this.#useMapLocation = useMapLocation;
     this.#useVertexColorsLocation = useVertexColorsLocation;
     this.#morphWeightLocation = morphWeightLocation;
+    this.#morphMulti = morphMulti;
   }
 
   /**
@@ -1979,14 +2096,16 @@ export class UnlitProgram implements Disposable {
   }
 
   /**
-   * One-target morph variant of {@link UnlitProgram.create} — compiled lazily
-   * on the first geometry that carries `positions1` (RFC 0003 WP-SK.4).
+   * Morph variant of {@link UnlitProgram.create} — compiled lazily on the
+   * first geometry that carries `positions1` (RFC 0003 WP-SK.4). `count`
+   * (default 1) selects the N-target shader (2..4, `morphWeights` vec4); one
+   * target keeps the original `mix` source and `morphWeight0` uniform.
    */
-  static createMorph(gl: WebglContext): UnlitProgram {
+  static createMorph(gl: WebglContext, count = 1): UnlitProgram {
     const program = createLinkedProgram(
       gl,
       "unlit-morph",
-      MORPH_VERTEX_SHADER_SOURCE,
+      count === 1 ? MORPH_VERTEX_SHADER_SOURCE : morphVertexSource(count),
       FRAGMENT_SHADER_SOURCE,
     );
     try {
@@ -1999,7 +2118,13 @@ export class UnlitProgram implements Disposable {
         requireUniform(gl, program, "map", "unlit-morph"),
         requireUniform(gl, program, "useMap", "unlit-morph"),
         requireUniform(gl, program, "useVertexColors", "unlit-morph"),
-        requireUniform(gl, program, "morphWeight0", "unlit-morph"),
+        requireUniform(
+          gl,
+          program,
+          count === 1 ? "morphWeight0" : "morphWeights",
+          "unlit-morph",
+        ),
+        count > 1,
       );
     } catch (error: unknown) {
       gl.deleteProgram(program);
@@ -2045,6 +2170,21 @@ export class UnlitProgram implements Disposable {
     }
     this.#gl.uniform1f(this.#morphWeightLocation, weight);
     this.#morphWeight = weight;
+  }
+
+  /**
+   * Weights `[w1..w4]` for a 2..4-target morph program (`morphWeights` vec4;
+   * absent lanes upload 0). A no-op on programs without the uniform.
+   */
+  setMorphWeights(weights: Float32Array | null): void {
+    if (this.#morphWeightLocation !== null && this.#morphMulti) {
+      uploadMorphWeights4(
+        this.#gl,
+        this.#morphWeightLocation,
+        this.#morphMirror,
+        weights,
+      );
+    }
   }
 
   /**
@@ -2402,6 +2542,10 @@ export class LitProgram implements Disposable {
 
   #morphWeight = 0;
 
+  readonly #morphMirror = new Float32Array(4).fill(Number.NaN);
+
+  #morphMulti = false;
+
   /** CPU mirror of `useMap`; see `UnlitProgram`'s for the contract. */
   #useMap = false;
 
@@ -2447,6 +2591,7 @@ export class LitProgram implements Disposable {
     hemisphere: HemisphereLightUniforms,
     shadow: ShadowUniforms,
     morphWeightLocation: GlUniformLocation | null = null,
+    morphMulti = false,
   ) {
     this.#gl = gl;
     this.#program = program;
@@ -2463,6 +2608,7 @@ export class LitProgram implements Disposable {
     this.#hemisphere = hemisphere;
     this.#shadow = shadow;
     this.#morphWeightLocation = morphWeightLocation;
+    this.#morphMulti = morphMulti;
   }
 
   /**
@@ -2501,12 +2647,14 @@ export class LitProgram implements Disposable {
     }
   }
 
-  /** One-target morph variant of {@link LitProgram.create}. */
-  static createMorph(gl: WebglContext): LitProgram {
+  /** Morph variant of {@link LitProgram.create}; see {@link UnlitProgram.createMorph}. */
+  static createMorph(gl: WebglContext, count = 1): LitProgram {
     const program = createLinkedProgram(
       gl,
       "lit-morph",
-      MORPH_LIT_VERTEX_SHADER_SOURCE,
+      count === 1
+        ? MORPH_LIT_VERTEX_SHADER_SOURCE
+        : morphLitVertexSource(count),
       LIT_FRAGMENT_SHADER_SOURCE,
     );
     try {
@@ -2525,7 +2673,13 @@ export class LitProgram implements Disposable {
         PunctualLightUniforms.resolve(gl, program, "lit-morph"),
         HemisphereLightUniforms.resolve(gl, program, "lit-morph"),
         ShadowUniforms.resolve(gl, program, "lit-morph"),
-        requireUniform(gl, program, "morphWeight0", "lit-morph"),
+        requireUniform(
+          gl,
+          program,
+          count === 1 ? "morphWeight0" : "morphWeights",
+          "lit-morph",
+        ),
+        count > 1,
       );
     } catch (error: unknown) {
       gl.deleteProgram(program);
@@ -2571,6 +2725,18 @@ export class LitProgram implements Disposable {
     }
     this.#gl.uniform1f(this.#morphWeightLocation, weight);
     this.#morphWeight = weight;
+  }
+
+  /** Weights for a 2..4-target lit morph program; see the unlit twin. */
+  setMorphWeights(weights: Float32Array | null): void {
+    if (this.#morphWeightLocation !== null && this.#morphMulti) {
+      uploadMorphWeights4(
+        this.#gl,
+        this.#morphWeightLocation,
+        this.#morphMirror,
+        weights,
+      );
+    }
   }
 
   /**

@@ -167,6 +167,7 @@ function resourcesFor(asset: GltfAsset): SharedResources {
           weights: primitive.weights,
           positions1: primitive.positions1,
           normals1: primitive.normals1,
+          extraMorphTargets: primitive.extraMorphTargets,
           indices: primitive.indices,
           mode: primitive.mode,
         }),
@@ -385,7 +386,12 @@ export function instantiateGltf(asset: GltfAsset): GltfInstance {
         mesh.geometry.positions1 !== undefined ||
         authoredWeights !== undefined
       ) {
-        mesh.addComponent(new MorphWeights(authoredWeights?.slice() ?? 1));
+        mesh.addComponent(
+          new MorphWeights(
+            authoredWeights?.slice() ??
+              1 + (mesh.geometry.extraMorphTargets?.length ?? 0),
+          ),
+        );
       }
     }
     if (record.matrix !== null) {

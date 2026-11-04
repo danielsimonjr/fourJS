@@ -85,6 +85,8 @@ import {
   PARTICLE_GL,
   POSITION_ATTRIBUTE_LOCATION,
   POSITION1_ATTRIBUTE_LOCATION,
+  morphNormalLocation,
+  morphPositionLocation,
   ParticleAppearanceProgram,
   ParticleBatchCache,
   ParticleProgram,
@@ -846,6 +848,10 @@ class TestGeometry {
   /** Optional first morph-target normals (§54). Undefined by default. */
   normals1: Float32Array | undefined;
 
+  /** Optional morph targets 2..4 (RFC 0003 residue). */
+  extraMorphTargets:
+    { positions: Float32Array; normals?: Float32Array }[] | undefined;
+
   indices: Uint16Array | Uint32Array | undefined;
 
   mode: "triangles" | "lines" = "triangles";
@@ -1540,6 +1546,111 @@ describe("WebglRenderer — one-target GPU morph (§54)", () => {
     renderer.render(root, [createView(camera)]);
     expect(gl.countOf("drawArrays")).toBe(0);
     renderer.dispose();
+  });
+});
+
+describe("WebglRenderer — N-target GPU morph (RFC 0003 residue)", () => {
+  function morphN(targets: number, withNormals: boolean): TestGeometry {
+    const geometry = triangleGeometry();
+    geometry.positions1 = new Float32Array([0, 1, 0, 1, 1, 0, 0, 2, 0]);
+    geometry.normals1 = new Float32Array(9);
+    geometry.extraMorphTargets = [];
+    for (let k = 2; k <= targets; k += 1) {
+      geometry.extraMorphTargets.push({
+        positions: new Float32Array(9).fill(k),
+        ...(withNormals ? { normals: new Float32Array(9) } : {}),
+      });
+    }
+    return geometry;
+  }
+
+  it("compiles distinct programs per count, binds 10..15 and uploads vec4 weights", async () => {
+    const { gl, renderer, camera } = await initialized();
+    const root = createRoot();
+    const two = renderable(morphN(2, true));
+    Object.assign(two, { morphTargetWeights: new Float32Array([0.1, 0.2]) });
+    const four = renderable(morphN(4, true));
+    Object.assign(four, {
+      morphTargetWeights: new Float32Array([0.1, 0.2, 0.3, 0.4]),
+    });
+    const lit = new Renderable(
+      morphN(3, true).asGeometry,
+      new TestLitMaterial().asMaterial,
+    );
+    Object.assign(lit, {
+      morphTargetWeights: new Float32Array([1, 0.5, 0.25]),
+    });
+    root.add(two);
+    root.add(four);
+    root.add(lit);
+    renderer.render(root, [createView(camera)]);
+    const names = gl.callsOf("getUniformLocation").map((c) => c.args[1]);
+    expect(names).toContain("morphWeights");
+    const sources = gl.callsOf("shaderSource").map((c) => String(c.args[1]));
+    const four1 = sources.find((src) => src.includes("position4"));
+    expect(four1).toContain("layout(location = 14) in vec3 position4;");
+    expect(four1).toContain("morphWeights.w * (position4 - position)");
+    expect(sources.find((src) => src.includes("normal3"))).toContain(
+      "layout(location = 13) in vec3 normal3;",
+    );
+    const w = gl
+      .callsOf("uniform4fv")
+      .map((c) => Array.from(c.args[1] as Float32Array));
+    expect(w.some((a) => Math.abs(a[3] - 0.4) < 1e-6)).toBe(true);
+    const programs = gl.countOf("createProgram");
+    renderer.render(root, [createView(camera)]);
+    expect(gl.countOf("createProgram")).toBe(programs);
+    expect(
+      gl.countOf("drawArrays") + gl.countOf("drawElements"),
+    ).toBeGreaterThan(5);
+    renderer.dispose();
+  });
+
+  it("skips N-target draws after a compile failure and draws absent-normal targets", async () => {
+    const failing = await initialized({ failProgramAt: 5 });
+    const root = createRoot();
+    root.add(renderable(morphN(2, false)));
+    failing.renderer.render(root, [createView(failing.camera)]);
+    failing.renderer.render(root, [createView(failing.camera)]);
+    expect(failing.gl.countOf("drawArrays")).toBe(0);
+    failing.renderer.dispose();
+    const ok = await initialized();
+    const root2 = createRoot();
+    const n = renderable(morphN(3, false));
+    root2.add(n);
+    ok.renderer.render(root2, [createView(ok.camera)]);
+    expect(ok.gl.countOf("drawArrays")).toBe(1);
+    ok.renderer.dispose();
+  });
+
+  it("program-level: one target keeps the mix source; N uses the sum", () => {
+    const gl = createFakeGl();
+    const one = UnlitProgram.createMorph(gl);
+    const two = UnlitProgram.createMorph(gl, 2);
+    const litTwo = LitProgram.createMorph(gl, 2);
+    const src = gl.callsOf("shaderSource").map((c) => String(c.args[1]));
+    expect(
+      src.some((x) => x.includes("mix(position, position1, morphWeight0)")),
+    ).toBe(true);
+    expect(
+      src.some((x) =>
+        x.includes(
+          "position + morphWeights.x * (position1 - position) + morphWeights.y",
+        ),
+      ),
+    ).toBe(true);
+    expect(morphPositionLocation(1)).toBe(6);
+    expect(morphNormalLocation(2)).toBe(11);
+    expect(morphPositionLocation(4)).toBe(14);
+    two.setMorphWeights(new Float32Array([1, 2]));
+    two.setMorphWeights(new Float32Array([1, 2]));
+    two.setMorphWeights(null);
+    litTwo.setMorphWeights(new Float32Array([0.5]));
+    litTwo.setMorphWeights(new Float32Array([0.5]));
+    expect(gl.countOf("uniform4fv")).toBe(3);
+    one.setMorphWeights(null);
+    LitProgram.create(gl).setMorphWeights(null);
+    expect(gl.countOf("uniform4fv")).toBe(3);
   });
 });
 

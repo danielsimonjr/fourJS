@@ -5,8 +5,9 @@ export type {
   GeometryBounds,
   GeometryDrawMode,
   GeometryIndexArray,
+  MorphTargetStreams,
 } from "./buffer-geometry.js";
-export { BufferGeometry } from "./buffer-geometry.js";
+export { BufferGeometry, MAX_MORPH_TARGETS } from "./buffer-geometry.js";
 // --- R-21: §53 geometry base + bounding volume (begin) ---
 export type { BoundingVolume } from "./geometry.js";
 export { Geometry } from "./geometry.js";

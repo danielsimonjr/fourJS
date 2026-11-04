@@ -217,6 +217,13 @@ export interface BufferGeometryOptions {
    */
   normals1?: Float32Array;
   /**
+   * Optional further morph targets 2..{@link MAX_MORPH_TARGETS} (RFC 0003
+   * residue): entry `j` is target `j + 2`, bound at attribute locations
+   * `10 + 2j` / `11 + 2j`. Each stream is index-aligned with `positions`;
+   * at most `MAX_MORPH_TARGETS - 1` entries (§85).
+   */
+  extraMorphTargets?: readonly MorphTargetStreams[];
+  /**
    * Optional index buffer. Every entry must be a valid vertex index and the
    * length must be a multiple of the mode's primitive size (§85).
    */
@@ -242,6 +249,48 @@ function primitiveSize(mode: GeometryDrawMode): number {
  * the message cites, and three copies of the same loop is how the three drift
  * apart.
  */
+/** One further morph target's absolute streams (targets 2..4). */
+export interface MorphTargetStreams {
+  /** Absolute target positions (xyz triplets). */
+  readonly positions: Float32Array;
+  /** Optional absolute target normals (xyz triplets). */
+  readonly normals?: Float32Array;
+}
+
+/** Morph targets the GPU path supports (locations 6/7, 10/11, 12/13, 14/15). */
+export const MAX_MORPH_TARGETS = 4;
+
+function validateExtraMorphs(
+  extra: readonly MorphTargetStreams[] | undefined,
+  vertexCount: number,
+): void {
+  if (extra === undefined) {
+    return;
+  }
+  if (extra.length > MAX_MORPH_TARGETS - 1) {
+    throw new RangeError(
+      `Geometry extraMorphTargets holds ${String(extra.length)} entries; at ` +
+        `most ${String(MAX_MORPH_TARGETS - 1)} (targets 2..${String(MAX_MORPH_TARGETS)}) (§54).`,
+    );
+  }
+  for (const target of extra) {
+    validateAttribute("positions", target.positions, 3, vertexCount, "§54");
+    validateAttribute("normals", target.normals, 3, vertexCount, "§54");
+  }
+}
+
+function extraMorphBytes(
+  extra: readonly MorphTargetStreams[] | undefined,
+): number {
+  let bytes = 0;
+  if (extra !== undefined) {
+    for (const target of extra) {
+      bytes += target.positions.byteLength + (target.normals?.byteLength ?? 0);
+    }
+  }
+  return bytes;
+}
+
 function validateAttribute(
   name: string,
   values: Float32Array | Uint16Array | undefined,
@@ -291,6 +340,7 @@ function validate(
   normals1: Float32Array | undefined,
   indices: GeometryIndexArray | undefined,
   mode: GeometryDrawMode,
+  extraMorphTargets?: readonly MorphTargetStreams[],
 ): void {
   if (positions.length % 3 !== 0) {
     throw new RangeError(
@@ -315,6 +365,7 @@ function validate(
   validateAttribute("weights", weights, 4, vertexCount, "§53, §54");
   validateAttribute("positions1", positions1, 3, vertexCount, "§53, §54");
   validateAttribute("normals1", normals1, 3, vertexCount, "§53, §54");
+  validateExtraMorphs(extraMorphTargets, vertexCount);
 
   const size = primitiveSize(mode);
 
@@ -377,6 +428,8 @@ export class BufferGeometry extends Geometry {
 
   #normals1: Float32Array | undefined;
 
+  #extraMorphTargets: readonly MorphTargetStreams[] | undefined;
+
   #indices: GeometryIndexArray | undefined;
 
   #mode: GeometryDrawMode;
@@ -419,7 +472,9 @@ export class BufferGeometry extends Geometry {
       options.normals1,
       options.indices,
       mode,
+      options.extraMorphTargets,
     );
+    this.#extraMorphTargets = options.extraMorphTargets;
     this.#positions = options.positions;
     this.#normals = options.normals;
     this.#uvs = options.uvs;
@@ -471,6 +526,7 @@ export class BufferGeometry extends Geometry {
       this.#normals1,
       this.#indices,
       this.#mode,
+      this.#extraMorphTargets,
     );
     const before = this.byteLength;
     this.#positions = value;
@@ -506,6 +562,7 @@ export class BufferGeometry extends Geometry {
       this.#normals1,
       this.#indices,
       this.#mode,
+      this.#extraMorphTargets,
     );
     const before = this.byteLength;
     this.#normals = value;
@@ -543,6 +600,7 @@ export class BufferGeometry extends Geometry {
       this.#normals1,
       this.#indices,
       this.#mode,
+      this.#extraMorphTargets,
     );
     const before = this.byteLength;
     this.#uvs = value;
@@ -580,6 +638,7 @@ export class BufferGeometry extends Geometry {
       this.#normals1,
       this.#indices,
       this.#mode,
+      this.#extraMorphTargets,
     );
     const before = this.byteLength;
     this.#colors = value;
@@ -616,6 +675,7 @@ export class BufferGeometry extends Geometry {
       this.#normals1,
       this.#indices,
       this.#mode,
+      this.#extraMorphTargets,
     );
     const before = this.byteLength;
     this.#joints = value;
@@ -646,6 +706,7 @@ export class BufferGeometry extends Geometry {
       this.#normals1,
       this.#indices,
       this.#mode,
+      this.#extraMorphTargets,
     );
     const before = this.byteLength;
     this.#weights = value;
@@ -672,6 +733,7 @@ export class BufferGeometry extends Geometry {
       this.#normals1,
       this.#indices,
       this.#mode,
+      this.#extraMorphTargets,
     );
     const before = this.byteLength;
     this.#positions1 = value;
@@ -698,9 +760,25 @@ export class BufferGeometry extends Geometry {
       value,
       this.#indices,
       this.#mode,
+      this.#extraMorphTargets,
     );
     const before = this.byteLength;
     this.#normals1 = value;
+    this.#mutated(before);
+  }
+
+  /**
+   * Optional morph targets 2..4 (RFC 0003 residue), or `undefined`. Target
+   * `j + 2` binds at locations `10 + 2j` / `11 + 2j`.
+   */
+  get extraMorphTargets(): readonly MorphTargetStreams[] | undefined {
+    return this.#extraMorphTargets;
+  }
+
+  set extraMorphTargets(value: readonly MorphTargetStreams[] | undefined) {
+    validateExtraMorphs(value, this.#positions.length / 3);
+    const before = this.byteLength;
+    this.#extraMorphTargets = value;
     this.#mutated(before);
   }
 
@@ -833,6 +911,7 @@ export class BufferGeometry extends Geometry {
       (this.#weights?.byteLength ?? 0) +
       (this.#positions1?.byteLength ?? 0) +
       (this.#normals1?.byteLength ?? 0) +
+      extraMorphBytes(this.#extraMorphTargets) +
       (this.#indices?.byteLength ?? 0)
     );
   }
@@ -981,6 +1060,10 @@ export class BufferGeometry extends Geometry {
       weights: this.#weights?.slice(),
       positions1: this.#positions1?.slice(),
       normals1: this.#normals1?.slice(),
+      extraMorphTargets: this.#extraMorphTargets?.map((t) => ({
+        positions: t.positions.slice(),
+        ...(t.normals === undefined ? {} : { normals: t.normals.slice() }),
+      })),
       indices: this.#indices?.slice(),
       mode: this.#mode,
     });
@@ -1020,6 +1103,7 @@ export class BufferGeometry extends Geometry {
     this.#weights = undefined;
     this.#positions1 = undefined;
     this.#normals1 = undefined;
+    this.#extraMorphTargets = undefined;
     this.#indices = undefined;
     noteGeometry(-1, -before);
     releaseGeometryDisposable(this);

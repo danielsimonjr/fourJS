@@ -99,6 +99,8 @@ export {
   POSITION_ATTRIBUTE_LOCATION,
   POSITION1_ATTRIBUTE_LOCATION,
   NORMAL1_ATTRIBUTE_LOCATION,
+  morphNormalLocation,
+  morphPositionLocation,
   HEMISPHERE_LIGHT_GLSL,
   HemisphereLightUniforms,
   PUNCTUAL_LIGHT_GLSL,

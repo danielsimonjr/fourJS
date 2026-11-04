@@ -45,7 +45,6 @@
  *    kept exported for grep/docs — it is not spliced into the live modules.
  */
 
-import { DRAW_UNIFORM_WGSL } from "./wgpu-bindings.js";
 import type { GpuVertexBufferLayout } from "./webgpu-device.js";
 import {
   HEMISPHERE_IRRADIANCE_WGSL,
@@ -59,12 +58,13 @@ import {
 } from "./wgpu-shadow.js";
 import {
   FRAGMENT_ENTRY_POINT,
-  MORPH_DRAW_UNIFORM_WGSL,
   MORPH_WEIGHT_WGSL,
-  NORMAL1_BUFFER_LAYOUT,
-  NORMAL1_SHADER_LOCATION,
-  POSITION1_BUFFER_LAYOUT,
-  POSITION1_SHADER_LOCATION,
+  drawUniformWgslFor,
+  morphHasNormals,
+  morphInputWgsl,
+  morphSumWgsl,
+  morphTargetCount,
+  morphVertexBufferLayouts,
   POSITION_BUFFER_LAYOUT,
   POSITION_SHADER_LOCATION,
   UV_BUFFER_LAYOUT,
@@ -120,10 +120,7 @@ export function shadedVertexBufferLayouts(
     layouts.push(UV_BUFFER_LAYOUT);
   }
   if (morph !== undefined) {
-    layouts.push(POSITION1_BUFFER_LAYOUT);
-    if (morph === "pn") {
-      layouts.push(NORMAL1_BUFFER_LAYOUT);
-    }
+    layouts.push(...morphVertexBufferLayouts(morph));
   }
   return layouts;
 }
@@ -180,27 +177,33 @@ export function shadedVertexStageWgsl(
   @location(${String(UV_SHADER_LOCATION)}) uv : vec2<f32>,`;
   }
   if (morph !== undefined) {
-    input += `
-  @location(${String(POSITION1_SHADER_LOCATION)}) position1 : vec3<f32>,`;
-    if (morph === "pn") {
-      input += `
-  @location(${String(NORMAL1_SHADER_LOCATION)}) normal1 : vec3<f32>,`;
-    }
+    input += morphInputWgsl(morph, morphHasNormals(morph));
   }
-  // One-target GPU morph (RFC 0003): GLSL's mix(position, position1, w), and
-  // likewise the normal when both normal streams are present.
+  // GPU morph (RFC 0003): one target is GLSL's mix(position, position1, w),
+  // and likewise the normal when both normal streams are present; 2..4
+  // targets use Σ wᵢ(pᵢ − p) over `draw.morphWeights`.
+  const count = morph === undefined ? 0 : morphTargetCount(morph);
+  const morphNormals = morph !== undefined && morphHasNormals(morph) && normals;
   const morphed =
     morph === undefined
       ? ""
-      : `  let morphedPosition = mix(position, position1, ${MORPH_WEIGHT_WGSL});
+      : count === 1
+        ? `  let morphedPosition = mix(position, position1, ${MORPH_WEIGHT_WGSL});
 ${
-  normals && morph === "pn"
+  morphNormals
     ? `  let morphedNormal = mix(normal, normal1, ${MORPH_WEIGHT_WGSL});
+`
+    : ""
+}`
+        : `  let morphedPosition = ${morphSumWgsl("position", count)};
+${
+  morphNormals
+    ? `  let morphedNormal = ${morphSumWgsl("normal", count)};
 `
     : ""
 }`;
   const positionName = morph === undefined ? "position" : "morphedPosition";
-  const normalName = morph === "pn" && normals ? "morphedNormal" : "normal";
+  const normalName = morphNormals ? "morphedNormal" : "normal";
   const normalMatrix =
     morph === undefined
       ? "draw.normalMatrix"
@@ -263,7 +266,7 @@ export function litShaderSource(
   shadow = false,
   morph?: WgpuMorph,
 ): string {
-  return `${morph === undefined ? DRAW_UNIFORM_WGSL : MORPH_DRAW_UNIFORM_WGSL}
+  return `${drawUniformWgslFor(morph)}
 
 ${shadow ? SHADOW_LIGHT_UNIFORM_WGSL : LIGHT_UNIFORM_WGSL}${
     map

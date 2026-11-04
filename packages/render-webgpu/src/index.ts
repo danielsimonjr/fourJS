@@ -91,6 +91,11 @@ export type { SurfaceSources } from "./wgpu-surface-group.js";
 export { WgpuSurfaceGroupCache } from "./wgpu-surface-group.js";
 export type { CacheableGeometry, WgpuGeometryRecord } from "./wgpu-geometry.js";
 export { WgpuGeometryCache } from "./wgpu-geometry.js";
+export {
+  STAGING_DIRECT_THRESHOLD,
+  STAGING_RING_FRAMES,
+  WgpuStagingRing,
+} from "./wgpu-staging.js";
 export type {
   WgpuBatchStream,
   WgpuPipelineDescriptor,
@@ -136,6 +141,12 @@ export {
   COLOR_BUFFER_LAYOUT,
   COLOR_SHADER_LOCATION,
   DRAW_MORPH_WEIGHT_OFFSET,
+  DRAW_MORPH_WEIGHTS_OFFSET,
+  MORPH_N_DRAW_UNIFORM_WGSL,
+  morphHasNormals,
+  morphTargetCount,
+  morphVariant,
+  morphVertexBufferLayouts,
   FRAGMENT_ENTRY_POINT,
   MORPH_DRAW_UNIFORM_WGSL,
   MORPH_WEIGHT_WGSL,
@@ -291,7 +302,9 @@ export {
 } from "./wgpu-stencil.js";
 export type { SurfaceMaps } from "./wgpu-standard.js";
 export {
+  MORPH_N_STANDARD_UNIFORM_WGSL,
   MORPH_STANDARD_UNIFORM_WGSL,
+  STANDARD_MORPH_WEIGHTS_OFFSET,
   NO_SURFACE_MAPS,
   SURFACE_DEFAULT_TEXELS,
   STANDARD_BASE_COLOR_OFFSET,

@@ -76,6 +76,8 @@ import {
   POSITION1_ATTRIBUTE_LOCATION,
   UV_ATTRIBUTE_LOCATION,
   WEIGHTS_ATTRIBUTE_LOCATION,
+  morphNormalLocation,
+  morphPositionLocation,
   type WebglContext,
 } from "./gl-program.js";
 import type { GlBuffer, GlVertexArray } from "./gl-program.js";
@@ -153,6 +155,15 @@ export interface GeometryRecord {
    * or `null`. Bound at `NORMAL1_ATTRIBUTE_LOCATION`.
    */
   readonly normal1Buffer: GlBuffer | null;
+
+  /**
+   * Buffers for morph targets 2..4 (`extraMorphTargets`), flattened
+   * `[p2, n2, p3, n3, p4, n4]`; `null` where a stream is absent. Empty for
+   * geometries without extra targets. Bound at locations 10..15 (spec 1.19+).
+   * Geometries carrying extras never join the dynamic ring (they refresh via
+   * `bufferData`).
+   */
+  readonly extraMorphBuffers: readonly (GlBuffer | null)[];
 
   /** Index buffer, or `null` for a non-indexed geometry. */
   readonly indexBuffer: GlBuffer | null;
@@ -241,6 +252,22 @@ interface GeometryCacheEntry {
   ring: GeometryRing | null;
 }
 
+/** Presence bits (8..13) of the six extra-morph streams; 0 when none. */
+function extraMorphMask(geometry: CacheableGeometry): number {
+  const extra = geometry.extraMorphTargets;
+  if (extra === undefined) {
+    return 0;
+  }
+  let mask = 0;
+  for (let j = 0; j < extra.length; j += 1) {
+    mask |= 1 << (8 + 2 * j);
+    if (extra[j].normals !== undefined) {
+      mask |= 1 << (9 + 2 * j);
+    }
+  }
+  return mask;
+}
+
 /** Direct reads avoid dynamic-key iteration on every dirty acquisition. */
 function attributeMask(geometry: CacheableGeometry): number {
   // Typed arrays are truthy even at length zero. Pack presence, not length.
@@ -252,7 +279,8 @@ function attributeMask(geometry: CacheableGeometry): number {
     (+!!geometry.weights << 4) |
     (+!!geometry.positions1 << 5) |
     (+!!geometry.normals1 << 6) |
-    (+!!geometry.indices << 7)
+    (+!!geometry.indices << 7) |
+    extraMorphMask(geometry)
   );
 }
 
@@ -452,7 +480,10 @@ export class GeometryCache {
     record: GeometryRecord,
   ): GeometryRing | null {
     const gl = this.#gl;
-    if (typeof (gl as SubDataContext).bufferSubData !== "function") {
+    if (
+      typeof (gl as SubDataContext).bufferSubData !== "function" ||
+      geometry.extraMorphTargets !== undefined
+    ) {
       return null;
     }
     const created: GlBuffer[] = [];
@@ -567,6 +598,7 @@ export class GeometryCache {
       weightBuffer: null,
       position1Buffer: null,
       normal1Buffer: null,
+      extraMorphBuffers: [],
       indexBuffer: null,
       version: geometry.version,
       mode: glMode(geometry.mode),
@@ -581,6 +613,21 @@ export class GeometryCache {
           return null;
         }
         record[field] = buffer;
+      }
+    }
+    const extra = geometry.extraMorphTargets;
+    if (extra !== undefined) {
+      const made: (GlBuffer | null)[] = [];
+      record.extraMorphBuffers = made;
+      for (const target of extra) {
+        for (const data of [target.positions, target.normals]) {
+          const buffer = data === undefined ? null : gl.createBuffer();
+          if (data !== undefined && buffer === null) {
+            this.#deleteRecord(record);
+            return null;
+          }
+          made.push(buffer);
+        }
       }
     }
     if (indices !== undefined) {
@@ -686,6 +733,23 @@ export class GeometryCache {
       geometry.normals1,
       NORMAL1_ATTRIBUTE_LOCATION,
     );
+    const extra = geometry.extraMorphTargets;
+    if (extra !== undefined) {
+      for (let j = 0; j < extra.length; j += 1) {
+        this.#writeAttribute(
+          setup,
+          record.extraMorphBuffers[2 * j],
+          extra[j].positions,
+          morphPositionLocation(j + 2),
+        );
+        this.#writeAttribute(
+          setup,
+          record.extraMorphBuffers[2 * j + 1],
+          extra[j].normals,
+          morphNormalLocation(j + 2),
+        );
+      }
+    }
     if (geometry.indices !== undefined) {
       gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, record.indexBuffer);
       gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, geometry.indices, GL.STATIC_DRAW);
@@ -721,6 +785,9 @@ export class GeometryCache {
     gl.deleteBuffer(record.positionBuffer);
     for (const [, field] of OPTIONAL_ATTRIBUTES) {
       const buffer = record[field];
+      if (buffer !== null) gl.deleteBuffer(buffer);
+    }
+    for (const buffer of record.extraMorphBuffers) {
       if (buffer !== null) gl.deleteBuffer(buffer);
     }
     if (record.indexBuffer !== null) gl.deleteBuffer(record.indexBuffer);

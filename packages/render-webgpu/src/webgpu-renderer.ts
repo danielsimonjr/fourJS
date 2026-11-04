@@ -230,6 +230,7 @@ import {
 } from "./wgpu-render-target.js";
 import {
   STANDARD_EMISSIVE_OFFSET,
+  STANDARD_MORPH_WEIGHTS_OFFSET,
   STANDARD_SURFACE_OFFSET,
   STANDARD_UNIFORM_BYTES,
   createStandardBindGroupLayout,
@@ -282,7 +283,15 @@ import {
   WgpuSurfaceGroupCache,
   type SurfaceSources,
 } from "./wgpu-surface-group.js";
-import { CLEAR_VERTEX_COUNT, DRAW_MORPH_WEIGHT_OFFSET } from "./wgpu-unlit.js";
+import {
+  CLEAR_VERTEX_COUNT,
+  DRAW_MORPH_WEIGHT_OFFSET,
+  DRAW_MORPH_WEIGHTS_OFFSET,
+  morphHasNormals,
+  morphTargetCount,
+  morphVariant,
+  type WgpuMorph,
+} from "./wgpu-unlit.js";
 
 /** Error code for use-after-dispose, mirroring the other two backends (§83, §89). */
 const LIFECYCLE_ERROR_CODE = "INVALID_APPLICATION_STATE";
@@ -333,6 +342,54 @@ const normalMatrixScratch = new Matrix3();
 
 /** The swap-chain format used when the host will not name a preferred one. */
 const FALLBACK_CANVAS_FORMAT = "bgra8unorm";
+
+/**
+ * The morph variant a record's loaded streams select (RFC 0003 and its
+ * further-targets residue): target count from the consecutive loaded
+ * `extraMorphBuffers` position slots, normals only when shading and every
+ * target's normal stream is present. `undefined` without `positions1`.
+ */
+function morphVariantOf(
+  record: WgpuGeometryRecord,
+  normals: boolean,
+): WgpuMorph | undefined {
+  if (record.position1Buffer === null) {
+    return undefined;
+  }
+  const extra = record.extraMorphBuffers;
+  let count = 1;
+  let withNormals = normals && record.normal1Buffer !== null;
+  for (let at = 0; at < extra.length && extra[at] !== null; at += 2) {
+    count += 1;
+    if (extra[at + 1] === null) {
+      withNormals = false;
+    }
+  }
+  return morphVariant(count, withNormals);
+}
+
+/** Binds a variant's morph streams from `slot`; returns the last slot used. */
+function setMorphVertexBuffers(
+  pass: GpuRenderPassEncoder,
+  slot: number,
+  record: WgpuGeometryRecord,
+  morph: WgpuMorph,
+): number {
+  pass.setVertexBuffer(slot, record.position1Buffer);
+  if (morphHasNormals(morph)) {
+    slot += 1;
+    pass.setVertexBuffer(slot, record.normal1Buffer);
+  }
+  for (let k = 2; k <= morphTargetCount(morph); k += 1) {
+    slot += 1;
+    pass.setVertexBuffer(slot, record.extraMorphBuffers[2 * (k - 2)]);
+    if (morphHasNormals(morph)) {
+      slot += 1;
+      pass.setVertexBuffer(slot, record.extraMorphBuffers[2 * (k - 2) + 1]);
+    }
+  }
+  return slot;
+}
 
 /** `UNIFORM_STRIDE_BYTES` in `Float32Array` elements. */
 const UNIFORM_STRIDE_FLOATS = UNIFORM_STRIDE_BYTES / 4;
@@ -2114,11 +2171,8 @@ export class WebgpuRenderer implements Renderer {
           request.occlusionMap = useOcclusionMap;
           request.emissiveMap = useEmissiveMap;
           const morph =
-            (item.kind === "lit" || item.kind === "standard") &&
-            record.position1Buffer !== null
-              ? normals && record.normal1Buffer !== null
-                ? "pn"
-                : "p"
+            item.kind === "lit" || item.kind === "standard"
+              ? morphVariantOf(record, normals)
               : undefined;
           request.morph = morph;
           const pipeline = this.#pipelineMemo.acquire(pipelines, request);
@@ -2145,7 +2199,7 @@ export class WebgpuRenderer implements Renderer {
             );
             this.#writeSurface(block, item.material);
             if (morph !== undefined) {
-              this.#writeMorphWeight(block, item.morphWeights);
+              this.#writeMorphWeight(block, item.morphWeights, morph, true);
             }
             pass.setPipeline(pipeline);
             pass.setBindGroup(
@@ -2165,7 +2219,7 @@ export class WebgpuRenderer implements Renderer {
               color[3] * opacity,
             );
             if (morph !== undefined) {
-              this.#writeMorphWeight(block, item.morphWeights);
+              this.#writeMorphWeight(block, item.morphWeights, morph, false);
             }
             pass.setPipeline(pipeline);
             pass.setBindGroup(
@@ -2207,12 +2261,7 @@ export class WebgpuRenderer implements Renderer {
             pass.setVertexBuffer(slot, record.uvBuffer);
           }
           if (morph !== undefined) {
-            slot += 1;
-            pass.setVertexBuffer(slot, record.position1Buffer);
-            if (morph === "pn") {
-              slot += 1;
-              pass.setVertexBuffer(slot, record.normal1Buffer);
-            }
+            slot = setMorphVertexBuffers(pass, slot + 1, record, morph);
           }
           if (mapBindGroup !== null) {
             pass.setBindGroup(SHADED_MAP_BIND_GROUP_INDEX, mapBindGroup);
@@ -2301,7 +2350,7 @@ export class WebgpuRenderer implements Renderer {
         request.shadow = false;
         request.metalRoughness = false;
         request.gpuInstances = false;
-        const morph = record.position1Buffer !== null ? "p" : undefined;
+        const morph = morphVariantOf(record, false);
         request.morph = morph;
         request.normalMap = false;
         request.occlusionMap = false;
@@ -2327,7 +2376,7 @@ export class WebgpuRenderer implements Renderer {
           material.color[3] * opacity,
         );
         if (morph !== undefined) {
-          this.#writeMorphWeight(block, item.morphWeights);
+          this.#writeMorphWeight(block, item.morphWeights, morph, false);
         }
 
         pass.setPipeline(pipeline);
@@ -2358,8 +2407,7 @@ export class WebgpuRenderer implements Renderer {
           pass.setBindGroup(MAP_BIND_GROUP_INDEX, mapBindGroup);
         }
         if (morph !== undefined) {
-          slot += 1;
-          pass.setVertexBuffer(slot, record.position1Buffer);
+          slot = setMorphVertexBuffers(pass, slot + 1, record, morph);
         }
         if (record.indexBuffer !== null && record.indexFormat !== null) {
           pass.setIndexBuffer(record.indexBuffer, record.indexFormat);
@@ -4225,10 +4273,23 @@ export class WebgpuRenderer implements Renderer {
   #writeMorphWeight(
     block: number,
     weights: Float32Array | null | undefined,
+    morph: WgpuMorph,
+    standard: boolean,
   ): void {
-    this.#uniformStaging[
-      block * UNIFORM_STRIDE_FLOATS + DRAW_MORPH_WEIGHT_OFFSET / 4
-    ] = weights?.[0] ?? 0;
+    const base = block * UNIFORM_STRIDE_FLOATS;
+    if (morphTargetCount(morph) === 1) {
+      this.#uniformStaging[base + DRAW_MORPH_WEIGHT_OFFSET / 4] =
+        weights?.[0] ?? 0;
+      return;
+    }
+    // 2..4 targets: the trailing `morphWeights` vec4 (absent lanes 0).
+    const at =
+      base +
+      (standard ? STANDARD_MORPH_WEIGHTS_OFFSET : DRAW_MORPH_WEIGHTS_OFFSET) /
+        4;
+    for (let lane = 0; lane < 4; lane += 1) {
+      this.#uniformStaging[at + lane] = weights?.[lane] ?? 0;
+    }
   }
 
   /** Packs one `DrawUniforms` block into the staging array at `block`'s stride. */

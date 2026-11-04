@@ -24,10 +24,11 @@
  * **Ships:** the class itself; skeletal deformation (through the skinned
  * render-item kinds and `@fourjs/render-webgl`'s registered skinning pipeline);
  * the morph-target plumbing (component, §17 binding form, weights on the
- * render item) **and the one-target GPU morph path** (`positions1`/`normals1`
- * at attribute locations 6/7; WebGL mixes, WebGPU skips the draw rather than
- * showing bind pose). **Staged, deliberately:** a second morph target and
- * beyond; multiple material groups (R-12's follow-up — `material` stays
+ * render item) **and the GPU morph path** for up to four targets
+ * (`positions1`/`normals1` at attribute locations 6/7, targets 2–4 via
+ * `extraMorphTargets` at 10/11, 12/13, 14/15; `morphTargetWeights[0..3]`
+ * blend as Σ wᵢ(pᵢ − p) on WebGL and WebGPU). **Staged, deliberately:**
+ * morph-weight animation clips from glTF; multiple material groups (R-12's follow-up — `material` stays
  * single here as on `Renderable`); hardware instancing (needs an
  * instance-transform attribute; the blocker for §86's 100 000-instance row);
  * indirect rendering (WebGPU); static-versus-dynamic GPU buffer usage (every

@@ -113,6 +113,13 @@ export interface WgpuGeometryRecord {
    * shades (`normals`), since only the lit family reads it.
    */
   normal1Buffer: GpuBuffer | null;
+  /**
+   * Buffers for morph targets 2..4, flattened `[p2, n2, p3, n3, p4, n4]` and
+   * filled lazily like the other optional streams (a slot is `null` until a
+   * morph draw asks; normals only for shading draws). Locations 10..15.
+   * The array is shared between a record and its in-place-rewrite copies.
+   */
+  readonly extraMorphBuffers: (GpuBuffer | null)[];
   /** Index buffer, or `null` for a non-indexed geometry. */
   readonly indexBuffer: GpuBuffer | null;
   /** `"uint16"` or `"uint32"`, or `null` when there are no indices. */
@@ -315,6 +322,18 @@ export class WgpuGeometryCache {
       [record.normal1Buffer, geometry.normals1],
       [record.indexBuffer, geometry.indices],
     ];
+    const extra = geometry.extraMorphTargets;
+    for (let i = 0; i < record.extraMorphBuffers.length; i += 1) {
+      const target = extra?.[i >> 1];
+      pairs.push([
+        record.extraMorphBuffers[i],
+        target === undefined
+          ? undefined
+          : (i & 1) === 0
+            ? target.positions
+            : target.normals,
+      ]);
+    }
     for (const [buffer, data] of pairs) {
       if (buffer === null) {
         continue;
@@ -366,6 +385,31 @@ export class WgpuGeometryCache {
     geometry: CacheableGeometry,
     normals: boolean,
   ): void {
+    const extra = geometry.extraMorphTargets;
+    if (extra !== undefined) {
+      const buffers = record.extraMorphBuffers;
+      for (let j = 0; j < extra.length; j += 1) {
+        const target = extra[j];
+        for (let half = 0; half < 2; half += 1) {
+          const data = half === 0 ? target.positions : target.normals;
+          const at = 2 * j + half;
+          if (buffers[at] === undefined) {
+            buffers[at] = null;
+          }
+          if (
+            buffers[at] === null &&
+            data !== undefined &&
+            (half === 0 || normals)
+          ) {
+            buffers[at] = this.#uploadBuffer(
+              data,
+              GPU_BUFFER_USAGE.VERTEX,
+              `fourJS:${half === 0 ? "positions" : "normals"}${String(j + 2)}:${geometry.id}`,
+            );
+          }
+        }
+      }
+    }
     if (record.position1Buffer === null && geometry.positions1 !== undefined) {
       record.position1Buffer = this.#uploadBuffer(
         geometry.positions1,
@@ -483,7 +527,7 @@ export class WgpuGeometryCache {
             `fourJS:indices:${geometry.id}`,
           );
 
-    return {
+    const record: WgpuGeometryRecord = {
       positionBuffer,
       normalBuffer,
       colorBuffer,
@@ -492,6 +536,7 @@ export class WgpuGeometryCache {
       weightBuffer,
       position1Buffer,
       normal1Buffer,
+      extraMorphBuffers: [],
       indexBuffer,
       indexFormat:
         indices === undefined
@@ -503,6 +548,10 @@ export class WgpuGeometryCache {
       count: geometry.drawCount,
       topology: geometry.mode === "lines" ? "line-list" : "triangle-list",
     };
+    if (morph) {
+      this.#upgradeMorph(record, geometry, normals);
+    }
+    return record;
   }
 
   #uploadBuffer(
@@ -529,6 +578,9 @@ export class WgpuGeometryCache {
     record.weightBuffer?.destroy();
     record.position1Buffer?.destroy();
     record.normal1Buffer?.destroy();
+    for (const buffer of record.extraMorphBuffers) {
+      buffer?.destroy();
+    }
     record.indexBuffer?.destroy();
   }
 }

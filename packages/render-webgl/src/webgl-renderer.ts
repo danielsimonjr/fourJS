@@ -1526,6 +1526,15 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
   #morphUnlit: UnlitProgram | null = null;
   #morphLit: LitProgram | null = null;
   #morphProgramsFailed = false;
+  /** 2..4-target morph pairs by target count (index 0/1 unused). */
+  readonly #morphMulti: ({ unlit: UnlitProgram; lit: LitProgram } | null)[] = [
+    null,
+    null,
+    null,
+    null,
+    null,
+  ];
+  readonly #morphMultiFailed: boolean[] = [false, false, false, false, false];
 
   /**
    * Whether the skinned caster compile failed on the current context — a
@@ -1692,6 +1701,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#morphUnlit = null;
     this.#morphLit = null;
     this.#morphProgramsFailed = false;
+    this.#morphMulti.fill(null);
+    this.#morphMultiFailed.fill(false);
     this.#skinnedShadowFailed = false;
     // §60's node-program cache (RFC 0001) died with the context too; the
     // next node-material draw re-creates it and recompiles per graph.
@@ -2142,9 +2153,14 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         | "particle-appearance"
         | "unlit-morph"
         | "lit-morph"
+        | "unlit-morph-n"
+        | "lit-morph-n"
         | "lit-instanced"
         | "standard-instanced" = "unlit";
       let particleTrailActive = false;
+      // The 2..4-target morph program in use while `activeKind` is a
+      // `*-morph-n` kind (counts share a kind, not a program).
+      let activeMorphN: UnlitProgram | LitProgram | null = null;
       // The GL state mirror starts where `#applyFixedState` and GL's own defaults
       // left it; every draw below moves it only where its material asks.
       resetGlState(state);
@@ -2229,6 +2245,9 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         let skinnedLitViewUploaded = false;
         let morphUnlitViewUploaded = false;
         let morphLitViewUploaded = false;
+        // Bit `2 * (count - 2) + (lit ? 1 : 0)`: per-count view uploads of the
+        // 2..4-target morph programs.
+        let morphNViewMask = 0;
 
         // §64 stages 2–3, per view (R-8, 2026-08-09). The frame's list is built
         // once, above; this derives *this view's* draws from it — §46's layer
@@ -2756,20 +2775,37 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             item.geometry.positions1 !== undefined &&
             (item.kind === "unlit" || isLitItem(item))
           ) {
-            const morph = this.#acquireMorphPrograms(gl);
+            const morphCount =
+              1 + (item.geometry.extraMorphTargets?.length ?? 0);
+            const morph = this.#acquireMorphPrograms(gl, morphCount);
             if (morph === null) {
               continue;
             }
             const weight = item.morphWeights?.[0] ?? 0;
+            const multi = morphCount > 1;
             if (item.kind === "unlit") {
               const morphUnlit = morph.unlit;
-              if (activeKind !== "unlit-morph") {
+              const kind = multi ? "unlit-morph-n" : "unlit-morph";
+              if (
+                activeKind !== kind ||
+                (multi && activeMorphN !== morphUnlit)
+              ) {
                 morphUnlit.use();
-                activeKind = "unlit-morph";
+                activeKind = kind;
+                activeMorphN = multi ? morphUnlit : null;
               }
-              if (!morphUnlitViewUploaded) {
+              const viewBit = 1 << (2 * (morphCount - 2));
+              if (
+                multi
+                  ? (morphNViewMask & viewBit) === 0
+                  : !morphUnlitViewUploaded
+              ) {
                 morphUnlit.setViewProjection(viewProjection);
-                morphUnlitViewUploaded = true;
+                if (multi) {
+                  morphNViewMask |= viewBit;
+                } else {
+                  morphUnlitViewUploaded = true;
+                }
               }
               const map = mapOf(item.material);
               const texture =
@@ -2803,7 +2839,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 unlitColorBlends(item.material),
                 item.clip ?? null,
               );
-              morphUnlit.setMorphWeight(weight);
+              if (multi) {
+                morphUnlit.setMorphWeights(item.morphWeights ?? null);
+              } else {
+                morphUnlit.setMorphWeight(weight);
+              }
               morphUnlit.setModel(item.worldMatrix);
               morphUnlit.setColor(
                 item.material.color,
@@ -2811,11 +2851,18 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               );
             } else {
               const morphLit = morph.lit;
-              if (activeKind !== "lit-morph") {
+              const kind = multi ? "lit-morph-n" : "lit-morph";
+              if (activeKind !== kind || (multi && activeMorphN !== morphLit)) {
                 morphLit.use();
-                activeKind = "lit-morph";
+                activeKind = kind;
+                activeMorphN = multi ? morphLit : null;
               }
-              if (!morphLitViewUploaded) {
+              const litViewBit = 1 << (2 * (morphCount - 2) + 1);
+              if (
+                multi
+                  ? (morphNViewMask & litViewBit) === 0
+                  : !morphLitViewUploaded
+              ) {
                 morphLit.setViewProjection(viewProjection);
                 morphLit.setAmbientLight(sceneLights.ambientColor);
                 morphLit.setHemisphereLight(sceneLights);
@@ -2825,7 +2872,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 );
                 morphLit.setPunctualLights(sceneLights);
                 morphLit.setShadow(sceneLights);
-                morphLitViewUploaded = true;
+                if (multi) {
+                  morphNViewMask |= litViewBit;
+                } else {
+                  morphLitViewUploaded = true;
+                }
               }
               const litMap = mapOf(item.material);
               const litTexture =
@@ -2862,7 +2913,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 item.clip ?? null,
               );
               morphLit.setReceivesShadow(shadowActive && item.receiveShadow);
-              morphLit.setMorphWeight(weight);
+              if (multi) {
+                morphLit.setMorphWeights(item.morphWeights ?? null);
+              } else {
+                morphLit.setMorphWeight(weight);
+              }
               morphLit.setModel(item.worldMatrix);
               morphLit.setColor(item.material.color, opacityOf(item.material));
             }
@@ -3815,6 +3870,10 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       this.#skinnedPrograms?.dispose();
       this.#morphUnlit?.dispose();
       this.#morphLit?.dispose();
+      for (const pair of this.#morphMulti) {
+        pair?.unlit.dispose();
+        pair?.lit.dispose();
+      }
       this.#nodePrograms?.dispose();
       this.#geometries?.dispose();
       this.#textures?.dispose();
@@ -3835,6 +3894,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#skinnedPrograms = null;
     this.#morphUnlit = null;
     this.#morphLit = null;
+    this.#morphMulti.fill(null);
     this.#nodePrograms = null;
     // The one `RenderTarget` this renderer created for itself (R-18), so the
     // one it owes a `dispose()` to (§83) — its bytes leave the process-wide
@@ -4190,10 +4250,16 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
    * carries `positions1` (RFC 0003 WP-SK.4). A compile failure skips morphing
    * draws for this context (§61), never the frame.
    */
-  #acquireMorphPrograms(gl: ParticleGlContext): {
+  #acquireMorphPrograms(
+    gl: ParticleGlContext,
+    count = 1,
+  ): {
     unlit: UnlitProgram;
     lit: LitProgram;
   } | null {
+    if (count > 1) {
+      return this.#acquireMorphMulti(gl, count);
+    }
     if (this.#morphUnlit !== null && this.#morphLit !== null) {
       return { unlit: this.#morphUnlit, lit: this.#morphLit };
     }
@@ -4215,6 +4281,38 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           "webgl-morph-compile-failed",
           "§54: the one-target GPU morph pipeline failed to compile on this " +
             `context; morphing draws are skipped (§61, §89). ${String(error)}`,
+        );
+      }
+      return null;
+    }
+  }
+
+  /** 2..4-target morph pair for `count`, compiled on first use. */
+  #acquireMorphMulti(
+    gl: ParticleGlContext,
+    count: number,
+  ): { unlit: UnlitProgram; lit: LitProgram } | null {
+    const cached = this.#morphMulti[count];
+    if (cached !== null) {
+      return cached;
+    }
+    if (this.#morphMultiFailed[count]) {
+      return null;
+    }
+    let unlit: UnlitProgram | null = null;
+    try {
+      unlit = UnlitProgram.createMorph(gl, count);
+      const pair = { unlit, lit: LitProgram.createMorph(gl, count) };
+      this.#morphMulti[count] = pair;
+      return pair;
+    } catch (error: unknown) {
+      this.#morphMultiFailed[count] = true;
+      unlit?.dispose();
+      if (DEV) {
+        devWarnOnce(
+          `webgl-morph-compile-failed-${String(count)}`,
+          `§54: the ${String(count)}-target GPU morph pipeline failed to ` +
+            `compile on this context; morphing draws are skipped (§61, §89). ${String(error)}`,
         );
       }
       return null;

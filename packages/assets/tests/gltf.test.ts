@@ -1530,17 +1530,17 @@ describe("mesh primitives", () => {
     );
   });
 
-  it("refuses a second morph target and a target TANGENT", async () => {
+  it("refuses a fifth morph target and a target TANGENT", async () => {
     await expectRefusal(
       load(
         corrupt(triangleDocument(), (c) => {
           const meshes = c["meshes"] as {
             primitives: { targets?: unknown }[];
           }[];
-          meshes[0].primitives[0].targets = [{}, {}];
+          meshes[0].primitives[0].targets = [{}, {}, {}, {}, {}];
         }),
       ),
-      /primitive\.targets must have length 1/,
+      /primitive\.targets must have length 1\.\.4/,
     );
     await expectRefusal(
       load(
@@ -1555,15 +1555,118 @@ describe("mesh primitives", () => {
     );
   });
 
-  it("refuses mesh-level morph weights that are not length 1", async () => {
+  it("refuses mesh-level morph weights outside length 1..4", async () => {
     await expectRefusal(
       load(
         corrupt(triangleDocument(), (c) => {
-          (c["meshes"] as Record<string, unknown>[])[0]["weights"] = [0.5, 0.5];
+          (c["meshes"] as Record<string, unknown>[])[0]["weights"] = [
+            0.5, 0.5, 0.5, 0.5, 0.5,
+          ];
         }),
       ),
-      /meshes\.weights must have length 1/,
+      /meshes\.weights must have length 1\.\.4/,
     );
+  });
+
+  it("refuses non-finite and over-long node morph weights", async () => {
+    await expectRefusal(
+      load(
+        corrupt(triangleDocument(), (c) => {
+          c["nodes"] = [{ mesh: 0, weights: [0, "x"] }];
+        }),
+      ),
+      /weights\[1\] must be a finite number|must be a finite number/,
+    );
+    await expectRefusal(
+      load(
+        corrupt(triangleDocument(), (c) => {
+          c["nodes"] = [{ mesh: 0, weights: [] }];
+        }),
+      ),
+      /nodes\.weights must have length 1\.\.4/,
+    );
+  });
+
+  it("converts four morph targets to absolute streams and keeps up to four weights", async () => {
+    const deltas = [1, 2, 3, 4].map((k) => new Float32Array(9).fill(k));
+    const normalDeltas = new Float32Array(9).fill(0.5);
+    const { bytes, offsets } = pack(
+      TRI_POSITIONS,
+      TRI_INDICES,
+      ...deltas,
+      normalDeltas,
+    );
+    const views = [
+      { buffer: 0, byteOffset: offsets[0], byteLength: 36 },
+      { buffer: 0, byteOffset: offsets[1], byteLength: 6 },
+      ...[2, 3, 4, 5, 6].map((i) => ({
+        buffer: 0,
+        byteOffset: offsets[i],
+        byteLength: 36,
+      })),
+    ];
+    const accessors = [
+      { bufferView: 0, componentType: 5126, count: 3, type: "VEC3" },
+      { bufferView: 1, componentType: 5123, count: 3, type: "SCALAR" },
+      ...[2, 3, 4, 5, 6].map((i) => ({
+        bufferView: i,
+        componentType: 5126,
+        count: 3,
+        type: "VEC3",
+      })),
+    ];
+    const asset = await load({
+      asset: { version: "2.0" },
+      buffers: [{ byteLength: bytes.byteLength, uri: dataUri(bytes) }],
+      bufferViews: views,
+      accessors,
+      meshes: [
+        {
+          weights: [0.1, 0.2, 0.3, 0.4],
+          primitives: [
+            {
+              attributes: { POSITION: 0, NORMAL: 0 },
+              indices: 1,
+              targets: [
+                { POSITION: 2 },
+                { POSITION: 3, NORMAL: 6 },
+                { NORMAL: 6 },
+                { POSITION: 5 },
+              ],
+            },
+          ],
+        },
+      ],
+      nodes: [{ mesh: 0, weights: [1, 0.5, 0.25] }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+    });
+    const primitive = asset.meshes[0].primitives[0];
+    const base = Array.from(TRI_POSITIONS);
+    expect(Array.from(primitive.positions1 ?? [])).toEqual(
+      base.map((v) => v + 1),
+    );
+    expect(primitive.normals1).toBeUndefined();
+    const extra = primitive.extraMorphTargets ?? [];
+    expect(extra).toHaveLength(3);
+    expect(Array.from(extra[0].positions)).toEqual(base.map((v) => v + 2));
+    expect(Array.from(extra[0].normals ?? [])).toEqual(
+      base.map((v) => v + 0.5),
+    );
+    // A target without POSITION morphs from the base pose.
+    expect(Array.from(extra[1].positions)).toEqual(base);
+    expect(extra[1].normals).toBeDefined();
+    expect(Array.from(extra[2].positions)).toEqual(base.map((v) => v + 4));
+    expect(extra[2].normals).toBeUndefined();
+    expect(Array.from(asset.meshes[0].morphWeights ?? [])).toEqual([
+      expect.closeTo(0.1),
+      expect.closeTo(0.2),
+      expect.closeTo(0.3),
+      expect.closeTo(0.4),
+    ]);
+    expect(Array.from(asset.nodes[0].morphWeights ?? [])).toEqual([
+      1, 0.5, 0.25,
+    ]);
   });
 
   it("refuses a mesh with no primitives", async () => {
