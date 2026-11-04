@@ -1193,9 +1193,7 @@
       "worldToPlane",
       "worldToPlaneVec"
     ],
-    "packages/physics-box2d": [
-      "PACKAGE_NAME"
-    ],
+    "packages/physics-box2d": ["PACKAGE_NAME"],
     "packages/physics-rapier": [
       "createRapierAdapter",
       "createRapierColliderDesc",
@@ -1242,9 +1240,7 @@
       "toRapierVector2",
       "toRapierVector3"
     ],
-    "packages/physics-soft": [
-      "PACKAGE_NAME"
-    ],
+    "packages/physics-soft": ["PACKAGE_NAME"],
     "packages/render": [
       "AddPassOptions",
       "AmbientLightSource",

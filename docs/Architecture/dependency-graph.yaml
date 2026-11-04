@@ -1304,7 +1304,7 @@ modules:
       interfaces:
         - LabelOptions
     packages/ui/src/canvas-view.ts:
-      description: "`CanvasViewWidget` (§73's \"canvas view\"; RFC 0004, accepted 2026-08-21) — a"
+      description: '`CanvasViewWidget` (§73''s "canvas view"; RFC 0004, accepted 2026-08-21) — a'
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
@@ -1376,7 +1376,7 @@ modules:
       constants:
         - UI_CONTROLS
     packages/ui/src/radio.ts:
-      description: "`RadioButton` (§73's \"radio control\") and its group mechanism (2026-08-07,"
+      description: '`RadioButton` (§73''s "radio control") and its group mechanism (2026-08-07,'
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
@@ -1816,7 +1816,7 @@ modules:
         - UI_LAYOUT_AUTHORITY
         - UI_STAGED
     packages/ui/src/image.ts:
-      description: "`ImageWidget` (§73's \"image\") — a box, a source key, and an intrinsic size"
+      description: '`ImageWidget` (§73''s "image") — a box, a source key, and an intrinsic size'
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
@@ -6604,7 +6604,7 @@ modules:
         - hasDisjointTimerQuery
   packages/physics:
     packages/physics/src/solver-registry.ts:
-      description: "The §37 solver registry — how `solver: \"auto\"` becomes an adapter without"
+      description: 'The §37 solver registry — how `solver: "auto"` becomes an adapter without'
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
@@ -9493,7 +9493,7 @@ modules:
       classes:
         - CpuSkinning
     packages/geometry/src/svg-path.ts:
-      description: "§50's *\"SVG import/export compatibility\"*, at the **path-data tier**: the"
+      description: '§50''s *"SVG import/export compatibility"*, at the **path-data tier**: the'
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
@@ -12246,7 +12246,7 @@ modules:
       interfaces:
         - DragManagerOptions
     packages/input/src/keyboard-state.ts:
-      description: "§72 — polled keyboard state: \"is this key held right now?\""
+      description: '§72 — polled keyboard state: "is this key held right now?"'
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
@@ -14253,7 +14253,7 @@ modules:
         - PARTICLE_APPEARANCE_SHADER_SOURCE
         - PARTICLE_SHADER_SOURCE
     packages/render-webgpu/src/wgpu-particle-simulation.ts:
-      description: "`WgpuParticleSimulation` — the device side of §36's `simulation: \"gpu\"`"
+      description: '`WgpuParticleSimulation` — the device side of §36''s `simulation: "gpu"`'
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
@@ -18207,7 +18207,7 @@ modules:
       constants:
         - monotonicNowSeconds
     packages/diagnostics/src/rollback.ts:
-      description: "`RollbackBuffer` (§33 *\"rollback\"*, §34; PH-20, 2026-08-21) — a bounded ring"
+      description: '`RollbackBuffer` (§33 *"rollback"*, §34; PH-20, 2026-08-21) — a bounded ring'
       externalDependencies: []
       nodeDependencies: []
       internalDependencies:
