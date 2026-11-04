@@ -61,10 +61,16 @@ import { FourError } from "@fourjs/core";
 
 import {
   GPU_BUFFER_USAGE,
+  GPU_SHADER_STAGE,
+  type GpuBindGroup,
   type GpuBuffer,
+  type GpuComputePipeline,
   type GpuDevice,
+  type GpuTextureView,
 } from "./webgpu-device.js";
 import {
+  COMPUTE_ENTRY_POINT,
+  PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE,
   PARTICLE_INTEGRATOR_SHADER_SOURCE,
   PARTICLE_SIMULATION_PARAMS_FLOATS,
   WgpuComputeBuffer,
@@ -73,11 +79,15 @@ import {
   particleIntegratorWorkgroups,
   writeComputeBuffer,
   writeParticleSimulationParams,
+  type ParticleSimulationField,
   type ParticleSimulationFieldParams,
 } from "./wgpu-compute.js";
 
 /** Bytes per particle in each flat x,y,z lane buffer (3 × f32). */
 export const PARTICLE_SIMULATION_VECTOR_BYTES = 12;
+
+/** NDC depth bias of the scene-depth test (`[0, 1]` depth). */
+export const DEFAULT_DEPTH_BIAS = 0.0005;
 
 /** Bytes of the intra-buffer move scratch: one position + one velocity. */
 export const PARTICLE_SIMULATION_SCRATCH_BYTES = 24;
@@ -157,6 +167,16 @@ export class WgpuParticleSimulation {
   readonly #spawnStaging = new Float32Array(3);
 
   #disposed = false;
+
+  #sceneDepth: GpuTextureView | null = null;
+  #depthBias = DEFAULT_DEPTH_BIAS;
+  readonly #viewProjection = new Float32Array(16);
+  #depthPipeline: GpuComputePipeline | null = null;
+  #depthLayout: object | null = null;
+  #depthGroup: GpuBindGroup | null = null;
+  #lastCount = 0;
+  #radialSource: object | null = null;
+  #radialStackCache: readonly ParticleSimulationField[] = [];
 
   /**
    * Internal — obtain instances through
@@ -267,11 +287,14 @@ export class WgpuParticleSimulation {
         readonly strength: number;
         readonly minDistance: number;
       };
+      readonly fields?: readonly ParticleSimulationField[];
+      readonly time?: number;
       readonly collisionGroundY?: number;
       readonly collisions?: "none" | "depth-buffer";
     },
   ): void {
     this.#requireLive("integrate");
+    this.#lastCount = count;
     if (!Number.isSafeInteger(count) || count <= 0 || count > this.capacity) {
       refuse(
         "integrate's count must be a positive safe integer within the " +
@@ -279,17 +302,23 @@ export class WgpuParticleSimulation {
         { count, capacity: this.capacity },
       );
     }
+    const sceneDepth = this.#sceneDepth !== null;
+    const radial = extras?.radial;
+    // The legacy single-radial spelling is a one-record stack.
+    const stack =
+      extras?.fields ??
+      (radial === undefined ? undefined : this.#radialStack(radial));
     const fields: ParticleSimulationFieldParams | undefined =
       extras === undefined
         ? undefined
         : {
-            radialOriginX: extras.radial?.originX,
-            radialOriginY: extras.radial?.originY,
-            radialOriginZ: extras.radial?.originZ,
-            radialStrength: extras.radial?.strength,
-            radialMinDistance: extras.radial?.minDistance,
+            fields: stack,
+            time: extras.time,
             collisionGroundY: extras.collisionGroundY,
-            collisionMode: extras.collisions === "depth-buffer" ? 1 : 0,
+            collisionMode:
+              extras.collisions === "depth-buffer" ? (sceneDepth ? 2 : 1) : 0,
+            depthBias: this.#depthBias,
+            viewProjection: this.#viewProjection,
           };
     writeParticleSimulationParams(
       this.#paramsStaging,
@@ -320,6 +349,160 @@ export class WgpuParticleSimulation {
           "simulation was created.",
       );
     }
+    if (sceneDepth && extras?.collisions === "depth-buffer") {
+      this.#collideWithSceneDepth();
+    }
+  }
+
+  /** Whether a scene depth view is bound (`collisions: "depth-buffer"` kills against it). */
+  get hasSceneDepth(): boolean {
+    return this.#sceneDepth !== null;
+  }
+
+  /**
+   * Binds the scene's depth for `collisions: "depth-buffer"` (§36): a
+   * `depth32float` view with `TEXTURE_BINDING` (a `RenderTarget` made with
+   * `depthTexture: true` — the main backbuffer's `depth24plus` is not
+   * sampleable) and the column-major view-projection that produced it.
+   * Rebinding replaces the previous view. `viewProjection` is copied.
+   *
+   * @throws FourError `INVALID_APPLICATION_STATE` after dispose or for a
+   * matrix that is not 16 numbers.
+   */
+  bindSceneDepth(
+    depthView: GpuTextureView,
+    viewProjection: ArrayLike<number>,
+    bias = DEFAULT_DEPTH_BIAS,
+  ): void {
+    this.#requireLive("bindSceneDepth");
+    this.updateViewProjection(viewProjection);
+    this.#sceneDepth = depthView;
+    this.#depthBias = bias;
+    this.#depthGroup = null;
+  }
+
+  /** Replaces the view-projection (copied, no allocation) — call per frame. */
+  updateViewProjection(viewProjection: ArrayLike<number>): void {
+    this.#requireLive("updateViewProjection");
+    if (viewProjection.length !== 16) {
+      refuse("A view-projection matrix has 16 elements (§36).", {
+        length: viewProjection.length,
+      });
+    }
+    for (let i = 0; i < 16; i += 1) {
+      this.#viewProjection[i] = viewProjection[i];
+    }
+  }
+
+  /** Unbinds the scene depth; `"depth-buffer"` falls back to resting on the ground plane. */
+  unbindSceneDepth(): void {
+    this.#sceneDepth = null;
+    this.#depthGroup = null;
+  }
+
+  /** The one-record stack of the legacy `radial` spelling, rebuilt only when the object changes. */
+  #radialStack(radial: {
+    readonly originX: number;
+    readonly originY: number;
+    readonly originZ: number;
+    readonly strength: number;
+    readonly minDistance: number;
+  }): readonly ParticleSimulationField[] {
+    if (this.#radialSource !== radial) {
+      this.#radialSource = radial;
+      this.#radialStackCache = [{ kind: "radial", ...radial }];
+    }
+    return this.#radialStackCache;
+  }
+
+  /** The second dispatch: project, sample the scene depth, kill hits. */
+  #collideWithSceneDepth(): void {
+    const view = this.#sceneDepth;
+    const device = this.#device;
+    if (view === null || device.createComputePipeline === undefined) {
+      return;
+    }
+    let pipeline = this.#depthPipeline;
+    if (pipeline === null) {
+      const layout = device.createBindGroupLayout({
+        label: `${this.#label}:depth-layout`,
+        entries: [
+          {
+            binding: 0,
+            visibility: GPU_SHADER_STAGE.COMPUTE,
+            buffer: { type: "read-only-storage" },
+          },
+          {
+            binding: 1,
+            visibility: GPU_SHADER_STAGE.COMPUTE,
+            buffer: { type: "storage" },
+          },
+          {
+            binding: 2,
+            visibility: GPU_SHADER_STAGE.COMPUTE,
+            buffer: { type: "storage" },
+          },
+          {
+            binding: 3,
+            visibility: GPU_SHADER_STAGE.COMPUTE,
+            texture: { sampleType: "depth", viewDimension: "2d" },
+          },
+        ],
+      });
+      this.#depthLayout = layout;
+      pipeline = (
+        device as GpuDevice & Required<Pick<GpuDevice, "createComputePipeline">>
+      ).createComputePipeline({
+        label: `${this.#label}:depth-collide`,
+        layout: device.createPipelineLayout({
+          label: `${this.#label}:depth-collide`,
+          bindGroupLayouts: [layout],
+        }),
+        compute: {
+          module: device.createShaderModule({
+            label: `${this.#label}:depth-collide`,
+            code: PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE,
+          }),
+          entryPoint: COMPUTE_ENTRY_POINT,
+        },
+      });
+      this.#depthPipeline = pipeline;
+    }
+    let group = this.#depthGroup;
+    if (group === null && this.#depthLayout !== null) {
+      group = device.createBindGroup({
+        label: `${this.#label}:depth-collide`,
+        layout: this.#depthLayout,
+        entries: [
+          { binding: 0, resource: { buffer: this.#params.buffer } },
+          { binding: 1, resource: { buffer: this.positions.buffer } },
+          { binding: 2, resource: { buffer: this.velocities.buffer } },
+          { binding: 3, resource: view },
+        ],
+      });
+      this.#depthGroup = group;
+    }
+    const encoder = device.createCommandEncoder({
+      label: `${this.#label}:depth-collide`,
+    });
+    if (encoder.beginComputePass === undefined || group === null) {
+      unsupported(
+        "The device surface lost its §82 compute entry points after this " +
+          "simulation was created.",
+      );
+    }
+    const pass = encoder.beginComputePass({
+      label: `${this.#label}:depth-collide`,
+    });
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, group);
+    pass.dispatchWorkgroups(
+      particleIntegratorWorkgroups(this.#lastCount)[0],
+      1,
+      1,
+    );
+    pass.end();
+    device.queue.submit([encoder.finish()]);
   }
 
   /**
@@ -424,6 +607,8 @@ export class WgpuParticleSimulation {
     this.velocities.dispose();
     this.#params.dispose();
     this.#scratch.destroy();
+    this.#sceneDepth = null;
+    this.#depthGroup = null;
     this.#onDispose?.();
   }
 

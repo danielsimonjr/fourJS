@@ -48,6 +48,7 @@ export const RENDER_TARGET_COLOR_BYTES: Readonly<
   Record<RenderTargetFormat, number>
 > = {
   rgba8: RENDER_TARGET_RGBA8_BYTES,
+  rgba32float: RENDER_TARGET_RGBA32F_BYTES,
 };
 
 /**

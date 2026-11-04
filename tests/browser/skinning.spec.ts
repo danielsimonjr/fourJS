@@ -138,50 +138,55 @@ function areaOf(rect: {
   );
 }
 
-test.describe("§54 skinning deforms on a real driver (RFC 0003)", () => {
-  test("bending the elbow moves the upper segment, in one draw", async ({
-    page,
-  }) => {
-    const code = await bundleFixture();
-    // The first site's server supplies an `http:` origin; the page itself is
-    // replaced, so nothing of that example is under test here.
-    await page.goto(`http://localhost:${String(PORT)}/`);
-    await page.setContent("<!doctype html><body></body>");
-    await page.addScriptTag({ content: code, type: "module" });
-    await page.waitForSelector("body[data-skinning-ready='1']", {
-      timeout: 30_000,
+for (const mode of ["gpu", "texture"] as const) {
+  test.describe(`§54 skinning deforms on a real driver (RFC 0003) — ${mode} palette`, () => {
+    test("bending the elbow moves the upper segment, in one draw", async ({
+      page,
+    }) => {
+      const code = await bundleFixture();
+      // The first site's server supplies an `http:` origin; the page itself is
+      // replaced, so nothing of that example is under test here.
+      await page.goto(`http://localhost:${String(PORT)}/`);
+      await page.setContent("<!doctype html><body></body>");
+      await page.addScriptTag({
+        content: `window.fourSkinningMode = ${JSON.stringify(mode)};`,
+      });
+      await page.addScriptTag({ content: code, type: "module" });
+      await page.waitForSelector("body[data-skinning-ready='1']", {
+        timeout: 30_000,
+      });
+
+      const bind = (await page.evaluate(() =>
+        window.fourSkinningProbe?.(0),
+      )) as Probe;
+      const bent = (await page.evaluate(() =>
+        window.fourSkinningProbe?.(-Math.PI / 2),
+      )) as Probe;
+
+      // One skinned mesh is one draw, both poses — the palette changed, not the
+      // submission.
+      expect(bind.drawCalls).toBe(1);
+      expect(bent.drawCalls).toBe(1);
+      expect(bind.pixels).toHaveLength(WIDTH * HEIGHT * 4);
+
+      const bindArm = orangeIn(bind.pixels, ARM);
+      const bindTop = orangeIn(bind.pixels, TOP);
+      const bentArm = orangeIn(bent.pixels, ARM);
+      const bentTop = orangeIn(bent.pixels, TOP);
+      console.log(
+        `skinning: arm region ${String(bindArm)} → ${String(bentArm)} orange ` +
+          `pixels (area ${String(areaOf(ARM))}), top region ` +
+          `${String(bindTop)} → ${String(bentTop)} (area ${String(areaOf(TOP))})`,
+      );
+
+      // Upright: the column fills its top and nothing reaches beside the elbow.
+      expect(bindTop).toBeGreaterThan(areaOf(TOP) * 0.9);
+      expect(bindArm).toBeLessThan(areaOf(ARM) * 0.02);
+
+      // Bent 90°: the upper segment fills the arm region and has left the top.
+      // Both must flip — a bind-pose picture at the bent angle fails both.
+      expect(bentArm).toBeGreaterThan(areaOf(ARM) * 0.9);
+      expect(bentTop).toBeLessThan(areaOf(TOP) * 0.02);
     });
-
-    const bind = (await page.evaluate(() =>
-      window.fourSkinningProbe?.(0),
-    )) as Probe;
-    const bent = (await page.evaluate(() =>
-      window.fourSkinningProbe?.(-Math.PI / 2),
-    )) as Probe;
-
-    // One skinned mesh is one draw, both poses — the palette changed, not the
-    // submission.
-    expect(bind.drawCalls).toBe(1);
-    expect(bent.drawCalls).toBe(1);
-    expect(bind.pixels).toHaveLength(WIDTH * HEIGHT * 4);
-
-    const bindArm = orangeIn(bind.pixels, ARM);
-    const bindTop = orangeIn(bind.pixels, TOP);
-    const bentArm = orangeIn(bent.pixels, ARM);
-    const bentTop = orangeIn(bent.pixels, TOP);
-    console.log(
-      `skinning: arm region ${String(bindArm)} → ${String(bentArm)} orange ` +
-        `pixels (area ${String(areaOf(ARM))}), top region ` +
-        `${String(bindTop)} → ${String(bentTop)} (area ${String(areaOf(TOP))})`,
-    );
-
-    // Upright: the column fills its top and nothing reaches beside the elbow.
-    expect(bindTop).toBeGreaterThan(areaOf(TOP) * 0.9);
-    expect(bindArm).toBeLessThan(areaOf(ARM) * 0.02);
-
-    // Bent 90°: the upper segment fills the arm region and has left the top.
-    // Both must flip — a bind-pose picture at the bent angle fails both.
-    expect(bentArm).toBeGreaterThan(areaOf(ARM) * 0.9);
-    expect(bentTop).toBeLessThan(areaOf(TOP) * 0.02);
   });
-});
+}

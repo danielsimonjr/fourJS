@@ -70,6 +70,7 @@ import type { Material } from "@fourjs/materials";
 import type { Matrix4 } from "@fourjs/math";
 import { Bone, MorphWeights, Skeleton, type Node } from "@fourjs/scene";
 
+import { MAX_TEXTURE_SKINNING_JOINTS } from "./skin-palette.js";
 import {
   Renderable,
   type RenderableOptions,
@@ -145,7 +146,7 @@ const pendingSkeletons = new WeakMap<Mesh<Material>, PendingSkeleton>();
 export class Mesh<M extends Material = SurfaceMaterial> extends Renderable<M> {
   #skeleton: Skeleton | null = null;
 
-  #skinningMode: "gpu" | "cpu" = "gpu";
+  #skinningMode: "gpu" | "cpu" | "texture" = "gpu";
 
   #cpuSkinning: CpuSkinning | null = null;
 
@@ -153,14 +154,29 @@ export class Mesh<M extends Material = SurfaceMaterial> extends Renderable<M> {
    * CPU mode supplies deformed geometry to rendering, bounds and picking.
    * It supports palettes larger than the GPU uniform tier. Set this before
    * assigning a large skeleton. CPU results belong to the same-runtime tier.
+   *
+   * `"texture"` keeps GPU skinning but uploads the palette as an `rgba32float`
+   * texture fetched in the vertex stage (`skin-palette.ts`), so the joint limit
+   * is {@link MAX_TEXTURE_SKINNING_JOINTS}, not {@link MAX_SKINNING_JOINTS}. A
+   * device without float vertex texture fetch draws it as `"gpu"` (and skips a
+   * rig over 48 joints with a development warning).
    */
-  get skinningMode(): "gpu" | "cpu" {
+  get skinningMode(): "gpu" | "cpu" | "texture" {
     return this.#skinningMode;
   }
 
-  set skinningMode(value: "gpu" | "cpu") {
-    if (value !== "gpu" && value !== "cpu") {
-      throw new TypeError("Mesh skinningMode must be gpu or cpu.");
+  set skinningMode(value: "gpu" | "cpu" | "texture") {
+    if (value !== "gpu" && value !== "cpu" && value !== "texture") {
+      throw new TypeError("Mesh skinningMode must be gpu, cpu or texture.");
+    }
+    if (
+      value === "texture" &&
+      (this.skeleton?.jointCount ?? 0) > MAX_TEXTURE_SKINNING_JOINTS
+    ) {
+      throw new FourError(
+        "UNSUPPORTED_GPU_FEATURE",
+        "The skeleton exceeds the bone-texture palette limit.",
+      );
     }
     if (
       value === "gpu" &&
@@ -172,7 +188,7 @@ export class Mesh<M extends Material = SurfaceMaterial> extends Renderable<M> {
       );
     }
     this.#skinningMode = value;
-    if (value === "gpu") {
+    if (value !== "cpu") {
       this.#cpuSkinning?.dispose();
       this.#cpuSkinning = null;
     }
@@ -257,6 +273,19 @@ export class Mesh<M extends Material = SurfaceMaterial> extends Renderable<M> {
           `${String(value.bones.length)} bones, but one skinned draw may use ` +
           `at most ${String(MAX_SKINNING_JOINTS)} ` +
           "(§62 maximumSkinningJoints; RFC 0003 — refused at setup, §61).",
+        { context: { node: this.id, bones: value.bones.length } },
+      );
+    }
+    if (
+      this.#skinningMode === "texture" &&
+      value !== null &&
+      value.bones.length > MAX_TEXTURE_SKINNING_JOINTS
+    ) {
+      throw new FourError(
+        "UNSUPPORTED_GPU_FEATURE",
+        `Mesh ${this.id} was given a skeleton of ` +
+          `${String(value.bones.length)} bones, over the bone-texture limit ` +
+          `${String(MAX_TEXTURE_SKINNING_JOINTS)} (§54).`,
         { context: { node: this.id, bones: value.bones.length } },
       );
     }

@@ -2015,6 +2015,23 @@ describe("registerSceneNodeTypes — Mesh, Bone, and MorphWeights (RFC 0003)", (
     expect(serializeScene(reloaded, io.components, io.write)).toEqual(document);
   });
 
+  it('round-trips the bone-texture mode ("texture") and ignores an unknown mode', () => {
+    const io = registerSceneNodeTypes({ geometries, materials });
+    const scene = buildSkinnedScene();
+    const mesh = scene.children[0] as Mesh;
+    mesh.skinningMode = "texture";
+    const document = serializeScene(scene, io.components, io.write);
+    const reloaded = instantiateScene(document, io.components, io.read);
+    expect((reloaded.children[0] as Mesh).skinningMode).toBe("texture");
+    expect(serializeScene(reloaded, io.components, io.write)).toEqual(document);
+    const text = JSON.stringify(document).replace(
+      '"skinningMode":"texture"',
+      '"skinningMode":"bogus"',
+    );
+    const odd = instantiateScene(JSON.parse(text), io.components, io.read);
+    expect((odd.children[0] as Mesh).skinningMode).toBe("gpu");
+  });
+
   it("is textually idempotent, skeleton included — the P11-1 gate", () => {
     const io = registerSceneNodeTypes({ geometries, materials });
     const scene = buildSkinnedScene();

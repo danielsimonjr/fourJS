@@ -39,6 +39,7 @@ import { DEV, devWarnOnce, EventEmitter, FourError } from "@fourjs/core";
 import { Frustum, Matrix4, type Rectangle2 } from "@fourjs/math";
 import {
   MAX_SKINNING_JOINTS,
+  MAX_TEXTURE_SKINNING_JOINTS,
   RenderTarget,
   buildInterpolatedRenderList,
   buildRenderList,
@@ -1080,6 +1081,7 @@ const WEBGL_STATIC_CAPABILITIES = Object.freeze({
   storageBuffers: false,
   computeShaders: false,
   indirectDraw: false,
+  particleDepthCollision: false,
   compressedTextureFormats: Object.freeze([]),
   shaderPrecision: "highp",
   // §54's joint limit (RFC 0003): a declared constant, not a `getParameter`
@@ -1088,6 +1090,15 @@ const WEBGL_STATIC_CAPABILITIES = Object.freeze({
   // says what this backend *can* do; drawing skinned additionally requires
   // `registerSkinningPipeline()` (see `gl-skinning-registry.ts`).
   maximumSkinningJoints: MAX_SKINNING_JOINTS,
+  // The bone-texture palette (`Mesh.skinningMode === "texture"`): WebGL 2
+  // uploads `RGBA32F` and `texelFetch`es it in the vertex stage with no
+  // extension (only *filtering* a float texture needs one, and the palette is
+  // fetched, not filtered). The joint count is bounded by the `uint16` joint
+  // index, not the device: 65535 joints is 128 rows of the 2048-texel width
+  // every WebGL 2 context guarantees. A context lacking `texSubImage2D` (a
+  // test double) cannot refill the texture; `readCapabilities` reports `false`.
+  floatTextures: true,
+  maximumTextureSkinningJoints: MAX_TEXTURE_SKINNING_JOINTS,
 } satisfies Partial<RendererCapabilities>);
 
 /**
@@ -1113,6 +1124,9 @@ function readCapabilities(gl: ParticleGlContext): RendererCapabilities {
     backend: "webgl2",
     maxTextureSize: typeof maxTextureSize === "number" ? maxTextureSize : 0,
     ...WEBGL_STATIC_CAPABILITIES,
+    ...(gl.texSubImage2D === undefined
+      ? { floatTextures: false, maximumTextureSkinningJoints: 0 }
+      : {}),
     get maxAnisotropy(): number {
       maxAnisotropy ??= queryMaxAnisotropy(gl);
       return maxAnisotropy;
@@ -1516,6 +1530,17 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
   #skinnedPrograms: SkinnedPrograms | null = null;
 
   /**
+   * The bone-texture skinning pair (`Mesh.skinningMode === "texture"`;
+   * `skin-palette.ts`), compiled on the first texture-palette draw. A
+   * separate pair with its own failure latch: a driver that refuses it still
+   * draws the uniform pair, and a scene with no texture-mode mesh issues the
+   * byte-identical GL sequence it always did.
+   */
+  #skinnedTexturePrograms: SkinnedPrograms | null = null;
+
+  #skinnedTextureFailed = false;
+
+  /**
    * Whether a skinned-program compile failed on the current context — the
    * once-per-context latch that keeps a refusing driver from being asked
    * again every frame. Cleared on context restore: a fresh context may
@@ -1698,6 +1723,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#shadowProgramFailed = false;
     this.#skinnedPrograms = null;
     this.#skinnedProgramsFailed = false;
+    this.#skinnedTexturePrograms = null;
+    this.#skinnedTextureFailed = false;
     this.#morphUnlit = null;
     this.#morphLit = null;
     this.#morphProgramsFailed = false;
@@ -2156,7 +2183,9 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         | "unlit-morph-n"
         | "lit-morph-n"
         | "lit-instanced"
-        | "standard-instanced" = "unlit";
+        | "standard-instanced"
+        | "skinned-unlit-texture"
+        | "skinned-lit-texture" = "unlit";
       let particleTrailActive = false;
       // The 2..4-target morph program in use while `activeKind` is a
       // `*-morph-n` kind (counts share a kind, not a program).
@@ -2243,6 +2272,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         let instStandardViewUploaded = false;
         let skinnedUnlitViewUploaded = false;
         let skinnedLitViewUploaded = false;
+        let skinnedTexUnlitViewUploaded = false;
+        let skinnedTexLitViewUploaded = false;
         let morphUnlitViewUploaded = false;
         let morphLitViewUploaded = false;
         // Bit `2 * (count - 2) + (lit ? 1 : 0)`: per-count view uploads of the
@@ -2384,23 +2415,41 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
           // direction is absence with a one-time warning, never a bind pose
           // (a character standing in T-pose is a different picture).
           if (isSkinnedUnlitItem(item) || isSkinnedLitItem(item)) {
-            const skinnedPrograms = this.#acquireSkinnedPrograms(gl);
+            const skinnedPrograms = this.#acquireSkinnedPalettePrograms(
+              gl,
+              item,
+            );
             if (skinnedPrograms === null) {
               continue;
             }
+            // The bone-texture pair is its own program pair (own keys), so it
+            // is its own `activeKind` and its own per-view upload flag.
+            const skinnedTextured =
+              skinnedPrograms === this.#skinnedTexturePrograms;
             const skinnedRecord = geometries.acquire(item.geometry);
             if (skinnedRecord === null) {
               continue;
             }
             if (isSkinnedUnlitItem(item)) {
               const skinnedProgram = skinnedPrograms.unlit;
-              if (activeKind !== "skinned-unlit") {
+              const unlitKind = skinnedTextured
+                ? "skinned-unlit-texture"
+                : "skinned-unlit";
+              if (activeKind !== unlitKind) {
                 skinnedProgram.use();
-                activeKind = "skinned-unlit";
+                activeKind = unlitKind;
               }
-              if (!skinnedUnlitViewUploaded) {
+              if (
+                !(skinnedTextured
+                  ? skinnedTexUnlitViewUploaded
+                  : skinnedUnlitViewUploaded)
+              ) {
                 skinnedProgram.setViewProjection(viewProjection);
-                skinnedUnlitViewUploaded = true;
+                if (skinnedTextured) {
+                  skinnedTexUnlitViewUploaded = true;
+                } else {
+                  skinnedUnlitViewUploaded = true;
+                }
               }
               const map = mapOf(item.material);
               const texture =
@@ -2445,9 +2494,12 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               skinnedProgram.setJointMatrices(item.jointMatrices);
             } else {
               const skinnedProgram = skinnedPrograms.lit;
-              if (activeKind !== "skinned-lit") {
+              const litKind = skinnedTextured
+                ? "skinned-lit-texture"
+                : "skinned-lit";
+              if (activeKind !== litKind) {
                 skinnedProgram.use();
-                activeKind = "skinned-lit";
+                activeKind = litKind;
               }
               applyMaterialState(
                 gl,
@@ -2456,7 +2508,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 false,
                 item.clip ?? null,
               );
-              if (!skinnedLitViewUploaded) {
+              if (
+                !(skinnedTextured
+                  ? skinnedTexLitViewUploaded
+                  : skinnedLitViewUploaded)
+              ) {
                 // The same per-view state the lit branch uploads, through the
                 // same shared uniform classes, so the skip rules agree.
                 skinnedProgram.setViewProjection(viewProjection);
@@ -2468,7 +2524,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 );
                 skinnedProgram.setPunctualLights(sceneLights);
                 skinnedProgram.setShadow(sceneLights);
-                skinnedLitViewUploaded = true;
+                if (skinnedTextured) {
+                  skinnedTexLitViewUploaded = true;
+                } else {
+                  skinnedLitViewUploaded = true;
+                }
               }
               const map = mapOf(item.material);
               const texture =
@@ -3868,6 +3928,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
       this.#effectProgram?.dispose();
       this.#shadowProgram?.dispose();
       this.#skinnedPrograms?.dispose();
+      this.#skinnedTexturePrograms?.dispose();
       this.#morphUnlit?.dispose();
       this.#morphLit?.dispose();
       for (const pair of this.#morphMulti) {
@@ -3892,6 +3953,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
     this.#effectProgram = null;
     this.#shadowProgram = null;
     this.#skinnedPrograms = null;
+    this.#skinnedTexturePrograms = null;
     this.#morphUnlit = null;
     this.#morphLit = null;
     this.#morphMulti.fill(null);
@@ -4241,6 +4303,66 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             `skinned draws are skipped (§61, §89). ${String(error)}`,
         );
       }
+      return null;
+    }
+  }
+
+  /**
+   * The skinned programs one skinned item draws through: the bone-texture pair
+   * for a `paletteTexture` item when the context can hold an `RGBA32F` palette
+   * and the pair compiles, else the uniform pair. A texture item that falls
+   * back past the uniform tier's 48 joints is skipped (`null`) with a
+   * development warning — a truncated palette would be a different picture.
+   */
+  #acquireSkinnedPalettePrograms(
+    gl: ParticleGlContext,
+    item: { readonly paletteTexture?: boolean; readonly jointCount: number },
+  ): SkinnedPrograms | null {
+    if (item.paletteTexture !== true) {
+      return this.#acquireSkinnedPrograms(gl);
+    }
+    const textured = this.#acquireSkinnedTexturePrograms(gl);
+    if (textured !== null) {
+      return textured;
+    }
+    if (DEV) {
+      devWarnOnce(
+        "webgl-skinning-texture-fallback",
+        '§54: skinningMode "texture" is unavailable on this context (no float ' +
+          'palette texture upload or the pair failed to compile); "texture" ' +
+          'meshes draw as "gpu" (48 joints).',
+      );
+    }
+    if (item.jointCount > MAX_SKINNING_JOINTS) {
+      return null;
+    }
+    return this.#acquireSkinnedPrograms(gl);
+  }
+
+  /**
+   * The bone-texture pair for this context, or `null` (nothing registered,
+   * no `texSubImage2D`, or a compile failure — latched per context).
+   */
+  #acquireSkinnedTexturePrograms(
+    gl: ParticleGlContext,
+  ): SkinnedPrograms | null {
+    const existing = this.#skinnedTexturePrograms;
+    if (existing !== null) {
+      return existing;
+    }
+    if (this.#skinnedTextureFailed || gl.texSubImage2D === undefined) {
+      return null;
+    }
+    const factory = resolveSkinningPipelineFactory();
+    if (factory === null) {
+      return null;
+    }
+    try {
+      const compiled = factory.create(gl, "texture");
+      this.#skinnedTexturePrograms = compiled;
+      return compiled;
+    } catch {
+      this.#skinnedTextureFailed = true;
       return null;
     }
   }
@@ -4635,6 +4757,18 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         continue;
       }
       if (isSkinnedUnlitItem(item) || isSkinnedLitItem(item)) {
+        if (item.jointCount > MAX_SKINNING_JOINTS) {
+          // Casters take the uniform palette; a bone-texture rig past 48
+          // joints would overflow it. Skipped, never a truncated silhouette.
+          if (DEV) {
+            devWarnOnce(
+              "webgl-skinning-texture-caster",
+              "§69: a bone-texture mesh over 48 joints casts no shadow " +
+                "(casters use the uniform palette).",
+            );
+          }
+          continue;
+        }
         const skinnedShadow = this.#acquireSkinnedShadowProgram(gl);
         if (skinnedShadow === null) {
           continue;

@@ -14527,3 +14527,323 @@ describe("WebglRenderer - R-22 instanced shaded runs", () => {
     expect(gl.countOf("deleteBuffer")).toBeGreaterThanOrEqual(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Bone-texture skin palette (`Mesh.skinningMode === "texture"`, decision D7).
+// ---------------------------------------------------------------------------
+
+/** A skinned drawable that asks for the bone-texture palette. */
+class TextureSkinnedNode extends SkinnedTestNode {
+  skinningMode = "texture" as const;
+}
+
+/** Initialises against a fake whose context can refill an RGBA32F texture. */
+async function initializedWithSubImage(
+  options: FakeGlOptions = {},
+): Promise<Harness & { subImage: ReturnType<typeof vi.fn> }> {
+  const gl = createFakeGl(options);
+  const subImage = vi.fn();
+  (gl as { texSubImage2D?: unknown }).texSubImage2D = (
+    ...args: unknown[]
+  ): void => {
+    subImage(...args);
+    gl.calls.push({ name: "texSubImage2D", args });
+  };
+  const canvas = new TestCanvas(gl);
+  const renderer = new WebglRenderer();
+  await renderer.initialize({ canvas });
+  return { gl, canvas, renderer, camera: new TestCamera(), subImage };
+}
+
+function textureSkinnedScene(
+  material: TestMaterial | TestLitMaterial = new TestMaterial(),
+  joints = 3,
+): { root: Renderable; node: TextureSkinnedNode; skeleton: TestSkeleton } {
+  const root = createRoot();
+  const skeleton = new TestSkeleton(joints);
+  const node = new TextureSkinnedNode(
+    skinnedGeometry().asGeometry,
+    material.asMaterial,
+  );
+  node.skeleton = skeleton;
+  root.add(node);
+  return { root, node, skeleton };
+}
+
+function jointTextureUniforms(gl: FakeGl, lit: boolean): Map<string, object> {
+  for (const perProgram of gl.uniformsByProgram.values()) {
+    if (
+      perProgram.has("jointTexture") &&
+      perProgram.has("ambientLight") === lit
+    ) {
+      return perProgram;
+    }
+  }
+  throw new Error("the bone-texture program never resolved its uniforms");
+}
+
+describe("bone-texture skinning in WebglRenderer (decision D7)", () => {
+  beforeEach(() => {
+    resetDevWarnings();
+    clearRegisteredSkinningPipeline();
+    registerSkinningPipeline();
+  });
+
+  it("reports float textures and the per-device joint limit", async () => {
+    const { renderer } = await initializedWithSubImage();
+    expect(renderer.capabilities.floatTextures).toBe(true);
+    expect(renderer.capabilities.maximumTextureSkinningJoints).toBe(65535);
+    expect(renderer.capabilities.maximumSkinningJoints).toBe(48);
+    const bare = await initialized();
+    expect(bare.renderer.capabilities.floatTextures).toBe(false);
+    expect(bare.renderer.capabilities.maximumTextureSkinningJoints).toBe(0);
+  });
+
+  it("uploads the uniform palette's bytes into an RGBA32F texture", async () => {
+    const { renderer, gl, camera, subImage } = await initializedWithSubImage();
+    const { root, skeleton } = textureSkinnedScene(new TestMaterial(), 3);
+    skeleton.jointMatrices[13] = 5;
+    skeleton.jointMatrices[40] = 7;
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    // Texture storage: width 2048, one row, RGBA32F / FLOAT.
+    const alloc = gl.callsOf("texImage2D")[0].args;
+    expect(alloc.slice(1, 8)).toEqual([
+      0,
+      0x8814,
+      2048,
+      1,
+      0,
+      GL.RGBA,
+      GL.FLOAT,
+    ]);
+    // Sampler unit 6, set once; no `jointMatrices` uniform upload at all.
+    const sampler = jointTextureUniforms(gl, false).get("jointTexture");
+    expect(
+      gl.callsOf("uniform1i").filter((c) => c.args[0] === sampler),
+    ).toHaveLength(1);
+    expect(subImage).toHaveBeenCalledTimes(1);
+    const args = subImage.mock.calls[0];
+    expect(args.slice(0, 8)).toEqual([
+      GL.TEXTURE_2D,
+      0,
+      0,
+      0,
+      2048,
+      1,
+      GL.RGBA,
+      GL.FLOAT,
+    ]);
+    const staged = args[8] as Float32Array;
+    expect(
+      Array.from(staged.subarray(0, skeleton.jointMatrices.length)),
+    ).toEqual(Array.from(skeleton.jointMatrices));
+    expect(staged.length).toBe(2048 * 4);
+    expect(staged[skeleton.jointMatrices.length]).toBe(0);
+    expect(gl.countOf("drawArrays")).toBe(1);
+    // The unit is left as found.
+    const units = gl.callsOf("activeTexture").map((c) => c.args[0]);
+    expect(units).toEqual([GL.TEXTURE0 + 6, GL.TEXTURE0]);
+
+    // Equality with the uniform path, byte for byte.
+    const uniform = await initialized();
+    registerSkinningPipeline();
+    const plain = skinnedScene(new TestMaterial(), skeleton);
+    uniform.gl.reset();
+    uniform.renderer.render(plain.root, [createView(uniform.camera)]);
+    const uploads = uploadsAt(
+      uniform.gl,
+      skinnedUnlitUniforms(uniform.gl).get("jointMatrices[0]"),
+    );
+    expect(Array.from(staged.subarray(0, 48))).toEqual(
+      Array.from(uploads[0] as number[]).slice(0, 48),
+    );
+  });
+
+  it("grows rows past 512 joints, reuses the texture, and never reallocates per frame", async () => {
+    const { renderer, gl, camera, subImage } = await initializedWithSubImage();
+    const { root } = textureSkinnedScene(new TestMaterial(), 513);
+    const views = [createView(camera)];
+    gl.reset();
+    renderer.render(root, views);
+    renderer.render(root, views);
+    expect(gl.callsOf("texImage2D")).toHaveLength(1);
+    expect(gl.callsOf("texImage2D")[0].args[4]).toBe(2);
+    expect(subImage).toHaveBeenCalledTimes(2);
+    expect((subImage.mock.calls[0][8] as Float32Array).length).toBe(
+      2 * 2048 * 4,
+    );
+    // Same staging array both frames: no per-frame allocation.
+    expect(subImage.mock.calls[1][8]).toBe(subImage.mock.calls[0][8]);
+  });
+
+  it("keeps distinct programs for the texture pair and compiles it lazily", async () => {
+    const { renderer, gl, camera } = await initializedWithSubImage();
+    const mixed = textureSkinnedScene(new TestMaterial(), 3);
+    const plainNode = new SkinnedTestNode(
+      skinnedGeometry().asGeometry,
+      new TestMaterial().asMaterial,
+    );
+    plainNode.skeleton = new TestSkeleton();
+    mixed.root.add(plainNode);
+    gl.reset();
+    renderer.render(mixed.root, [createView(camera)]);
+    // Two pairs: 2 + 2 programs, with distinct sources.
+    expect(gl.countOf("createProgram")).toBe(4);
+    const vertexSources = gl
+      .callsOf("shaderSource")
+      .map((c) => String(c.args[1]))
+      .filter((s) => s.includes("skinMatrix"));
+    expect(vertexSources.some((s) => s.includes("texelFetch"))).toBe(true);
+    expect(
+      vertexSources.some((s) => s.includes("uniform mat4 jointMatrices")),
+    ).toBe(true);
+    expect(new Set(vertexSources).size).toBe(vertexSources.length);
+    expect(gl.countOf("drawArrays")).toBe(2);
+    // Second frame: nothing recompiled, and switching back re-`use`s.
+    gl.reset();
+    renderer.render(mixed.root, [createView(camera)]);
+    expect(gl.countOf("createProgram")).toBe(0);
+  });
+
+  it("shades a texture-skinned lit draw through the lit texture program", async () => {
+    const { renderer, gl, camera } = await initializedWithSubImage();
+    const root = new AmbientRoot([0.2, 0.3, 0.4]);
+    const node = new TextureSkinnedNode(
+      skinnedGeometry().asGeometry,
+      new TestLitMaterial([1, 0, 0, 1]).asMaterial,
+    );
+    node.skeleton = new TestSkeleton(2);
+    root.add(node);
+    gl.reset();
+    renderer.render(root, [createView(camera)]);
+    expect(jointTextureUniforms(gl, true).has("jointTexture")).toBe(true);
+    expect(gl.countOf("drawArrays")).toBe(1);
+    // A second view re-uploads the per-view state exactly once per view.
+    gl.reset();
+    renderer.render(root, [createView(camera), createView(camera)]);
+    expect(gl.countOf("drawArrays")).toBe(2);
+  });
+
+  it("falls back to the uniform palette without float upload, with one warning", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { renderer, gl, camera } = await initialized();
+      const { root, skeleton } = textureSkinnedScene(new TestMaterial(), 3);
+      skeleton.jointMatrices[13] = 5;
+      gl.reset();
+      renderer.render(root, [createView(camera)]);
+      renderer.render(root, [createView(camera)]);
+      const palette = uploadsAt(
+        gl,
+        skinnedUnlitUniforms(gl).get("jointMatrices[0]"),
+      );
+      expect(palette).toHaveLength(2);
+      expect((palette[0] as number[])[13]).toBe(5);
+      expect(gl.countOf("texImage2D")).toBe(0);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0][0])).toContain("texture");
+
+      // A rig past 48 joints cannot fall back: skipped, not truncated.
+      const big = textureSkinnedScene(new TestMaterial(), 49);
+      gl.reset();
+      renderer.render(big.root, [createView(camera)]);
+      expect(gl.countOf("drawArrays")).toBe(0);
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("falls back when the texture pair fails to compile, and latches", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      // Programs: 3 at initialize; the texture pair is compiled first.
+      const { renderer, gl, camera } = await initializedWithSubImage({
+        failProgramAt: 4,
+      });
+      const { root } = textureSkinnedScene(new TestMaterial(), 3);
+      gl.reset();
+      renderer.render(root, [createView(camera)]);
+      expect(gl.countOf("drawArrays")).toBe(1);
+      const compiled = gl.countOf("createProgram");
+      renderer.render(root, [createView(camera)]);
+      expect(gl.countOf("createProgram")).toBe(compiled);
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("falls back to nothing when no skinning pipeline is registered", async () => {
+    clearRegisteredSkinningPipeline();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { renderer, gl, camera } = await initializedWithSubImage();
+      const { root } = textureSkinnedScene(new TestMaterial(), 3);
+      gl.reset();
+      renderer.render(root, [createView(camera)]);
+      expect(gl.countOf("drawArrays")).toBe(0);
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("skips shadow casting for a texture rig over 48 joints but casts a small one", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { renderer, gl, camera } = await initializedWithSubImage();
+      const root = new AmbientRoot([0.1, 0.1, 0.1]);
+      root.add(new TestShadowLight(8));
+      const big = new TextureSkinnedNode(
+        skinnedGeometry().asGeometry,
+        new TestLitMaterial().asMaterial,
+      );
+      big.skeleton = new TestSkeleton(60);
+      const small = new TextureSkinnedNode(
+        skinnedGeometry().asGeometry,
+        new TestLitMaterial().asMaterial,
+      );
+      small.skeleton = new TestSkeleton(3);
+      root.add(big, small);
+      gl.reset();
+      renderer.render(root, [createView(camera)]);
+      const caster = skinnedShadowUniforms(gl);
+      expect(uploadsAt(gl, caster.get("model"))).toHaveLength(1);
+      expect(
+        warn.mock.calls.some((c) => String(c[0]).includes("casts no shadow")),
+      ).toBe(true);
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("drops the texture pair on context loss and frees its textures on dispose", async () => {
+    const { renderer, gl, canvas, camera } = await initializedWithSubImage();
+    const { root } = textureSkinnedScene(new TestMaterial(), 3);
+    renderer.render(root, [createView(camera)]);
+    canvas.dispatch("webglcontextlost");
+    canvas.dispatch("webglcontextrestored");
+    gl.reset();
+    renderer.render(root, [createView(camera)]);
+    expect(gl.countOf("createProgram")).toBeGreaterThanOrEqual(2);
+    expect(gl.callsOf("texImage2D")).toHaveLength(1);
+    gl.reset();
+    renderer.dispose();
+    expect(gl.countOf("deleteTexture")).toBeGreaterThanOrEqual(1);
+  });
+
+  it("skips the draw when the palette texture cannot be allocated", async () => {
+    const { renderer, gl, camera, subImage } = await initializedWithSubImage({
+      allocateTextures: false,
+    });
+    const { root } = textureSkinnedScene(new TestMaterial(), 3);
+    gl.reset();
+    renderer.render(root, [createView(camera)]);
+    expect(subImage).not.toHaveBeenCalled();
+  });
+});

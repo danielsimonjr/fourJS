@@ -115,6 +115,17 @@ describe("RenderTarget — construction and defaults (§61, §85)", () => {
     ).toBe("rgba8");
   });
 
+  it("honours the rgba32float format (decision D7) and bills 16 bytes a texel", () => {
+    const target = new RenderTarget({
+      width: 2,
+      height: 2,
+      format: "rgba32float",
+      depth: false,
+    });
+    expect(target.format).toBe("rgba32float");
+    expect(target.byteLength).toBe(2 * 2 * 16);
+  });
+
   it("rejects a non-integer, zero, negative, or non-finite size (§85)", () => {
     const bad: readonly (readonly [number, number])[] = [
       [0, 4],

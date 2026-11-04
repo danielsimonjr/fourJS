@@ -1589,7 +1589,9 @@ export function registerRenderSerializers(
               materials,
               policy,
             ),
-            ...(mesh.skinningMode === "cpu" ? { skinningMode: "cpu" } : {}),
+            ...(mesh.skinningMode === "cpu" || mesh.skinningMode === "texture"
+              ? { skinningMode: mesh.skinningMode }
+              : {}),
             renderLayer: mesh.renderLayer,
             renderOrder: mesh.renderOrder,
             ...renderableFlagsJson(mesh),
@@ -1759,7 +1761,9 @@ export function registerRenderSerializers(
             ...readRenderableFlags(data),
             ...readScissor(data),
           });
-          if (data.skinningMode === "cpu") mesh.skinningMode = "cpu";
+          if (data.skinningMode === "cpu" || data.skinningMode === "texture") {
+            mesh.skinningMode = data.skinningMode;
+          }
           // The skeleton record: shape-corrupt restores no skeleton (the
           // motion serializers' corrupt-field policy — a mesh without its rig
           // is a usable mesh), while a well-formed record the classes refuse

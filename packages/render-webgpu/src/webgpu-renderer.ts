@@ -117,6 +117,8 @@ import {
   buildRenderList,
   buildViewRenderList,
   MAX_SKINNING_JOINTS,
+  MAX_TEXTURE_SKINNING_JOINTS,
+  skinPaletteRows,
   collectSceneLights,
   unionViewLayerMask,
   createSceneLights,
@@ -226,6 +228,7 @@ import {
 import { readTexturePixels } from "./wgpu-readback.js";
 import {
   RENDER_TARGET_COLOR_FORMAT,
+  RENDER_TARGET_DEPTH_TEXTURE_FORMAT,
   WgpuRenderTargetCache,
   type WgpuRenderTargetRecord,
 } from "./wgpu-render-target.js";
@@ -551,6 +554,7 @@ function readCapabilities(device: GpuDevice): RendererCapabilities {
     storageBuffers: limit("maxStorageBuffersPerShaderStage") > 0,
     computeShaders: limit("maxComputeWorkgroupSizeX") > 0,
     indirectDraw: true,
+    particleDepthCollision: limit("maxComputeWorkgroupSizeX") > 0,
     compressedTextureFormats: Object.freeze(
       [
         "texture-compression-bc",
@@ -566,6 +570,19 @@ function readCapabilities(device: GpuDevice): RendererCapabilities {
     // in to paying for the pipelines; the capability says what this
     // backend *can* do.
     maximumSkinningJoints: MAX_SKINNING_JOINTS,
+    // The bone-texture palette (`Mesh.skinningMode === "texture"`): an
+    // `rgba32float` texture `textureLoad`ed in the vertex stage needs no
+    // feature (unfilterable-float is core), only a texture at least the
+    // palette's 2048 texels wide; a double that omits `limits` reports false
+    // and draws "texture" meshes through the uniform palette.
+    floatTextures: limit("maxTextureDimension2D") >= 2048,
+    maximumTextureSkinningJoints:
+      limit("maxTextureDimension2D") >= 2048
+        ? Math.min(
+            MAX_TEXTURE_SKINNING_JOINTS,
+            (limit("maxTextureDimension2D") * 2048) / 4,
+          )
+        : 0,
     // WebGPU exposes no standard anisotropy limit; 16 is the clamp
     // `wgpu-texture.ts` already uses when `limits.maxAnisotropy` is absent.
     // Reading a property of the device's existing `limits` record is not a
@@ -772,6 +789,8 @@ export class WebgpuRenderer implements Renderer {
     // Declared joint limit, not a device query — same constant after
     // initialize. Registration is what compiles the pipelines.
     maximumSkinningJoints: MAX_SKINNING_JOINTS,
+    floatTextures: false,
+    maximumTextureSkinningJoints: 0,
   } satisfies RendererCapabilities);
 
   #canvas: WebgpuCanvas | null = null;
@@ -1378,6 +1397,8 @@ export class WebgpuRenderer implements Renderer {
     // packed per view below.
     let hasLitItems = false;
     let skinnedCount = 0;
+    let skinnedTextureDraws = 0;
+    let skinnedTextureRows = 0;
     for (const item of items) {
       if (
         item.kind === "lit" ||
@@ -1388,6 +1409,10 @@ export class WebgpuRenderer implements Renderer {
       }
       if (item.kind === "skinned-unlit" || item.kind === "skinned-lit") {
         skinnedCount += 1;
+        if (item.paletteTexture === true) {
+          skinnedTextureDraws += 1;
+          skinnedTextureRows += skinPaletteRows(item.jointCount);
+        }
       }
     }
     if (hasLitItems) {
@@ -1434,6 +1459,16 @@ export class WebgpuRenderer implements Renderer {
         device,
         skinnedCount * views.length + (frameShadow ? skinnedCount : 0),
       );
+      if (
+        skinnedTextureDraws > 0 &&
+        this.#capabilities.floatTextures === true
+      ) {
+        skinnedPrograms.prepareTexture(
+          device,
+          skinnedTextureDraws * views.length,
+          skinnedTextureRows * views.length,
+        );
+      }
     }
 
     // Sized before recording: one clear block per view plus, at worst, one
@@ -2923,6 +2958,42 @@ export class WebgpuRenderer implements Renderer {
   }
 
   /**
+   * Binds a scene depth to a particle simulation for `collisions:
+   * "depth-buffer"` (§36): `target` must be a `RenderTarget` created with
+   * `depthTexture: true` (its `depth32float` attachment is samplable; the
+   * backbuffer's `depth24plus` is not), already rendered to this frame;
+   * `viewProjection` is the column-major matrix of the view that drew it.
+   * Call again per frame (or `simulation.updateViewProjection`) as the
+   * camera moves; re-binding after a resize picks up the new view.
+   *
+   * Throws a `FourError`: `INVALID_APPLICATION_STATE` for an uninitialized
+   * renderer, a disposed target, or a target without a samplable depth.
+   */
+  bindParticleSceneDepth(
+    simulation: WgpuParticleSimulation,
+    target: RenderTarget,
+    viewProjection: ArrayLike<number>,
+    bias?: number,
+  ): void {
+    this.#computeDevice("bindParticleSceneDepth");
+    const record = this.#renderTargets?.acquire(target) ?? null;
+    if (
+      record === null ||
+      record.depthView === null ||
+      record.depthFormat !== RENDER_TARGET_DEPTH_TEXTURE_FORMAT
+    ) {
+      throw new FourError(
+        LIFECYCLE_ERROR_CODE,
+        "bindParticleSceneDepth needs a live RenderTarget with " +
+          "`depthTexture: true` — only that attachment (depth32float) is " +
+          "samplable (§36, §69).",
+        { context: { target: target.id } },
+      );
+    }
+    simulation.bindSceneDepth(record.depthView, viewProjection, bias);
+  }
+
+  /**
    * Creates the device residency of one §36 `simulation: "gpu"` particle
    * system (R-31 wiring, 2026-08-29) — see `wgpu-particle-simulation.ts`'s
    * header for the design: flat-lane storage buffers, the WP-R1.8 integrator
@@ -3207,12 +3278,30 @@ export class WebgpuRenderer implements Renderer {
         shadedLights = shadowGroup;
       }
     }
+    // The bone-texture palette (decision D7) when the mesh asked and the
+    // device can hold it; otherwise the uniform palette, which a rig past 48
+    // joints cannot fall back to — skipped, never truncated.
+    const textured =
+      item.paletteTexture === true && this.#capabilities.floatTextures === true;
+    if (item.paletteTexture === true && !textured) {
+      if (DEV) {
+        devWarnOnce(
+          "webgpu-skinning-texture-fallback",
+          '§54: skinningMode "texture" is unavailable on this device (no ' +
+            '2048-texel texture); "texture" meshes draw as "gpu" (48 joints).',
+        );
+      }
+      if (item.jointCount > MAX_SKINNING_JOINTS) {
+        return skipped;
+      }
+    }
     const stencilRecord = frameStencil
       ? clip !== null
         ? clip.stencil
         : material.stencil
       : undefined;
     const descriptor: WgpuSkinnedDrawDescriptor = {
+      paletteTexture: textured,
       vertexColors,
       map: useMap,
       normals,
@@ -3233,8 +3322,16 @@ export class WebgpuRenderer implements Renderer {
     const pipeline = lit
       ? programs.lit.acquire(descriptor)
       : programs.unlit.acquire(descriptor);
-    const paletteGroup = programs.paletteBindGroup();
+    const paletteGroup = textured
+      ? programs.paletteTextureBindGroup()
+      : programs.paletteBindGroup();
     if (pipeline === null || paletteGroup === null) {
+      return skipped;
+    }
+    const paletteOffset = textured
+      ? programs.packTexturePalette(item.jointMatrices)
+      : programs.packPalette(item.jointMatrices);
+    if (paletteOffset < 0) {
       return skipped;
     }
     const opacity = material.opacity ?? 1;
@@ -3248,7 +3345,6 @@ export class WebgpuRenderer implements Renderer {
       color[2],
       color[3] * opacity,
     );
-    const paletteOffset = programs.packPalette(item.jointMatrices);
     pass.setPipeline(pipeline);
     pass.setBindGroup(
       0,
@@ -4115,6 +4211,18 @@ export class WebgpuRenderer implements Renderer {
       }
       if (isSkinnedUnlitItem(item) || isSkinnedLitItem(item)) {
         if (skinnedPrograms === null) {
+          continue;
+        }
+        if (item.jointCount > MAX_SKINNING_JOINTS) {
+          // Casters take the uniform palette; a bone-texture rig past 48
+          // joints would overflow it. Skipped, never a truncated silhouette.
+          if (DEV) {
+            devWarnOnce(
+              "webgpu-skinning-texture-caster",
+              "§69: a bone-texture mesh over 48 joints casts no shadow " +
+                "(casters use the uniform palette).",
+            );
+          }
           continue;
         }
         const geometry = geometries.acquire(item.geometry, false, true);

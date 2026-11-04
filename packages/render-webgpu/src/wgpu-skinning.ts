@@ -41,11 +41,18 @@
  * {@link registerSkinningPipeline}.
  */
 
-import { MAX_SKINNING_JOINTS } from "@fourjs/render";
+import {
+  MAX_SKINNING_JOINTS,
+  SKIN_PALETTE_FLOATS_PER_ROW,
+  SKIN_PALETTE_TEXTURE_FORMAT,
+  SKIN_PALETTE_TEXTURE_WIDTH,
+  skinPaletteRows,
+} from "@fourjs/render";
 
 import {
   GPU_BUFFER_USAGE,
   GPU_SHADER_STAGE,
+  GPU_TEXTURE_USAGE,
   type GpuBindGroup,
   type GpuBindGroupLayout,
   type GpuBuffer,
@@ -53,6 +60,7 @@ import {
   type GpuPipelineLayout,
   type GpuRenderPipeline,
   type GpuShaderModule,
+  type GpuTexture,
   type GpuVertexBufferLayout,
 } from "./webgpu-device.js";
 import { DRAW_UNIFORM_WGSL, MAP_BINDING_WGSL } from "./wgpu-bindings.js";
@@ -178,13 +186,84 @@ export function createJointPaletteBindGroupLayout(
   });
 }
 
+/** `@binding(0)` of the bone-texture palette group — the `rgba32float` texture. */
+export const JOINT_TEXTURE_BINDING = 0;
+
+/** `@binding(1)` of the bone-texture palette group — the draw's base row. */
+export const JOINT_TEXTURE_INFO_BINDING = 1;
+
+/**
+ * Bytes per draw in the base-row uniform: one dynamic-offset slot, so the
+ * slot *is* the 256-byte stride.
+ */
+export const JOINT_TEXTURE_INFO_STRIDE = 256;
+
+/**
+ * The bone-texture palette bind-group layout (decision D7; `skin-palette.ts`):
+ * the `rgba32float` texture (`unfilterable-float` — it is `textureLoad`ed, never
+ * sampled) plus a dynamically-offset uniform carrying the draw's first row, both
+ * visible to the **vertex** stage alone. One shared texture holds every draw's
+ * rows end to end, because a WebGPU queue write lands before the submit and a
+ * per-draw refill of one texture would leave every draw reading the last.
+ */
+export function createJointPaletteTextureBindGroupLayout(
+  device: GpuDevice,
+): GpuBindGroupLayout {
+  return device.createBindGroupLayout({
+    label: "fourJS:joint-palette-texture",
+    entries: [
+      {
+        binding: JOINT_TEXTURE_BINDING,
+        visibility: GPU_SHADER_STAGE.VERTEX,
+        texture: { sampleType: "unfilterable-float", viewDimension: "2d" },
+      },
+      {
+        binding: JOINT_TEXTURE_INFO_BINDING,
+        visibility: GPU_SHADER_STAGE.VERTEX,
+        buffer: {
+          type: "uniform",
+          hasDynamicOffset: true,
+          minBindingSize: 16,
+        },
+      },
+    ],
+  });
+}
+
 /**
  * Linear-blend skinning chunk spliced into every skinned vertex stage —
  * four influences, weights as authored (not renormalised), matching
  * WebGL's `SKINNING_GLSL`. Joint indices arrive as `uint16x4` at location
  * 4 (WGSL `vec4<u32>`) and weights as `float32x4` at location 5.
  */
-export function skinningWgsl(paletteGroup: number): string {
+export function skinningWgsl(paletteGroup: number, texture = false): string {
+  if (texture) {
+    const width = String(SKIN_PALETTE_TEXTURE_WIDTH);
+    return `struct JointPaletteInfo {
+  baseRow : u32,
+};
+
+@group(${String(paletteGroup)}) @binding(${String(JOINT_TEXTURE_BINDING)}) var jointTexture : texture_2d<f32>;
+@group(${String(paletteGroup)}) @binding(${String(JOINT_TEXTURE_INFO_BINDING)}) var<uniform> paletteInfo : JointPaletteInfo;
+
+fn jointMatrix(joint : u32) -> mat4x4<f32> {
+  let texel = joint * 4u;
+  let row = paletteInfo.baseRow + texel / ${width}u;
+  let column = texel % ${width}u;
+  return mat4x4<f32>(
+    textureLoad(jointTexture, vec2<u32>(column, row), 0),
+    textureLoad(jointTexture, vec2<u32>(column + 1u, row), 0),
+    textureLoad(jointTexture, vec2<u32>(column + 2u, row), 0),
+    textureLoad(jointTexture, vec2<u32>(column + 3u, row), 0));
+}
+
+fn skinMatrix() -> mat4x4<f32> {
+  return weights.x * jointMatrix(joints.x)
+       + weights.y * jointMatrix(joints.y)
+       + weights.z * jointMatrix(joints.z)
+       + weights.w * jointMatrix(joints.w);
+}`;
+  }
   return `struct JointPalette {
   jointMatrices : array<mat4x4<f32>, ${String(MAX_SKINNING_JOINTS)}>,
 };
@@ -297,6 +376,7 @@ function skinnedInfluenceInputs(): string {
 export function skinnedUnlitShaderSource(
   vertexColors: boolean,
   map = false,
+  texture = false,
 ): string {
   const paletteGroup = skinnedPaletteBindGroupIndex(false, map);
   let input = `  @location(0) position : vec3<f32>,`;
@@ -312,7 +392,7 @@ export function skinnedUnlitShaderSource(
   const color = vertexColors ? "draw.color * vertexColor" : "draw.color";
   return `${DRAW_UNIFORM_WGSL}
 
-${skinningWgsl(paletteGroup)}${map ? `\n\n${MAP_BINDING_WGSL}` : ""}
+${skinningWgsl(paletteGroup, texture)}${map ? `\n\n${MAP_BINDING_WGSL}` : ""}
 
 struct VertexOutput {
   @builtin(position) position : vec4<f32>,
@@ -354,6 +434,7 @@ export function skinnedLitShaderSource(
   normals: boolean,
   map: boolean,
   shadow = false,
+  texture = false,
 ): string {
   const paletteGroup = skinnedPaletteBindGroupIndex(true, map);
   let input = `  @location(0) position : vec3<f32>,`;
@@ -368,7 +449,7 @@ export function skinnedLitShaderSource(
   input += skinnedInfluenceInputs();
   return `${DRAW_UNIFORM_WGSL}
 
-${skinningWgsl(paletteGroup)}
+${skinningWgsl(paletteGroup, texture)}
 
 ${shadow ? SHADOW_LIGHT_UNIFORM_WGSL : LIGHT_UNIFORM_WGSL}${
     map
@@ -440,6 +521,7 @@ function descriptorKey(
     descriptor.topology,
     descriptor.colorFormat,
     descriptor.depthFormat ?? "-",
+    descriptor.paletteTexture === true ? "pt" : "pu",
   ].join("|");
   const stencil = descriptor.stencil;
   if (stencil !== null) {
@@ -479,6 +561,28 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
   #paletteCapacity = 0;
 
   #packed = 0;
+
+  // Bone-texture palette state (decision D7) — created lazily, so a scene with
+  // no texture-mode mesh issues the byte-identical call sequence.
+  #textureLayout: GpuBindGroupLayout | null = null;
+
+  #paletteTexture: GpuTexture | null = null;
+
+  #textureStaging = new Float32Array(0);
+
+  #textureRowCapacity = 0;
+
+  #textureRowsPacked = 0;
+
+  #infoBuffer: GpuBuffer | null = null;
+
+  #infoStaging = new Uint32Array(0);
+
+  #infoCapacity = 0;
+
+  #infoPacked = 0;
+
+  #textureBindGroup: GpuBindGroup | null = null;
 
   #shadowFailed = false;
 
@@ -544,6 +648,96 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
 
   paletteBindGroup(): GpuBindGroup | null {
     return this.#paletteBindGroup;
+  }
+
+  prepareTexture(device: GpuDevice, draws: number, rows: number): void {
+    this.#textureRowsPacked = 0;
+    this.#infoPacked = 0;
+    if (this.#disposed || draws <= 0 || rows <= 0) {
+      return;
+    }
+    const maxRows = device.limits?.["maxTextureDimension2D"] ?? 0;
+    const wantRows = Math.min(rows, maxRows);
+    if (wantRows <= 0) {
+      return;
+    }
+    const layout = (this.#textureLayout ??=
+      createJointPaletteTextureBindGroupLayout(device));
+    if (
+      wantRows <= this.#textureRowCapacity &&
+      draws <= this.#infoCapacity &&
+      this.#textureBindGroup !== null
+    ) {
+      return;
+    }
+    const rowCapacity = Math.min(
+      maxRows,
+      Math.max(wantRows, this.#textureRowCapacity * 2),
+    );
+    const infoCapacity = Math.max(draws, this.#infoCapacity * 2);
+    this.#paletteTexture?.destroy?.();
+    this.#infoBuffer?.destroy();
+    const texture = device.createTexture({
+      label: "fourJS:joint-palette-texture",
+      size: [SKIN_PALETTE_TEXTURE_WIDTH, rowCapacity],
+      format: SKIN_PALETTE_TEXTURE_FORMAT,
+      usage: GPU_TEXTURE_USAGE.TEXTURE_BINDING | GPU_TEXTURE_USAGE.COPY_DST,
+    });
+    const info = device.createBuffer({
+      label: "fourJS:joint-palette-texture-info",
+      size: infoCapacity * JOINT_TEXTURE_INFO_STRIDE,
+      usage: GPU_BUFFER_USAGE.UNIFORM | GPU_BUFFER_USAGE.COPY_DST,
+    });
+    this.#paletteTexture = texture;
+    this.#infoBuffer = info;
+    this.#textureStaging = new Float32Array(
+      rowCapacity * SKIN_PALETTE_FLOATS_PER_ROW,
+    );
+    this.#infoStaging = new Uint32Array(
+      (infoCapacity * JOINT_TEXTURE_INFO_STRIDE) / 4,
+    );
+    this.#textureRowCapacity = rowCapacity;
+    this.#infoCapacity = infoCapacity;
+    this.#textureBindGroup = device.createBindGroup({
+      label: "fourJS:joint-palette-texture",
+      layout,
+      entries: [
+        { binding: JOINT_TEXTURE_BINDING, resource: texture.createView() },
+        {
+          binding: JOINT_TEXTURE_INFO_BINDING,
+          resource: { buffer: info, offset: 0, size: 16 },
+        },
+      ],
+    });
+  }
+
+  packTexturePalette(palette: Float32Array): number {
+    const rows = skinPaletteRows(palette.length / 16);
+    const slot = this.#infoPacked;
+    if (
+      this.#textureBindGroup === null ||
+      this.#textureRowsPacked + rows > this.#textureRowCapacity ||
+      slot >= this.#infoCapacity
+    ) {
+      return -1;
+    }
+    const base = this.#textureRowsPacked * SKIN_PALETTE_FLOATS_PER_ROW;
+    const staging = this.#textureStaging;
+    staging.set(palette, base);
+    staging.fill(
+      0,
+      base + palette.length,
+      base + rows * SKIN_PALETTE_FLOATS_PER_ROW,
+    );
+    this.#infoStaging[(slot * JOINT_TEXTURE_INFO_STRIDE) / 4] =
+      this.#textureRowsPacked;
+    this.#textureRowsPacked += rows;
+    this.#infoPacked = slot + 1;
+    return slot * JOINT_TEXTURE_INFO_STRIDE;
+  }
+
+  paletteTextureBindGroup(): GpuBindGroup | null {
+    return this.#textureBindGroup;
   }
 
   acquireShadow(descriptor: WgpuSkinnedShadowDescriptor): GpuRenderPipeline {
@@ -615,17 +809,40 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
   }
 
   upload(device: GpuDevice): void {
-    const buffer = this.#paletteBuffer;
-    if (buffer === null || this.#packed === 0 || this.#disposed) {
+    if (this.#disposed) {
       return;
     }
-    device.queue.writeBuffer(
-      buffer,
-      0,
-      this.#paletteStaging,
-      0,
-      this.#packed * JOINT_PALETTE_FLOATS,
-    );
+    const buffer = this.#paletteBuffer;
+    if (buffer !== null && this.#packed !== 0) {
+      device.queue.writeBuffer(
+        buffer,
+        0,
+        this.#paletteStaging,
+        0,
+        this.#packed * JOINT_PALETTE_FLOATS,
+      );
+    }
+    const texture = this.#paletteTexture;
+    const info = this.#infoBuffer;
+    if (texture !== null && info !== null && this.#infoPacked !== 0) {
+      device.queue.writeTexture(
+        { texture },
+        this.#textureStaging,
+        {
+          offset: 0,
+          bytesPerRow: SKIN_PALETTE_TEXTURE_WIDTH * 16,
+          rowsPerImage: this.#textureRowsPacked,
+        },
+        [SKIN_PALETTE_TEXTURE_WIDTH, this.#textureRowsPacked],
+      );
+      device.queue.writeBuffer(
+        info,
+        0,
+        this.#infoStaging,
+        0,
+        (this.#infoPacked * JOINT_TEXTURE_INFO_STRIDE) / 4,
+      );
+    }
   }
 
   dispose(): void {
@@ -634,6 +851,8 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
     }
     this.#disposed = true;
     this.#paletteBuffer?.destroy();
+    this.#paletteTexture?.destroy?.();
+    this.#infoBuffer?.destroy();
     this.#forgetState();
   }
 
@@ -651,6 +870,16 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
     this.#paletteStaging = new Float32Array(0);
     this.#paletteCapacity = 0;
     this.#packed = 0;
+    this.#textureLayout = null;
+    this.#paletteTexture = null;
+    this.#textureStaging = new Float32Array(0);
+    this.#textureRowCapacity = 0;
+    this.#textureRowsPacked = 0;
+    this.#infoBuffer = null;
+    this.#infoStaging = new Uint32Array(0);
+    this.#infoCapacity = 0;
+    this.#infoPacked = 0;
+    this.#textureBindGroup = null;
     this.#shadowFailed = false;
   }
 
@@ -724,8 +953,8 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
   ): GpuShaderModule {
     const moduleKey =
       family === "unlit"
-        ? `unlit${descriptor.vertexColors ? "|vc" : ""}${descriptor.map ? "|map" : ""}`
-        : `lit${descriptor.normals ? "|n" : ""}${descriptor.map ? "|map" : ""}${descriptor.shadow ? "|sh" : ""}`;
+        ? `unlit${descriptor.vertexColors ? "|vc" : ""}${descriptor.map ? "|map" : ""}${descriptor.paletteTexture === true ? "|pt" : ""}`
+        : `lit${descriptor.normals ? "|n" : ""}${descriptor.map ? "|map" : ""}${descriptor.shadow ? "|sh" : ""}${descriptor.paletteTexture === true ? "|pt" : ""}`;
     const existing = this.#modules.get(moduleKey);
     if (existing !== undefined) {
       return existing;
@@ -734,11 +963,16 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
       label: `fourJS:skinned-${moduleKey}`,
       code:
         family === "unlit"
-          ? skinnedUnlitShaderSource(descriptor.vertexColors, descriptor.map)
+          ? skinnedUnlitShaderSource(
+              descriptor.vertexColors,
+              descriptor.map,
+              descriptor.paletteTexture === true,
+            )
           : skinnedLitShaderSource(
               descriptor.normals,
               descriptor.map,
               descriptor.shadow,
+              descriptor.paletteTexture === true,
             ),
     });
     this.#modules.set(moduleKey, module);
@@ -770,8 +1004,16 @@ class WgpuSkinnedProgramPair implements SkinnedPrograms {
       }
       groups.push(texture);
     }
-    groups.push(this.#paletteLayout);
-    const layoutKey = `${family}|${descriptor.map ? "map" : "-"}|${descriptor.shadow ? "sh" : "-"}`;
+    const textured = descriptor.paletteTexture === true;
+    if (textured) {
+      if (this.#textureLayout === null) {
+        return null;
+      }
+      groups.push(this.#textureLayout);
+    } else {
+      groups.push(this.#paletteLayout);
+    }
+    const layoutKey = `${family}|${descriptor.map ? "map" : "-"}|${descriptor.shadow ? "sh" : "-"}|${textured ? "pt" : "pu"}`;
     const existing = this.#pipelineLayouts.get(layoutKey);
     if (existing !== undefined) {
       return existing;

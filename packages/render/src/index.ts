@@ -212,6 +212,16 @@ export {
 export type { RenderableOptions, SurfaceMaterial } from "./renderable.js";
 export { Renderable } from "./renderable.js";
 export { MAX_SKINNING_JOINTS, Mesh, restoreMeshSkeleton } from "./mesh.js";
+export {
+  MAX_TEXTURE_SKINNING_JOINTS,
+  SKIN_PALETTE_FLOATS_PER_ROW,
+  SKIN_PALETTE_JOINTS_PER_ROW,
+  SKIN_PALETTE_TEXELS_PER_JOINT,
+  SKIN_PALETTE_TEXTURE_FORMAT,
+  SKIN_PALETTE_TEXTURE_WIDTH,
+  skinPaletteRows,
+  stageSkinPalette,
+} from "./skin-palette.js";
 export type {
   RendererCapabilityDeclaration,
   RendererCapabilityName,

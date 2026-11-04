@@ -22,7 +22,12 @@ import {
   GPU_SHADER_STAGE,
   PARTICLE_INTEGRATOR_SHADER_SOURCE,
   PARTICLE_INTEGRATOR_WORKGROUP_SIZE,
+  PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE,
+  PARTICLE_FIELD_KIND,
+  PARTICLE_SIMULATION_FIELD_FLOATS,
+  PARTICLE_SIMULATION_HEADER_FLOATS,
   PARTICLE_SIMULATION_PARAMS_FLOATS,
+  type ParticleSimulationField,
   WebgpuRenderer,
   WgpuComputeBuffer,
   WgpuComputeCache,
@@ -516,9 +521,184 @@ describe("the §36 integrator kernel (R-31's GPU-simulation half)", () => {
     const result = writeParticleSimulationParams(out, 0.5, 3, 0, -10, 2);
 
     expect(result).toBe(out);
-    expect(Array.from(out)).toEqual([
-      0.5, 3, 0, 0, 0, -10, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    expect(Array.from(out)).toEqual(
+      [
+        0.5,
+        3,
+        ...new Array<number>(PARTICLE_SIMULATION_PARAMS_FLOATS - 2).fill(0),
+      ].map((value, i) => (i === 5 ? -10 : i === 6 ? 2 : i === 4 ? 0 : value)),
+    );
+  });
+
+  it("packs every field kind, volume and salt into its record", () => {
+    const out = new Float32Array(PARTICLE_SIMULATION_PARAMS_FLOATS).fill(9);
+    const matrix = Array.from({ length: 16 }, (_, i) => i + 1);
+    writeParticleSimulationParams(out, 0.25, 4, 0, -1, 0, {
+      time: 2,
+      collisionMode: 2,
+      collisionGroundY: -3,
+      depthBias: 0.001,
+      viewProjection: matrix,
+      fields: [
+        {
+          kind: "radial",
+          originX: 1,
+          originY: 2,
+          originZ: 3,
+          strength: -4,
+          minDistance: 0.5,
+        },
+        { kind: "uniform", x: 1, y: 2, z: 3 },
+        { kind: "drag", coefficient: 0.4 },
+        { kind: "wind", windX: 1, windY: 2, windZ: 3, coefficient: 0.5 },
+        {
+          kind: "vortex",
+          centerX: 1,
+          centerY: 2,
+          centerZ: 3,
+          axisX: 0,
+          axisY: 1,
+          axisZ: 0,
+          strength: 5,
+          minDistance: 0.1,
+        },
+        {
+          kind: "turbulence",
+          saltX: 0xdeadbeef,
+          saltY: 7,
+          saltZ: 0xffffffff,
+          frequency: 2,
+          amplitude: 3,
+          scrollX: 1,
+          scrollY: 0,
+          scrollZ: -1,
+          volume: {
+            shape: "box",
+            centerX: 1,
+            centerY: 2,
+            centerZ: 3,
+            radius: 0,
+            extentX: 4,
+            extentY: 5,
+            extentZ: 6,
+            falloff: 0.5,
+          },
+        },
+        {
+          kind: "drag",
+          coefficient: 1,
+          volume: {
+            shape: "sphere",
+            centerX: 0,
+            centerY: 0,
+            centerZ: 0,
+            radius: 9,
+            extentX: 0,
+            extentY: 0,
+            extentZ: 0,
+            falloff: 0,
+          },
+        },
+        { kind: "drag" },
+      ],
+    });
+    expect(out[7]).toBe(2);
+    expect(out[11]).toBe(-3);
+    expect(out[12]).toBe(8);
+    expect(out[13]).toBe(2);
+    expect(out[14]).toBeCloseTo(0.001);
+    expect(Array.from(out.slice(16, 32))).toEqual(matrix);
+    const rec = (n: number): Float32Array =>
+      out.slice(
+        PARTICLE_SIMULATION_HEADER_FLOATS +
+          n * PARTICLE_SIMULATION_FIELD_FLOATS,
+        PARTICLE_SIMULATION_HEADER_FLOATS +
+          (n + 1) * PARTICLE_SIMULATION_FIELD_FLOATS,
+      );
+    expect(Array.from(rec(0).slice(0, 7))).toEqual([
+      PARTICLE_FIELD_KIND.radial,
+      -4,
+      0.5,
+      0,
+      1,
+      2,
+      3,
     ]);
+    expect(Array.from(rec(1).slice(0, 7))).toEqual([
+      PARTICLE_FIELD_KIND.uniform,
+      0,
+      0,
+      0,
+      1,
+      2,
+      3,
+    ]);
+    expect(Array.from(rec(2).slice(0, 3))).toEqual([
+      PARTICLE_FIELD_KIND.drag,
+      Math.fround(0.4),
+      0,
+    ]);
+    expect(Array.from(rec(3).slice(0, 7))).toEqual([
+      PARTICLE_FIELD_KIND.wind,
+      0.5,
+      0,
+      0,
+      1,
+      2,
+      3,
+    ]);
+    expect(Array.from(rec(4).slice(0, 11))).toEqual([
+      PARTICLE_FIELD_KIND.vortex,
+      5,
+      Math.fround(0.1),
+      0,
+      1,
+      2,
+      3,
+      0,
+      0,
+      1,
+      0,
+    ]);
+    const turb = rec(5);
+    expect(turb[0]).toBe(PARTICLE_FIELD_KIND.turbulence);
+    expect(turb[3]).toBe(2);
+    expect(turb[7]).toBe(0.5);
+    expect(turb[11]).toBe(2);
+    expect(turb[19]).toBe(3);
+    expect(Array.from(turb.slice(12, 19))).toEqual([1, 2, 3, 0, 4, 5, 6]);
+    const salts = new Uint32Array(rec(5).buffer, 20 * 4, 3);
+    expect(Array.from(salts)).toEqual([0xdeadbeef, 7, 0xffffffff]);
+    expect(rec(6)[3]).toBe(1);
+    expect(rec(6)[15]).toBe(9);
+    expect(Array.from(rec(7).slice(0, 4))).toEqual([
+      PARTICLE_FIELD_KIND.drag,
+      0,
+      0,
+      0,
+    ]);
+  });
+
+  it("zeroes unused records, clears the matrix without a view, and refuses a ninth field", () => {
+    const out = new Float32Array(PARTICLE_SIMULATION_PARAMS_FLOATS).fill(9);
+    writeParticleSimulationParams(out, 1, 1, 0, 0, 0, {
+      fields: [{ kind: "drag", coefficient: 1 }],
+    });
+    expect(out[12]).toBe(1);
+    expect(Array.from(out.slice(16, 32))).toEqual(
+      new Array<number>(16).fill(0),
+    );
+    expect(
+      out[PARTICLE_SIMULATION_HEADER_FLOATS + PARTICLE_SIMULATION_FIELD_FLOATS],
+    ).toBe(0);
+    const nine = new Array<ParticleSimulationField>(9).fill({ kind: "drag" });
+    expect(() =>
+      writeParticleSimulationParams(out, 1, 1, 0, 0, 0, { fields: nine }),
+    ).toThrow(/at most 8/);
+    // A short staging array (legacy 8-lane callers) gets the header lanes only.
+    const short = new Float32Array(8);
+    writeParticleSimulationParams(short, 1, 2, 3, 4, 5);
+    expect(Array.from(short)).toEqual([1, 2, 0, 0, 3, 4, 5, 0]);
   });
 
   it("covers count particles with ceil(count / workgroup) groups along x", () => {
@@ -551,12 +731,18 @@ describe("the §36 integrator kernel (R-31's GPU-simulation half)", () => {
     // v += g·dt lands in the velocity lanes before p += v·dt reads them —
     // @fourjs/particles' documented closed form, per lane.
     expect(PARTICLE_INTEGRATOR_SHADER_SOURCE).toContain(
-      "var vx = velocities[base] + ax * dt;",
+      "var vx = v0.x + a.x * dt;",
     );
     expect(PARTICLE_INTEGRATOR_SHADER_SOURCE).toContain(
       "positions[base] = px;",
     );
-    expect(PARTICLE_INTEGRATOR_SHADER_SOURCE).toContain("radialStrength");
+    expect(PARTICLE_INTEGRATOR_SHADER_SOURCE).toContain("fn sampleField(");
+    expect(PARTICLE_INTEGRATOR_SHADER_SOURCE).toContain(
+      "array<FieldRecord, 8>",
+    );
+    expect(PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE).toContain(
+      "@group(0) @binding(3) var sceneDepth : texture_depth_2d;",
+    );
   });
 });
 

@@ -240,8 +240,13 @@ export type {
 } from "./wgpu-compute.js";
 export {
   COMPUTE_ENTRY_POINT,
+  PARTICLE_DEPTH_COLLIDE_SHADER_SOURCE,
+  PARTICLE_FIELD_KIND,
   PARTICLE_INTEGRATOR_SHADER_SOURCE,
   PARTICLE_INTEGRATOR_WORKGROUP_SIZE,
+  PARTICLE_SIMULATION_FIELD_FLOATS,
+  PARTICLE_SIMULATION_HEADER_FLOATS,
+  PARTICLE_SIMULATION_MAX_FIELDS,
   PARTICLE_SIMULATION_PARAMS_FLOATS,
   WgpuComputeBuffer,
   WgpuComputeCache,
@@ -251,7 +256,10 @@ export {
   writeComputeBuffer,
   writeParticleSimulationParams,
 } from "./wgpu-compute.js";
-export type { ParticleSimulationFieldParams } from "./wgpu-compute.js";
+export type {
+  ParticleSimulationField,
+  ParticleSimulationFieldParams,
+} from "./wgpu-compute.js";
 export type { WgpuParticleRecord } from "./wgpu-particles.js";
 export {
   PARTICLE_GPU_INSTANCE_BUFFER_LAYOUT,
@@ -274,6 +282,7 @@ export {
 } from "./wgpu-particles.js";
 export type { WgpuParticleSimulationOptions } from "./wgpu-particle-simulation.js";
 export {
+  DEFAULT_DEPTH_BIAS,
   PARTICLE_SIMULATION_SCRATCH_BYTES,
   PARTICLE_SIMULATION_VECTOR_BYTES,
   WgpuParticleSimulation,

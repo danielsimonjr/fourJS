@@ -234,6 +234,13 @@ export interface RendererCapabilities {
   readonly indirectDraw?: boolean;
 
   /**
+   * §36 `collisions: "depth-buffer"` against a real scene depth texture
+   * (collide-and-kill on the device). `false`/absent means a particle
+   * emitter falls back to the CPU kill-below-ground path.
+   */
+  readonly particleDepthCollision?: boolean;
+
+  /**
    * §62 "compressed textures": the compressed texture formats available, by
    * their canonical names (`"bc7-rgba-unorm"`, `"etc2-rgba8unorm"`, …), or an
    * empty list where none are.
@@ -287,6 +294,24 @@ export interface RendererCapabilities {
    * do, registration is the application opting in to paying for it.
    */
   readonly maximumSkinningJoints?: number;
+
+  /**
+   * Whether the backend can upload an `"rgba32float"` texture and fetch it in
+   * the vertex stage with integer coordinates — the bone-texture palette's
+   * requirement (`Mesh.skinningMode === "texture"`, `skin-palette.ts`).
+   * Optional, tri-state like its siblings. `false` or absent: a `"texture"`
+   * mesh draws through the uniform palette (48 joints) with a development
+   * warning.
+   */
+  readonly floatTextures?: boolean;
+
+  /**
+   * The most joints a `"texture"`-mode skeleton may have on this device
+   * (`0`/absent where {@link RendererCapabilities.floatTextures} is not
+   * `true`). Bounded by the palette texture's rows (`skin-palette.ts`) and the
+   * device's texture-dimension limit.
+   */
+  readonly maximumTextureSkinningJoints?: number;
 }
 
 /**
@@ -962,6 +987,8 @@ export class NullRenderer implements Renderer {
     maxUniformBufferBytes: 0,
     maxBindings: 0,
     maximumSkinningJoints: 0,
+    floatTextures: false,
+    maximumTextureSkinningJoints: 0,
   } satisfies RendererCapabilities);
 
   /** The §6b channel required by {@link Renderer}. Never emitted to by this class. */

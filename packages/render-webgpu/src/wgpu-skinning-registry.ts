@@ -92,6 +92,12 @@ export interface WgpuSkinnedDrawDescriptor {
   readonly colorFormat: string;
   readonly depthFormat: string | null;
   readonly stencil: WgpuStencilDescriptor | null;
+  /**
+   * Whether the pipeline fetches the palette from the bone texture
+   * (`Mesh.skinningMode === "texture"`) instead of the uniform block. Part of
+   * the pipeline, module and layout keys; absent means the uniform palette.
+   */
+  readonly paletteTexture?: boolean;
 }
 
 /**
@@ -157,6 +163,22 @@ export interface SkinnedPrograms {
   packPalette(palette: Float32Array): number;
   /** The palette bind group, or `null` before {@link SkinnedPrograms.prepare}. */
   paletteBindGroup(): GpuBindGroup | null;
+  /**
+   * Sizes the bone-texture palette (decision D7) for `draws` palettes totalling
+   * `rows` texture rows. Call **before** the pass is recorded, like
+   * {@link SkinnedPrograms.prepare}; `0` is a no-op, and a frame with no
+   * texture-mode mesh creates nothing.
+   */
+  prepareTexture(device: GpuDevice, draws: number, rows: number): void;
+  /**
+   * Packs `palette` (16 floats per joint) into the next free rows of the
+   * shared palette texture and returns the dynamic offset of the draw's
+   * base-row uniform, or `-1` when the texture has no room (the draw is
+   * skipped, never truncated).
+   */
+  packTexturePalette(palette: Float32Array): number;
+  /** The bone-texture palette bind group, or `null` before `prepareTexture`. */
+  paletteTextureBindGroup(): GpuBindGroup | null;
   /**
    * Compiles the §69 skinned caster on first call and returns it.
    * Subsequent calls reuse the pipeline for the same descriptor.

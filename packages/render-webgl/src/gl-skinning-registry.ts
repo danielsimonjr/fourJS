@@ -56,7 +56,11 @@ export interface SkinnedUnlitPipeline {
   ): void;
   /** Selects the map and vertex-colour multipliers, mirrored on change. */
   setFeatures(useMap: boolean, useVertexColors: boolean): void;
-  /** Uploads the item's joint palette — 16 floats per joint (§54). */
+  /**
+   * Uploads the item's joint palette — 16 floats per joint (§54). On the
+   * bone-texture pair this stages and `texSubImage2D`s the palette texture
+   * instead (`skin-palette.ts`).
+   */
   setJointMatrices(palette: Float32Array): void;
 }
 
@@ -148,8 +152,14 @@ export interface SkinningPipelineFactory {
    * Compiles the two skinned colour programs on `gl`. May throw
    * `SHADER_COMPILATION_FAILED` (§89); the renderer catches it — §61 forbids a
    * frame from throwing — warns once, and skins nothing on that context.
+   *
+   * `palette` selects the uniform palette (default, 48 joints) or the
+   * bone-texture palette (`"texture"`, `skin-palette.ts`); the two are
+   * distinct programs, so their keys never alias. The texture pair's
+   * `acquireShadow()` is not used by the renderer (casters take the uniform
+   * pair).
    */
-  create(gl: WebglContext): SkinnedPrograms;
+  create(gl: WebglContext, palette?: "uniform" | "texture"): SkinnedPrograms;
 }
 
 /** The slot. `null` until `registerSkinningPipeline()` fills it. */

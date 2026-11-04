@@ -153,7 +153,7 @@ describe("ParticleEmitter simulation option (§36)", () => {
           simulation: "gpu",
           fields: [field],
         }),
-    ).toThrowError(/does not accept `fields` other than radialField/);
+    ).toThrowError(/hand-written or nested-volume field/);
     // An empty array names no field and is not refused.
     expect(
       () =>

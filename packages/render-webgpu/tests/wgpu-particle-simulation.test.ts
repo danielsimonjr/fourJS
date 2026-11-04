@@ -20,6 +20,10 @@ import {
 import {
   GPU_BUFFER_USAGE,
   PARTICLE_INTEGRATOR_WORKGROUP_SIZE,
+  PARTICLE_SIMULATION_FIELD_FLOATS,
+  PARTICLE_SIMULATION_HEADER_FLOATS,
+  PARTICLE_SIMULATION_PARAMS_FLOATS,
+  DEFAULT_DEPTH_BIAS,
   PARTICLE_SIMULATION_SCRATCH_BYTES,
   PARTICLE_SIMULATION_VECTOR_BYTES,
   WgpuComputeCache,
@@ -114,7 +118,7 @@ describe("WgpuParticleSimulation creation (§36, §83)", () => {
         GPU_BUFFER_USAGE.COPY_SRC,
     );
     expect(creates[2]?.label).toBe("fourJS:particle-sim:node-1:params");
-    expect(creates[2]?.size).toBe(64);
+    expect(creates[2]?.size).toBe(PARTICLE_SIMULATION_PARAMS_FLOATS * 4);
     expect(creates[3]).toEqual({
       label: "fourJS:particle-sim:node-1:scratch",
       size: PARTICLE_SIMULATION_SCRATCH_BYTES,
@@ -184,10 +188,10 @@ describe("integrate — the WP-R1.8 kernel, dispatched (§36, §82)", () => {
     gpu.reset();
     simulation.integrate(130, 1 / 60, 0, -9.81, 0);
 
-    // First 8 floats stay [dt, count, 0, 0, gx, gy, gz, 0]; the extra 8 are
-    // reserved for optional radial / collision extras (R-32 / §27 GPU fields).
     const write = gpu.callsOf("queue.writeBuffer")[0];
-    expect(write?.args[2]).toEqual([
+    const packed = write?.args[2] as number[];
+    expect(packed).toHaveLength(PARTICLE_SIMULATION_PARAMS_FLOATS);
+    expect(packed.slice(0, 8)).toEqual([
       Math.fround(1 / 60),
       130,
       0,
@@ -196,15 +200,8 @@ describe("integrate — the WP-R1.8 kernel, dispatched (§36, §82)", () => {
       Math.fround(-9.81),
       0,
       0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
     ]);
+    expect(packed.slice(8).every((value) => value === 0)).toBe(true);
 
     const dispatch = gpu.callsOf("computePass.dispatchWorkgroups")[0];
     expect(dispatch?.args).toEqual([
@@ -423,5 +420,94 @@ describe("the Q3 promotion's structural-handle narrowing (§82, §85)", () => {
     // The structural face the promotion crossed the seam with.
     const handle: ComputeBuffer = buffer;
     expect(handle.isComputeBuffer).toBe(true);
+  });
+});
+
+describe("integrate — the §27 field stack and scene-depth collision", () => {
+  const lastParams = (gpu: RecordingGpu): number[] => {
+    const writes = gpu.callsOf("queue.writeBuffer");
+    return writes[writes.length - 1]?.args[2] as number[];
+  };
+  const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
+  it("packs an ordered stack and the time into the params", () => {
+    const { gpu, simulation } = rig(8);
+    simulation.integrate(2, 1 / 60, 0, 0, 0, {
+      time: 1.5,
+      fields: [
+        { kind: "drag", coefficient: 2 },
+        { kind: "uniform", x: 1, y: 2, z: 3 },
+      ],
+    });
+    const params = lastParams(gpu);
+    expect(params[12]).toBe(2);
+    expect(params[13]).toBe(1.5);
+    expect(params[PARTICLE_SIMULATION_HEADER_FLOATS + 1]).toBe(2);
+    expect(
+      params[
+        PARTICLE_SIMULATION_HEADER_FLOATS + PARTICLE_SIMULATION_FIELD_FLOATS + 6
+      ],
+    ).toBe(3);
+  });
+
+  it("packs the legacy radial spelling as a one-record stack, cached by identity", () => {
+    const { gpu, simulation } = rig(8);
+    const radial = {
+      originX: 1,
+      originY: 2,
+      originZ: 3,
+      strength: -4,
+      minDistance: 0.5,
+    };
+    simulation.integrate(2, 1 / 60, 0, 0, 0, { radial });
+    simulation.integrate(2, 1 / 60, 0, 0, 0, { radial });
+    const params = lastParams(gpu);
+    expect(params[12]).toBe(1);
+    expect(params[PARTICLE_SIMULATION_HEADER_FLOATS + 1]).toBe(-4);
+  });
+
+  it("rests on the ground (mode 1) with no depth bound, and runs no depth pass", () => {
+    const { gpu, simulation } = rig(8);
+    simulation.integrate(2, 1 / 60, 0, 0, 0, {
+      collisions: "depth-buffer",
+      collisionGroundY: -2,
+    });
+    const params = lastParams(gpu);
+    expect(params[7]).toBe(1);
+    expect(params[11]).toBe(-2);
+    expect(gpu.countOf("computePass.dispatchWorkgroups")).toBe(1);
+    expect(simulation.hasSceneDepth).toBe(false);
+  });
+
+  it("kills against a bound scene depth with a second dispatch (mode 2)", () => {
+    const { gpu, simulation } = rig(200);
+    const view = {};
+    simulation.bindSceneDepth(view, identity);
+    expect(simulation.hasSceneDepth).toBe(true);
+    gpu.reset();
+    simulation.integrate(130, 1 / 60, 0, 0, 0, { collisions: "depth-buffer" });
+    simulation.integrate(130, 1 / 60, 0, 0, 0, { collisions: "depth-buffer" });
+    const params = lastParams(gpu);
+    expect(params[7]).toBe(2);
+    expect(params[14]).toBeCloseTo(DEFAULT_DEPTH_BIAS);
+    expect(Array.from(params.slice(16, 32))).toEqual(identity);
+    expect(gpu.countOf("computePass.dispatchWorkgroups")).toBe(4);
+    // One layout, one pipeline and one bind group serve both steps.
+    expect(gpu.countOf("device.createComputePipeline")).toBe(2);
+    simulation.updateViewProjection(identity.map((v) => v * 2));
+    simulation.bindSceneDepth({}, identity, 0.01);
+    simulation.unbindSceneDepth();
+    expect(simulation.hasSceneDepth).toBe(false);
+  });
+
+  it("refuses a malformed matrix and calls after dispose", () => {
+    const { simulation } = rig(4);
+    expect(thrown(() => simulation.bindSceneDepth({}, [1, 2])).code).toBe(
+      "INVALID_APPLICATION_STATE",
+    );
+    simulation.dispose();
+    expect(thrown(() => simulation.bindSceneDepth({}, identity)).code).toBe(
+      "INVALID_APPLICATION_STATE",
+    );
   });
 });

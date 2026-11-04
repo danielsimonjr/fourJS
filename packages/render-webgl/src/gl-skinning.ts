@@ -52,11 +52,21 @@
 
 import type { Disposable } from "@fourjs/core";
 import type { Matrix4 } from "@fourjs/math";
-import type { SceneLights } from "@fourjs/render";
+import {
+  SKIN_PALETTE_FLOATS_PER_ROW,
+  SKIN_PALETTE_TEXTURE_WIDTH,
+  skinPaletteRows,
+  stageSkinPalette,
+  type SceneLights,
+} from "@fourjs/render";
 
-import { SKINNING_GLSL } from "./gl-skinning-glsl.js";
+import {
+  JOINT_TEXTURE_UNIT,
+  SKINNING_GLSL,
+  SKINNING_TEXTURE_GLSL,
+} from "./gl-skinning-glsl.js";
 
-export { SKINNING_GLSL };
+export { JOINT_TEXTURE_UNIT, SKINNING_GLSL, SKINNING_TEXTURE_GLSL };
 
 import {
   FRAGMENT_SHADER_SOURCE,
@@ -68,7 +78,9 @@ import {
   createLinkedProgram,
   matrixScratch,
   requireUniform,
+  GL,
   type GlProgramHandle,
+  type GlTexture,
   type GlUniformLocation,
   type WebglContext,
 } from "./gl-program.js";
@@ -85,11 +97,12 @@ import {
  * position run through the skin matrix first. The fragment stage is the unlit
  * one, verbatim — same source string, so the two cannot drift.
  */
-const SKINNED_VERTEX_SHADER_SOURCE = `#version 300 es
+function skinnedVertexSource(skinning: string): string {
+  return `#version 300 es
 layout(location = 0) in vec3 position;
 layout(location = 2) in vec2 uv;
 layout(location = 3) in vec4 vertexColor;
-${SKINNING_GLSL}
+${skinning}
 uniform mat4 viewProjection;
 uniform mat4 model;
 
@@ -102,6 +115,7 @@ void main() {
   gl_Position = viewProjection * model * (skinMatrix() * vec4(position, 1.0));
 }
 `;
+}
 
 /**
  * The skinned lit vertex stage: `gl-program.ts`'s lit stage with the model
@@ -110,11 +124,12 @@ void main() {
  * scales its verts bends their normals with them. The fragment stage is the
  * lit one, verbatim.
  */
-const SKINNED_LIT_VERTEX_SHADER_SOURCE = `#version 300 es
+function skinnedLitVertexSource(skinning: string): string {
+  return `#version 300 es
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 uv;
-${SKINNING_GLSL}
+${skinning}
 uniform mat4 viewProjection;
 uniform mat4 model;
 
@@ -131,12 +146,110 @@ void main() {
   gl_Position = viewProjection * worldPosition;
 }
 `;
+}
 
 /** Scratch for colour uploads; `gl-program.ts`'s `matrixScratch` argument. */
 const colorScratch = new Float32Array(4);
 
 /** Scratch for the lit pipeline's `vec3` uploads. */
 const vec3Scratch = new Float32Array(3);
+
+/** `GL_RGBA32F` — the palette texture's sized internal format. */
+const RGBA32F = 0x8814;
+
+/** One palette texture, shaped by its row count. */
+interface PaletteTextureEntry {
+  readonly texture: GlTexture;
+  readonly staging: Float32Array;
+  readonly rows: number;
+}
+
+/**
+ * The bone-texture palette store (decision D7; `skin-palette.ts`): one
+ * `RGBA32F` texture (and one staging `Float32Array`) per distinct row count,
+ * shared by the lit and unlit texture programs and **re-filled with
+ * `texSubImage2D` per draw** — in GL a draw reads the texture as it stands at
+ * the call, so one texture serves every skinned draw of the same size and the
+ * working set is bounded by the number of distinct rig sizes, not the number
+ * of meshes. Nothing is allocated per frame after the first draw of a size.
+ * The texel stream is the skeleton's own `Float32Array` (§33: the same bytes
+ * the uniform path uploads), zero-padded to whole rows.
+ */
+export class JointPaletteTextures implements Disposable {
+  readonly #gl: WebglContext;
+
+  readonly #entries = new Map<number, PaletteTextureEntry>();
+
+  #disposed = false;
+
+  constructor(gl: WebglContext) {
+    this.#gl = gl;
+  }
+
+  /** Texture units' state is left as found: unit 0 active, unit 6 bound. */
+  upload(palette: Float32Array): void {
+    const gl = this.#gl;
+    const rows = skinPaletteRows(palette.length / 16);
+    let entry = this.#entries.get(rows);
+    gl.activeTexture(GL.TEXTURE0 + JOINT_TEXTURE_UNIT);
+    if (entry === undefined) {
+      const texture = gl.createTexture();
+      if (texture === null) {
+        gl.activeTexture(GL.TEXTURE0);
+        return;
+      }
+      gl.bindTexture(GL.TEXTURE_2D, texture);
+      gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST);
+      gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
+      gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE);
+      gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE);
+      gl.texImage2D(
+        GL.TEXTURE_2D,
+        0,
+        RGBA32F,
+        SKIN_PALETTE_TEXTURE_WIDTH,
+        rows,
+        0,
+        GL.RGBA,
+        GL.FLOAT,
+        null,
+      );
+      entry = {
+        texture,
+        rows,
+        staging: new Float32Array(rows * SKIN_PALETTE_FLOATS_PER_ROW),
+      };
+      this.#entries.set(rows, entry);
+    } else {
+      gl.bindTexture(GL.TEXTURE_2D, entry.texture);
+    }
+    stageSkinPalette(palette, entry.staging);
+    gl.texSubImage2D?.(
+      GL.TEXTURE_2D,
+      0,
+      0,
+      0,
+      SKIN_PALETTE_TEXTURE_WIDTH,
+      entry.rows,
+      GL.RGBA,
+      GL.FLOAT,
+      entry.staging,
+    );
+    gl.activeTexture(GL.TEXTURE0);
+  }
+
+  /** Deletes every palette texture (§83). Idempotent; live context only. */
+  dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
+    for (const entry of this.#entries.values()) {
+      this.#gl.deleteTexture(entry.texture);
+    }
+    this.#entries.clear();
+  }
+}
 
 /**
  * The palette upload both programs share: `uniformMatrix4fv` straight from the
@@ -178,6 +291,11 @@ export class SkinnedUnlitProgram implements SkinnedUnlitPipeline, Disposable {
 
   readonly #jointMatricesLocation: GlUniformLocation;
 
+  /** The bone-texture palette store, or `null` for the uniform palette. */
+  readonly #palette: JointPaletteTextures | null;
+
+  #jointSamplerUploaded = false;
+
   /** CPU mirror of the feature uniforms, at GL's initial `0` — see `UnlitProgram`. */
   #useMap = false;
 
@@ -209,9 +327,14 @@ export class SkinnedUnlitProgram implements SkinnedUnlitPipeline, Disposable {
 
   #colorMirrorValid = false;
 
-  private constructor(gl: WebglContext, program: GlProgramHandle) {
+  private constructor(
+    gl: WebglContext,
+    program: GlProgramHandle,
+    palette: JointPaletteTextures | null,
+  ) {
     this.#gl = gl;
     this.#program = program;
+    this.#palette = palette;
     this.#viewProjectionLocation = requireUniform(
       gl,
       program,
@@ -236,21 +359,26 @@ export class SkinnedUnlitProgram implements SkinnedUnlitPipeline, Disposable {
     this.#jointMatricesLocation = requireUniform(
       gl,
       program,
-      "jointMatrices[0]",
+      palette === null ? "jointMatrices[0]" : "jointTexture",
       "skinned-unlit",
     );
   }
 
   /** Compiles and links the program — `UnlitProgram.create`'s contract (§89). */
-  static create(gl: WebglContext): SkinnedUnlitProgram {
+  static create(
+    gl: WebglContext,
+    palette: JointPaletteTextures | null = null,
+  ): SkinnedUnlitProgram {
     const program = createLinkedProgram(
       gl,
       "skinned-unlit",
-      SKINNED_VERTEX_SHADER_SOURCE,
+      skinnedVertexSource(
+        palette === null ? SKINNING_GLSL : SKINNING_TEXTURE_GLSL,
+      ),
       FRAGMENT_SHADER_SOURCE,
     );
     try {
-      return new SkinnedUnlitProgram(gl, program);
+      return new SkinnedUnlitProgram(gl, program, palette);
     } catch (error: unknown) {
       gl.deleteProgram(program);
       throw error;
@@ -331,7 +459,16 @@ export class SkinnedUnlitProgram implements SkinnedUnlitPipeline, Disposable {
    * per skeleton per frame, so there is nothing to mirror.
    */
   setJointMatrices(palette: Float32Array): void {
-    uploadPalette(this.#gl, this.#jointMatricesLocation, palette);
+    const store = this.#palette;
+    if (store === null) {
+      uploadPalette(this.#gl, this.#jointMatricesLocation, palette);
+      return;
+    }
+    if (!this.#jointSamplerUploaded) {
+      this.#gl.uniform1i(this.#jointMatricesLocation, JOINT_TEXTURE_UNIT);
+      this.#jointSamplerUploaded = true;
+    }
+    store.upload(palette);
   }
 
   /** Deletes the GL program (§83). Idempotent; live context only. */
@@ -373,6 +510,11 @@ export class SkinnedLitProgram implements SkinnedLitPipeline, Disposable {
 
   readonly #jointMatricesLocation: GlUniformLocation;
 
+  /** The bone-texture palette store, or `null` for the uniform palette. */
+  readonly #palette: JointPaletteTextures | null;
+
+  #jointSamplerUploaded = false;
+
   readonly #punctual: PunctualLightUniforms;
 
   readonly #hemisphere: HemisphereLightUniforms;
@@ -407,9 +549,14 @@ export class SkinnedLitProgram implements SkinnedLitPipeline, Disposable {
 
   #colorMirrorValid = false;
 
-  private constructor(gl: WebglContext, program: GlProgramHandle) {
+  private constructor(
+    gl: WebglContext,
+    program: GlProgramHandle,
+    palette: JointPaletteTextures | null,
+  ) {
     this.#gl = gl;
     this.#program = program;
+    this.#palette = palette;
     this.#viewProjectionLocation = requireUniform(
       gl,
       program,
@@ -441,7 +588,7 @@ export class SkinnedLitProgram implements SkinnedLitPipeline, Disposable {
     this.#jointMatricesLocation = requireUniform(
       gl,
       program,
-      "jointMatrices[0]",
+      palette === null ? "jointMatrices[0]" : "jointTexture",
       "skinned-lit",
     );
     this.#punctual = PunctualLightUniforms.resolve(gl, program, "skinned-lit");
@@ -454,15 +601,20 @@ export class SkinnedLitProgram implements SkinnedLitPipeline, Disposable {
   }
 
   /** Compiles and links the program — `LitProgram.create`'s contract (§89). */
-  static create(gl: WebglContext): SkinnedLitProgram {
+  static create(
+    gl: WebglContext,
+    palette: JointPaletteTextures | null = null,
+  ): SkinnedLitProgram {
     const program = createLinkedProgram(
       gl,
       "skinned-lit",
-      SKINNED_LIT_VERTEX_SHADER_SOURCE,
+      skinnedLitVertexSource(
+        palette === null ? SKINNING_GLSL : SKINNING_TEXTURE_GLSL,
+      ),
       LIT_FRAGMENT_SHADER_SOURCE,
     );
     try {
-      return new SkinnedLitProgram(gl, program);
+      return new SkinnedLitProgram(gl, program, palette);
     } catch (error: unknown) {
       gl.deleteProgram(program);
       throw error;
@@ -570,7 +722,16 @@ export class SkinnedLitProgram implements SkinnedLitPipeline, Disposable {
   }
 
   setJointMatrices(palette: Float32Array): void {
-    uploadPalette(this.#gl, this.#jointMatricesLocation, palette);
+    const store = this.#palette;
+    if (store === null) {
+      uploadPalette(this.#gl, this.#jointMatricesLocation, palette);
+      return;
+    }
+    if (!this.#jointSamplerUploaded) {
+      this.#gl.uniform1i(this.#jointMatricesLocation, JOINT_TEXTURE_UNIT);
+      this.#jointSamplerUploaded = true;
+    }
+    store.upload(palette);
   }
 
   /** Deletes the GL program (§83). Idempotent; live context only. */
@@ -729,11 +890,15 @@ class SkinnedProgramPair implements SkinnedPrograms {
 
   #shadowFailed = false;
 
-  constructor(gl: WebglContext) {
+  readonly #palette: JointPaletteTextures | null;
+
+  constructor(gl: WebglContext, texture = false) {
     this.#gl = gl;
-    const unlit = SkinnedUnlitProgram.create(gl);
+    const palette = texture ? new JointPaletteTextures(gl) : null;
+    this.#palette = palette;
+    const unlit = SkinnedUnlitProgram.create(gl, palette);
     try {
-      this.lit = SkinnedLitProgram.create(gl);
+      this.lit = SkinnedLitProgram.create(gl, palette);
     } catch (error: unknown) {
       unlit.dispose();
       throw error;
@@ -766,6 +931,7 @@ class SkinnedProgramPair implements SkinnedPrograms {
     this.unlit.dispose();
     this.lit.dispose();
     this.#shadow?.dispose();
+    this.#palette?.dispose();
   }
 }
 
@@ -787,8 +953,8 @@ class SkinnedProgramPair implements SkinnedPrograms {
  */
 export function registerSkinningPipeline(): void {
   setSkinningPipelineFactory({
-    create(gl: WebglContext): SkinnedPrograms {
-      return new SkinnedProgramPair(gl);
+    create(gl: WebglContext, palette = "uniform"): SkinnedPrograms {
+      return new SkinnedProgramPair(gl, palette === "texture");
     },
   });
 }

@@ -43,7 +43,7 @@
  * | turbulence/noise        | **ships** — {@link turbulenceField}, with the honesty note below |
  * | spring field            | **staged** — a spring field wants a rest *target* per particle (§27 gives none) and reads as an attractor with a linear law; {@link radialField} is inverse-square only, so shipping "spring" as a relabelled radial would be a lie |
  * | user-defined callback   | **already possible** — an object literal with a `sample` method *is* the interface; no wrapper is shipped because there is nothing for it to do |
- * | GPU field               | **partial** — `radialField` ships on `simulation: "gpu"` (`gpuField` brand, `resolveGpuRadial` in `emitter.ts`, R-31 2026-08-29). Vortex, wind, drag, turbulence, and callback GPU fields remain staged |
+ * | GPU field               | **ships** — every built-in here (radial, uniform gravity, drag, wind, vortex, turbulence, one {@link volumeField} over any) carries a `gpuField` record; `simulation: "gpu"` evaluates up to `MAX_GPU_FIELDS` (8) in declaration order with the same formulas (float32). Hand-written callback fields and nested volumes stay CPU-only and are refused |
  * | volume inclusion/filtering | **ships, MVP** — {@link volumeField}: axis-aligned sphere and box, with an edge fade. Rotated boxes, cylinders, capsules, meshes, and inversion are staged |
  *
  * Nothing here is accepted-and-ignored: an option that silently does nothing is
@@ -87,7 +87,7 @@ import { DEFAULT_GRAVITY_Y } from "@fourjs/core";
 import { Vector3 } from "@fourjs/math";
 
 import { SeededRandom } from "./random.js";
-import type { ParticleForceField } from "./types.js";
+import type { ParticleForceField, ParticleGpuVolume } from "./types.js";
 
 /**
  * Standard gravity in units/s², as a signed Y component: the default of
@@ -157,6 +157,7 @@ export function uniformGravityField(
   const scratch = new Vector3();
 
   const field: ParticleForceField = {
+    gpuField: { kind: "uniform", x, y, z },
     sample(_position, _velocity, _time, out = scratch): Vector3 {
       return out.set(x, y, z);
     },
@@ -215,6 +216,7 @@ export function dragField(coefficient: number): ParticleForceField {
   const scratch = new Vector3();
 
   const field: ParticleForceField = {
+    gpuField: { kind: "drag", coefficient: c },
     sample(_position, velocity, _time, out = scratch): Vector3 {
       const vx = velocity.x;
       const vy = velocity.y;
@@ -271,6 +273,13 @@ export function windField(
   const scratch = new Vector3();
 
   const field: ParticleForceField = {
+    gpuField: {
+      kind: "wind",
+      windX: wx,
+      windY: wy,
+      windZ: wz,
+      coefficient: c,
+    },
     sample(_position, velocity, _time, out = scratch): Vector3 {
       const vx = velocity.x;
       const vy = velocity.y;
@@ -495,6 +504,17 @@ export function vortexField(
   const scratch = new Vector3();
 
   const field: ParticleForceField = {
+    gpuField: {
+      kind: "vortex",
+      centerX: cx,
+      centerY: cy,
+      centerZ: cz,
+      axisX: ax,
+      axisY: ay,
+      axisZ: az,
+      strength: s,
+      minDistance,
+    },
     sample(position, _velocity, _time, out = scratch): Vector3 {
       const rx = position.x - cx;
       const ry = position.y - cy;
@@ -704,6 +724,17 @@ export function turbulenceField(
   const scratch = new Vector3();
 
   const field: ParticleForceField = {
+    gpuField: {
+      kind: "turbulence",
+      saltX,
+      saltY,
+      saltZ,
+      frequency,
+      amplitude,
+      scrollX,
+      scrollY,
+      scrollZ,
+    },
     sample(position, _velocity, time, out = scratch): Vector3 {
       const sx = (position.x - scrollX * time) * frequency;
       const sy = (position.y - scrollY * time) * frequency;
@@ -889,7 +920,26 @@ export function volumeField(
   }
   const isSphere = volume.shape === "sphere";
 
+  // The device record: the inner field's, wrapped. A hand-written inner field
+  // (no `gpuField`) or an already-volumed one cannot be expressed, so the
+  // wrapper carries none and `simulation: "gpu"` refuses it.
+  const innerGpu = inner.gpuField;
+  const gpuVolume: ParticleGpuVolume = {
+    shape: volume.shape,
+    centerX: cx,
+    centerY: cy,
+    centerZ: cz,
+    radius,
+    extentX: ex,
+    extentY: ey,
+    extentZ: ez,
+    falloff,
+  };
+
   const field: ParticleForceField = {
+    ...(innerGpu !== undefined && innerGpu.volume === undefined
+      ? { gpuField: { ...innerGpu, volume: gpuVolume } }
+      : {}),
     sample(position, velocity, time, out = scratch): Vector3 {
       const px = position.x - cx;
       const py = position.y - cy;

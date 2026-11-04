@@ -646,6 +646,8 @@ describe("WebgpuRenderer.initialize", () => {
       maxUniformBufferBytes: 0,
       maxBindings: 0,
       maximumSkinningJoints: 48,
+      floatTextures: false,
+      maximumTextureSkinningJoints: 0,
     });
   });
 
@@ -3965,6 +3967,30 @@ describe("WebgpuRenderer GPU particle simulations (§36, R-31)", () => {
     throw new Error("expected the call to throw a FourError");
   }
 
+  it("binds a depthTexture target's depth for collisions and refuses others", () => {
+    const simulation = harness.renderer.createParticleSimulation({
+      systemId: "depth-sim",
+      capacity: 4,
+    });
+    const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    const good = new RenderTarget({ width: 4, height: 4, depthTexture: true });
+    harness.renderer.bindParticleSceneDepth(simulation, good, identity);
+    expect(simulation.hasSceneDepth).toBe(true);
+    const plain = new RenderTarget({ width: 4, height: 4 });
+    expect(
+      caught(() =>
+        harness.renderer.bindParticleSceneDepth(simulation, plain, identity),
+      ).code,
+    ).toBe("INVALID_APPLICATION_STATE");
+    good.dispose();
+    expect(
+      caught(() =>
+        harness.renderer.bindParticleSceneDepth(simulation, good, identity),
+      ).code,
+    ).toBe("INVALID_APPLICATION_STATE");
+    expect(harness.renderer.capabilities.particleDepthCollision).toBe(true);
+  });
+
   it("registers under the system id and refuses a duplicate", () => {
     const particles = new TestParticles(8);
     const simulation = harness.renderer.createParticleSimulation({
@@ -5113,5 +5139,269 @@ describe("WebgpuRenderer instanced shaded runs (R-22)", () => {
     expect(
       harness.gpu.callsOf("pass.draw").map((c) => c.args.slice(0, 2)),
     ).toContainEqual([3, 2]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bone-texture skin palette (`Mesh.skinningMode === "texture"`, decision D7).
+// ---------------------------------------------------------------------------
+
+function withTextureSkeleton(
+  node: Renderable,
+  joints: number,
+  fill = 0,
+): Float32Array {
+  const palette = new Float32Array(joints * 16);
+  for (let i = 0; i < palette.length; i += 1) {
+    palette[i] = fill + (i % 16);
+  }
+  (node as unknown as { skeleton: unknown; skinningMode: string }).skeleton = {
+    update: (): void => undefined,
+    jointMatrices: palette,
+    bones: new Array<null>(joints).fill(null),
+  };
+  (node as unknown as { skinningMode: string }).skinningMode = "texture";
+  return palette;
+}
+
+function textureUploads(
+  gpu: RecordingGpu,
+): { data: number[]; size: unknown }[] {
+  return gpu
+    .callsOf("queue.writeTexture")
+    .filter(
+      (call) =>
+        (call.args[2] as { bytesPerRow: number }).bytesPerRow === 2048 * 16,
+    )
+    .map((call) => ({
+      data: call.args[1] as number[],
+      size: call.args[3],
+    }));
+}
+
+describe("bone-texture skinning in WebgpuRenderer (decision D7)", () => {
+  beforeEach(() => {
+    resetDevWarnings();
+    clearRegisteredSkinningPipeline();
+    registerSkinningPipeline();
+  });
+
+  afterEach(() => {
+    clearRegisteredSkinningPipeline();
+    resetDevWarnings();
+  });
+
+  it("reports float textures and the per-device joint limit", async () => {
+    const { renderer } = await initialized();
+    expect(renderer.capabilities.floatTextures).toBe(true);
+    // 8192 rows * 512 joints per row, capped by the uint16 joint index.
+    expect(renderer.capabilities.maximumTextureSkinningJoints).toBe(65535);
+    const small = await initialized({
+      limits: { maxTextureDimension2D: 2048 },
+    });
+    expect(small.renderer.capabilities.maximumTextureSkinningJoints).toBe(
+      65535,
+    );
+    const none = await initialized({ limits: {}, features: [] });
+    expect(none.renderer.capabilities.floatTextures).toBe(false);
+    expect(none.renderer.capabilities.maximumTextureSkinningJoints).toBe(0);
+  });
+
+  it("uploads the uniform palette's bytes as rgba32float rows, fetched with textureLoad", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const node = renderable(skinnedTriangle());
+    const palette = withTextureSkeleton(node, 60);
+    root.add(node);
+
+    harness.renderer.render(root, [createView()]);
+
+    const created = harness.gpu
+      .callsOf("device.createTexture")
+      .map(
+        (c) => c.args[0] as { format: string; size: number[]; label?: string },
+      )
+      .filter((d) => d.label === "fourJS:joint-palette-texture");
+    expect(created).toHaveLength(1);
+    expect(created[0].format).toBe("rgba32float");
+    expect(created[0].size).toEqual([2048, 1]);
+    const uploads = textureUploads(harness.gpu);
+    expect(uploads).toHaveLength(1);
+    expect(uploads[0].size).toEqual([2048, 1]);
+    expect(uploads[0].data.slice(0, palette.length)).toEqual(
+      Array.from(palette),
+    );
+    expect(uploads[0].data[palette.length]).toBe(0);
+    // The shader module fetches with textureLoad, not the uniform array.
+    const modules = harness.gpu
+      .callsOf("device.createShaderModule")
+      .map((c) => (c.args[0] as { code: string }).code)
+      .filter((code) => code.includes("jointTexture"));
+    expect(modules).toHaveLength(1);
+    expect(modules[0]).toContain("textureLoad(jointTexture");
+    expect(modules[0]).not.toContain("array<mat4x4<f32>");
+    // No uniform palette buffer was needed for this frame.
+    expect(paletteUploads(harness.gpu)).toHaveLength(0);
+    expect(bindGroupOffsets(harness.gpu, 1)).toContainEqual([0]);
+  });
+
+  it("packs several draws end to end with distinct base rows and distinct pipelines", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const a = renderable(skinnedTriangle());
+    const b = renderable(skinnedTriangle());
+    const plain = renderable(skinnedTriangle());
+    withTextureSkeleton(a, 513, 1);
+    withTextureSkeleton(b, 3, 100);
+    withSkeleton(plain);
+    root.add(a, b, plain);
+
+    harness.renderer.render(root, [createView()]);
+
+    const uploads = textureUploads(harness.gpu);
+    expect(uploads).toHaveLength(1);
+    // 2 rows for the 513-joint rig, 1 row for the 3-joint rig.
+    expect(uploads[0].size).toEqual([2048, 3]);
+    const infoWrite = harness.gpu
+      .callsOf("queue.writeBuffer")
+      .find((c) => c.args[4] === 128);
+    const info = infoWrite?.args[2] as number[];
+    expect(info[0]).toBe(0);
+    expect(info[64]).toBe(2);
+    expect(uploads[0].data[2 * 8192]).toBe(100);
+    // The texture and uniform variants are distinct pipelines.
+    const labels = pipelineLabels(harness.gpu).filter((l) =>
+      l.startsWith("fourJS:skinned-unlit|"),
+    );
+    expect(labels).toHaveLength(2);
+    expect(labels.some((l) => l.endsWith("|pt"))).toBe(true);
+    expect(labels.some((l) => l.endsWith("|pu"))).toBe(true);
+    expect(bindGroupOffsets(harness.gpu, 1)).toEqual(
+      expect.arrayContaining([[0], [256]]),
+    );
+
+    // Second frame: nothing recreated, same staging, no pipeline churn.
+    harness.gpu.reset();
+    harness.renderer.render(root, [createView()]);
+    expect(harness.gpu.countOf("device.createRenderPipeline")).toBe(0);
+    expect(
+      harness.gpu
+        .callsOf("device.createTexture")
+        .filter(
+          (c) =>
+            (c.args[0] as { label?: string }).label ===
+            "fourJS:joint-palette-texture",
+        ),
+    ).toHaveLength(0);
+  });
+
+  it("shades a texture-skinned lit draw", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const node = new Renderable(
+      skinnedTriangle(litTriangle()).asGeometry,
+      new TestLitMaterial().asMaterial,
+    );
+    withTextureSkeleton(node, 4);
+    root.add(node);
+    harness.renderer.render(root, [createView()]);
+    expect(
+      pipelineLabels(harness.gpu).some(
+        (l) => l.startsWith("fourJS:skinned-lit|") && l.endsWith("|pt"),
+      ),
+    ).toBe(true);
+    expect(textureUploads(harness.gpu)).toHaveLength(1);
+  });
+
+  it("falls back to the uniform palette on a device with no 2048-texel texture, skipping past 48 joints", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const harness = await initialized({ limits: {}, features: [] });
+      const root = createRoot();
+      const small = renderable(skinnedTriangle());
+      const palette = withTextureSkeleton(small, 3, 5);
+      root.add(small);
+      harness.renderer.render(root, [createView()]);
+      expect(textureUploads(harness.gpu)).toHaveLength(0);
+      expect(paletteUploads(harness.gpu)).toHaveLength(1);
+      expect(paletteUploads(harness.gpu)[0]?.[0]).toBe(palette[0]);
+      expect(warn).toHaveBeenCalledTimes(1);
+
+      const big = renderable(skinnedTriangle());
+      withTextureSkeleton(big, 49);
+      const bigRoot = createRoot();
+      bigRoot.add(big);
+      harness.gpu.reset();
+      harness.renderer.render(bigRoot, [createView()]);
+      expect(harness.gpu.countOf("pass.draw")).toBe(1); // clear only
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("skips a draw the shared texture has no room for, and never truncates", async () => {
+    const harness = await initialized({
+      limits: { maxTextureDimension2D: 2048 },
+    });
+    const root = createRoot();
+    // 2048 rows of room for one view; three rigs of 1000 rows each.
+    const nodes = [0, 1, 2].map(() => {
+      const n = renderable(skinnedTriangle());
+      withTextureSkeleton(n, 1000 * 512);
+      return n;
+    });
+    root.add(...nodes);
+    // Past the uint16 cap rigs are refused at setup; here the doubles bypass it.
+    harness.renderer.render(root, [createView()]);
+    const draws = harness.gpu.countOf("pass.draw");
+    expect(draws).toBeLessThan(4);
+  });
+
+  it("casts no shadow for a texture rig over 48 joints but casts a small one", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const harness = await initialized();
+      const { root } = shadowedScene();
+      const big = new Renderable(
+        skinnedTriangle(litTriangle()).asGeometry,
+        new TestLitMaterial().asMaterial,
+      );
+      withTextureSkeleton(big, 60);
+      const small = new Renderable(
+        skinnedTriangle(litTriangle()).asGeometry,
+        new TestLitMaterial().asMaterial,
+      );
+      withTextureSkeleton(small, 3);
+      root.add(big, small);
+      harness.renderer.render(root, [createView()]);
+      const names = harness.gpu.calls.map((call) => call.name);
+      const shadowStart = names.indexOf("encoder.beginRenderPass");
+      const viewsStart = names.indexOf(
+        "encoder.beginRenderPass",
+        shadowStart + 1,
+      );
+      const casterDraws = names
+        .slice(shadowStart, viewsStart)
+        .filter((name) => name === "pass.draw" || name === "pass.drawIndexed");
+      // The unskinned caster from shadowedScene plus the small skinned rig.
+      expect(casterDraws).toHaveLength(2);
+      expect(
+        warn.mock.calls.some((c) => String(c[0]).includes("casts no shadow")),
+      ).toBe(true);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("drops and destroys the palette texture on dispose", async () => {
+    const harness = await initialized();
+    const root = createRoot();
+    const node = renderable(skinnedTriangle());
+    withTextureSkeleton(node, 3);
+    root.add(node);
+    harness.renderer.render(root, [createView()]);
+    harness.gpu.reset();
+    harness.renderer.dispose();
+    expect(harness.gpu.countOf("texture.destroy")).toBeGreaterThanOrEqual(1);
   });
 });
