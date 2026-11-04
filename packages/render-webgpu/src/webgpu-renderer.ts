@@ -118,6 +118,7 @@ import {
   buildViewRenderList,
   MAX_SKINNING_JOINTS,
   collectSceneLights,
+  unionViewLayerMask,
   createSceneLights,
   isRenderTargetTexture,
   isSkinnedLitItem,
@@ -1332,7 +1333,7 @@ export class WebgpuRenderer implements Renderer {
       }
     }
     if (hasLitItems) {
-      collectSceneLights(root, sceneLights);
+      collectSceneLights(root, sceneLights, unionViewLayerMask(views));
       // Sized before recording, like the draw uniforms below: one block per
       // view at most, and growth mid-pass would orphan the bound group.
       this.#growLights(device, views.length);

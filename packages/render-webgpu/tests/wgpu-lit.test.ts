@@ -9,7 +9,7 @@
  * frame (`wgpu-caches.test.ts`'s argument).
  */
 
-import { MAX_PUNCTUAL_LIGHTS, createSceneLights } from "@fourjs/render";
+import { MAX_LIGHT_SLOTS, createSceneLights } from "@fourjs/render";
 import { describe, expect, it } from "vitest";
 
 import { createRecordingGpu } from "../../../tests/integration/helpers/recording-gpu.js";
@@ -115,7 +115,7 @@ describe("the light uniform layout (wgpu-lights.ts)", () => {
     expect(LIGHT_CAMERA_OFFSET - LIGHT_COLOR_OFFSET).toBe(16);
     expect(LIGHT_COUNTS_OFFSET - LIGHT_CAMERA_OFFSET).toBe(16);
     expect(LIGHT_PUNCTUAL_POSITION_OFFSET - LIGHT_COUNTS_OFFSET).toBe(16);
-    const arrayBytes = MAX_PUNCTUAL_LIGHTS * 16;
+    const arrayBytes = MAX_LIGHT_SLOTS * 16;
     expect(LIGHT_PUNCTUAL_COLOR_OFFSET - LIGHT_PUNCTUAL_POSITION_OFFSET).toBe(
       arrayBytes,
     );
@@ -155,7 +155,7 @@ describe("the light uniform layout (wgpu-lights.ts)", () => {
       `@group(${String(LIGHTS_BIND_GROUP_INDEX)}) @binding(0)`,
     );
     expect(LIGHT_UNIFORM_WGSL).toContain(
-      `array<vec4<f32>, ${String(MAX_PUNCTUAL_LIGHTS)}>`,
+      `array<vec4<f32>, ${String(MAX_LIGHT_SLOTS)}>`,
     );
   });
 
@@ -244,10 +244,29 @@ describe("the light uniform layout (wgpu-lights.ts)", () => {
       0,
     ]);
     expect(at(HEMISPHERE_UP_OFFSET)).toEqual([0, 0, 1, 0]);
-    // The core 592-byte block is still fully rewritten; the 592…672 gap
-    // (shadow's home) is left to writeShadowUniforms.
-    expect(HEMISPHERE_SKY_OFFSET).toBe(672);
-    expect(LIGHT_BINDING_BYTES).toBe(720);
+    // The core block is still fully rewritten; the 80-byte gap after it
+    // (shadow's home) is left to writeShadowUniforms. W5.1: 11 light slots
+    // push the block to 784 bytes and the hemisphere tail to 864.
+    expect(LIGHT_UNIFORM_BYTES).toBe(784);
+    expect(HEMISPHERE_SKY_OFFSET).toBe(LIGHT_UNIFORM_BYTES + 80);
+    expect(LIGHT_BINDING_BYTES).toBe(912);
+    expect(LIGHT_UNIFORM_STRIDE_BYTES).toBe(1024);
+  });
+
+  it("packs extra directionals into the shared slots after the punctual set (W5.1)", () => {
+    const lights = createSceneLights();
+    lights.punctualCount = 3;
+    lights.punctualColors.set([1, 1, 1, 2, 2, 2, 3, 3, 3]);
+    lights.punctualDirections.set([0, 0, 0, 0, 0, 0, 0, -1, 0]);
+    lights.punctualParams.set([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]);
+    const staging = new Float32Array(LIGHT_UNIFORM_STRIDE_FLOATS);
+    writeLightUniforms(staging, 0, lights, 0, 0, 0);
+    const at = (offset: number): number[] =>
+      Array.from(staging.slice(offset / 4, offset / 4 + 4));
+    expect(at(LIGHT_COUNTS_OFFSET)[0]).toBe(3);
+    expect(at(LIGHT_PUNCTUAL_DIRECTION_OFFSET + 32)).toEqual([0, -1, 0, 0]);
+    expect(at(LIGHT_PUNCTUAL_PARAMS_OFFSET + 32)[3]).toBe(2);
+    expect(PUNCTUAL_LIGHT_WGSL).toContain("punctualParams[index].w > 1.5");
   });
 
   it("writes zeros in the hemisphere slots when none is present", () => {

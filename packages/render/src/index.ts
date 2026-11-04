@@ -3,10 +3,16 @@ export const PACKAGE_NAME = "@fourjs/render";
 export type {
   BatchableItem,
   BatchableMaterial,
+  InstanceableItem,
+  InstancedRun,
   RenderBatch,
   RenderBatchOptions,
 } from "./batch.js";
-export { DEFAULT_MAX_BATCH_VERTICES, RenderBatcher } from "./batch.js";
+export {
+  DEFAULT_MAX_BATCH_VERTICES,
+  INSTANCE_FLOATS,
+  RenderBatcher,
+} from "./batch.js";
 
 export type { BoundingSphere } from "./bounds.js";
 export {
@@ -70,8 +76,12 @@ export type {
   SpotLightSource,
 } from "./lights.js";
 export {
+  EXTRA_DIRECTIONAL_FLAG,
+  MAX_DIRECTIONAL_LIGHTS,
+  MAX_LIGHT_SLOTS,
   MAX_PUNCTUAL_LIGHTS,
   collectSceneLights,
+  unionViewLayerMask,
   createSceneLights,
   isDirectionalLightSource,
   isHemisphereLightSource,

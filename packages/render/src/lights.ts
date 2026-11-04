@@ -13,10 +13,16 @@
  * One walk collects three things:
  *
  * - the scene **ambient** term, read off the root only;
- * - the first visible, enabled **directional** light — the sun. Exactly one,
- *   still: further directional lights are ignored, deterministically
- *   (scene-graph order decides which one wins, §33), for the reason
- *   `@fourjs/scene`'s `light.ts` records;
+ * - the first visible, enabled **directional** light — the sun, with the
+ *   dedicated uniforms and the shadow — plus up to
+ *   {@link MAX_DIRECTIONAL_LIGHTS}` - 1` **extra** directionals (W5.1),
+ *   packed after the punctual lights; scene-graph order decides (§33);
+ * - **light layers** (W5.1): `collectSceneLights(root, out, layerMask)` keeps
+ *   a light only if `light.layers & layerMask` is non-zero. The mask is
+ *   *per frame*, not per item: backends share one light record across the
+ *   frame's views, so a renderer passes the union of its views' layer masks.
+ *   Per-item light lists would need a per-draw uniform in every shader
+ *   family and are not supported;
  * - the first visible, enabled **hemisphere** light — a two-colour
  *   directional ambient (sky / ground) beside the scene term. Exactly
  *   one, the same first-match rule;
@@ -69,7 +75,13 @@
 
 import { DEV, DEV_WARNING_PREFIX, devWarnOnce } from "@fourjs/core";
 import { Matrix4, Vector3 } from "@fourjs/math";
-import type { Node } from "@fourjs/scene";
+import { viewLayerMask } from "./render-list.js";
+import {
+  ALL_LAYERS,
+  type LayerMask,
+  type Node,
+  type Viewport,
+} from "@fourjs/scene";
 
 /**
  * What the light collector reads from a directional light node — the
@@ -181,6 +193,32 @@ export interface DirectionalShadowSource {
  * time and a §61 renderer may not throw inside a frame.
  */
 export const MAX_PUNCTUAL_LIGHTS = 8;
+
+/**
+ * The most **directional** lights one frame shades with (§68, W5.1,
+ * 2026-11-04) — the sun plus up to three fills.
+ *
+ * Four, because the practical use of a second directional is a key/fill/rim/
+ * bounce rig (the classic studio four) and a fifth is a sign the author wants
+ * an environment light, which is the staged IBL tier's job. Each extra costs
+ * one slot of the shared light arrays, so the budget is small on purpose: the
+ * arrays grow by `MAX_DIRECTIONAL_LIGHTS - 1` slots, not by a second set.
+ *
+ * Only the **first** directional (scene-graph order) is the "primary": it
+ * owns the dedicated `direction` / `directionalColor` uniforms and is the one
+ * that casts a shadow (§69's directional tier is unchanged). Directionals 2…4
+ * are *extras*, packed after the punctual lights into the same arrays with
+ * `punctualParams.w == `{@link EXTRA_DIRECTIONAL_FLAG}`, no shadow, and the
+ * direction in `punctualDirections`. Past the cap the rest are skipped and a
+ * `devWarnOnce` fires, exactly the punctual overflow rule.
+ */
+export const MAX_DIRECTIONAL_LIGHTS = 4;
+
+/** Slots in the packed light arrays: punctual plus the extra directionals. */
+export const MAX_LIGHT_SLOTS = MAX_PUNCTUAL_LIGHTS + MAX_DIRECTIONAL_LIGHTS - 1;
+
+/** `punctualParams.w` value marking a slot as an extra directional light. */
+export const EXTRA_DIRECTIONAL_FLAG = 2;
 
 /**
  * What the collector reads from **any** of §68's positional lights — the half
@@ -331,7 +369,7 @@ export interface SceneLights {
   punctualCount: number;
 
   /**
-   * World-space positions, `x, y, z` per light, `MAX_PUNCTUAL_LIGHTS` entries
+   * World-space positions, `x, y, z` per light, `MAX_LIGHT_SLOTS` entries
    * long and only the first `punctualCount` of them meaningful.
    *
    * `Float32Array` rather than the `number[]` the fields above use, because
@@ -516,10 +554,10 @@ export function createSceneLights(): SceneLights {
     direction: new Vector3(0, 0, -1),
     directionalColor: [0, 0, 0],
     punctualCount: 0,
-    punctualPositions: new Float32Array(MAX_PUNCTUAL_LIGHTS * 3),
-    punctualColors: new Float32Array(MAX_PUNCTUAL_LIGHTS * 3),
-    punctualDirections: new Float32Array(MAX_PUNCTUAL_LIGHTS * 3),
-    punctualParams: new Float32Array(MAX_PUNCTUAL_LIGHTS * 4),
+    punctualPositions: new Float32Array(MAX_LIGHT_SLOTS * 3),
+    punctualColors: new Float32Array(MAX_LIGHT_SLOTS * 3),
+    punctualDirections: new Float32Array(MAX_LIGHT_SLOTS * 3),
+    punctualParams: new Float32Array(MAX_LIGHT_SLOTS * 4),
     hasShadow: false,
     shadowMatrix: new Matrix4(),
     shadowMapSize: 0,
@@ -581,9 +619,73 @@ const lightScratch = new Vector3();
  * A `WeakSet` holds no scene alive.
  */
 const warnedOverflowRoots = new WeakSet<object>();
+const warnedDirectionalRoots = new WeakSet<object>();
 
 /** Punctual lights the current walk *saw*, including any past the bound. */
 let walkPunctualFound = 0;
+
+/** Directional lights the current walk saw (counted past the cap). */
+let walkDirectionalFound = 0;
+
+/** The first directional light of the current walk — the primary. */
+let walkPrimary: DirectionalLightSource | null = null;
+
+/** Extra directionals stored so far this walk (they sit at the array tail). */
+let walkExtraCount = 0;
+
+/** The layer mask the current walk keeps lights for. */
+let walkLayerMask: LayerMask = ALL_LAYERS;
+
+/**
+ * Whether a light survives the walk's layer mask (W5.1). A node double that
+ * predates layers reports `undefined`, which reads as "every layer".
+ */
+function lightOnLayer(node: Node): boolean {
+  return ((node.layers ?? ALL_LAYERS) & walkLayerMask) !== 0;
+}
+
+/** Writes extra directional `light` into the tail slot reserved for it. */
+function writeExtraDirectional(
+  light: DirectionalLightSource,
+  out: SceneLights,
+): void {
+  const slot = MAX_PUNCTUAL_LIGHTS + walkExtraCount;
+  walkExtraCount += 1;
+  const vector = slot * 3;
+  light.getWorldDirection(lightScratch);
+  out.punctualDirections[vector] = lightScratch.x;
+  out.punctualDirections[vector + 1] = lightScratch.y;
+  out.punctualDirections[vector + 2] = lightScratch.z;
+  out.punctualColors[vector] = light.color[0] * light.intensity;
+  out.punctualColors[vector + 1] = light.color[1] * light.intensity;
+  out.punctualColors[vector + 2] = light.color[2] * light.intensity;
+  out.punctualParams[slot * 4 + 3] = EXTRA_DIRECTIONAL_FLAG;
+}
+
+/**
+ * Moves the extras from their reserved tail slots down to sit directly after
+ * the live punctual lights, so the shader's single `0…punctualCount` loop
+ * covers both. A no-op when the punctual set is full (or there are no extras).
+ */
+function compactExtraDirectionals(out: SceneLights): void {
+  const base = out.punctualCount;
+  if (walkExtraCount > 0 && base < MAX_PUNCTUAL_LIGHTS) {
+    for (let i = 0; i < walkExtraCount; i += 1) {
+      const from = MAX_PUNCTUAL_LIGHTS + i;
+      const to = base + i;
+      for (let c = 0; c < 3; c += 1) {
+        out.punctualDirections[to * 3 + c] =
+          out.punctualDirections[from * 3 + c];
+        out.punctualColors[to * 3 + c] = out.punctualColors[from * 3 + c];
+        out.punctualDirections[from * 3 + c] = 0;
+        out.punctualColors[from * 3 + c] = 0;
+      }
+      out.punctualParams[to * 4 + 3] = EXTRA_DIRECTIONAL_FLAG;
+      out.punctualParams[from * 4 + 3] = 0;
+    }
+  }
+  out.punctualCount = base + walkExtraCount;
+}
 
 /**
  * Packs one punctual light into the next free slot of `out`.
@@ -661,21 +763,24 @@ function writeHemisphereLight(
  * is expressed as "a subtree's answer only counts if everything before it had
  * none" and needs no mutable module state to say so.
  */
-function collectFrom(
-  node: Node,
-  out: SceneLights,
-): DirectionalLightSource | null {
+function collectFrom(node: Node, out: SceneLights): void {
   if (!node.visible || !node.enabled) {
-    return null;
+    return;
   }
-  let directional: DirectionalLightSource | null = null;
   if (isDirectionalLightSource(node)) {
-    directional = node;
+    if (lightOnLayer(node)) {
+      walkDirectionalFound += 1;
+      if (walkPrimary === null) {
+        walkPrimary = node;
+      } else if (walkExtraCount < MAX_DIRECTIONAL_LIGHTS - 1) {
+        writeExtraDirectional(node, out);
+      }
+    }
   } else if (isHemisphereLightSource(node)) {
-    if (!out.hasHemisphereLight) {
+    if (!out.hasHemisphereLight && lightOnLayer(node)) {
       writeHemisphereLight(node, out);
     }
-  } else if (isPunctualLightSource(node)) {
+  } else if (isPunctualLightSource(node) && lightOnLayer(node)) {
     walkPunctualFound += 1;
     if (out.punctualCount < MAX_PUNCTUAL_LIGHTS) {
       writePunctualLight(node, out);
@@ -683,12 +788,8 @@ function collectFrom(
   }
   const children = node.children;
   for (let i = 0; i < children.length; i += 1) {
-    const found = collectFrom(children[i], out);
-    if (directional === null) {
-      directional = found;
-    }
+    collectFrom(children[i], out);
   }
-  return directional;
 }
 
 /**
@@ -719,7 +820,11 @@ function collectFrom(
  *
  * Allocates nothing; every field of `out` is rewritten in place.
  */
-export function collectSceneLights(root: Node, out: SceneLights): SceneLights {
+export function collectSceneLights(
+  root: Node,
+  out: SceneLights,
+  layerMask: LayerMask = ALL_LAYERS,
+): SceneLights {
   clearSceneLights(out);
 
   if (!root.visible || !root.enabled) {
@@ -733,7 +838,14 @@ export function collectSceneLights(root: Node, out: SceneLights): SceneLights {
   }
 
   walkPunctualFound = 0;
-  const light = collectFrom(root, out);
+  walkDirectionalFound = 0;
+  walkExtraCount = 0;
+  walkPrimary = null;
+  walkLayerMask = layerMask;
+  collectFrom(root, out);
+  compactExtraDirectionals(out);
+  const light = walkPrimary as DirectionalLightSource | null;
+  walkPrimary = null;
   if (light !== null) {
     out.hasDirectionalLight = true;
     light.getWorldDirection(out.direction);
@@ -778,5 +890,33 @@ export function collectSceneLights(root: Node, out: SceneLights): SceneLights {
       console.warn(`${DEV_WARNING_PREFIX} ${message}`);
     }
   }
+  if (walkDirectionalFound > MAX_DIRECTIONAL_LIGHTS) {
+    const message =
+      `${String(walkDirectionalFound)} directional lights, but a frame ` +
+      `shades with at most ${String(MAX_DIRECTIONAL_LIGHTS)} (§68): the ` +
+      "first in scene-graph order are used and the rest are skipped. Only " +
+      "the first casts a shadow. Further overflows in this scene are " +
+      "suppressed.";
+    if (DEV) {
+      devWarnOnce(`directional-overflow:${root.id}`, message);
+    } else if (!warnedDirectionalRoots.has(root)) {
+      warnedDirectionalRoots.add(root);
+      console.warn(`${DEV_WARNING_PREFIX} ${message}`);
+    }
+  }
   return out;
+}
+
+/**
+ * The union of the layer masks `views` draw (W5.1) — what a backend passes
+ * to {@link collectSceneLights} so a light is kept if *any* view of the frame
+ * can see its layer. Empty `views` yields `0` (no light survives, nothing is
+ * drawn anyway). Allocates nothing.
+ */
+export function unionViewLayerMask(views: readonly Viewport[]): LayerMask {
+  let mask = 0;
+  for (let i = 0; i < views.length; i += 1) {
+    mask |= viewLayerMask(views[i]);
+  }
+  return mask >>> 0;
 }

@@ -11,9 +11,13 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  EXTRA_DIRECTIONAL_FLAG,
+  MAX_DIRECTIONAL_LIGHTS,
+  MAX_LIGHT_SLOTS,
   MAX_PUNCTUAL_LIGHTS,
   collectSceneLights,
   createSceneLights,
+  unionViewLayerMask,
   isDirectionalLightSource,
   isHemisphereLightSource,
   isPunctualLightSource,
@@ -110,12 +114,12 @@ describe("createSceneLights", () => {
       lights.hemisphereUp.z,
     ]).toEqual([0, 1, 0]);
     expect(lights.punctualCount).toBe(0);
-    expect(lights.punctualPositions).toHaveLength(MAX_PUNCTUAL_LIGHTS * 3);
-    expect(lights.punctualColors).toHaveLength(MAX_PUNCTUAL_LIGHTS * 3);
-    expect(lights.punctualDirections).toHaveLength(MAX_PUNCTUAL_LIGHTS * 3);
-    expect(lights.punctualParams).toHaveLength(MAX_PUNCTUAL_LIGHTS * 4);
+    expect(lights.punctualPositions).toHaveLength(MAX_LIGHT_SLOTS * 3);
+    expect(lights.punctualColors).toHaveLength(MAX_LIGHT_SLOTS * 3);
+    expect(lights.punctualDirections).toHaveLength(MAX_LIGHT_SLOTS * 3);
+    expect(lights.punctualParams).toHaveLength(MAX_LIGHT_SLOTS * 4);
     expect([...lights.punctualParams]).toEqual(
-      new Array<number>(MAX_PUNCTUAL_LIGHTS * 4).fill(0),
+      new Array<number>(MAX_LIGHT_SLOTS * 4).fill(0),
     );
   });
 });
@@ -406,10 +410,10 @@ describe("collectSceneLights — the light set (§68, R-17)", () => {
     collectSceneLights(new Scene(), out);
     expect(out.punctualCount).toBe(0);
     expect([...out.punctualPositions]).toEqual(
-      new Array<number>(MAX_PUNCTUAL_LIGHTS * 3).fill(0),
+      new Array<number>(MAX_LIGHT_SLOTS * 3).fill(0),
     );
     expect([...out.punctualColors]).toEqual(
-      new Array<number>(MAX_PUNCTUAL_LIGHTS * 3).fill(0),
+      new Array<number>(MAX_LIGHT_SLOTS * 3).fill(0),
     );
   });
 });
@@ -675,5 +679,86 @@ describe("collectSceneLights — hemisphere (§68)", () => {
       out.hemisphereUp.y,
       out.hemisphereUp.z,
     ]).toEqual([0, 1, 0]);
+  });
+});
+
+describe("extra directional lights and light layers (W5.1)", () => {
+  function sun(x: number, intensity: number): DirectionalLight {
+    const light = new DirectionalLight({ color: [1, 1, 1], intensity });
+    light.transform.position.set(x, 0, 0);
+    return light;
+  }
+
+  it("packs directionals 2..4 after the punctual lights, in scene-graph order", () => {
+    const scene = new Scene();
+    const lamp = new PointLight({ color: [1, 1, 1], intensity: 5 });
+    scene.add(sun(0, 1));
+    scene.add(sun(1, 2));
+    scene.add(lamp);
+    scene.add(sun(2, 3));
+    const out = collectSceneLights(scene, createSceneLights());
+    expect(out.hasDirectionalLight).toBe(true);
+    expect([...out.directionalColor]).toEqual([1, 1, 1]);
+    expect(out.punctualCount).toBe(3);
+    expect(out.punctualColors[3]).toBe(2);
+    expect(out.punctualColors[6]).toBe(3);
+    expect(out.punctualParams[7]).toBe(EXTRA_DIRECTIONAL_FLAG);
+    expect(out.punctualParams[11]).toBe(EXTRA_DIRECTIONAL_FLAG);
+    expect(out.punctualParams[3]).toBe(0);
+    expect(out.punctualColors[9]).toBe(0);
+  });
+
+  it("keeps extras past a full punctual set and caps at MAX_DIRECTIONAL_LIGHTS", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const scene = new Scene();
+    for (let i = 0; i < MAX_PUNCTUAL_LIGHTS; i += 1) {
+      scene.add(new PointLight({ intensity: 1 }));
+    }
+    for (let i = 0; i < MAX_DIRECTIONAL_LIGHTS + 2; i += 1) {
+      scene.add(sun(i, i + 1));
+    }
+    const out = collectSceneLights(scene, createSceneLights());
+    expect(out.punctualCount).toBe(MAX_LIGHT_SLOTS);
+    expect(out.punctualColors[MAX_PUNCTUAL_LIGHTS * 3]).toBe(2);
+    expect(warn.mock.calls.length).toBeGreaterThanOrEqual(1);
+    warn.mockRestore();
+  });
+
+  it("filters every light kind by layer mask and defaults to all", () => {
+    const scene = new Scene();
+    const a = sun(0, 1);
+    const b = sun(1, 2);
+    b.layers = 2;
+    const lamp = new PointLight({ intensity: 4 });
+    lamp.layers = 2;
+    scene.add(a);
+    scene.add(b);
+    scene.add(lamp);
+    const all = collectSceneLights(scene, createSceneLights());
+    expect(all.punctualCount).toBe(2);
+    const only1 = collectSceneLights(scene, createSceneLights(), 1);
+    expect(only1.punctualCount).toBe(0);
+    expect(only1.hasDirectionalLight).toBe(true);
+    const only2 = collectSceneLights(scene, createSceneLights(), 2);
+    expect([...only2.directionalColor]).toEqual([2, 2, 2]);
+    expect(only2.punctualCount).toBe(1);
+  });
+
+  it("default mask and one directional leave the extra slots zero", () => {
+    const scene = new Scene();
+    scene.add(sun(0, 1));
+    const out = collectSceneLights(scene, createSceneLights());
+    expect(out.punctualCount).toBe(0);
+    expect(out.punctualParams.every((v) => v === 0)).toBe(true);
+  });
+
+  it("unions view masks", () => {
+    expect(unionViewLayerMask([])).toBe(0);
+    expect(
+      unionViewLayerMask([
+        { layerMask: 1 } as never,
+        { layerMask: 4 } as never,
+      ]),
+    ).toBe(5);
   });
 });

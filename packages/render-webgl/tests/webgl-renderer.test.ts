@@ -40,7 +40,7 @@
 import { FourError, isFourError, resetDevWarnings } from "@fourjs/core";
 import { Matrix4, Quaternion, Rectangle2, Vector3 } from "@fourjs/math";
 import {
-  MAX_PUNCTUAL_LIGHTS,
+  MAX_LIGHT_SLOTS,
   PARTICLE_INSTANCE_FLOATS,
   PARTICLE_ROTATION_OFFSET,
   PARTICLE_SOFTNESS_OFFSET,
@@ -76,6 +76,7 @@ import {
   GeometryCache,
   JOINTS_ATTRIBUTE_LOCATION,
   LitProgram,
+  PUNCTUAL_LIGHT_GLSL,
   MAP_TEXTURE_UNIT,
   METAL_ROUGHNESS_TEXTURE_UNIT,
   EMISSIVE_TEXTURE_UNIT,
@@ -128,6 +129,7 @@ import {
   resolveSkinningPipelineFactory,
   resolveStandardPipelineFactory,
   type BatchGlContext,
+  type InstanceGlContext,
   type NodeItemMaterial,
   type ParticleGlContext,
   type WebglCanvas,
@@ -266,7 +268,7 @@ interface FakeGlOptions {
  * the smaller half would be rejected at `initialize` exactly as a WebGL 1
  * context is.
  */
-interface FakeGl extends ParticleGlContext {
+interface FakeGl extends ParticleGlContext, InstanceGlContext {
   readonly calls: RecordedCall[];
   /**
    * Uniform handles by name, from the **first** program that resolved each name
@@ -671,6 +673,12 @@ function createFakeGl(options: FakeGlOptions = {}): FakeGl {
     },
     drawElements(mode, count, type, offset) {
       record("drawElements", mode, count, type, offset);
+    },
+    drawElementsInstanced(mode, count, type, offset, instanceCount) {
+      record("drawElementsInstanced", mode, count, type, offset, instanceCount);
+    },
+    disableVertexAttribArray(index) {
+      record("disableVertexAttribArray", index);
     },
     isContextLost() {
       record("isContextLost");
@@ -9234,13 +9242,13 @@ describe("PunctualLightUniforms — the light set (§68, R-17)", () => {
 
       expect(fragment).toContain("uniform int punctualCount;");
       expect(fragment).toContain(
-        `const int MAX_PUNCTUAL_LIGHTS = ${String(MAX_PUNCTUAL_LIGHTS)};`,
+        `const int MAX_LIGHT_SLOTS = ${String(MAX_LIGHT_SLOTS)};`,
       );
       expect(fragment).toContain(
-        "uniform vec3 punctualPosition[MAX_PUNCTUAL_LIGHTS];",
+        "uniform vec3 punctualPosition[MAX_LIGHT_SLOTS];",
       );
       expect(fragment).toContain(
-        "uniform vec4 punctualParams[MAX_PUNCTUAL_LIGHTS];",
+        "uniform vec4 punctualParams[MAX_LIGHT_SLOTS];",
       );
       // The loop is bounded by the *uniform*, which is what makes one linked
       // program shade zero through MAX lamps.
@@ -9329,7 +9337,7 @@ describe("PunctualLightUniforms — the light set (§68, R-17)", () => {
       gl,
       uniforms.get("punctualPosition[0]"),
     )[0] as number[];
-    expect(positions).toHaveLength(MAX_PUNCTUAL_LIGHTS * 3);
+    expect(positions).toHaveLength(MAX_LIGHT_SLOTS * 3);
     expect(positions.slice(0, 3)).toEqual([1, 2, 3]);
     expect(
       (uploadsAt(gl, uniforms.get("punctualColor[0]"))[0] as number[]).slice(
@@ -9341,6 +9349,30 @@ describe("PunctualLightUniforms — the light set (§68, R-17)", () => {
       (uploadsAt(gl, uniforms.get("punctualParams[0]"))[0] as number[])[0],
     ).toBe(12);
     expect(uploadsAt(gl, uniforms.get("punctualDirection[0]"))).toHaveLength(1);
+  });
+
+  it("uploads extra directionals in the shared slots with flag 2 (W5.1)", () => {
+    const gl = createFakeGl();
+    const program = LitProgram.create(gl);
+    program.use();
+    gl.reset();
+    const set = oneLampSet();
+    set.punctualCount = 2;
+    set.punctualDirections.set([0, 0, 0, 0, -1, 0], 0);
+    set.punctualColors.set([7, 8, 9], 3);
+    set.punctualParams[7] = 2;
+
+    program.setPunctualLights(set);
+
+    const uniforms = punctualUniforms(gl, "ambientLight");
+    expect(uploadsAt(gl, uniforms.get("punctualCount"))).toEqual([2]);
+    const params = uploadsAt(
+      gl,
+      uniforms.get("punctualParams[0]"),
+    )[0] as number[];
+    expect(params).toHaveLength(MAX_LIGHT_SLOTS * 4);
+    expect(params[7]).toBe(2);
+    expect(PUNCTUAL_LIGHT_GLSL).toContain("punctualParams[i].w > 1.5");
   });
 
   it("re-uploads the arrays every frame but the count only on change", () => {
@@ -14202,5 +14234,185 @@ describe("bound-texture mirror — the shaded and skinned map sites (audit A6)",
     } finally {
       clearRegisteredSkinningPipeline();
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// R-22: instanced meshes for the shaded pipelines (§65).
+// ---------------------------------------------------------------------------
+
+describe("WebglRenderer - R-22 instanced shaded runs", () => {
+  function sharedLitRoot(count: number, material = new TestLitMaterial()) {
+    const root = createRoot();
+    const geometry = litTriangleGeometry();
+    for (let i = 0; i < count; i += 1) {
+      const mesh = litRenderable(geometry, material);
+      mesh.transform.position.x = i;
+      root.add(mesh);
+    }
+    return root;
+  }
+
+  it("draws a run of lit meshes sharing geometry and material as one instanced call", async () => {
+    const { renderer, gl, camera } = await initialized();
+    renderer.batching = createGlBatching();
+    const statistics = createRenderStatistics();
+    renderer.statistics = statistics;
+    const root = sharedLitRoot(3);
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    expect(gl.countOf("drawArrays")).toBe(0);
+    expect(gl.callsOf("drawArraysInstanced")).toHaveLength(1);
+    expect(gl.callsOf("drawArraysInstanced")[0].args).toEqual([
+      GL.TRIANGLES,
+      0,
+      3,
+      3,
+    ]);
+    expect(statistics.drawCalls).toBe(1);
+    expect(statistics.instances).toBe(3);
+    // The vertex stage was rewritten to read model + normal matrices per instance.
+    const sources = gl
+      .callsOf("shaderSource")
+      .map((call) => String(call.args[1]));
+    expect(sources.some((source) => source.includes("iModel3"))).toBe(true);
+    expect(sources.some((source) => source.includes("iNormal2"))).toBe(true);
+  });
+
+  it("lays the instance buffer out as 4 vec4 + 3 vec3 columns and restores the vertex array", async () => {
+    const { renderer, gl, camera } = await initialized();
+    renderer.batching = createGlBatching();
+    const root = sharedLitRoot(2);
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    const pointers = gl
+      .callsOf("vertexAttribPointer")
+      .filter((call) => Number(call.args[0]) >= 8);
+    expect(pointers.map((call) => call.args)).toEqual([
+      [8, 4, GL.FLOAT, false, 100, 0],
+      [9, 4, GL.FLOAT, false, 100, 16],
+      [10, 4, GL.FLOAT, false, 100, 32],
+      [11, 4, GL.FLOAT, false, 100, 48],
+      [12, 3, GL.FLOAT, false, 100, 64],
+      [13, 3, GL.FLOAT, false, 100, 76],
+      [14, 3, GL.FLOAT, false, 100, 88],
+    ]);
+    const divisors = gl
+      .callsOf("vertexAttribDivisor")
+      .map((call) => [call.args[0], call.args[1]]);
+    expect(divisors.filter((d) => d[1] === 1)).toHaveLength(7);
+    expect(divisors.filter((d) => d[1] === 0)).toHaveLength(7);
+    expect(gl.callsOf("disableVertexAttribArray")).toHaveLength(7);
+    expect(gl.countOf("bufferData")).toBeGreaterThanOrEqual(1);
+  });
+
+  it("does not instance meshes with different materials or a lone mesh", async () => {
+    const { renderer, gl, camera } = await initialized();
+    renderer.batching = createGlBatching();
+    const root = createRoot();
+    const geometry = litTriangleGeometry();
+    root.add(litRenderable(geometry, new TestLitMaterial()));
+    root.add(litRenderable(geometry, new TestLitMaterial()));
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    expect(gl.countOf("drawArraysInstanced")).toBe(0);
+    expect(gl.countOf("drawArrays")).toBe(2);
+  });
+
+  it("skips the instance re-upload on an idle second frame", async () => {
+    const { renderer, gl, camera } = await initialized();
+    renderer.batching = createGlBatching();
+    const root = sharedLitRoot(3);
+    renderer.render(root, [createView(camera)]);
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    expect(gl.countOf("drawArraysInstanced")).toBe(1);
+    expect(gl.countOf("bufferData")).toBe(0);
+    expect(gl.countOf("bufferSubData")).toBe(0);
+  });
+
+  it("re-uploads through bufferSubData when a run changes within capacity", async () => {
+    const { renderer, gl, camera } = await initialized();
+    renderer.batching = createGlBatching();
+    const root = sharedLitRoot(3);
+    renderer.render(root, [createView(camera)]);
+    root.children[0].transform.worldMatrix.fromArray([
+      1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 2, 0, 1,
+    ]);
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    expect(gl.countOf("bufferData")).toBe(0);
+    expect(gl.countOf("bufferSubData")).toBe(1);
+  });
+
+  it("instances a standard run through the registered pipeline", async () => {
+    const { renderer, gl, camera } = await initialized();
+    renderer.batching = createGlBatching();
+    const root = createRoot();
+    const geometry = litTriangleGeometry();
+    const material = new TestStandardMaterial();
+    for (let i = 0; i < 4; i += 1) {
+      root.add(standardRenderable(geometry, material));
+    }
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    expect(gl.callsOf("drawArraysInstanced")).toHaveLength(1);
+    expect(gl.callsOf("drawArraysInstanced")[0].args[3]).toBe(4);
+    expect(gl.countOf("drawArrays")).toBe(0);
+  });
+
+  it("falls back to plain draws when the instanced variant will not link", async () => {
+    const probe = await initialized();
+    const built = probe.gl.countOf("createProgram");
+    const { renderer, gl, camera } = await initialized({
+      failProgramAt: built + 1,
+    });
+    renderer.batching = createGlBatching();
+    const root = sharedLitRoot(3);
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    expect(gl.countOf("drawArraysInstanced")).toBe(0);
+    expect(gl.countOf("drawArrays")).toBe(3);
+  });
+
+  it("leaves a renderer with no batcher on plain draws", async () => {
+    const { renderer, gl, camera } = await initialized();
+    const root = sharedLitRoot(3);
+    gl.reset();
+
+    renderer.render(root, [createView(camera)]);
+
+    expect(gl.countOf("drawArraysInstanced")).toBe(0);
+    expect(gl.countOf("drawArrays")).toBe(3);
+  });
+
+  it("rebuilds the instanced programs after forget and frees them on dispose", async () => {
+    const { renderer, gl, camera } = await initialized();
+    const batching = createGlBatching();
+    renderer.batching = batching;
+    const root = sharedLitRoot(2);
+    renderer.render(root, [createView(camera)]);
+    const built = gl.countOf("createProgram");
+    batching.forget();
+    renderer.render(root, [createView(camera)]);
+    expect(gl.countOf("createProgram")).toBe(built + 1);
+    gl.reset();
+    batching.dispose();
+    expect(gl.countOf("deleteProgram")).toBe(1);
+    expect(gl.countOf("deleteBuffer")).toBeGreaterThanOrEqual(1);
   });
 });

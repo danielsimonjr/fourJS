@@ -11,6 +11,16 @@
  * program per view, this backend packs one block per view into one buffer and
  * issues one `writeBuffer` for the whole frame.
  *
+ * ## W5.1 (2026-11-04): extra directionals widen the arrays
+ *
+ * The four punctual arrays hold `MAX_LIGHT_SLOTS` (11) entries instead of 8:
+ * slots after the live punctual lights carry directionals 2…4
+ * (`punctualParams.w == 2`). Every offset below that follows the arrays is
+ * derived from the slot count, so the numbers in the table are the
+ * pre-W5.1 values (8 slots); the stride grows 768 → 1024 (the next 256-byte
+ * dynamic-offset multiple). A scene with no extras writes zeros in the new
+ * slots and the same floats in every landed position.
+ *
  * ## The layout, declared as data (§7 of the R-1 plan)
  *
  * Every slot is a **`vec4`**, deliberately: WGSL's `vec3<f32>` is 16-byte
@@ -94,7 +104,7 @@
  * {@link LIGHT_UNIFORM_MEMBERS_WGSL} so the two structs cannot drift.
  */
 
-import { MAX_PUNCTUAL_LIGHTS, type SceneLights } from "@fourjs/render";
+import { MAX_LIGHT_SLOTS, type SceneLights } from "@fourjs/render";
 
 import {
   GPU_SHADER_STAGE,
@@ -148,20 +158,24 @@ export const LIGHT_COUNTS_OFFSET = 64;
 export const LIGHT_PUNCTUAL_POSITION_OFFSET = 80;
 
 /** Byte offset of the `punctualColor` array (rgb × intensity per light; w 0). */
-export const LIGHT_PUNCTUAL_COLOR_OFFSET = 208;
+export const LIGHT_PUNCTUAL_COLOR_OFFSET =
+  LIGHT_PUNCTUAL_POSITION_OFFSET + MAX_LIGHT_SLOTS * 16;
 
 /** Byte offset of the `punctualDirection` array (cone axis per light; w 0). */
-export const LIGHT_PUNCTUAL_DIRECTION_OFFSET = 336;
+export const LIGHT_PUNCTUAL_DIRECTION_OFFSET =
+  LIGHT_PUNCTUAL_COLOR_OFFSET + MAX_LIGHT_SLOTS * 16;
 
 /** Byte offset of the `punctualParams` array — `SceneLights.punctualParams`'s vec4s. */
-export const LIGHT_PUNCTUAL_PARAMS_OFFSET = 464;
+export const LIGHT_PUNCTUAL_PARAMS_OFFSET =
+  LIGHT_PUNCTUAL_DIRECTION_OFFSET + MAX_LIGHT_SLOTS * 16;
 
 /**
  * Size of the original light-data prefix, before shadow and hemisphere tails.
  * Kept stable as the shadow-matrix offset. Use {@link LIGHT_BINDING_BYTES}
  * for the current unshadowed shader binding, not this prefix size.
  */
-export const LIGHT_UNIFORM_BYTES = 592;
+export const LIGHT_UNIFORM_BYTES =
+  LIGHT_PUNCTUAL_PARAMS_OFFSET + MAX_LIGHT_SLOTS * 16;
 
 /** {@link LIGHT_UNIFORM_BYTES} in `Float32Array` elements. */
 export const LIGHT_UNIFORM_FLOATS = LIGHT_UNIFORM_BYTES / 4;
@@ -170,13 +184,13 @@ export const LIGHT_UNIFORM_FLOATS = LIGHT_UNIFORM_BYTES / 4;
  * Byte offset of the hemisphere sky colour (rgb × intensity; w 0) — the
  * first spare stride byte after §69's shadow tail (592…672).
  */
-export const HEMISPHERE_SKY_OFFSET = 672;
+export const HEMISPHERE_SKY_OFFSET = LIGHT_UNIFORM_BYTES + 80;
 
 /** Byte offset of the hemisphere ground colour (rgb × intensity; w 0). */
-export const HEMISPHERE_GROUND_OFFSET = 688;
+export const HEMISPHERE_GROUND_OFFSET = HEMISPHERE_SKY_OFFSET + 16;
 
 /** Byte offset of the hemisphere sky axis (xyz unit; w 0). */
-export const HEMISPHERE_UP_OFFSET = 704;
+export const HEMISPHERE_UP_OFFSET = HEMISPHERE_GROUND_OFFSET + 16;
 
 /**
  * Size of the unshadowed light binding once the hemisphere tail is
@@ -193,7 +207,7 @@ export const LIGHT_BINDING_BYTES = HEMISPHERE_UP_OFFSET + 16;
  * reasoning — 256 is every conforming device's valid alignment, and a fixed
  * stride keeps the frame's byte layout device-independent, §33).
  */
-export const LIGHT_UNIFORM_STRIDE_BYTES = 768;
+export const LIGHT_UNIFORM_STRIDE_BYTES = 1024;
 
 /** {@link LIGHT_UNIFORM_STRIDE_BYTES} in `Float32Array` elements. */
 export const LIGHT_UNIFORM_STRIDE_FLOATS = LIGHT_UNIFORM_STRIDE_BYTES / 4;
@@ -240,10 +254,10 @@ export const LIGHT_UNIFORM_MEMBERS_WGSL = `  ambientColor : vec4<f32>,
   lightColor : vec4<f32>,
   cameraPosition : vec4<f32>,
   counts : vec4<f32>,
-  punctualPosition : array<vec4<f32>, ${String(MAX_PUNCTUAL_LIGHTS)}>,
-  punctualColor : array<vec4<f32>, ${String(MAX_PUNCTUAL_LIGHTS)}>,
-  punctualDirection : array<vec4<f32>, ${String(MAX_PUNCTUAL_LIGHTS)}>,
-  punctualParams : array<vec4<f32>, ${String(MAX_PUNCTUAL_LIGHTS)}>,`;
+  punctualPosition : array<vec4<f32>, ${String(MAX_LIGHT_SLOTS)}>,
+  punctualColor : array<vec4<f32>, ${String(MAX_LIGHT_SLOTS)}>,
+  punctualDirection : array<vec4<f32>, ${String(MAX_LIGHT_SLOTS)}>,
+  punctualParams : array<vec4<f32>, ${String(MAX_LIGHT_SLOTS)}>,`;
 
 /**
  * The three hemisphere members, at {@link HEMISPHERE_SKY_OFFSET}. Shared
@@ -313,6 +327,12 @@ export const PUNCTUAL_LIGHT_WGSL = `struct PunctualLight {
 };
 
 fn punctualLight(index : i32, p : vec3<f32>) -> PunctualLight {
+  if (lights.punctualParams[index].w > 1.5) {
+    var extra : PunctualLight;
+    extra.irradiance = lights.punctualColor[index].xyz;
+    extra.direction = -lights.punctualDirection[index].xyz;
+    return extra;
+  }
   let offset = lights.punctualPosition[index].xyz - p;
   let distanceSquared = max(dot(offset, offset), 1e-8);
   let d = sqrt(distanceSquared);
@@ -428,7 +448,7 @@ export function writeLightUniforms(
   const positions = floatBase + LIGHT_PUNCTUAL_POSITION_OFFSET / 4;
   const colors = floatBase + LIGHT_PUNCTUAL_COLOR_OFFSET / 4;
   const directions = floatBase + LIGHT_PUNCTUAL_DIRECTION_OFFSET / 4;
-  for (let index = 0; index < MAX_PUNCTUAL_LIGHTS; index += 1) {
+  for (let index = 0; index < MAX_LIGHT_SLOTS; index += 1) {
     const packed = index * 3;
     const slot = index * 4;
     staging[positions + slot] = lights.punctualPositions[packed];
@@ -446,7 +466,7 @@ export function writeLightUniforms(
   }
 
   const params = floatBase + LIGHT_PUNCTUAL_PARAMS_OFFSET / 4;
-  for (let index = 0; index < MAX_PUNCTUAL_LIGHTS * 4; index += 1) {
+  for (let index = 0; index < MAX_LIGHT_SLOTS * 4; index += 1) {
     staging[params + index] = lights.punctualParams[index];
   }
 

@@ -44,6 +44,7 @@ import {
   buildRenderList,
   buildViewRenderList,
   collectSceneLights,
+  unionViewLayerMask,
   createSceneLights,
   isLitItem,
   isNodeItem,
@@ -57,6 +58,7 @@ import {
   validateReadbackRegion,
   COLOR_GRADE_DEFAULTS,
   type EffectRenderPass,
+  type InstancedRun,
   type GraphEffect,
   type PickingService,
   type RenderItem,
@@ -76,7 +78,7 @@ import {
 // (see `WebglRenderer.batching` and `gl-batch.ts`'s header). The context this
 // backend narrows to (`ParticleGlContext`) already satisfies the batcher's own
 // `BatchGlContext` structurally, so no second narrowing is needed either.
-import type { RenderBatching } from "./gl-batch.js";
+import type { InstanceGlContext, RenderBatching } from "./gl-batch.js";
 import {
   EFFECT_TEXTURE_UNIT,
   EFFECT_VERTEX_COUNT,
@@ -2066,7 +2068,7 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         }
       }
       if (hasLitItems) {
-        collectSceneLights(root, sceneLights);
+        collectSceneLights(root, sceneLights, unionViewLayerMask(views));
       }
 
       // §69's shadow map (R-18), rendered **before** the view loop: §63's own
@@ -2139,7 +2141,9 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         | "particle-trail"
         | "particle-appearance"
         | "unlit-morph"
-        | "lit-morph" = "unlit";
+        | "lit-morph"
+        | "lit-instanced"
+        | "standard-instanced" = "unlit";
       let particleTrailActive = false;
       // The GL state mirror starts where `#applyFixedState` and GL's own defaults
       // left it; every draw below moves it only where its material asks.
@@ -2219,6 +2223,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
         let particleViewUploaded = false;
         let litViewUploaded = false;
         let standardViewUploaded = false;
+        let instLitViewUploaded = false;
+        let instStandardViewUploaded = false;
         let skinnedUnlitViewUploaded = false;
         let skinnedLitViewUploaded = false;
         let morphUnlitViewUploaded = false;
@@ -2872,6 +2878,31 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             continue;
           }
 
+          // R-22: a run of consecutive lit/standard items sharing geometry and
+          // material draws as one instanced call through the batcher's
+          // instanced program variant. `null` for everything else, and always
+          // `null` when no batcher was assigned.
+          let instRun: InstancedRun | null = null;
+          let instLit: LitProgram | null = null;
+          let instStandard: StandardPipeline | null = null;
+          if (batching?.nextInstanced !== undefined) {
+            instRun = batching.nextInstanced(viewItems, index);
+            if (instRun !== null) {
+              if (instRun.kind === "lit") {
+                instLit = batching.instancedLit?.(gl) ?? null;
+                if (instLit === null) instRun = null;
+              } else {
+                instStandard = batching.instancedStandard?.(gl) ?? null;
+                if (
+                  instStandard === null ||
+                  this.#acquireStandardProgram(gl) === null
+                ) {
+                  instRun = null;
+                }
+              }
+            }
+          }
+
           if (isSpriteItem(item)) {
             const material = item.material;
             const texture = resolveTexture(
@@ -2916,9 +2947,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             // and opaque unless its material says otherwise (§57) — which, at
             // the default `transparent: false`, is every material that predates
             // the flag.
-            if (activeKind !== "lit") {
-              litProgram.use();
-              activeKind = "lit";
+            const lp = instLit ?? litProgram;
+            const litKind = instLit === null ? "lit" : "lit-instanced";
+            if (activeKind !== litKind) {
+              lp.use();
+              activeKind = litKind;
             }
             applyMaterialState(
               gl,
@@ -2927,28 +2960,29 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               false,
               item.clip ?? null,
             );
-            if (!litViewUploaded) {
+            if (instLit === null ? !litViewUploaded : !instLitViewUploaded) {
               // The view-projection and the frame's lights, once per view —
               // uniforms live in the program object, so they hold for every lit
               // draw into this view even if other pipelines run in between. The
               // lights were collected before the view loop; a frame with no
               // directional light uploads black `lightColor`, which zeroes the
               // Lambert term in the shader (no variants, no branch here).
-              litProgram.setViewProjection(viewProjection);
-              litProgram.setAmbientLight(sceneLights.ambientColor);
-              litProgram.setHemisphereLight(sceneLights);
-              litProgram.setDirectionalLight(
+              lp.setViewProjection(viewProjection);
+              lp.setAmbientLight(sceneLights.ambientColor);
+              lp.setHemisphereLight(sceneLights);
+              lp.setDirectionalLight(
                 sceneLights.direction,
                 sceneLights.directionalColor,
               );
               // §68's point and spot lights (R-17). A scene with none issues
               // no call here at all — see `PunctualLightUniforms`.
-              litProgram.setPunctualLights(sceneLights);
+              lp.setPunctualLights(sceneLights);
               // §69's shadow matrix, biases and tap size (R-18). A frame in
               // which nothing casts issues no call here at all — see
               // `ShadowUniforms`.
-              litProgram.setShadow(sceneLights);
-              litViewUploaded = true;
+              lp.setShadow(sceneLights);
+              if (instLit === null) litViewUploaded = true;
+              else instLitViewUploaded = true;
             }
             // §57's `map` (R-19): an albedo texture, bound and switched on for
             // this draw and switched off again by the next draw that has none.
@@ -2975,15 +3009,15 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               }
               textureBound = true;
             }
-            litProgram.setFeatures(litTexture !== null);
+            lp.setFeatures(litTexture !== null);
             // §49's `receiveShadow` (§69, R-18), folded together with "does
             // anything cast at all": both are reasons this draw is not
             // shadowed, and one mirrored uniform says so. `false` on every
             // draw of a shadowless frame, which is the mirror's initial value,
             // so no call is issued.
-            litProgram.setReceivesShadow(shadowActive && item.receiveShadow);
-            litProgram.setModel(item.worldMatrix);
-            litProgram.setColor(item.material.color, opacityOf(item.material));
+            lp.setReceivesShadow(shadowActive && item.receiveShadow);
+            lp.setModel(item.worldMatrix);
+            lp.setColor(item.material.color, opacityOf(item.material));
           } else if (isStandardItem(item)) {
             // §59's metallic-roughness pipeline (R-13). Structurally the lit
             // branch above — same lights, same albedo map, same §57 render
@@ -2993,13 +3027,16 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             // since 2026-09-11: unregistered or refused, the draw is skipped
             // with one warning (a Lambert stand-in would be a different
             // picture).
-            const standardProgram = this.#acquireStandardProgram(gl);
-            if (standardProgram === null) {
+            const baseStandard = this.#acquireStandardProgram(gl);
+            if (baseStandard === null) {
               continue;
             }
-            if (activeKind !== "standard") {
+            const standardProgram = instStandard ?? baseStandard;
+            const standardKind =
+              instStandard === null ? "standard" : "standard-instanced";
+            if (activeKind !== standardKind) {
               standardProgram.use();
-              activeKind = "standard";
+              activeKind = standardKind;
             }
             applyMaterialState(
               gl,
@@ -3008,7 +3045,11 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
               false,
               item.clip ?? null,
             );
-            if (!standardViewUploaded) {
+            if (
+              instStandard === null
+                ? !standardViewUploaded
+                : !instStandardViewUploaded
+            ) {
               // Per-view state: uniforms live in the program object, so one
               // upload holds for every standard draw into this view even when
               // other pipelines run in between.
@@ -3032,7 +3073,8 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
                 cameraElements[13],
                 cameraElements[14],
               );
-              standardViewUploaded = true;
+              if (instStandard === null) standardViewUploaded = true;
+              else instStandardViewUploaded = true;
             }
             const standardMap = mapOf(item.material);
             const standardTexture =
@@ -3191,6 +3233,16 @@ export class WebglRenderer implements Renderer, ScreenEffectRenderer {
             program.setColor(item.material.color, opacityOf(item.material));
           }
 
+          if (instRun !== null && batching?.drawInstanced !== undefined) {
+            // R-22: the whole run in one instanced call; the state above was
+            // set for its first item and holds for all of them.
+            batching.drawInstanced(gl as InstanceGlContext, record, instRun);
+            if (statistics !== null) {
+              countDraw(statistics, record.mode, record.count, instRun.items);
+            }
+            index += instRun.items - 1;
+            continue;
+          }
           gl.bindVertexArray(record.vertexArray);
           if (record.indexType === null) {
             gl.drawArrays(record.mode, 0, record.count);
