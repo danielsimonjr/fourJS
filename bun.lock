@@ -188,8 +188,8 @@
       "name": "@fourjs/physics-rapier",
       "version": "0.1.0",
       "dependencies": {
-        "@dimforge/rapier2d-compat": "0.20.0",
-        "@dimforge/rapier3d-compat": "0.20.0",
+        "@dimforge/rapier2d-compat": "0.21.0",
+        "@dimforge/rapier3d-compat": "0.21.0",
         "@fourjs/core": "workspace:*",
         "@fourjs/math": "workspace:*",
         "@fourjs/physics": "workspace:*",
@@ -365,9 +365,9 @@
 
     "@danielsimonjr/physjs-core": ["@danielsimonjr/physjs-core@0.5.0", "", {}, "sha512-KekXyrHKVzza8/k/WuaxZ6xHnnvZ8q4mywc29af7AzyekOMcLbruL3oJ6ZqQpwbjp7OZBuq6r8JoaQOik4q3sQ=="],
 
-    "@dimforge/rapier2d-compat": ["@dimforge/rapier2d-compat@0.20.0", "", {}, "sha512-FFYwGrfJov7d5kn4fxblG/ip5C+sYQL+Jl/hqLvDvu4BcMD/Mhrz7cTvnZTtuIRDXY8CLuraObqB/prip4wdWQ=="],
+    "@dimforge/rapier2d-compat": ["@dimforge/rapier2d-compat@0.21.0", "", {}, "sha512-cMStLQZbY5D/ajAPjOwTwoYuAJAungTYB45MNFEa5B+LGaMiZfxLwjHsfpxH5B0sDa+gkmcQFJJKiHNKnlpMnA=="],
 
-    "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.20.0", "", {}, "sha512-X4W9pJBdGRX5CO3c/gUNjBFEFG2fn4nYxp9k8STdBDaLa0/w5XTW2ArpayS+9jGFojTi3uFSOWAElCd4rkpekA=="],
+    "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.21.0", "", {}, "sha512-tCl1HPGwOhn5aCQbgqWbOH+Nx/5fnr3IPAnzQuR7zIhC/raqi2yxC6LhvZqjdI2El5hQgY5RDAwDrAjAi2FdPA=="],
 
     "@fourjs-tools/docs": ["@fourjs-tools/docs@workspace:tools/docs"],
 
