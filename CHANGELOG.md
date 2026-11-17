@@ -14,8 +14,7 @@ specification; until then, entries are grouped by date under **Unreleased**.
   is regenerated for the new solver version. The three examples that bundle Rapier grew, so their
   gzipped size limits are raised. Each new limit is about 4% above the measured size:
   `flagship/one-scene-everything-moves` 2.05 -> 3.20 MB (3.05 MB), `flagship/motor-digital-twin`
-  1.25 -> 1.88 MB (1.80 MB) and `character-controller` 1.20 -> 1.80 MB (1.72 MB). The user approved
-  the raise. All tests pass with 0.21.0.
+  1.25 -> 1.88 MB (1.80 MB) and `character-controller` 1.20 -> 1.80 MB (1.72 MB). All tests pass with 0.21.0.
 
 ### Added
 
