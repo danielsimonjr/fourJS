@@ -598,6 +598,16 @@ readable; never delete the pointer itself.
   skip, do not assume it. Two Playwright runs on this machine collide on
   ports 4173–4183; run browser gates one at a time.
 
+- **2026-11-17 — Rapier 0.21 goldens re-recorded (#132).** Deliberate solver
+  bump. Phase 5: every event count and step, and the first-step digests, are
+  unchanged; only the end-state checksums (2D and 3D) and the digests built
+  from them moved, which is numeric drift with the same behaviour. Phase 10:
+  every step and replay checksum is unchanged; the recording bytes, its length
+  and the initial snapshot digest moved with Rapier's snapshot encoding and
+  the adapter version string. Every other golden matched 0.21 as it was. Values
+  came from two runs of each scenario helper, which agreed, not from hand edits.
+  Each file's `_amended` lists what moved and what did not.
+
 - **2026-09-06 — Rapier 0.20 goldens re-recorded.** Deliberate solver bump
   (the exception each golden's `_warning` names). Values came from the
   scenario helpers, not from editing hashes by hand. 0.20 contact persistence

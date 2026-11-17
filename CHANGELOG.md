@@ -8,6 +8,20 @@ specification; until then, entries are grouped by date under **Unreleased**.
 
 ## [Unreleased]
 
+### 2026-11-17 — rapier 0.21.0 and three example size limits (#132)
+
+- `@dimforge/rapier2d-compat` and `@dimforge/rapier3d-compat` 0.20.0 -> 0.21.0. `docs/COMPATIBILITY.md`
+  is regenerated for the new solver version. The three examples that bundle Rapier grew, so their
+  gzipped size limits are raised. Each new limit is about 4% above the measured size:
+  `flagship/one-scene-everything-moves` 2.05 -> 3.20 MB (3.05 MB), `flagship/motor-digital-twin`
+  1.25 -> 1.88 MB (1.80 MB) and `character-controller` 1.20 -> 1.80 MB (1.72 MB).
+- **Rapier 0.21 goldens (reviewed re-record).** `golden/phase5.json`: the end-state checksums and
+  the digests built from them moved; every event count and step and the first-step digests did not.
+  `golden/phase10.json`: the recording digest, its length (68971 -> 71963), the initial snapshot digest
+  and the adapter version moved with Rapier's snapshot encoding; every step and replay checksum is
+  unchanged. Values come from two agreeing runs of each scenario helper. Every other golden matches
+  0.21 unchanged. All 103 suite files pass (772 tests).
+
 ### Added
 
 - **WebGL shader-family seams (2026-11-04, W11.5)**: the shadow atlas and the 2–4 morph target
